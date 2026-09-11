@@ -112,10 +112,11 @@ namespace TestCase
         {
             _ = source.Reuse;
 
-            string sourceName = source.Name;
-
             return new global::TestCase.Destination(
-                name: sourceName);
+                name: source.FromConstruct())
+            {
+                Name = source.Name
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -131,21 +132,18 @@ namespace TestCase
             }
             else
             {
-                throw new global::Morphant.Exceptions.MappingConfigurationException(
-                    global::Morphant.Context.MappingOperation.Update,
-                    typeof(global::TestCase.Source),
-                    typeof(global::TestCase.Destination),
-                    "This Construct or Resolve expression is not supported.");
+                var result = new global::TestCase.Destination(
+                    name: source.FromConstruct());
+
+                result.Name = (result.Name + " updated");
+
+                return result;
             }
         }
     }
 }
 """)
             ],
-            expectedSurfaces: ExplicitConstructorThenReadingResultSurfaces,
-            expectedDiagnostics: """
-MORPH0042 Error: Rule for destination member 'Name' cannot be applied in mapping 'TestCase.Source -> TestCase.Destination': member rule uses 'result' before the destination is created; its value is required by constructor parameter 'name'. Affected cases: Update with an existing destination.
-  at TestCase.cs(36,21-36,25); TestCase.cs(36,48-36,54)
-""");
+            expectedSurfaces: ExplicitConstructorThenReadingResultSurfaces);
     }
 }

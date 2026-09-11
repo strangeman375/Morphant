@@ -106,12 +106,14 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
+            var result = new global::TestCase.Destination(
+                name: source.FromConstruct());
+
             if (source.Name == "allowed")
             {
-                string sourceName = source.FromMembers();
+                result.Name = source.FromMembers();
 
-                return new global::TestCase.Destination(
-                    name: sourceName);
+                return result;
             }
             else
             {

@@ -100,10 +100,12 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
+            string? constructName = source.FromConstruct();
+
             return new global::TestCase.Destination(
-                name: source.FromConstruct())
+                name: constructName)
             {
-                Name = source.Name
+                Name = constructName
             };
         }
 

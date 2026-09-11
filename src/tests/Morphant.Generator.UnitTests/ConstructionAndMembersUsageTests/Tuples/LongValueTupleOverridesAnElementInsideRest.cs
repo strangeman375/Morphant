@@ -94,17 +94,18 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int tupleFirst = 1;
-            int tupleSecond = 2;
-            int tupleThird = 3;
-            int tupleFourth = 4;
-            int tupleFifth = 5;
-            int tupleSixth = 6;
-            int tupleSeventh = 7;
-            int tupleNinth = 9;
-            int tupleEighth = source.Id + 100;
+            int first = 1;
+            int second = 2;
+            int third = 3;
+            int fourth = 4;
+            int fifth = 5;
+            int sixth = 6;
+            int seventh = 7;
+            int eighth = 8;
+            int ninth = 9;
+            eighth = source.Id + 100;
 
-            return (First: tupleFirst, Second: tupleSecond, Third: tupleThird, Fourth: tupleFourth, Fifth: tupleFifth, Sixth: tupleSixth, Seventh: tupleSeventh, Eighth: tupleEighth, Ninth: tupleNinth);
+            return (First: first, Second: second, Third: third, Fourth: fourth, Fifth: fifth, Sixth: sixth, Seventh: seventh, Eighth: eighth, Ninth: ninth);
         }
 
         private (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) __Update(

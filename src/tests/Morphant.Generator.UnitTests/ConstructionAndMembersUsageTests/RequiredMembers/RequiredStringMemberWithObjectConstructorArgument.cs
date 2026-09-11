@@ -96,12 +96,10 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            string sourceName = "member string";
-
             return new global::TestCase.Destination(
-                name: (object)sourceName)
+                name: source.Name)
             {
-                Name = sourceName
+                Name = "member string"
             };
         }
 

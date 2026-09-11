@@ -102,8 +102,11 @@ namespace TestCase
             (int Id, string Name) destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Id = source.Id;
-            destination.Name = source.Name;
+            int id = source.Id;
+            string name = source.Name;
+
+            destination.Id = id;
+            destination.Name = name;
 
             return destination;
         }

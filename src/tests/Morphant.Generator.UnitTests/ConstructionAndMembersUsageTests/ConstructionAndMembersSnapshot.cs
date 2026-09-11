@@ -6,7 +6,7 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests;
 
 internal static class ConstructionAndMembersSnapshot
 {
-    // Characterization snapshots for review; disputed behavior is not a design decision.
+    // Complete readable examples of construction and member composition.
     public static void Verify(
         string source,
         (string HintName, string Source)[] expectedMappers,

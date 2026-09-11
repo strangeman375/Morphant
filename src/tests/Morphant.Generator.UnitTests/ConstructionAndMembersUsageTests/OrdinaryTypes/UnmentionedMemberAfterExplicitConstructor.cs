@@ -113,8 +113,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = source.Name;
-            destination.Age = source.Age;
+            string name = source.Name;
+            int age = source.Age;
+
+            destination.Name = name;
+            destination.Age = age;
 
             return destination;
         }

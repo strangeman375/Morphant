@@ -75,7 +75,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
         }
 
         /// <inheritdoc/>
@@ -91,7 +91,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
             }
 
             return __Update(source, destination, context);
@@ -99,12 +99,14 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
+            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
-            string sourceName = source.FromMembers();
-
-            return new global::TestCase.Destination(
-                name: sourceName);
+            throw new global::Morphant.Exceptions.MappingConfigurationException(
+                operation,
+                typeof(global::TestCase.Source),
+                typeof(global::TestCase.Destination),
+                "This Construct or Resolve expression is not supported.");
         }
 
         private global::TestCase.Destination __Update(
@@ -120,6 +122,10 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: DifferentConstructorAndMemberExpressionsSurfaces);
+            expectedSurfaces: DifferentConstructorAndMemberExpressionsSurfaces,
+            expectedDiagnostics: """
+MORPH0037 Error: Rule for constructor parameter 'name' is invalid in mapping 'TestCase.Source -> TestCase.Destination': Ignore can only omit an optional or params parameter.
+  at TestCase.cs(27,37-27,43); TestCase.cs(18,16-18,27)
+""");
     }
 }

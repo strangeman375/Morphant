@@ -109,13 +109,16 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            string sourceName = source.FromMembers();
+            string? sourceName = source.FromConstruct();
             int sourceAge = 50;
 
             return new global::TestCase.Destination(
                 name: sourceName,
                 age: sourceAge,
-                score: source.Score);
+                score: source.Score)
+            {
+                Name = source.FromMembers()
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -123,9 +126,13 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = source.FromMembers();
-            destination.Age = 50;
-            destination.Score = source.Score;
+            string name = source.FromMembers();
+            int age = 50;
+            int score = source.Score;
+
+            destination.Name = name;
+            destination.Age = age;
+            destination.Score = score;
 
             return destination;
         }

@@ -17,7 +17,7 @@ internal sealed class ResultDependencyTests
     [TestCase(Route.Factory)]
     [TestCase(Route.ResolveFactory)]
     [TestCase(Route.Unrelated)]
-    public void Preserves_valid_paths_and_throws_before_invalid_construction(Route route)
+    public void Reads_the_initial_result_after_independent_construction(Route route)
     {
         Scenario.Verify(route, update: false, hasPrevious: false);
         Scenario.Verify(route, update: true, hasPrevious: false);

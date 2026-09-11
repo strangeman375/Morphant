@@ -106,8 +106,10 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination(
+            var result = new global::TestCase.Destination(
                 name: source.FromConstruct());
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(

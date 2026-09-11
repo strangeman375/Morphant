@@ -121,7 +121,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
 
         private static int InitialId(FusionSource source)
         {
-            Events.Add("discarded-id");
+            Events.Add("initial-id");
             return source.Id + 1000;
         }
 
@@ -179,7 +179,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
 
         private static string InitialResolveText(ResolveSource source)
         {
-            Events.Add("resolve-discarded");
+            Events.Add("resolve-initial");
             return source.Text + ":initial";
         }
 
@@ -214,11 +214,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
                 default(MappingContext));
 
             if (created != (7, "created:initial") ||
-                TestMapper.EventLog() != "initial-name,final-id")
+                TestMapper.EventLog() != "initial-id,initial-name,final-id")
             {
                 throw new InvalidOperationException(
-                    "Tuple fusion evaluated an overridden rule or reordered " +
-                    "surviving rules.");
+                    "Tuple composition must evaluate constructor rules before member rules.");
             }
 
             TestMapper.ClearEvents();
@@ -317,7 +316,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
 
             if (created.Item1 != 37 ||
                 created.Item2 != "create:final" ||
-                TestMapper.EventLog() != "resolve-final")
+                TestMapper.EventLog() != "resolve-initial,resolve-final")
             {
                 throw new InvalidOperationException(
                     "Resolve construction did not fuse its final element plan.");
@@ -346,7 +345,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
             if (ReferenceEquals(existing, replaced) ||
                 replaced.Item1 != 47 ||
                 replaced.Item2 != "replace:final" ||
-                TestMapper.EventLog() != "resolve-final")
+                TestMapper.EventLog() != "resolve-initial,resolve-final")
             {
                 throw new InvalidOperationException(
                     "Resolve replacement did not receive the final tuple plan.");

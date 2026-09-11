@@ -78,7 +78,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -105,7 +105,6 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
             if (context.Operation == global::Morphant.Context.MappingOperation.Create)
@@ -117,11 +116,12 @@ namespace TestCase
             }
             else
             {
-                throw new global::Morphant.Exceptions.MappingConfigurationException(
-                    operation,
-                    typeof(global::TestCase.Source),
-                    typeof(global::TestCase.Destination),
-                    "This member cannot be assigned in this Create or Update case.");
+                var result = new global::TestCase.Destination(
+                    name: source.Name);
+
+                result.Name = (result.Name + " updated");
+
+                return result;
             }
         }
 

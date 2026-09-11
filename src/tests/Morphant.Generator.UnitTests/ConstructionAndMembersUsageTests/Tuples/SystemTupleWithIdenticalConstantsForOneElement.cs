@@ -99,7 +99,11 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::System.Tuple<int, string>(7, "same");
+            int item1 = 7;
+            string item2 = "same";
+            item2 = "same";
+
+            return new global::System.Tuple<int, string>(item1, item2);
         }
 
         private global::System.Tuple<int, string> __Update(

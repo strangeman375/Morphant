@@ -64,30 +64,58 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
-            => throw new global::Morphant.Exceptions.MappingConfigurationException(
-                global::Morphant.Context.MappingOperation.Create,
-                typeof(global::TestCase.Source),
-                typeof(global::TestCase.Destination),
-                "This mapping contains code that Morphant cannot generate.");
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            return __Create(source, context);
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
-            => throw new global::Morphant.Exceptions.MappingConfigurationException(
-                global::Morphant.Context.MappingOperation.Update,
-                typeof(global::TestCase.Source),
-                typeof(global::TestCase.Destination),
-                "This mapping contains code that Morphant cannot generate.");
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            if (destination is null)
+            {
+                return __Create(source, context);
+            }
+
+            return __Update(source, destination, context);
+        }
+
+        private global::TestCase.Destination __Create(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.Destination(
+                name: "constructor value")
+            {
+                Name = source.Raw
+            };
+        }
+
+        private global::TestCase.Destination __Update(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Name = source.Raw;
+
+            return destination;
+        }
     }
 }
 """)
             ],
-            expectedSurfaces: NullableMemberValueIntoNonNullableConstructorSurfaces,
-            expectedDiagnostics: """
-MORPH0030 Error: Construct for mapping 'TestCase.Source -> TestCase.Destination' cannot be used by mapper 'TestCase.Mapper': the generated mapping reports compiler diagnostic 'CS8604'.
-  at TestCase.cs(22,28-22,57)
-""");
+            expectedSurfaces: NullableMemberValueIntoNonNullableConstructorSurfaces);
     }
 }

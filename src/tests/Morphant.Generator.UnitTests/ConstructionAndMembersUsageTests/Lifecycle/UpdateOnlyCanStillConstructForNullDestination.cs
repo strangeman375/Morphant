@@ -98,10 +98,11 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            string sourceName = context.Operation + ":" + false;
-
             return new global::TestCase.Destination(
-                name: sourceName);
+                name: source.FromConstruct())
+            {
+                Name = context.Operation + ":" + false
+            };
         }
 
         private global::TestCase.Destination __Update(

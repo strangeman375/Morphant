@@ -75,7 +75,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -91,7 +91,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
+                return __Create(source, context);
             }
 
             return __Update(source, destination, context);
@@ -99,14 +99,13 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::Morphant.Exceptions.MappingConfigurationException(
-                operation,
-                typeof(global::TestCase.Source),
-                typeof(global::TestCase.Destination),
-                "This Construct or Resolve expression is not supported.");
+            return new global::TestCase.Destination(
+                name: 7)
+            {
+                Name = 123L
+            };
         }
 
         private global::TestCase.Destination __Update(

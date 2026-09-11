@@ -112,10 +112,11 @@ namespace TestCase
         {
             _ = source.Reuse;
 
-            string sourceName = source.Name;
-
             return new global::TestCase.Destination(
-                name: sourceName);
+                name: source.FromConstruct())
+            {
+                Name = source.Name
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -131,10 +132,11 @@ namespace TestCase
             }
             else
             {
-                string sourceName = (destination.Name + " replacement");
-
                 return new global::TestCase.Destination(
-                    name: sourceName);
+                    name: source.FromConstruct())
+                {
+                    Name = (destination.Name + " replacement")
+                };
             }
         }
     }

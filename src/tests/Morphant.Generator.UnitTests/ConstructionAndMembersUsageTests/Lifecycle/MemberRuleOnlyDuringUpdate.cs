@@ -106,17 +106,18 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
+            var result = new global::TestCase.Destination(
+                name: source.FromConstruct());
+
             if (context.Operation == global::Morphant.Context.MappingOperation.Update)
             {
-                string sourceName = source.FromMembers();
+                result.Name = source.FromMembers();
 
-                return new global::TestCase.Destination(
-                    name: sourceName);
+                return result;
             }
             else
             {
-                return new global::TestCase.Destination(
-                    name: source.FromConstruct());
+                return result;
             }
         }
 

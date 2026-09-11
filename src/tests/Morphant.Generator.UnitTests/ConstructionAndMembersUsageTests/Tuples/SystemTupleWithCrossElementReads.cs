@@ -105,7 +105,10 @@ namespace TestCase
         {
             global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(source.Id, source.FromConstruct());
 
-            return new global::System.Tuple<int, string>(result.Item2.Length, result.Item1.ToString());
+            int item1 = result.Item2.Length;
+            string item2 = result.Item1.ToString();
+
+            return new global::System.Tuple<int, string>(item1, item2);
         }
 
         private global::System.Tuple<int, string> __Update(

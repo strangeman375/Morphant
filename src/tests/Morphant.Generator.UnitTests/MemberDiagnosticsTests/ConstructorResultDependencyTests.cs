@@ -12,10 +12,19 @@ internal sealed class ConstructorResultDependencyTests
     [TestCase(".Resolve((_, previous) => new(7))", true)]
     [TestCase("", false)]
     [TestCase(".Construct(_ => new(7))", false)]
-    public void Reports_result_needed_by_a_constructor(string construction, bool sourceMember)
+    public void Requires_an_independent_value_before_reading_result(string construction, bool sourceMember)
     {
         var source = Consumer(construction, "", "return new() { Value = result.Value + 10 };", sourceMember);
         var result = MemberDiagnosticsGeneratorTest.Run(source);
+        if (sourceMember || construction.Length != 0)
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.EffectiveDiagnostics, Is.Empty);
+                Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+            });
+            return;
+        }
         var diagnostic = result.MemberDiagnostics.Single();
         Assert.Multiple(() =>
         {
@@ -52,7 +61,7 @@ internal sealed class ConstructorResultDependencyTests
     [TestCase("if (context.Operation == MappingOperation.Create) return new() { Value = 7 }; return new() { Value = result.Value + 10 };")]
     public void Reports_only_Update_without_previous_when_Create_is_guarded(string body)
     {
-        var result = MemberDiagnosticsGeneratorTest.Run(Consumer("", "", body));
+        var result = MemberDiagnosticsGeneratorTest.Run(Consumer("", "", body, sourceMember: false));
         Assert.Multiple(() =>
         {
             Assert.That(result.EffectiveDiagnostics.Select(d => d.Id), Is.EqualTo(new[] { "MORPH0042" }));
@@ -66,7 +75,7 @@ internal sealed class ConstructorResultDependencyTests
     [TestCase("if (result.Value > 0) return new() { Value = 7 }; return new() { Value = 8 };")]
     public void Reports_indirect_result_dependencies(string body)
     {
-        var result = MemberDiagnosticsGeneratorTest.Run(Consumer("", "", body));
+        var result = MemberDiagnosticsGeneratorTest.Run(Consumer("", "", body, sourceMember: false));
         Assert.Multiple(() =>
         {
             Assert.That(result.EffectiveDiagnostics, Is.Not.Empty);
@@ -88,16 +97,14 @@ internal sealed class ConstructorResultDependencyTests
     }
 
     [Test]
-    public void Reports_replacement_despite_an_existing_previous()
+    public void Allows_result_from_an_independent_replacement()
     {
         var result = MemberDiagnosticsGeneratorTest.Run(Consumer(
             ".Resolve((source, previous) => { if (previous.HasValue && source.Value > 0) return previous; return new(7); })", "",
             "return new() { Value = previous.HasValue ? result.Value + 10 : 7 };"));
         Assert.Multiple(() =>
         {
-            Assert.That(result.EffectiveDiagnostics.Select(d => d.Id), Is.EqualTo(new[] { "MORPH0042" }));
-            Assert.That(result.MemberDiagnostics.Single().GetMessage(),
-                Does.EndWith("Affected cases: Update with an existing destination."));
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -133,7 +140,7 @@ internal sealed class ConstructorResultDependencyTests
     public void Reports_result_in_the_wrong_operation_branch()
     {
         var result = MemberDiagnosticsGeneratorTest.Run(Consumer("", "",
-            "return new() { Value = context.Operation is MappingOperation.Create ? result.Value + 10 : 7 };"));
+            "return new() { Value = context.Operation is MappingOperation.Create ? result.Value + 10 : 7 };", sourceMember: false));
         Assert.Multiple(() =>
         {
             Assert.That(result.EffectiveDiagnostics.Select(d => d.Id), Is.EqualTo(new[] { "MORPH0042" }));
@@ -145,7 +152,7 @@ internal sealed class ConstructorResultDependencyTests
     [Test]
     public void Severity_does_not_change_recovery_and_guard_edits_actualize_one_driver()
     {
-        var source = Consumer("", "", "return new() { Value = result.Value + 10 };");
+        var source = Consumer("", "", "return new() { Value = result.Value + 10 };", sourceMember: false);
         var visible = MemberDiagnosticsGeneratorTest.Run(source);
         var suppressed = MemberDiagnosticsGeneratorTest.Run(source, diagnosticOptions:
             new Dictionary<string, ReportDiagnostic> { ["MORPH0042"] = ReportDiagnostic.Suppress });

@@ -102,12 +102,16 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination(
-                NAME: source.FromConstruct())
-            {
-                Name = source.FromMembers(),
-                name = "lower case"
-            };
+            var result = new global::TestCase.Destination(
+                NAME: source.FromConstruct());
+
+            string name = source.FromMembers();
+            string name1 = "lower case";
+
+            result.Name = name;
+            result.name = name1;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -115,8 +119,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = source.FromMembers();
-            destination.name = "lower case";
+            string name = source.FromMembers();
+            string name1 = "lower case";
+
+            destination.Name = name;
+            destination.name = name1;
 
             return destination;
         }

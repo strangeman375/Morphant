@@ -94,7 +94,11 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return (Id: 7, Name: source.FromMembers());
+            int id = 7;
+            string? name = (string? )(default);
+            name = source.FromMembers();
+
+            return (Id: id, Name: name);
         }
 
         private (int Id, string? Name) __Update(

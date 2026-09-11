@@ -76,7 +76,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -92,7 +92,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
+                return __Create(source, context);
             }
 
             return __Update(source, destination, context);
@@ -100,14 +100,14 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::Morphant.Exceptions.MappingConfigurationException(
-                operation,
-                typeof(global::TestCase.Source),
-                typeof(global::TestCase.Destination),
-                "This member cannot be assigned in this Create or Update case.");
+            var result = new global::TestCase.Destination(
+                name: source.FromConstruct());
+
+            result.Name = result.Name + " updated";
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -124,10 +124,6 @@ namespace TestCase
 """)
             ],
             expectedSurfaces: ExplicitConstructorThenReadingResultSurfaces,
-            expectedDiagnostics: """
-MORPH0042 Error: Rule for destination member 'Name' cannot be applied in mapping 'TestCase.Source -> TestCase.Destination': member rule uses 'result' before the destination is created; its value is required by constructor parameter 'name'. Affected cases: Create; Update without an existing destination.
-  at TestCase.cs(29,73-29,77); TestCase.cs(29,80-29,86)
-""",
             languageVersion: Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11);
     }
 }

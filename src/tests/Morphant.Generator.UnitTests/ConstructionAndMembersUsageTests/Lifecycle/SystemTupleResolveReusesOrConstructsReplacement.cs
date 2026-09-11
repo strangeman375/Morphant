@@ -104,11 +104,13 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceId = source.Id;
+            _ = source.Id > 0;
 
-            _ = sourceId > 0;
+            int item1 = source.Id;
+            string item2 = source.FromConstruct();
+            item2 = source.FromMembers();
 
-            return new global::System.Tuple<int, string>(sourceId, source.FromMembers());
+            return new global::System.Tuple<int, string>(item1, item2);
         }
 
         private global::System.Tuple<int, string> __Update(
@@ -116,15 +118,17 @@ namespace TestCase
             global::System.Tuple<int, string> destination,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceId = source.Id;
-
-            if (sourceId > 0)
+            if (source.Id > 0)
             {
                 return destination;
             }
             else
             {
-                return new global::System.Tuple<int, string>(sourceId, source.FromMembers());
+                int item1 = source.Id;
+                string item2 = source.FromConstruct();
+                item2 = source.FromMembers();
+
+                return new global::System.Tuple<int, string>(item1, item2);
             }
         }
     }

@@ -10,14 +10,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
     {
         public int Calls { get; private set; }
         public int Read() { Calls++; return 117; }
-        public int Obsolete() => throw new InvalidOperationException("Overridden argument was evaluated.");
+        public int ConstructorCalls { get; private set; }
+        public int ConstructValue() { ConstructorCalls++; return 23; }
     }
     public sealed class Destination
     {
         private int value;
         public Destination(int value = -1)
         {
-            if (value != 117) throw new ArgumentException("Constructor received the wrong value.");
             ConstructorValue = value;
             Value = value + 1000;
         }
@@ -50,7 +50,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
     public partial class ValueMapper : TypeMapper<ValueMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>().Construct(source => new(source.Obsolete()))
+            builder.Map<Source, Destination>().Construct(source => new(source.ConstructValue()))
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
@@ -64,7 +64,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
     public partial class ByConventionValueMapper : TypeMapper<ByConventionValueMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>().Construct(source => new(ByConvention(), new() { value = source.Obsolete() }))
+            builder.Map<Source, Destination>().Construct(source => new(ByConvention(), new() { value = source.ConstructValue() }))
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
@@ -85,21 +85,21 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
     {
         public int Reads { get; private set; }
         public int Value { get { Reads++; return 117; } }
-        public int Obsolete() => throw new InvalidOperationException("Auto did not override construction.");
+        public int ConstructValue() => 23;
     }
     [MorphantMapper]
     public partial class MemberAutoMapper : TypeMapper<MemberAutoMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<AutoSource, Destination>()
-                .Construct(source => new(source.Obsolete()))
+                .Construct(source => new(source.ConstructValue()))
                 .Members(_ => new() { Value = Auto() });
     }
     public sealed class TextSource
     {
         public int Calls { get; private set; }
         public string Read() { Calls++; return "member"; }
-        public object Obsolete() => throw new InvalidOperationException("Old object expression ran.");
+        public object ConstructValue() => "constructor";
     }
     public sealed class OverloadedDestination
     {
@@ -115,7 +115,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<TextSource, OverloadedDestination>()
-                .Construct(source => new(source.Obsolete()))
+                .Construct(source => new(source.ConstructValue()))
                 .Members(source => new() { Value = source.Read() });
     }
     public static class Scenario
@@ -135,33 +135,40 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
                 _ => throw new ArgumentOutOfRangeException(nameof(route))
             };
             var source = new Source();
+            var explicitValue = route is Route.Value or Route.ByConventionValue;
+            var independent = explicitValue || route == Route.Omitted;
+            var expectedArgument = explicitValue ? 23 : route == Route.Omitted ? -1 : 117;
+            var expectedValue = independent ? 117 : 1117;
+            var expectedWrites = independent ? 2 : 1;
             var created = mapper.Create(source);
-            Check(created.Value == 1117 && created.ConstructorValue == 117 && created.Writes == 1,
-                "Create must preserve the constructor's normalization and avoid a second assignment.");
-            Check(source.Calls == 1, "Create must evaluate the selected rule once.");
+            Check(created.Value == expectedValue && created.ConstructorValue == expectedArgument && created.Writes == expectedWrites,
+                "Create must preserve each explicit rule and share only automatic constructor values.");
+            Check(source.Calls == 1 && source.ConstructorCalls == (explicitValue ? 1 : 0),
+                "Create evaluated an explicit rule an incorrect number of times.");
             var replacement = mapper.Update(source, null);
-            Check(replacement.Value == 1117 && replacement.Writes == 1 && source.Calls == 2,
+            Check(replacement.Value == expectedValue && replacement.Writes == expectedWrites && source.Calls == 2,
                 "Update without a destination must use the same creation rule.");
             var updated = mapper.Update(source, created);
-            Check(ReferenceEquals(created, updated) && updated.Value == 117 && updated.Writes == 2,
+            Check(ReferenceEquals(created, updated) && updated.Value == 117 && updated.Writes == expectedWrites + 1,
                 "Update with a destination must apply the value through its setter.");
-            Check(source.Calls == 3, "Update must evaluate the rule once.");
+            Check(source.Calls == 3 && source.ConstructorCalls == (explicitValue ? 2 : 0),
+                "Reuse must skip construction and evaluate the member rule once.");
         }
         public static void VerifyMemberAuto()
         {
             ITypeMapper<AutoSource, Destination> mapper = new MemberAutoMapper();
             var source = new AutoSource();
             var created = mapper.Create(source);
-            Check(source.Reads == 1 && created.ConstructorValue == 117 && created.Value == 1117 && created.Writes == 1,
-                "Member Auto must supply the constructor and skip its old expression.");
+            Check(source.Reads == 1 && created.ConstructorValue == 23 && created.Value == 117 && created.Writes == 2,
+                "Explicit member Auto must run after the explicit constructor value.");
         }
         public static void VerifyOverload()
         {
             ITypeMapper<TextSource, OverloadedDestination> mapper = new OverloadMapper();
             var source = new TextSource();
             var created = mapper.Create(source);
-            Check(created.ObjectOverload && created.Value == "member" && created.Writes == 1 && source.Calls == 1,
-                "Member promotion must preserve the explicitly selected object overload.");
+            Check(created.ObjectOverload && created.Value == "member" && created.Writes == 2 && source.Calls == 1,
+                "Independent member assignment must preserve the explicitly selected object overload.");
         }
         private static void Check(bool condition, string message)
         {

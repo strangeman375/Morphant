@@ -1,10 +1,8 @@
 #nullable enable
 #pragma warning disable CS1591
-#pragma warning disable MORPH0042 // Exercise the generated recovery after suppressing diagnostics.
 using System;
 using Morphant;
 using Morphant.Context;
-using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorResultDependencies
 {
@@ -152,37 +150,26 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorResul
             var source = new Source { Replace = replace };
             var previous = hasPrevious ? new Destination(10) : null;
             var before = Destination.Constructions;
-            var failure = !hasPrevious && (route is Route.Unguarded or Route.Explicit || route == Route.Operation && update) ||
-                hasPrevious && replace && route == Route.Resolve;
-            try
-            {
-                var result = update ? mapper.Update(source, previous) : mapper.Create(source);
-                Check(!failure, "An invalid constructor dependency did not throw.");
-                var replaced = hasPrevious && replace && route is Route.PreviousValue or Route.ResolveFactory;
-                Check(ReferenceEquals(previous, result) == (hasPrevious && !replaced), "Unexpected destination identity.");
-                var factory = route is Route.Factory or Route.ResolveFactory;
-                var expectedValue = route == Route.Unrelated && hasPrevious ? 7 :
-                    replaced && route == Route.PreviousValue ? 220 :
-                    hasPrevious && !replaced ? 120 : factory ? 117 : 107;
-                Check(result.Value == expectedValue, "Wrong destination value.");
-                Check(result.Writes == (hasPrevious && !replaced || factory ? 2 : 1), "Member assigned an incorrect number of times.");
-                if (!hasPrevious || replaced)
-                    Check(result.ConstructorValue == (replaced && route == Route.PreviousValue ? 120 : 7), "Wrong constructor argument.");
-                if (route == Route.Unrelated)
-                    Check(result.Echo == result.Value + 10, "Unrelated result-dependent setter did not run after construction.");
-                if (route == Route.Deferred)
-                    Check(source.Reads == (hasPrevious ? 0 : 1), "Deferred value was evaluated an incorrect number of times.");
-                if (replaced) Check(previous!.Value == 110 && previous.Writes == 1, "Replacement mutated the previous object.");
-            }
-            catch (MappingConfigurationException exception)
-            {
-                Check(failure, "A valid path failed.");
-                Check(exception.Operation == (update ? MappingOperation.Update : MappingOperation.Create) &&
-                    exception.SourceType == typeof(Source) && exception.DestinationType == typeof(Destination),
-                    "Failure lost the requested operation or pair.");
-                Check(Destination.Constructions == before, "The invalid path invoked a constructor.");
-                if (previous is not null) Check(previous.Value == 110 && previous.Writes == 1, "The invalid path mutated previous.");
-            }
+            var replaced = hasPrevious && replace && route is Route.Resolve or Route.PreviousValue or Route.ResolveFactory;
+            var result = update ? mapper.Update(source, previous) : mapper.Create(source);
+            Check(ReferenceEquals(previous, result) == (hasPrevious && !replaced), "Unexpected destination identity.");
+            var readsResult = route is Route.Unguarded or Route.Explicit or Route.Factory or Route.ResolveFactory ||
+                route == Route.Operation && update || replaced && route == Route.Resolve;
+            var explicitMember = route is Route.Resolve or Route.PreviousValue;
+            var expectedValue = hasPrevious && !replaced
+                ? route == Route.Unrelated ? 7 : 120
+                : replaced && route == Route.PreviousValue ? 120
+                : readsResult ? 117 : explicitMember ? 7 : 107;
+            Check(result.Value == expectedValue, "Wrong destination value.");
+            Check(result.Writes == (hasPrevious && !replaced || readsResult || explicitMember ? 2 : 1),
+                "Member assigned an incorrect number of times.");
+            if (!hasPrevious || replaced)
+                Check(result.ConstructorValue == 7 && Destination.Constructions == before + 1, "Wrong construction.");
+            if (route == Route.Unrelated)
+                Check(result.Echo == (hasPrevious ? 120 : 117), "Member expressions must read the initial result.");
+            if (route == Route.Deferred)
+                Check(source.Reads == (hasPrevious ? 0 : 1), "Deferred value was evaluated an incorrect number of times.");
+            if (replaced) Check(previous!.Value == 110 && previous.Writes == 1, "Replacement mutated the previous object.");
         }
         private static void Check(bool condition, string message)
         {

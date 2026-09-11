@@ -109,10 +109,11 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            string sourceName = source.Read("base member");
-
             return new global::TestCase.BaseDestination(
-                name: sourceName);
+                name: source.Read("base constructor"))
+            {
+                Name = source.Read("base member")
+            };
         }
 
         private global::TestCase.BaseDestination __Update(
@@ -161,11 +162,15 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination()
-            {
-                Name = source.Read("base member"),
-                Label = source.Read("local member")
-            };
+            var result = new global::TestCase.Destination();
+
+            string name = source.Read("base member");
+            string label = source.Read("local member");
+
+            result.Name = name;
+            result.Label = label;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update1(
@@ -173,8 +178,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = source.Read("base member");
-            destination.Label = source.Read("local member");
+            string name = source.Read("base member");
+            string label = source.Read("local member");
+
+            destination.Name = name;
+            destination.Label = label;
 
             return destination;
         }

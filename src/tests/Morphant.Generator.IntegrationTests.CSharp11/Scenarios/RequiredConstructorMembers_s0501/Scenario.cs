@@ -137,7 +137,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
             where TDestination : class, IObservedDestination
         {
             var source = new Source();
-            int expectedReads = 1;
+            int expectedReads = route == ConstructionRoute.Explicit ? 2 : 1;
             VerifyCreated(mapper.Create(source), source, expectedReads);
             source = new Source();
             VerifyCreated(mapper.Update(source, null), source, expectedReads);
@@ -152,10 +152,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
 
         private static void VerifyCreated(IObservedDestination created, Source source, int expectedReads)
         {
-            bool attributed = created is AttributedInit or AttributedSet;
-            Equal(17, created.ConstructorValue, "constructor receives the member value");
-            Equal(attributed ? 117 : 17, created.Value, "constructor normalization and required initializer");
-            Equal(attributed ? 1 : 2, created.Writes, "only the required initializer repeats assignment");
+            Equal(expectedReads == 2 ? 7 : 17, created.ConstructorValue, "explicit constructor value or shared automatic value");
+            Equal(17, created.Value, "explicit required initializer is always applied");
+            Equal(2, created.Writes, "explicit required initializer is retained with SetsRequiredMembers");
             Equal(expectedReads, source.Reads, "constructor and member dependency reads");
         }
 

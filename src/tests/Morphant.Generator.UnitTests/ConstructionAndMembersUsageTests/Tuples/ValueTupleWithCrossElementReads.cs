@@ -100,8 +100,11 @@ namespace TestCase
         {
             (int Id, string Name) result = (Id: source.Id, Name: source.FromConstruct());
 
-            result.Id = result.Name.Length;
-            result.Name = result.Id.ToString();
+            int id = result.Name.Length;
+            string name = result.Id.ToString();
+
+            result.Id = id;
+            result.Name = name;
 
             return result;
         }
@@ -111,8 +114,11 @@ namespace TestCase
             (int Id, string Name) destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Id = destination.Name.Length;
-            destination.Name = destination.Id.ToString();
+            int id = destination.Name.Length;
+            string name = destination.Id.ToString();
+
+            destination.Id = id;
+            destination.Name = name;
 
             return destination;
         }
