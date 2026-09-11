@@ -621,6 +621,7 @@ internal static class TypeMapperRuntimeEquality
                 leftArgument.TupleElementOrdinal !=
                     rightArgument.TupleElementOrdinal ||
                 leftArgument.IsEvaluationOnly != rightArgument.IsEvaluationOnly ||
+                leftArgument.HasGeneratedDestination != rightArgument.HasGeneratedDestination ||
                 leftArgument.DeclarativeOrder !=
                     rightArgument.DeclarativeOrder)
             {
@@ -660,6 +661,7 @@ internal static class TypeMapperRuntimeEquality
                left.RequiresPreviousDestinationValueLocal ==
                    right.RequiresPreviousDestinationValueLocal &&
                left.IsResultDependent == right.IsResultDependent &&
+               left.HasGeneratedDestination == right.HasGeneratedDestination &&
                AreEquivalent(
                    left.DependencyExpression,
                    right.DependencyExpression) &&
@@ -817,6 +819,7 @@ internal static class TypeMapperRuntimeEquality
                 left.ValueTypeName,
                 right.ValueTypeName) ||
             left.CanMaterialize != right.CanMaterialize ||
+            left.HasGeneratedDestination != right.HasGeneratedDestination ||
             !StringComparer.Ordinal.Equals(
                 left.ExpressionTemplate,
                 right.ExpressionTemplate) ||

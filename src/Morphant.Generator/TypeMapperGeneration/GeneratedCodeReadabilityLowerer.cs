@@ -245,6 +245,7 @@ internal static class GeneratedCodeReadabilityLowerer
                 ExplicitValueExpression = member.SourceValueLocalName ?? member.ExplicitValueExpression,
                 ConventionValueExpression = member.ConventionValueExpression,
                 DependencyExpression = member.DependencyExpression,
+                HasGeneratedDestination = member.HasGeneratedDestination,
                 EvaluationLocals = Normalize(member.EvaluationLocals).AddRange(Normalize(member.InvocationArgumentLocals)),
                 RuleOriginNode = null,
                 SourceMemberSymbol = null,
@@ -410,6 +411,8 @@ internal static class GeneratedCodeReadabilityLowerer
 
                 if (mapping.ExplicitValueExpression is not
                         { } expression ||
+                    !(mapping.HasGeneratedDestination ||
+                      mapping.DependencyExpression?.Root.HasGeneratedDestination == true) ||
                     !TryLowerMapInvocation(
                         expression,
                         mapping.DestinationMemberName,
@@ -523,7 +526,9 @@ internal static class GeneratedCodeReadabilityLowerer
             return argument;
         }
 
-        if (TryLowerMapInvocation(
+        if ((argument.HasGeneratedDestination ||
+             argument.DependencyExpression?.Root.HasGeneratedDestination == true) &&
+            TryLowerMapInvocation(
                 expression,
                 argument.ParameterName,
                 forceSourceLocal: false,

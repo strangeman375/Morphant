@@ -222,6 +222,13 @@ internal static class DeclarativeDependencyExpressionBuilder
                     normalized.Span.Contains(candidate.Syntax.Span))
                 .ToImmutableArray());
 
+        if (dependencyRoot is InvocationExpressionSyntax invocation &&
+            nestedMapMappings.TryGetValue(invocation, out var nestedMap) &&
+            nestedMap.GeneratedDestinationExpression is not null)
+        {
+            rootNode = rootNode with { HasGeneratedDestination = true };
+        }
+
         dependencyExpression =
             new TypeMapperDependencyExpressionModel(rootNode);
         rewrittenExpression = dependencyExpression.Render();

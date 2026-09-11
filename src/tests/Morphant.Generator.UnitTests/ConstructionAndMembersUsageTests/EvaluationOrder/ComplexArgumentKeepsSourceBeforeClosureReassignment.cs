@@ -110,14 +110,11 @@ namespace TestCase
                 return true;
             };
 
-            global::TestCase.Source? original = source;
-            int value = replaceSourceForConstructorValueSelection()
-                ? global::TestCase.Mapper.ReadPreferredConstructorValue(source)
-                : global::TestCase.Mapper.ReadFallbackConstructorValue(source);
-
             return new global::TestCase.Destination(
-                original: original,
-                value: value);
+                original: source,
+                value: replaceSourceForConstructorValueSelection()
+                    ? global::TestCase.Mapper.ReadPreferredConstructorValue(source)
+                    : global::TestCase.Mapper.ReadFallbackConstructorValue(source));
         }
 
         private global::TestCase.Destination __Update(

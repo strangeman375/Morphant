@@ -99,14 +99,11 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.Source? original = source;
-            int value = global::TestCase.Mapper.ReplaceSourceForConstructorValueSelection(ref source)
-                ? source.Value + 10
-                : source.Value + 20;
-
             return new global::TestCase.Destination(
-                original: original,
-                value: value);
+                original: source,
+                value: global::TestCase.Mapper.ReplaceSourceForConstructorValueSelection(ref source)
+                    ? source.Value + 10
+                    : source.Value + 20);
         }
 
         private global::TestCase.Destination __Update(

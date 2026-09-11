@@ -418,6 +418,7 @@ internal static class DeclarativeDependencyGraphOptimizer
             argument = argument with
             {
                 ExplicitValueExpression = optimized.Expression,
+                HasGeneratedDestination = dependency.Root.HasGeneratedDestination,
                 DependencyExpression = null,
                 EvaluationLocals = Normalize(
                     argument.EvaluationLocals)
@@ -488,6 +489,7 @@ internal static class DeclarativeDependencyGraphOptimizer
             initializerArray[index] = member with
             {
                 ExplicitValueExpression = optimized.Expression,
+                HasGeneratedDestination = dependency.Root.HasGeneratedDestination,
                 DependencyExpression = null
             };
             changed |= optimized.Changed;
@@ -560,6 +562,7 @@ internal static class DeclarativeDependencyGraphOptimizer
             result[index] = member with
             {
                 ExplicitValueExpression = optimized.Expression,
+                HasGeneratedDestination = dependency.Root.HasGeneratedDestination,
                 DependencyExpression = null,
                 EvaluationLocals = Normalize(member.EvaluationLocals)
                     .AddRange(optimized.PrefixLocals)

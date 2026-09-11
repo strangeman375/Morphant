@@ -16,8 +16,15 @@ internal sealed class EvaluationOrderTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void Readable_complex_arguments_preserve_conversions_branches_and_independent_members(bool preferred) =>
+    public void User_expressions_preserve_conversions_branches_and_independent_members(bool preferred) =>
         Scenario.VerifyComplexArguments(preferred);
+
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public void User_calls_evaluate_the_receiver_before_arguments_with_or_without_written_locals(bool locals, bool preferred) =>
+        CSharp9.Scenarios.UserExpressionEvaluation.Scenario.Verify(locals, preferred);
 
     [TestCase(false)]
     [TestCase(true)]

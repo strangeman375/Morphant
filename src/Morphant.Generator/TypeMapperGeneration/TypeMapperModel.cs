@@ -174,7 +174,8 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
     ImmutableArray<ISymbol> SourcePathMembers = default,
     string? MemberValueTypeName = null,
     string? ArgumentCastTypeName = null,
-    bool IsEvaluationOnly = false
+    bool IsEvaluationOnly = false,
+    bool HasGeneratedDestination = false
 );
 
 internal readonly record struct TypeMapperMemberMappingModel
@@ -193,7 +194,8 @@ internal readonly record struct TypeMapperMemberMappingModel
     ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default,
     ImmutableArray<TypeMapperLocalValueModel> InvocationArgumentLocals =
         default,
-    string? DestinationAccessPath = null
+    string? DestinationAccessPath = null,
+    bool HasGeneratedDestination = false
 );
 
 internal sealed record TypeMapperControlFlowMappingModel
@@ -296,7 +298,8 @@ internal sealed record TypeMapperDependencyExpressionNodeModel
     string ValueTypeName,
     bool CanMaterialize,
     string ExpressionTemplate,
-    ImmutableArray<TypeMapperDependencyExpressionChildModel> Children
+    ImmutableArray<TypeMapperDependencyExpressionChildModel> Children,
+    bool HasGeneratedDestination = false
 )
 {
     public string Render()

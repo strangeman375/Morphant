@@ -25,8 +25,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 - Simplify null checks in generated mappings where conditional access preserves
   the original behavior.
-- Keep generated object initializers and simple assignments concise, and make
-  complex constructor arguments readable without changing their evaluation order.
+- Preserve user-written expressions and locals in generated mappings. Add
+  supporting variables only where mapping semantics require them.
 - Publish a Git snapshot for every successful compilation's target framework.
   Remove `MorphantGitSnapshotTargetFrameworks`; use MSBuild conditions on
   `MorphantGitSnapshot` to opt individual compilations in or out.

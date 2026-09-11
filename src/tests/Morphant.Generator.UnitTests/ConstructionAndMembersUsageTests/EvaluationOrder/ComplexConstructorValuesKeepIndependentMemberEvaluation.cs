@@ -3,7 +3,7 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Evaluati
 internal sealed partial class EvaluationOrderTests
 {
     [Test]
-    [Description("Only complex constructor values and preceding conversions need locals; member initialization remains readable and independent.")]
+    [Description("User-written constructor and member computations remain in place, preserving independent evaluations and conversions.")]
     public void ComplexConstructorValuesKeepIndependentMemberEvaluation()
     {
         // lang=c#
@@ -115,14 +115,11 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int first = (int)source.ReadConversionInput();
-            int value = source.ShouldUsePreferredConstructorValue()
-                ? source.ReadPreferredConstructorValue()
-                : source.ReadFallbackConstructorValue();
-
             return new global::TestCase.Destination(
-                first: first,
-                value: value)
+                first: (int)source.ReadConversionInput(),
+                value: source.ShouldUsePreferredConstructorValue()
+                    ? source.ReadPreferredConstructorValue()
+                    : source.ReadFallbackConstructorValue())
             {
                 Value = source.ShouldUsePreferredConstructorValue()
                     ? source.ReadPreferredConstructorValue()

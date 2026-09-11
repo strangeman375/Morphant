@@ -3,8 +3,8 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Evaluati
 internal sealed partial class EvaluationOrderTests
 {
     [Test]
-    [Description("Passing a struct source as an earlier argument captures its value before a later method mutates the source parameter.")]
-    public void ComplexArgumentKeepsEarlierStructCopy()
+    [Description("Preserves user-written computation structure and C# evaluation order.")]
+    public void ExplicitNestedDestinationsKeepUserExpressions()
     {
         // lang=c#
         const string source =
@@ -12,30 +12,33 @@ internal sealed partial class EvaluationOrderTests
 #nullable enable
 #pragma warning disable CS1591
 using Morphant;
+
 namespace TestCase
 {
-    public struct Source
+    public sealed class Source
     {
-        public int Value { get; set; }
-        public bool AdvanceAndSelectConstructorValue() { Value++; return true; }
-        public int ReadPreferredConstructorValue() => Value + 10;
-        public int ReadFallbackConstructorValue() => Value + 20;
+        public bool Enabled => true;
+        public int Read(int value) => value;
     }
+
     public sealed class Destination
     {
-        public Destination(Source original, int value) { Original = original; Value = value; }
-        public Source Original { get; }
-        public int Value { get; }
+        public Destination(int first, int value) { First = first; Value = value; }
+        public int First { get; }
+        public int Value { get; set; }
     }
+
     [MorphantMapper]
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct(source => new(source,
-                    source.AdvanceAndSelectConstructorValue()
-                        ? source.ReadPreferredConstructorValue()
-                        : source.ReadFallbackConstructorValue()));
+                .Construct(source => new(source.Read(1),
+                    Update<int>(source.Read(2), destination: source.Enabled ? 3 : 4)))
+                .Members(source => new()
+                {
+                    Value = Update<int>(source.Read(5), destination: source.Enabled ? 6 : 7)
+                });
     }
 }
 """;
@@ -66,16 +69,28 @@ namespace TestCase
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
-            global::TestCase.Source source,
+            global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, context);
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            return __Create(source, context);
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
-            global::TestCase.Source source,
+            global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
         {
+            if (source is null)
+            {
+                return default!;
+            }
+
             if (destination is null)
             {
                 return __Create(source, context);
@@ -89,10 +104,11 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination(
-                original: source,
-                value: source.AdvanceAndSelectConstructorValue()
-                    ? source.ReadPreferredConstructorValue()
-                    : source.ReadFallbackConstructorValue());
+                first: source.Read(1),
+                value: context.Mapper.Map<int, int>(source.Read(2), destination: source.Enabled ? 3 : 4))
+            {
+                Value = context.Mapper.Map<int, int>(source.Read(5), destination: source.Enabled ? 6 : 7)
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -100,12 +116,14 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
+            destination.Value = context.Mapper.Map<int, int>(source.Read(5), destination: source.Enabled ? 6 : 7);
+
             return destination;
         }
     }
 }
 """)
             ],
-            expectedSurfaces: ComplexArgumentKeepsEarlierStructCopySurfaces);
+            expectedSurfaces: ComplexConstructorValuesKeepIndependentMemberEvaluationSurfaces);
     }
 }
