@@ -106,8 +106,8 @@ namespace TestCase
             ],
             expectedSurfaces: NamedTupleWithoutPositionalConventionFallbackSurfaces,
             expectedDiagnostics: """
-MORPH0036 Error: ConstructorSelection.Explicit cannot select a constructor for mapping 'TestCase.Source -> System.ValueTuple<int, string>': destination construction must be configured explicitly.
-  at TestCase.cs(15,21-15,24); <no source>
+MORPH0037 Error: Rule for constructor parameter 'Code' is invalid in mapping 'TestCase.Source -> System.ValueTuple<int, string>': ByConvention could not find exactly one compatible source member.
+  at TestCase.cs(17,37-17,49); <no source>
 """);
     }
 }
