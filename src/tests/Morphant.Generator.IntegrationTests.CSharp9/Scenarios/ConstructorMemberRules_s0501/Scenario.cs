@@ -160,22 +160,22 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorMembe
     {
         public static void VerifyMutable(ConstructionRoute route) => VerifyMapping(
             (ITypeMapper<Source, MutableDestination>)CreateMapper(route),
-            () => new MutableDestination(99), creationOnly: false);
+            () => new MutableDestination(99), creationOnly: false, route);
 
         public static void VerifyInit(ConstructionRoute route) => VerifyMapping(
             (ITypeMapper<Source, InitDestination>)CreateMapper(route),
-            () => new InitDestination(99), creationOnly: true);
+            () => new InitDestination(99), creationOnly: true, route);
 
         private static void VerifyMapping<TDestination>(
             ITypeMapper<Source, TDestination> mapper,
-            Func<TDestination> existing, bool creationOnly)
+            Func<TDestination> existing, bool creationOnly, ConstructionRoute route)
             where TDestination : class, IObservedDestination
         {
             var source = new Source();
             var created = mapper.Create(source);
-            VerifyCreated(created, source);
+            VerifyCreated(created, source, route);
             source = new Source();
-            VerifyCreated(mapper.Update(source, null), source);
+            VerifyCreated(mapper.Update(source, null), source, route);
 
             source = new Source { ThrowRule = creationOnly };
             var previous = existing();
@@ -191,12 +191,12 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorMembe
             ExpectRuleException(() => mapper.Update(new Source { ThrowRule = true }, null));
         }
 
-        private static void VerifyCreated(IObservedDestination result, Source source)
+        private static void VerifyCreated(IObservedDestination result, Source source, ConstructionRoute route)
         {
             Equal(17, result.Value, "created explicit value");
-            Equal(17, result.ConstructorValue, "constructor receives the configured member value");
-            Equal(1, result.Writes, "constructor is the only assignment");
-            Equal(1, source.Reads, "the configured value is computed once");
+            Equal(route == ConstructionRoute.Explicit ? 7 : 17, result.ConstructorValue, "constructor argument");
+            Equal(route == ConstructionRoute.Explicit ? 2 : 1, result.Writes, "explicit member writes");
+            Equal(route == ConstructionRoute.Explicit ? 2 : 1, source.Reads, "source reads");
             Equal(1, source.RuleCalls, "member expression evaluated once");
         }
 
@@ -210,9 +210,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorMembe
                 Equal(enabled ? 17 : 7, result.Value, "selected branch value");
                 Equal(enabled ? 20 : 0, result.Echo, "shared local value");
                 Equal(enabled ? 1 : 0, source.RuleCalls, "selected dependency once");
-                Equal(1, source.Reads, "selected reads");
-                Equal(enabled ? 17 : 7, result.ConstructorValue, "selected constructor argument");
-                Equal(1, result.Writes, "no repeated setter");
+                Equal(route == ConstructionRoute.Explicit && enabled ? 2 : 1, source.Reads, "selected reads");
+                Equal(route != ConstructionRoute.Explicit && enabled ? 17 : 7, result.ConstructorValue, "selected constructor argument");
+                Equal(route == ConstructionRoute.Explicit && enabled ? 2 : 1, result.Writes, "selected member writes");
 
                 source = new Source { Enabled = enabled, ThrowRule = !enabled };
                 var previous = new BranchDestination(99) { Echo = 98 };

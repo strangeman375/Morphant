@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperEvaluationTests/ResultValuesTests::Reuses_result_dependent_values_only_after_construction
+// Compiled integration scenario: TypeMapperEvaluationTests/ResultValuesTests::Evaluates_each_result_dependent_call_after_construction
 #nullable enable
 #pragma warning disable CS1591
 
@@ -58,11 +58,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResultValues_9bf
 
             if (created.Seed != 5 ||
                 created.First != 105 ||
-                created.Second != 105 ||
-                TestMapper.InvocationCount != 1)
+                created.Second != 205 ||
+                TestMapper.InvocationCount != 2)
             {
                 throw new InvalidOperationException(
-                    "Create did not share the result-dependent value.");
+                    "Create must evaluate each result-dependent call.");
             }
 
             var previous = new Destination(7);
@@ -73,12 +73,12 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResultValues_9bf
 
             if (!ReferenceEquals(previous, updated) ||
                 updated.Seed != 7 ||
-                updated.First != 207 ||
-                updated.Second != 207 ||
-                TestMapper.InvocationCount != 2)
+                updated.First != 307 ||
+                updated.Second != 407 ||
+                TestMapper.InvocationCount != 4)
             {
                 throw new InvalidOperationException(
-                    "Update did not share the result-dependent value.");
+                    "Update must evaluate each result-dependent call.");
             }
         }
     }

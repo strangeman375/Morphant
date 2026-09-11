@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperEvaluationTests/AliasingTests::Evaluates_an_aliased_source_value_once_without_reordering_assignments
+// Compiled integration scenario: TypeMapperEvaluationTests/AliasingTests::Evaluates_each_alias_read_before_assignments
 #nullable enable
 #pragma warning disable CS1591
 
@@ -53,10 +53,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Aliasing_9cff7b2
             if (!ReferenceEquals(value, result) ||
                 result.Value != 15 ||
                 result.Copy != 15 ||
-                TestMapper.ReadCount != 1)
+                TestMapper.ReadCount != 2)
             {
                 throw new InvalidOperationException(
-                    "The aliased source value was not shared once.");
+                    "Both alias reads must occur before the assignments.");
             }
         }
     }

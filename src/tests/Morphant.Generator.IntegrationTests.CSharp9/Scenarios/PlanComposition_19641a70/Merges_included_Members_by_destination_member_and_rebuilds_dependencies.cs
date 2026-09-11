@@ -93,7 +93,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
                 result.Code != string.Empty ||
                 result.Kept != "base:kept" ||
                 result.Breed != "breed" ||
-                result.Extra != "dog:name:extra")
+                result.Extra != ":extra")
             {
                 throw new InvalidOperationException(
                     "The effective Members plan was composed incorrectly.");

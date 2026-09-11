@@ -131,6 +131,33 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 .Members((source, _, result) => new() { Item1 = source.Observe(result), Item2 = result.Item1 });
     }
 
+    [MorphantMapper]
+    public partial class TupleLocalMapper : TypeMapper<TupleLocalMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Tuple<int, int>>()
+                .Construct(source => new(source.Next(), source.Next()))
+                .Members(source =>
+                {
+                    var value = source.Next();
+                    return new() { Item1 = value, Item2 = value };
+                });
+    }
+
+    [MorphantMapper]
+    public partial class TupleConditionMapper : TypeMapper<TupleConditionMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Tuple<int, int>>()
+                .Construct(source => new(source.Next(), source.Next()))
+                .Members(source =>
+                {
+                    if (source.Next() > 0)
+                        return new() { Item1 = source.Next(), Item2 = source.Next() };
+                    return new() { Item1 = -1, Item2 = -2 };
+                });
+    }
+
     public static class Scenario
     {
         public static void Verify(Route route)
@@ -191,6 +218,17 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
             source.Events.Clear();
             if (!ReferenceEquals(created, mapper.Update(source, created)) || source.Events.Count != 0)
                 throw new InvalidOperationException("Tuple reuse evaluated creation-only rules.");
+        }
+
+        public static void VerifyTupleBlock(bool condition)
+        {
+            ITypeMapper<Source, Tuple<int, int>> mapper = condition ? new TupleConditionMapper() : new TupleLocalMapper();
+            var source = new Source();
+            var created = mapper.Create(source);
+            Equal(condition ? "read:1,read:2,read:3,read:4,read:5" : "read:1,read:2,read:3",
+                string.Join(",", source.Events));
+            if (created.Item1 != (condition ? 4 : 3) || created.Item2 != (condition ? 5 : 3))
+                throw new InvalidOperationException("Tuple member blocks must run after initial element evaluations.");
         }
 
         private static void Equal(string expected, string actual)

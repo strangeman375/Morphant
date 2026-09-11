@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperEvaluationTests/PathSensitivityTests::Evaluates_only_the_selected_branch_and_reuses_its_value
+// Compiled integration scenario: TypeMapperEvaluationTests/PathSensitivityTests::Evaluates_constructor_and_member_branches_independently
 #nullable enable
 #pragma warning disable CS1591
 
@@ -87,18 +87,18 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PathSensitivity_
                 context);
 
             if (primary.Seed != 11 ||
-                primary.Value != 11 ||
+                primary.Value != 21 ||
                 alternate.Seed != 102 ||
-                alternate.Value != 102 ||
+                alternate.Value != 202 ||
                 !ReferenceEquals(previous, updated) ||
                 updated.Seed != 9 ||
-                updated.Value != 203 ||
-                TestMapper.ConditionCount != 3 ||
-                TestMapper.PrimaryCount != 1 ||
-                TestMapper.AlternateCount != 2)
+                updated.Value != 303 ||
+                TestMapper.ConditionCount != 5 ||
+                TestMapper.PrimaryCount != 2 ||
+                TestMapper.AlternateCount != 3)
             {
                 throw new InvalidOperationException(
-                    "The dependency graph was not path-sensitive.");
+                    "Constructor and member branches must each evaluate only their selected expressions.");
             }
         }
     }

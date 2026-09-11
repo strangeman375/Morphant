@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperNestedMapTests/SharingTests::Shares_equivalent_nested_calls_across_construction_and_members
+// Compiled integration scenario: TypeMapperNestedMapTests/SharingTests::Preserves_separate_nested_calls_across_construction_and_members
 #nullable enable
 #pragma warning disable CS1591
 
@@ -88,16 +88,17 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Sharing_9c1bfd0d
             var result = mapper.Map<OuterSource, OuterDestination>(
                 new OuterSource(new ChildSource(5)));
 
-            if (!ReferenceEquals(
+            if (ReferenceEquals(
                     result.ConstructorValue,
                     result.MemberValue) ||
                 result.ConstructorValue.Value != 15 ||
+                result.MemberValue.Value != 15 ||
                 result.UpdateValue.Value != 25 ||
-                child.CreateCalls != 1 ||
+                child.CreateCalls != 2 ||
                 child.UpdateCalls != 1)
             {
                 throw new InvalidOperationException(
-                    "Nested semantic identity or operation identity is " +
+                    "Separate nested invocations or their operations are " +
                     "incorrect.");
             }
         }

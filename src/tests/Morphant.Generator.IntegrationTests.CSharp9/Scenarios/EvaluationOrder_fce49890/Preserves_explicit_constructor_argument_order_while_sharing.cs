@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperEvaluationTests/EvaluationOrderTests::Preserves_constructor_argument_order_when_values_are_reused
+// Compiled integration scenario: TypeMapperEvaluationTests/EvaluationOrderTests::Preserves_constructor_then_member_expression_order
 #nullable enable
 #pragma warning disable CS1591
 
@@ -126,7 +126,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.EvaluationOrder_
                 result.SharedValue != 12 ||
                 result.CombinedValue != 29 ||
                 result.NestedValue != 15 ||
-                order.Length != 7 ||
+                order != "FWSLFSPNCN" ||
                 !constructorOrder ||
                 !expressionOrder)
             {

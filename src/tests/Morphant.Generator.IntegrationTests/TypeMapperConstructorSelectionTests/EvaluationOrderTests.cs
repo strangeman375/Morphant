@@ -15,4 +15,8 @@ internal sealed class EvaluationOrderTests
     [TestCase(false)]
     [TestCase(true)]
     public void Preserves_both_tuple_stages_and_the_initial_result(bool readsResult) => Scenario.VerifyTuple(readsResult);
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Evaluates_initial_tuple_elements_before_member_locals_and_conditions(bool condition) =>
+        Scenario.VerifyTupleBlock(condition);
 }

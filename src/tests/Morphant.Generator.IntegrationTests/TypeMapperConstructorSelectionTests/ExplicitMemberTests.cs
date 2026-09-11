@@ -9,7 +9,7 @@ internal sealed class ExplicitMemberTests
     [TestCase(ConstructionRoute.ByConvention)]
     [TestCase(ConstructionRoute.Explicit)]
     [TestCase(ConstructionRoute.Resolve)]
-    public void Supplies_the_explicit_member_value_to_the_constructor(ConstructionRoute route) =>
+    public void Separates_explicit_constructor_and_member_values(ConstructionRoute route) =>
         Scenario.VerifyMutable(route);
 
     [TestCase(ConstructionRoute.Automatic)]

@@ -4,7 +4,7 @@ namespace Morphant.Generator.IntegrationTests.TypeMapperEvaluationTests;
 internal sealed class PathSensitivityTests
 {
     [Test]
-    public void Evaluates_only_the_selected_branch_and_reuses_its_value()
+    public void Evaluates_constructor_and_member_branches_independently()
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PathSensitivity_de7bb566.Scenario.Verify();
     }

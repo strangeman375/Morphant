@@ -72,10 +72,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NameCollision_fd
                 selected.Other != 13 ||
                 skipped.Value != 0 ||
                 skipped.Other != 0 ||
-                TestMapper.InvocationCount != 1)
+                TestMapper.InvocationCount != 2)
             {
                 throw new InvalidOperationException(
-                    "Shared-local naming changed switch behavior.");
+                    "Generated local naming changed the selected switch branch.");
             }
         }
     }

@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperEvaluationTests/ConversionTests::Evaluates_an_implicit_conversion_once_when_its_result_is_reused
+// Compiled integration scenario: TypeMapperEvaluationTests/ConversionTests::Evaluates_each_explicit_target_conversion
 #nullable enable
 #pragma warning disable CS1591
 
@@ -73,13 +73,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Conversion_bd5d4
                 context);
 
             if (created.Seed.Value != 113 ||
-                created.First.Value != 113 ||
-                created.Second.Value != 113 ||
-                TestMapper.InvocationCount != 1 ||
-                Wrapped.ConversionCount != 1)
+                created.First.Value != 213 ||
+                created.Second.Value != 313 ||
+                TestMapper.InvocationCount != 3 ||
+                Wrapped.ConversionCount != 3)
             {
                 throw new InvalidOperationException(
-                    "Create did not share the target conversion.");
+                    "Create must preserve each explicit target conversion.");
             }
 
             var previous = new Destination(new Wrapped(1));
@@ -89,13 +89,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Conversion_bd5d4
                 context);
 
             if (!ReferenceEquals(previous, updated) ||
-                updated.First.Value != 214 ||
-                updated.Second.Value != 214 ||
-                TestMapper.InvocationCount != 2 ||
-                Wrapped.ConversionCount != 2)
+                updated.First.Value != 414 ||
+                updated.Second.Value != 514 ||
+                TestMapper.InvocationCount != 5 ||
+                Wrapped.ConversionCount != 5)
             {
                 throw new InvalidOperationException(
-                    "Update did not share the target conversion.");
+                    "Update must preserve each explicit target conversion.");
             }
         }
     }

@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperEvaluationTests/EquivalentExpressionTests::Reuses_equivalent_values_across_parentheses_and_nullability
+// Compiled integration scenario: TypeMapperEvaluationTests/EquivalentExpressionTests::Evaluates_separate_callback_locals_once_each
 #nullable enable
 #pragma warning disable CS1591
 
@@ -66,10 +66,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Wrapper_7b8f2fe2
             if (result.Seed != "value" ||
                 result.First != "value" ||
                 result.Second != "value" ||
-                TestMapper.InvocationCount != 1)
+                TestMapper.InvocationCount != 2)
             {
                 throw new InvalidOperationException(
-                    "Transparent wrappers split one dependency node.");
+                    "Separate callback locals must each evaluate once.");
             }
         }
     }

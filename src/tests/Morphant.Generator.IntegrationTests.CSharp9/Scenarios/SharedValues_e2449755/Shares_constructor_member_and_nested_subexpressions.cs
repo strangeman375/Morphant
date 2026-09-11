@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperEvaluationTests/SharedValuesTests::Evaluates_repeated_values_once_across_constructor_and_members
+// Compiled integration scenario: TypeMapperEvaluationTests/SharedValuesTests::Evaluates_each_repeated_expression_across_constructor_and_members
 #nullable enable
 #pragma warning disable CS1591
 
@@ -64,13 +64,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedValues_e24
                 context);
 
             if (created.Seed != 103 ||
-                created.First != 103 ||
-                created.Second != 103 ||
-                created.Text != "103" ||
-                TestMapper.InvocationCount != 1)
+                created.First != 203 ||
+                created.Second != 303 ||
+                created.Text != "403" ||
+                TestMapper.InvocationCount != 4)
             {
                 throw new InvalidOperationException(
-                    $"Create did not share the common value: " +
+                    $"Create lost a separate evaluation: " +
                     $"seed={created.Seed}, first={created.First}, " +
                     $"second={created.Second}, text={created.Text}, " +
                     $"count={TestMapper.InvocationCount}.");
@@ -84,13 +84,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedValues_e24
 
             if (!ReferenceEquals(previous, updated) ||
                 updated.Seed != 7 ||
-                updated.First != 204 ||
-                updated.Second != 204 ||
-                updated.Text != "204" ||
-                TestMapper.InvocationCount != 2)
+                updated.First != 504 ||
+                updated.Second != 604 ||
+                updated.Text != "704" ||
+                TestMapper.InvocationCount != 7)
             {
                 throw new InvalidOperationException(
-                    $"Update did not share duplicate member values: " +
+                    $"Update lost a separate member evaluation: " +
                     $"seed={updated.Seed}, first={updated.First}, " +
                     $"second={updated.Second}, text={updated.Text}, " +
                     $"count={TestMapper.InvocationCount}.");
