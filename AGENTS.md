@@ -17,6 +17,17 @@
 
 ## Generated code
 
+- Simplicity, optimality, readability and conciseness of generated code are
+  first priorities, equal to correctness. A passing test suite does not justify
+  making generated code larger, more complicated or harder to read.
+- Preserve ordinary object initializers and direct assignments. Introduce a
+  temporary only to preserve required evaluation order or reuse, or to make a
+  genuinely complex expression readable. Do not materialize every value or
+  split initializers as a general policy. Keep separately written evaluations
+  independent without inlining oversized expressions into constructor calls.
+- Review the generated-code diff before accepting snapshot changes. Limit
+  output changes to the requested behavior and justified readability fixes;
+  snapshots must enforce this standard rather than bless incidental rewrites.
 - Runtime reflection is not supported and must not be introduced. Diagnose
   polymorphic branch relationships that cannot be determined at generation
   time instead of deferring type comparison to runtime reflection.
@@ -92,10 +103,12 @@
 - Apply explicit init/required rules in the initializer. Reuse an associated
   evaluated value only for a necessary synthesized required initializer.
   `SetsRequiredMembers` never suppresses an explicit member rule.
-- Evaluate a selected member branch's values before applying its assignments;
-  adjacent expressions read the initial `result`. Preserve user-written shared
-  locals. Only automatic constructor dependencies justify early member values;
-  diagnose cycles and unsupported initialization instead of inventing values.
+- Preserve user-written shared locals and reads of the initial `result` when
+  member expressions depend on it. Limit supporting temporaries to the cases
+  that need them; ordinary source-only member rules retain object initializers
+  and direct assignments. Only automatic constructor dependencies justify early
+  member values; diagnose cycles and unsupported initialization instead of
+  inventing values.
 - For tuples without `result` dependencies, evaluate initial and final element
   values in locals and construct the final tuple once. When `result` is used,
   materializing an initial tuple is allowed, including for element reads.
@@ -154,15 +167,10 @@
 
 - Preserve unrelated changes and work only in the canonical
   `/workspace/Morphant` checkout; scratch locations are disposable.
-- **Hard checkpoint rule:** every completed implementation stage and every
-  meaningful intermediate checkpoint must be committed and published directly
-  to remote `main` before the next stage starts. Never leave completed progress
-  only in the worktree, in the index, or in local-only commits. This rule still
-  applies when the checkpoint does not build, tests fail, or the repository is
-  temporarily inconsistent; record that state clearly in the commit message
-  and publish it anyway. Do not postpone publication until validation, cleanup,
-  a later stage, or the end of the task. After each publication, verify that the
-  checkpoint is present on remote `main`.
+- Publish coherent, reviewed and appropriately verified checkpoints directly
+  to remote `main`, and verify each publication. Do not publish broken or
+  unreviewed changes merely to satisfy a checkpoint schedule. This reflects
+  the user's 2026-09-11 instruction to push only good changes.
 - Persist agreed design decisions and completion criteria before a long
   implementation when the repository does not already contain them.
 - Split long work into coherent checkpoints and publish verified progress
