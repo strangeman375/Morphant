@@ -171,7 +171,8 @@ internal static class GeneratedCodeReadabilityLowerer
                 { } createConstructor
             ? createConstructor with
             {
-                Arguments = LowerArguments(createConstructor.Arguments, mapping.NonNullSourceName, names)
+                Arguments = LowerArguments(createConstructor.Arguments, mapping.NonNullSourceName,
+                    mapping.AnalysisContext.SourceType.IsReferenceType, names)
             }
             : (TypeMapperConstructorMappingModel?)null;
 
@@ -450,11 +451,13 @@ internal static class GeneratedCodeReadabilityLowerer
     private static ImmutableArray<TypeMapperConstructorArgumentMappingModel> LowerArguments(
         ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
         string sourceName,
+        bool sourceIsReferenceType,
         GeneratedLocalNameAllocator names)
     {
         var lowered = arguments.Select(argument => LowerArgument(argument, names)).ToArray();
         var lastEvaluation = Array.FindLastIndex(lowered, static argument =>
             argument.ValueLocalName is not null || !Normalize(argument.EvaluationLocals).IsEmpty);
+        var canDelaySourceRead = sourceIsReferenceType && !arguments.Any(SourceMayBeReassigned);
 
         // Extracting a later argument must not move it ahead of earlier calls,
         // property reads or user-defined conversions.
@@ -462,7 +465,7 @@ internal static class GeneratedCodeReadabilityLowerer
         {
             var argument = lowered[index];
             if (argument.ValueLocalName is not null ||
-                argument.ExplicitValueExpression == sourceName ||
+                canDelaySourceRead && argument.ExplicitValueExpression == sourceName ||
                 argument.ExplicitValueExpression is { } expression &&
                 SyntaxFactory.ParseExpression(expression) is LiteralExpressionSyntax &&
                 argument.ParameterSymbol?.Type.SpecialType is
@@ -479,6 +482,36 @@ internal static class GeneratedCodeReadabilityLowerer
         }
 
         return lowered.ToImmutableArray();
+    }
+
+    private static bool SourceMayBeReassigned(TypeMapperConstructorArgumentMappingModel argument)
+    {
+        var callback = argument.RuleOriginNode?.AncestorsAndSelf().OfType<LambdaExpressionSyntax>().FirstOrDefault();
+        var sourceName = callback switch
+        {
+            SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.ValueText,
+            ParenthesizedLambdaExpressionSyntax parenthesized =>
+                parenthesized.ParameterList.Parameters.FirstOrDefault()?.Identifier.ValueText,
+            _ => null
+        };
+        if (sourceName is null) return false;
+
+        // Include nested closures and ref aliases: either can replace the
+        // callback parameter while a later argument is being evaluated.
+        return callback!.DescendantNodes().Any(node =>
+        {
+            var target = node switch
+            {
+                AssignmentExpressionSyntax assignment => assignment.Left,
+                ArgumentSyntax item when item.RefKindKeyword.Kind() is SyntaxKind.RefKeyword or SyntaxKind.OutKeyword => item.Expression,
+                RefExpressionSyntax reference => reference.Expression,
+                PrefixUnaryExpressionSyntax prefix when prefix.Kind() is SyntaxKind.PreIncrementExpression or SyntaxKind.PreDecrementExpression => prefix.Operand,
+                PostfixUnaryExpressionSyntax postfix when postfix.Kind() is SyntaxKind.PostIncrementExpression or SyntaxKind.PostDecrementExpression => postfix.Operand,
+                _ => null
+            };
+            return target?.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
+                .Any(identifier => identifier.Identifier.ValueText == sourceName) == true;
+        });
     }
 
     private static TypeMapperConstructorArgumentMappingModel LowerArgument(

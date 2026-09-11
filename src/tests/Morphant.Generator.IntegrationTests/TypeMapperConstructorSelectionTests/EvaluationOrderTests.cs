@@ -21,6 +21,15 @@ internal sealed class EvaluationOrderTests
 
     [TestCase(false)]
     [TestCase(true)]
+    public void Complex_arguments_keep_the_source_before_ref_or_closure_reassignment(bool closure) =>
+        CSharp9.Scenarios.ComplexArgumentEvaluation.Scenario.VerifyReference(closure);
+
+    [Test]
+    public void Complex_arguments_keep_the_struct_before_a_mutating_method() =>
+        CSharp9.Scenarios.ComplexArgumentEvaluation.Scenario.VerifyValue();
+
+    [TestCase(false)]
+    [TestCase(true)]
     public void Preserves_both_tuple_stages_and_the_initial_result(bool readsResult) => Scenario.VerifyTuple(readsResult);
     [TestCase(false)]
     [TestCase(true)]
