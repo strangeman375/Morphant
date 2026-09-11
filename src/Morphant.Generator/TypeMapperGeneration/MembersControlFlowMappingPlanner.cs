@@ -53,13 +53,17 @@ internal static class MembersControlFlowMappingPlanner
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            var memberPlan = hasResultDependentControlFlow && !reuseFlatMapping
+                ? DeferMembersUntilResult(leaf.Value, members, cancellationToken)
+                : leaf.Value;
+
             var flat = sharedMapping is { } reusableMapping
                 ? ApplyMemberPlan(
                     reusableMapping,
                     leaf.Value,
                     mapperType)
                 : buildFlatMapping(
-                    leaf.Value,
+                    memberPlan,
                     !reuseFlatMapping);
 
             if (reuseFlatMapping)
@@ -197,6 +201,44 @@ internal static class MembersControlFlowMappingPlanner
                 updateRoot),
             HelperMethodDeclarations = helperDeclarations.ToImmutable(),
             Failure = null
+        };
+    }
+
+    private static ConventionMemberMappingPlan DeferMembersUntilResult(
+        ConventionMemberMappingPlan plan,
+        MembersDeclarativeControlFlowPlan members,
+        CancellationToken cancellationToken)
+    {
+        var configured = plan.Observation.Rules.Where(rule =>
+                rule.Origin is not (MemberRuleOrigin.Convention or MemberRuleOrigin.Ignore))
+            .Select(rule => rule.DestinationMember.Name).ToImmutableHashSet(StringComparer.Ordinal);
+        var dependencyOrigin = members.TransferScope.DescendantNodes().OfType<IdentifierNameSyntax>()
+            .FirstOrDefault(identifier => members.ResultParameter is { } parameter &&
+                SymbolEqualityComparer.Default.Equals(
+                    members.SemanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol, parameter));
+        ImmutableArray<TypeMapperMemberMappingModel> Initializers(ImmutableArray<TypeMapperMemberMappingModel> values) =>
+            values.Where(value => !configured.Contains(value.DestinationMemberName)).ToImmutableArray();
+        ImmutableArray<TypeMapperMemberMappingModel> Post(ImmutableArray<TypeMapperMemberMappingModel> values) =>
+            values.Select(value => configured.Contains(value.DestinationMemberName)
+                ? value with { IsResultDependent = true } : value).ToImmutableArray();
+        return plan with
+        {
+            Create = Initializers(plan.Create),
+            MapReplacement = Initializers(plan.MapReplacement),
+            CreatePost = Post(plan.CreatePost),
+            MapReplacementPost = Post(plan.MapReplacementPost),
+            Observation = plan.Observation with
+            {
+                Rules = plan.Observation.Rules.Select(rule => configured.Contains(rule.DestinationMember.Name)
+                    ? rule with
+                    {
+                        Lifecycle = rule.Lifecycle | MemberLifecycleDependency.Result,
+                        ResultDependencyOrigin = rule.ResultDependencyOrigin ?? dependencyOrigin
+                    } : rule).ToImmutableArray(),
+                RequiredObligations = plan.Observation.RequiredObligations.AddRange(
+                    plan.Observation.Rules.Where(rule => rule.IsRequired && configured.Contains(rule.DestinationMember.Name))
+                        .Select(rule => rule.DestinationMember)).Distinct(SymbolEqualityComparer.Default).ToImmutableArray()
+            }
         };
     }
 

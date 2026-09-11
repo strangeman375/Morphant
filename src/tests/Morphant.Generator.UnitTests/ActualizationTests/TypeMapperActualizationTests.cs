@@ -423,7 +423,7 @@ namespace TestCase
             var result = new global::TestCase.Destination();
 
             int value = source.Value;
-            string? name = source.Name;
+            string name = source.Name;
 
             result.Value = value;
             result.Name = name;
@@ -437,7 +437,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             int value = source.Value;
-            string? name = source.Name;
+            string name = source.Name;
 
             destination.Value = value;
             destination.Name = name;
@@ -491,7 +491,7 @@ namespace TestCase
             var result = new global::TestCase.Destination();
 
             int value = source.Value;
-            string? name = source.Name;
+            string name = source.Name;
 
             result.Value = value;
             result.Name = name;
