@@ -11,7 +11,13 @@ internal sealed class EvaluationOrderTests
     [TestCase(Route.Factory)]
     [TestCase(Route.Swap)]
     [TestCase(Route.Convention)]
-    public void Preserves_constructor_evaluations_then_member_values_then_assignments(Route route) => Scenario.Verify(route);
+    [TestCase(Route.InitialResult)]
+    public void Preserves_constructor_evaluations_and_member_initialization(Route route) => Scenario.Verify(route);
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Readable_complex_arguments_preserve_conversions_branches_and_independent_members(bool preferred) =>
+        Scenario.VerifyComplexArguments(preferred);
 
     [TestCase(false)]
     [TestCase(true)]

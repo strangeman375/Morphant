@@ -25,6 +25,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 - Simplify null checks in generated mappings where conditional access preserves
   the original behavior.
+- Keep generated object initializers and simple assignments concise, and make
+  complex constructor arguments readable without changing their evaluation order.
 - Publish a Git snapshot for every successful compilation's target framework.
   Remove `MorphantGitSnapshotTargetFrameworks`; use MSBuild conditions on
   `MorphantGitSnapshot` to opt individual compilations in or out.
@@ -59,8 +61,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 - Preserve independent explicit constructor and member evaluations, even for
   identical expressions. Share member values only with automatic constructor
   arguments, and diagnose circular dependencies on `result`.
-- Preserve initial tuple values and evaluate member values before writable
-  assignments. Avoid an intermediate tuple when member rules do not need it.
+- Preserve reads of the initial `result` in member expressions. Avoid an
+  intermediate tuple when member rules do not need it.
 - Avoid generated-name conflicts across mappers, assemblies and nested types.
   IntelliSense offers aliases for reserved destination-member names.
 - Accept `Resolve` branches guarded by `previous.TryGetValue`.

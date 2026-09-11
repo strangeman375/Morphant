@@ -128,21 +128,15 @@ namespace TestCase
         {
             if (destination.Name.Length > 0)
             {
-                string extra = source.Name;
-                string name = source.Name;
-
-                destination.Extra = extra;
-                destination.Name = name;
+                destination.Extra = source.Name;
+                destination.Name = source.Name;
 
                 return destination;
             }
             else
             {
-                string extra = "fallback";
-                string name = source.Name;
-
-                destination.Extra = extra;
-                destination.Name = name;
+                destination.Extra = "fallback";
+                destination.Name = source.Name;
 
                 return destination;
             }

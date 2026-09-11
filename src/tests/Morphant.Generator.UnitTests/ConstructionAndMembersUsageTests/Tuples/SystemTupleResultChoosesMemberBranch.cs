@@ -99,17 +99,11 @@ namespace TestCase
 
             if (result.Item1 > 0)
             {
-                int item1 = 10;
-                string item2 = "positive";
-
-                return new global::System.Tuple<int, string>(item1, item2);
+                return new global::System.Tuple<int, string>(10, "positive");
             }
             else
             {
-                int item1 = -10;
-                string item2 = "negative";
-
-                return new global::System.Tuple<int, string>(item1, item2);
+                return new global::System.Tuple<int, string>(-10, "negative");
             }
         }
 

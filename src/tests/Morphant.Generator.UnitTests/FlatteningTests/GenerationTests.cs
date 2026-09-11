@@ -257,21 +257,14 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var result = new global::TestCase.Destination();
-
-            string? maybeCustomerName = source.MaybeCustomer?.Name;
-            string certainCustomerName = source.CertainCustomer.Name;
-            string? maybeCustomerFieldName = source.MaybeCustomerField?.Name;
-            string certainCustomerFieldName = source.CertainCustomerField.Name;
-            int certainMetricsCount = source.CertainMetrics.Value.Count;
-
-            result.MaybeCustomerName = maybeCustomerName;
-            result.CertainCustomerName = certainCustomerName;
-            result.MaybeCustomerFieldName = maybeCustomerFieldName;
-            result.CertainCustomerFieldName = certainCustomerFieldName;
-            result.CertainMetricsCount = certainMetricsCount;
-
-            return result;
+            return new global::TestCase.Destination()
+            {
+                MaybeCustomerName = source.MaybeCustomer?.Name,
+                CertainCustomerName = source.CertainCustomer.Name,
+                MaybeCustomerFieldName = source.MaybeCustomerField?.Name,
+                CertainCustomerFieldName = source.CertainCustomerField.Name,
+                CertainMetricsCount = source.CertainMetrics.Value.Count
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -279,17 +272,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            string? maybeCustomerName = source.MaybeCustomer?.Name;
-            string certainCustomerName = source.CertainCustomer.Name;
-            string? maybeCustomerFieldName = source.MaybeCustomerField?.Name;
-            string certainCustomerFieldName = source.CertainCustomerField.Name;
-            int certainMetricsCount = source.CertainMetrics.Value.Count;
-
-            destination.MaybeCustomerName = maybeCustomerName;
-            destination.CertainCustomerName = certainCustomerName;
-            destination.MaybeCustomerFieldName = maybeCustomerFieldName;
-            destination.CertainCustomerFieldName = certainCustomerFieldName;
-            destination.CertainMetricsCount = certainMetricsCount;
+            destination.MaybeCustomerName = source.MaybeCustomer?.Name;
+            destination.CertainCustomerName = source.CertainCustomer.Name;
+            destination.MaybeCustomerFieldName = source.MaybeCustomerField?.Name;
+            destination.CertainCustomerFieldName = source.CertainCustomerField.Name;
+            destination.CertainMetricsCount = source.CertainMetrics.Value.Count;
 
             return destination;
         }

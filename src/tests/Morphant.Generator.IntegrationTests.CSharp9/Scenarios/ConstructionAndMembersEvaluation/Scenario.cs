@@ -6,7 +6,7 @@ using Morphant;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndMembersEvaluation
 {
-    public enum Route { Expressions, Local, Condition, Factory, Swap, Convention }
+    public enum Route { Expressions, Local, Condition, Factory, Swap, Convention, InitialResult }
 
     public sealed class Source
     {
@@ -14,6 +14,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
         public int Reads { get; private set; }
         public int Left => -100;
         public Tuple<int, int>? InitialTuple { get; private set; }
+        public bool PreferFirst { get; set; }
+
+        public ConversionInput ReadConversionInput() => new ConversionInput(this, Next());
+        public bool ShouldUsePreferredConstructorValue()
+        {
+            Events.Add("choose");
+            return PreferFirst;
+        }
+        public int ReadPreferredConstructorValue() => Next() + 10;
+        public int ReadFallbackConstructorValue() => Next() + 20;
 
         public int Next()
         {
@@ -27,6 +37,49 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
             Events.Add("observe");
             return tuple.Item2 + 10;
         }
+    }
+
+    public readonly struct ConversionInput
+    {
+        private readonly Source owner;
+        private readonly int value;
+        public ConversionInput(Source owner, int value) { this.owner = owner; this.value = value; }
+        public static implicit operator int(ConversionInput input)
+        {
+            input.owner.Events.Add("convert:" + input.value);
+            return input.value;
+        }
+    }
+
+    public sealed class ComplexDestination
+    {
+        public ComplexDestination(Source owner, int first, int value)
+        {
+            First = first;
+            Value = value;
+            owner.Events.Add($"complex:{first}:{value}");
+        }
+        public int First { get; }
+        public int Value { get; set; }
+    }
+
+    [MorphantMapper]
+    public partial class ComplexArgumentsMapper : TypeMapper<ComplexArgumentsMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, ComplexDestination>()
+                .Construct(source => new(
+                    source,
+                    (int)source.ReadConversionInput(),
+                    source.ShouldUsePreferredConstructorValue()
+                        ? source.ReadPreferredConstructorValue()
+                        : source.ReadFallbackConstructorValue()))
+                .Members(source => new()
+                {
+                    Value = source.ShouldUsePreferredConstructorValue()
+                        ? source.ReadPreferredConstructorValue()
+                        : source.ReadFallbackConstructorValue()
+                });
     }
 
     public sealed class Destination
@@ -101,6 +154,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
             builder.Map<Source, Destination>()
                 .ConstructUsing(source => new Destination(source, source.Next()))
                 .Members(source => new() { Left = source.Next(), Right = source.Next() })
+                .MemberSelection(MemberSelection.Explicit);
+    }
+
+    [MorphantMapper]
+    public partial class InitialResultMapper : TypeMapper<InitialResultMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Construct(source => new(source, source.Next()))
+                .Members((source, _, result) => new() { Left = source.Next(), Right = result.Left })
                 .MemberSelection(MemberSelection.Explicit);
     }
 
@@ -201,6 +264,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 Route.Factory => new FactoryMapper(),
                 Route.Swap => new SwapMapper(),
                 Route.Convention => new ConventionMapper(),
+                Route.InitialResult => new InitialResultMapper(),
                 _ => throw new ArgumentOutOfRangeException(nameof(route))
             };
             var source = new Source();
@@ -211,7 +275,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 Route.Condition => "read:1,construct:1,read:2,left:10,right:20",
                 Route.Swap => "read:1,construct:1,left:99,right:1",
                 Route.Convention => "read:1,construct:1,right:1",
-                _ => "read:1,construct:1,read:2,read:3,left:2,right:3"
+                Route.InitialResult => "read:1,construct:1,read:2,left:2,right:1",
+                _ => "read:1,construct:1,read:2,left:2,read:3,right:3"
             };
             Equal(expected, string.Join(",", source.Events));
             source.Events.Clear();
@@ -226,9 +291,27 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 Route.Condition => $"read:{reads + 1},left:10,right:20",
                 Route.Swap => $"left:{previousRight},right:{previousLeft}",
                 Route.Convention => $"right:{previousLeft},left:-100",
-                _ => $"read:{reads + 1},read:{reads + 2},left:{reads + 1},right:{reads + 2}"
+                Route.InitialResult => $"read:{reads + 1},left:{reads + 1},right:{previousLeft}",
+                _ => $"read:{reads + 1},left:{reads + 1},read:{reads + 2},right:{reads + 2}"
             };
             Equal(expected, string.Join(",", source.Events));
+        }
+
+        public static void VerifyComplexArguments(bool preferred)
+        {
+            ITypeMapper<Source, ComplexDestination> mapper = new ComplexArgumentsMapper();
+            var source = new Source { PreferFirst = preferred };
+            var offset = preferred ? 10 : 20;
+            var created = mapper.Create(source);
+            Equal($"read:1,convert:1,choose,read:2,complex:1:{offset + 2},choose,read:3",
+                string.Join(",", source.Events));
+            if (created.First != 1 || created.Value != offset + 3)
+                throw new InvalidOperationException("Independent constructor and member expressions were lost.");
+
+            source.Events.Clear();
+            if (!ReferenceEquals(created, mapper.Update(source, created)) || created.Value != offset + 4)
+                throw new InvalidOperationException("Reuse must evaluate only the member expression.");
+            Equal("choose,read:4", string.Join(",", source.Events));
         }
 
         public static void VerifyTuple(bool readsResult)

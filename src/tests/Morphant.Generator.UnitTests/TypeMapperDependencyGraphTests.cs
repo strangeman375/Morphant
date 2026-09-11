@@ -396,16 +396,12 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var result = new global::TestCase.Destination(
-                seed: global::TestCase.TestMapper.Share(source.Value));
-
-            int value = global::TestCase.TestMapper.Share(source.Value);
-            int other = global::TestCase.TestMapper.Share(source.Value);
-
-            result.Value = value;
-            result.Other = other;
-
-            return result;
+            return new global::TestCase.Destination(
+                seed: global::TestCase.TestMapper.Share(source.Value))
+            {
+                Value = global::TestCase.TestMapper.Share(source.Value),
+                Other = global::TestCase.TestMapper.Share(source.Value)
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -413,11 +409,8 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            int value = global::TestCase.TestMapper.Share(source.Value);
-            int other = global::TestCase.TestMapper.Share(source.Value);
-
-            destination.Value = value;
-            destination.Other = other;
+            destination.Value = global::TestCase.TestMapper.Share(source.Value);
+            destination.Other = global::TestCase.TestMapper.Share(source.Value);
 
             return destination;
         }

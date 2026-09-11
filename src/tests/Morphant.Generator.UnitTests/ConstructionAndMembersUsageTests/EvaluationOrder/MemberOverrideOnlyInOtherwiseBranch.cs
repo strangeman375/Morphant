@@ -115,11 +115,8 @@ namespace TestCase
             }
             else
             {
-                string name = "member";
-                string extra = "fallback";
-
-                result.Name = name;
-                result.Extra = extra;
+                result.Name = "member";
+                result.Extra = "fallback";
 
                 return result;
             }
@@ -132,21 +129,15 @@ namespace TestCase
         {
             if (source.Enabled)
             {
-                string extra = source.Name;
-                string name = source.Name;
-
-                destination.Extra = extra;
-                destination.Name = name;
+                destination.Extra = source.Name;
+                destination.Name = source.Name;
 
                 return destination;
             }
             else
             {
-                string name = "member";
-                string extra = "fallback";
-
-                destination.Name = name;
-                destination.Extra = extra;
+                destination.Name = "member";
+                destination.Extra = "fallback";
 
                 return destination;
             }

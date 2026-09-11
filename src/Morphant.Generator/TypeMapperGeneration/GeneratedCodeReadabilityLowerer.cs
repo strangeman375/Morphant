@@ -147,13 +147,16 @@ internal static class GeneratedCodeReadabilityLowerer
     {
         mapping = CollapseTupleConstruction(mapping, names);
         if (mapping.CreateConstructor is { TupleConstruction: null } &&
-            mapping.CreateMemberMappings.Length + mapping.CreatePostMemberMappings.Length > 1 &&
+            mapping.CreatePostMemberMappings.Any(static member => member.IsResultDependent) &&
+            !mapping.CreateMemberMappings.IsEmpty &&
             mapping.PostMemberControlFlow is null && mapping.MemberObservation is { } observation &&
             mapping.CreateMemberMappings.All(member => !member.IsRequired &&
                 observation.Rules.Any(rule =>
                     StringComparer.Ordinal.Equals(rule.DestinationMember.Name, member.DestinationMemberName) &&
                     rule.Lifecycle.HasFlag(MemberLifecycleDependency.ExistingDestination))))
         {
+            // A source-only initializer must not overwrite a value that a
+            // neighboring member expression reads from the initial result.
             mapping = mapping with
             {
                 CreatePostMemberMappings = mapping.CreateMemberMappings.AddRange(mapping.CreatePostMemberMappings)
@@ -168,17 +171,15 @@ internal static class GeneratedCodeReadabilityLowerer
                 { } createConstructor
             ? createConstructor with
             {
-                Arguments = createConstructor.Arguments
-                    .Select(argument => LowerArgument(
-                        argument,
-                        names))
-                    .ToImmutableArray()
+                Arguments = LowerArguments(createConstructor.Arguments, mapping.NonNullSourceName, names)
             }
             : (TypeMapperConstructorMappingModel?)null;
 
         return mapping with
         {
             CreateConstructor = constructor,
+            CreateMemberMappings = mapping.CreateMemberMappings
+                .Select(FormatMemberExpression).ToImmutableArray(),
             CreatePostMemberMappings = LowerMembers(
                 mapping.CreatePostMemberMappings,
                 mapping.NonNullSourceName,
@@ -385,10 +386,14 @@ internal static class GeneratedCodeReadabilityLowerer
         string sourceName,
         GeneratedLocalNameAllocator names)
     {
+        // Only result-dependent values need to observe the destination before
+        // the first assignment. Ordinary member rules stay direct assignments.
+        var preserveInitialResult = mappings.Length > 1 &&
+            mappings.Any(static mapping => mapping.IsResultDependent);
         return Normalize(mappings)
             .Select(mapping =>
             {
-                if (mappings.Length > 1 && mapping.ValueLocalName is null)
+                if (preserveInitialResult && mapping.ValueLocalName is null)
                 {
                     mapping = mapping with
                     {
@@ -411,7 +416,7 @@ internal static class GeneratedCodeReadabilityLowerer
                         names,
                         out var lowered))
                 {
-                    return mapping;
+                    return FormatMemberExpression(mapping);
                 }
 
                 return mapping with
@@ -430,28 +435,100 @@ internal static class GeneratedCodeReadabilityLowerer
             .ToImmutableArray();
     }
 
+    private static TypeMapperMemberMappingModel FormatMemberExpression(
+        TypeMapperMemberMappingModel mapping)
+    {
+        return mapping.ExplicitValueExpression is { } expression && IsComplexExpression(expression)
+            ? mapping with
+            {
+                ExplicitValueExpression = FormatComplexExpression(
+                    SyntaxFactory.ParseExpression(expression))
+            }
+            : mapping;
+    }
+
+    private static ImmutableArray<TypeMapperConstructorArgumentMappingModel> LowerArguments(
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
+        string sourceName,
+        GeneratedLocalNameAllocator names)
+    {
+        var lowered = arguments.Select(argument => LowerArgument(argument, names)).ToArray();
+        var lastEvaluation = Array.FindLastIndex(lowered, static argument =>
+            argument.ValueLocalName is not null || !Normalize(argument.EvaluationLocals).IsEmpty);
+
+        // Extracting a later argument must not move it ahead of earlier calls,
+        // property reads or user-defined conversions.
+        for (var index = 0; index < lastEvaluation; index++)
+        {
+            var argument = lowered[index];
+            if (argument.ValueLocalName is not null ||
+                argument.ExplicitValueExpression == sourceName ||
+                argument.ExplicitValueExpression is { } expression &&
+                SyntaxFactory.ParseExpression(expression) is LiteralExpressionSyntax &&
+                argument.ParameterSymbol?.Type.SpecialType is
+                    not null and not SpecialType.None and not SpecialType.System_Object)
+            {
+                continue;
+            }
+
+            lowered[index] = argument with
+            {
+                ValueLocalName = AllocateValueLocalName(names, argument.ParameterName),
+                ValueLocalTypeName = argument.ValueLocalTypeName ?? argument.TargetTypeName
+            };
+        }
+
+        return lowered.ToImmutableArray();
+    }
+
     private static TypeMapperConstructorArgumentMappingModel LowerArgument(
         TypeMapperConstructorArgumentMappingModel argument,
         GeneratedLocalNameAllocator names)
     {
-        if (argument.ExplicitValueExpression is not
-                { } expression ||
-            !TryLowerMapInvocation(
+        if (argument.ExplicitValueExpression is not { } expression)
+        {
+            return argument;
+        }
+
+        if (TryLowerMapInvocation(
                 expression,
                 argument.ParameterName,
                 forceSourceLocal: false,
                 names,
                 out var lowered))
         {
-            return argument;
+            return argument with
+            {
+                ExplicitValueExpression = lowered.Expression,
+                EvaluationLocals = Normalize(argument.EvaluationLocals)
+                    .AddRange(lowered.Locals)
+            };
         }
 
-        return argument with
+        if (argument.ValueLocalName is null && IsComplexExpression(expression))
         {
-            ExplicitValueExpression = lowered.Expression,
-            EvaluationLocals = Normalize(argument.EvaluationLocals)
-                .AddRange(lowered.Locals)
-        };
+            var syntax = SyntaxFactory.ParseExpression(expression);
+            var valueType = argument.ValueLocalTypeName ?? argument.TargetTypeName;
+            return argument with
+            {
+                ExplicitValueExpression = FormatComplexExpression(syntax),
+                ValueLocalName = AllocateValueLocalName(names, argument.ParameterName),
+                ValueLocalTypeName = UnwrapParentheses(syntax) is CastExpressionSyntax cast &&
+                    Normalize(cast.Type) == valueType ? "var" : valueType
+            };
+        }
+
+        return argument;
+    }
+
+    private static bool IsComplexExpression(string expression)
+    {
+        if (expression.Length <= 100) return false;
+
+        var evaluatedNodes = SyntaxFactory.ParseExpression(expression).DescendantNodesAndSelf(
+            static node => node is not AnonymousFunctionExpressionSyntax).ToArray();
+        return evaluatedNodes.Any(static node => node is ConditionalExpressionSyntax or SwitchExpressionSyntax) ||
+            evaluatedNodes.OfType<InvocationExpressionSyntax>().Skip(1).Any();
     }
 
     private static bool TryLowerGuardedEvaluation(
@@ -696,8 +773,14 @@ internal static class GeneratedCodeReadabilityLowerer
     }
 
     private static string FormatInvocation(
-        InvocationExpressionSyntax invocation)
+        InvocationExpressionSyntax invocation,
+        bool formatArguments = false)
     {
+        if (invocation.ArgumentList.Arguments.Count == 0)
+        {
+            return Normalize(invocation);
+        }
+
         var lines = new List<string>
         {
             Normalize(invocation.Expression) + "("
@@ -706,8 +789,12 @@ internal static class GeneratedCodeReadabilityLowerer
 
         for (var index = 0; index < arguments.Count; index++)
         {
+            var argument = formatArguments
+                ? arguments[index].WithExpression(SyntaxFactory.ParseExpression(
+                    FormatComplexExpression(arguments[index].Expression))).ToFullString().Trim()
+                : Normalize(arguments[index]);
             lines.Add(
-                "    " + Normalize(arguments[index]) +
+                "    " + argument.Replace("\n", "\n    ") +
                 (index == arguments.Count - 1 ? ")" : ","));
         }
 
@@ -717,9 +804,29 @@ internal static class GeneratedCodeReadabilityLowerer
     private static string FormatComplexExpression(
         ExpressionSyntax expression)
     {
-        return expression is SwitchExpressionSyntax switchExpression
-            ? FormatSwitchExpression(switchExpression)
-            : Normalize(expression);
+        return expression switch
+        {
+            SwitchExpressionSyntax switchExpression => FormatSwitchExpression(switchExpression),
+            ConditionalExpressionSyntax conditional when Normalize(expression).Length > 100 =>
+                Normalize(conditional.Condition) + "\n    ? " + Normalize(conditional.WhenTrue) +
+                "\n    : " + Normalize(conditional.WhenFalse),
+            InvocationExpressionSyntax invocation when Normalize(expression).Length > 100 =>
+                FormatInvocation(invocation, formatArguments: true),
+            ParenthesizedExpressionSyntax parenthesized =>
+                "(" + FormatComplexExpression(parenthesized.Expression) + ")",
+            CastExpressionSyntax cast =>
+                "(" + Normalize(cast.Type) + ")" + FormatComplexExpression(cast.Expression),
+            // Keep compiling against Roslyn 4.4 while formatting collection
+            // expressions when the generator runs in a C# 12 host.
+            _ when expression.Kind().ToString() == "CollectionExpression" =>
+                "[\n" + string.Join(",\n", expression.ChildNodes().Select(element =>
+                {
+                    var value = element.ChildNodes().OfType<ExpressionSyntax>().Single();
+                    var spread = Normalize(element).StartsWith("..", StringComparison.Ordinal) ? ".." : string.Empty;
+                    return "    " + spread + FormatComplexExpression(value).Replace("\n", "\n    ");
+                })) + "\n]",
+            _ => Normalize(expression)
+        };
     }
 
     private static string FormatSwitchExpression(

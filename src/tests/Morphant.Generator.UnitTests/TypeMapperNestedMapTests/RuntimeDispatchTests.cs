@@ -424,20 +424,14 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var result = new global::TestCase.Destination(
-                constructed: context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child));
-
-            global::TestCase.ChildDestination created = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child);
-            global::TestCase.ChildDestination updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, source.Previous);
-            global::TestCase.ChildDestination inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred);
-            global::TestCase.ChildDestination typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed);
-
-            result.Created = created;
-            result.Updated = updated;
-            result.Inferred = inferred;
-            result.Typed = typed;
-
-            return result;
+            return new global::TestCase.Destination(
+                constructed: context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child))
+            {
+                Created = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child),
+                Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, source.Previous),
+                Inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred),
+                Typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed)
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -445,15 +439,10 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.ChildDestination created = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child);
-            global::TestCase.ChildDestination updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, source.Previous);
-            global::TestCase.ChildDestination inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred, destination: destination.Inferred);
-            global::TestCase.ChildDestination typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed, destination: destination.Typed);
-
-            destination.Created = created;
-            destination.Updated = updated;
-            destination.Inferred = inferred;
-            destination.Typed = typed;
+            destination.Created = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child);
+            destination.Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, source.Previous);
+            destination.Inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred, destination: destination.Inferred);
+            destination.Typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed, destination: destination.Typed);
 
             return destination;
         }

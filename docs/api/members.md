@@ -49,7 +49,7 @@ builder.Map<Source, Destination>()
 
 Construction evaluates `FromConstruct`; member initialization evaluates
 `Normalize`. Identical expressions written in both places also run twice.
-Creation-only initialization uses an object initializer. A constructor marked
+Ordinary member initialization uses an object initializer. A constructor marked
 `SetsRequiredMembers` does not suppress an explicit member rule.
 
 Automatic constructor arguments can instead use the corresponding member
@@ -81,9 +81,11 @@ member value or condition can read `result`. A circular dependency, or an
 initializer that needs the not-yet-created result, produces
 [`MORPH0042`](../diagnostics/MORPH0042.md).
 
-Within a selected member branch, values are evaluated before writable member
-assignments. Adjacent expressions therefore read the initial `result`, so
-swapping two members works. Side effects inside user calls still apply.
+When member values depend on `result`, Morphant preserves their reads before
+writable member assignments, so swapping two members works. Side effects inside
+user calls still apply. Source-only rules follow normal initializer or assignment
+order. If source and destination are the same object, later source reads can
+observe earlier assignments.
 
 An Update may also construct a destination, for example for a null input or
 a replacement selected by `Resolve`. `previous` always refers to the original

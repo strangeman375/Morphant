@@ -440,16 +440,12 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var result = new global::TestCase.Destination(
-                origin: source.Value + 10);
-
-            int value = source.Value + 2;
-            string name = source.Name + "!";
-
-            result.Value = value;
-            result.Name = name;
-
-            return result;
+            return new global::TestCase.Destination(
+                origin: source.Value + 10)
+            {
+                Value = source.Value + 2,
+                Name = source.Name + "!"
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -457,11 +453,8 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            int value = source.Value + 2;
-            string name = source.Name + "!";
-
-            destination.Value = value;
-            destination.Name = name;
+            destination.Value = source.Value + 2;
+            destination.Name = source.Name + "!";
 
             return destination;
         }

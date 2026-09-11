@@ -119,21 +119,15 @@ namespace TestCase
         {
             if (destination.Left > 0)
             {
-                int left = 10;
-                int right = 20;
-
-                destination.Left = left;
-                destination.Right = right;
+                destination.Left = 10;
+                destination.Right = 20;
 
                 return destination;
             }
             else
             {
-                int left = 30;
-                int right = 40;
-
-                destination.Left = left;
-                destination.Right = right;
+                destination.Left = 30;
+                destination.Right = 40;
 
                 return destination;
             }

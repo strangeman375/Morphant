@@ -100,17 +100,13 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var result = new global::TestCase.Destination(
+            return new global::TestCase.Destination(
                 left: source.Next(),
-                right: source.Next());
-
-            int left = source.Next();
-            int right = source.Next();
-
-            result.Left = left;
-            result.Right = right;
-
-            return result;
+                right: source.Next())
+            {
+                Left = source.Next(),
+                Right = source.Next()
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -118,11 +114,8 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            int left = source.Next();
-            int right = source.Next();
-
-            destination.Left = left;
-            destination.Right = right;
+            destination.Left = source.Next();
+            destination.Right = source.Next();
 
             return destination;
         }

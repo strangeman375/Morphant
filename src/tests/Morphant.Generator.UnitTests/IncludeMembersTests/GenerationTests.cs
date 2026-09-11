@@ -425,24 +425,16 @@ namespace TestCase
             global::TestCase.Source<T> source,
             global::Morphant.Context.MappingContext context)
         {
-            var result = new global::TestCase.Destination(
-                constructorValue: (source.SafeRoot is { } safeRoot1 && safeRoot1.Next is { } next4 && next4.Next is { } next5 ? next5.Next!.ConstructorValue : default(object?)));
-
-            object? safeValue = (source.SafeRoot is { } safeRoot && safeRoot.Next is { } next && next.Next is { } next1 ? next1.Next!.SafeValue : default(object?));
-            string? safeText = source.SafeRoot?.Next?.Next?.Next!.SafeText;
-            object? assertedValue = (source.AssertedRoot!.Next is { } next2 && next2.Next!.Next is { } next3 ? next3.AssertedValue : default(object?));
-            string? assertedText = source.AssertedRoot!.Next?.Next!.Next?.AssertedText;
-            object? bothValue = (source.BothRoot is { } bothRoot && bothRoot.Leaf is { } leaf ? leaf.BothValue : default(object?));
-            string? bothText = source.BothRoot!?.Leaf?.BothText;
-
-            result.SafeValue = safeValue;
-            result.SafeText = safeText;
-            result.AssertedValue = assertedValue;
-            result.AssertedText = assertedText;
-            result.BothValue = bothValue;
-            result.BothText = bothText;
-
-            return result;
+            return new global::TestCase.Destination(
+                constructorValue: (source.SafeRoot is { } safeRoot && safeRoot.Next is { } next && next.Next is { } next1 ? next1.Next!.ConstructorValue : default(object?)))
+            {
+                SafeValue = (source.SafeRoot is { } safeRoot1 && safeRoot1.Next is { } next2 && next2.Next is { } next3 ? next3.Next!.SafeValue : default(object?)),
+                SafeText = source.SafeRoot?.Next?.Next?.Next!.SafeText,
+                AssertedValue = (source.AssertedRoot!.Next is { } next4 && next4.Next!.Next is { } next5 ? next5.AssertedValue : default(object?)),
+                AssertedText = source.AssertedRoot!.Next?.Next!.Next?.AssertedText,
+                BothValue = (source.BothRoot is { } bothRoot && bothRoot.Leaf is { } leaf ? leaf.BothValue : default(object?)),
+                BothText = source.BothRoot!?.Leaf?.BothText
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -450,19 +442,12 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            object? safeValue = (source.SafeRoot is { } safeRoot && safeRoot.Next is { } next && next.Next is { } next1 ? next1.Next!.SafeValue : default(object?));
-            string? safeText = source.SafeRoot?.Next?.Next?.Next!.SafeText;
-            object? assertedValue = (source.AssertedRoot!.Next is { } next2 && next2.Next!.Next is { } next3 ? next3.AssertedValue : default(object?));
-            string? assertedText = source.AssertedRoot!.Next?.Next!.Next?.AssertedText;
-            object? bothValue = (source.BothRoot is { } bothRoot && bothRoot.Leaf is { } leaf ? leaf.BothValue : default(object?));
-            string? bothText = source.BothRoot!?.Leaf?.BothText;
-
-            destination.SafeValue = safeValue;
-            destination.SafeText = safeText;
-            destination.AssertedValue = assertedValue;
-            destination.AssertedText = assertedText;
-            destination.BothValue = bothValue;
-            destination.BothText = bothText;
+            destination.SafeValue = (source.SafeRoot is { } safeRoot && safeRoot.Next is { } next && next.Next is { } next1 ? next1.Next!.SafeValue : default(object?));
+            destination.SafeText = source.SafeRoot?.Next?.Next?.Next!.SafeText;
+            destination.AssertedValue = (source.AssertedRoot!.Next is { } next2 && next2.Next!.Next is { } next3 ? next3.AssertedValue : default(object?));
+            destination.AssertedText = source.AssertedRoot!.Next?.Next!.Next?.AssertedText;
+            destination.BothValue = (source.BothRoot is { } bothRoot && bothRoot.Leaf is { } leaf ? leaf.BothValue : default(object?));
+            destination.BothText = source.BothRoot!?.Leaf?.BothText;
 
             return destination;
         }
@@ -603,17 +588,13 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var result = new global::TestCase.Destination(
+            return new global::TestCase.Destination(
                 id: source.Id,
-                count: source.Details?.Count);
-
-            string? name = source.Name;
-            string? tag = source.Metadata?.Tag;
-
-            result.Name = name;
-            result.Tag = tag;
-
-            return result;
+                count: source.Details?.Count)
+            {
+                Name = source.Name,
+                Tag = source.Metadata?.Tag
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -621,11 +602,8 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            string? name = source.Name;
-            string? tag = source.Metadata?.Tag;
-
-            destination.Name = name;
-            destination.Tag = tag;
+            destination.Name = source.Name;
+            destination.Tag = source.Metadata?.Tag;
 
             return destination;
         }

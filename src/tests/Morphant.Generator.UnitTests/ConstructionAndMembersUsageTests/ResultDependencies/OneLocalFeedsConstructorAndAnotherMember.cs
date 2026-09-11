@@ -124,11 +124,8 @@ namespace TestCase
         {
             var normalized = source.FromMembers();
 
-            string name = normalized;
-            string label = normalized;
-
-            destination.Name = name;
-            destination.Label = label;
+            destination.Name = normalized;
+            destination.Label = normalized;
 
             return destination;
         }

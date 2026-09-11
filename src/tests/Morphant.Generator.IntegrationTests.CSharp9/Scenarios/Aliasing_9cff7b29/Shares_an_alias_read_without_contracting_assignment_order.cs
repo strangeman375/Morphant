@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperEvaluationTests/AliasingTests::Evaluates_each_alias_read_before_assignments
+// Compiled integration scenario: TypeMapperEvaluationTests/AliasingTests::Reads_an_aliased_source_in_assignment_order
 #nullable enable
 #pragma warning disable CS1591
 
@@ -52,11 +52,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Aliasing_9cff7b2
 
             if (!ReferenceEquals(value, result) ||
                 result.Value != 15 ||
-                result.Copy != 15 ||
+                result.Copy != 25 ||
                 TestMapper.ReadCount != 2)
             {
                 throw new InvalidOperationException(
-                    "Both alias reads must occur before the assignments.");
+                    "The second source read must observe the preceding assignment to the same instance.");
             }
         }
     }

@@ -110,11 +110,8 @@ namespace TestCase
 
             var value = source.Next();
 
-            int left = value;
-            int right = value;
-
-            result.Left = left;
-            result.Right = right;
+            result.Left = value;
+            result.Right = value;
 
             return result;
         }
@@ -126,11 +123,8 @@ namespace TestCase
         {
             var value = source.Next();
 
-            int left = value;
-            int right = value;
-
-            destination.Left = left;
-            destination.Right = right;
+            destination.Left = value;
+            destination.Right = value;
 
             return destination;
         }

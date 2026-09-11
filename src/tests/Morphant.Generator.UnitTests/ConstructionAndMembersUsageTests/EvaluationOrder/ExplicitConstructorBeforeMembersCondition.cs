@@ -111,21 +111,15 @@ namespace TestCase
 
             if (source.Next() > 0)
             {
-                int left = 10;
-                int right = 20;
-
-                result.Left = left;
-                result.Right = right;
+                result.Left = 10;
+                result.Right = 20;
 
                 return result;
             }
             else
             {
-                int left = 30;
-                int right = 40;
-
-                result.Left = left;
-                result.Right = right;
+                result.Left = 30;
+                result.Right = 40;
 
                 return result;
             }
@@ -138,21 +132,15 @@ namespace TestCase
         {
             if (source.Next() > 0)
             {
-                int left = 10;
-                int right = 20;
-
-                destination.Left = left;
-                destination.Right = right;
+                destination.Left = 10;
+                destination.Right = 20;
 
                 return destination;
             }
             else
             {
-                int left = 30;
-                int right = 40;
-
-                destination.Left = left;
-                destination.Right = right;
+                destination.Left = 30;
+                destination.Right = 40;
 
                 return destination;
             }

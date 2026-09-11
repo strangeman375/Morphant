@@ -3,30 +3,36 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Evaluati
 internal sealed partial class EvaluationOrderTests
 {
     [Test]
-    [Description("Locals with the same user-written name remain independent in Construct and Members.")]
-    public void ConstructorAndMembersKeepSeparateLocalScopes()
+    [Description("Only complex constructor values and preceding conversions need locals; member initialization remains readable and independent.")]
+    public void ComplexConstructorValuesKeepIndependentMemberEvaluation()
     {
         // lang=c#
         const string source =
 """
 #nullable enable
 #pragma warning disable CS1591
-using System;
 using Morphant;
-using Morphant.Context;
 
 namespace TestCase
 {
     public sealed class Source
     {
-        public int Next() => 7;
+        public ConversionInput ReadConversionInput() => new();
+        public bool ShouldUsePreferredConstructorValue() => true;
+        public int ReadPreferredConstructorValue() => 1;
+        public int ReadFallbackConstructorValue() => 2;
+    }
+
+    public readonly struct ConversionInput
+    {
+        public static implicit operator int(ConversionInput value) => 7;
     }
 
     public sealed class Destination
     {
-        public Destination(int left, int right) { Left = left; Right = right; }
-        public int Left { get; set; }
-        public int Right { get; set; }
+        public Destination(int first, int value) { First = first; Value = value; }
+        public int First { get; }
+        public int Value { get; set; }
     }
 
     [MorphantMapper]
@@ -34,15 +40,16 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct(source =>
+                .Construct(source => new(
+                    (int)source.ReadConversionInput(),
+                    source.ShouldUsePreferredConstructorValue()
+                        ? source.ReadPreferredConstructorValue()
+                        : source.ReadFallbackConstructorValue()))
+                .Members(source => new()
                 {
-                    var value = source.Next();
-                    return new(value, 2);
-                })
-                .Members(source =>
-                {
-                    var value = source.Next();
-                    return new() { Left = value, Right = value };
+                    Value = source.ShouldUsePreferredConstructorValue()
+                        ? source.ReadPreferredConstructorValue()
+                        : source.ReadFallbackConstructorValue()
                 });
     }
 }
@@ -108,18 +115,19 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var value = source.Next();
+            int first = (int)source.ReadConversionInput();
+            int value = source.ShouldUsePreferredConstructorValue()
+                ? source.ReadPreferredConstructorValue()
+                : source.ReadFallbackConstructorValue();
 
-            var result = new global::TestCase.Destination(
-                left: value,
-                right: 2);
-
-            var value1 = source.Next();
-
-            result.Left = value1;
-            result.Right = value1;
-
-            return result;
+            return new global::TestCase.Destination(
+                first: first,
+                value: value)
+            {
+                Value = source.ShouldUsePreferredConstructorValue()
+                    ? source.ReadPreferredConstructorValue()
+                    : source.ReadFallbackConstructorValue()
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -127,10 +135,9 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            var value = source.Next();
-
-            destination.Left = value;
-            destination.Right = value;
+            destination.Value = source.ShouldUsePreferredConstructorValue()
+                ? source.ReadPreferredConstructorValue()
+                : source.ReadFallbackConstructorValue();
 
             return destination;
         }
@@ -138,6 +145,6 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: OrdinaryMembersSwapInitialValuesSurfaces);
+            expectedSurfaces: ComplexConstructorValuesKeepIndependentMemberEvaluationSurfaces);
     }
 }

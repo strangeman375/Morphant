@@ -196,19 +196,13 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var result = new global::TestCase.Destination();
-
-            long numeric = source.Numeric;
-            global::TestCase.BaseValue reference = source.Reference;
-            long? lifted = source.Lifted;
-            global::TestCase.DestinationCode userDefined = source.UserDefined;
-
-            result.Numeric = numeric;
-            result.Reference = reference;
-            result.Lifted = lifted;
-            result.UserDefined = userDefined;
-
-            return result;
+            return new global::TestCase.Destination()
+            {
+                Numeric = source.Numeric,
+                Reference = source.Reference,
+                Lifted = source.Lifted,
+                UserDefined = source.UserDefined
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -216,15 +210,10 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            long numeric = source.Numeric;
-            global::TestCase.BaseValue reference = source.Reference;
-            long? lifted = source.Lifted;
-            global::TestCase.DestinationCode userDefined = source.UserDefined;
-
-            destination.Numeric = numeric;
-            destination.Reference = reference;
-            destination.Lifted = lifted;
-            destination.UserDefined = userDefined;
+            destination.Numeric = source.Numeric;
+            destination.Reference = source.Reference;
+            destination.Lifted = source.Lifted;
+            destination.UserDefined = source.UserDefined;
 
             return destination;
         }

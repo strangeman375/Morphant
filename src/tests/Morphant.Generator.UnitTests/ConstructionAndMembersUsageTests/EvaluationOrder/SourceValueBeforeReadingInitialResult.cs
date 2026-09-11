@@ -3,8 +3,8 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Evaluati
 internal sealed partial class EvaluationOrderTests
 {
     [Test]
-    [Description("Locals with the same user-written name remain independent in Construct and Members.")]
-    public void ConstructorAndMembersKeepSeparateLocalScopes()
+    [Description("A source-only rule must not overwrite the constructor value before another member reads the initial result.")]
+    public void SourceValueBeforeReadingInitialResult()
     {
         // lang=c#
         const string source =
@@ -34,16 +34,8 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct(source =>
-                {
-                    var value = source.Next();
-                    return new(value, 2);
-                })
-                .Members(source =>
-                {
-                    var value = source.Next();
-                    return new() { Left = value, Right = value };
-                });
+                .Construct(source => new(source.Next(), 2))
+                .Members((source, _, result) => new() { Left = source.Next(), Right = result.Left });
     }
 }
 """;
@@ -108,16 +100,15 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            var value = source.Next();
-
             var result = new global::TestCase.Destination(
-                left: value,
+                left: source.Next(),
                 right: 2);
 
-            var value1 = source.Next();
+            int left = source.Next();
+            int right = result.Left;
 
-            result.Left = value1;
-            result.Right = value1;
+            result.Left = left;
+            result.Right = right;
 
             return result;
         }
@@ -127,10 +118,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            var value = source.Next();
+            int left = source.Next();
+            int right = destination.Left;
 
-            destination.Left = value;
-            destination.Right = value;
+            destination.Left = left;
+            destination.Right = right;
 
             return destination;
         }

@@ -603,10 +603,18 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
+            var constructed = (global::System.Collections.Immutable.ImmutableArray<int>)([
+                context.Operation == global::Morphant.Context.MappingOperation.Create ? 1 : 10,
+                ..source.Values
+            ]);
+
             return new global::TestCase.Destination(
-                constructed: (global::System.Collections.Immutable.ImmutableArray<int>)([context.Operation == global::Morphant.Context.MappingOperation.Create ? 1 : 10, ..source.Values]))
+                constructed: constructed)
             {
-                Members = (global::System.Collections.Immutable.ImmutableArray<int>)([..source.Values, context.Operation == global::Morphant.Context.MappingOperation.Create ? 2 : 20])
+                Members = (global::System.Collections.Immutable.ImmutableArray<int>)([
+                    ..source.Values,
+                    context.Operation == global::Morphant.Context.MappingOperation.Create ? 2 : 20
+                ])
             };
         }
 
@@ -615,7 +623,10 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Members = (global::System.Collections.Immutable.ImmutableArray<int>)([..source.Values, context.Operation == global::Morphant.Context.MappingOperation.Create ? 2 : 20]);
+            destination.Members = (global::System.Collections.Immutable.ImmutableArray<int>)([
+                ..source.Values,
+                context.Operation == global::Morphant.Context.MappingOperation.Create ? 2 : 20
+            ]);
 
             return destination;
         }
@@ -677,8 +688,13 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
+            var constructed = (global::System.Collections.Immutable.ImmutableArray<int>)([
+                context.Operation == global::Morphant.Context.MappingOperation.Create ? 3 : 30,
+                ..source.Values
+            ]);
+
             return new global::TestCase.Destination(
-                constructed: (global::System.Collections.Immutable.ImmutableArray<int>)([context.Operation == global::Morphant.Context.MappingOperation.Create ? 3 : 30, ..source.Values]));
+                constructed: constructed);
         }
 
         private global::TestCase.Destination __Update(
@@ -686,8 +702,13 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
+            var constructed = (global::System.Collections.Immutable.ImmutableArray<int>)([
+                context.Operation == global::Morphant.Context.MappingOperation.Create ? 3 : 30,
+                ..source.Values
+            ]);
+
             return new global::TestCase.Destination(
-                constructed: (global::System.Collections.Immutable.ImmutableArray<int>)([context.Operation == global::Morphant.Context.MappingOperation.Create ? 3 : 30, ..source.Values]));
+                constructed: constructed);
         }
     }
 }
