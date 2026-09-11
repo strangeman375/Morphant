@@ -1436,26 +1436,6 @@ internal static class StructuredConstructMappingPlanner
                 continue;
             }
 
-            if (ConventionConstructorMappingPlanner.BuildMemberArgument(
-                    memberMappings, parameter, compilation, mapperType,
-                    out var memberCompatible) is { } memberArgument)
-            {
-                mappedArguments.Add(memberArgument);
-                var memberRejection = memberCompatible
-                    ? ConstructorCandidateRejectionReason.None
-                    : ConstructorCandidateRejectionReason.IncompatibleArgument;
-                if (!memberCompatible)
-                {
-                    Reject(memberRejection);
-                }
-                parameterObservations.Add(new ConstructorParameterRuleObservation(
-                    parameter, parameter.Name, ConstructorParameterRuleOrigin.Value,
-                    memberArgument.RuleOriginNode, memberArgument.SourceMemberSymbol,
-                    ConventionConstructorMappingPlanner.FindAssociatedDestinationMember(
-                        destinationMembers, parameter.Name), memberCompatible, memberRejection));
-                continue;
-            }
-
             if (DeclarativeConstructorMarker.TryGetKind(
                     rule.Value,
                     DeclarativeIntrinsic.TryGetWrapperTargetType(
@@ -1505,6 +1485,26 @@ internal static class StructuredConstructMappingPlanner
                 if (markerKind ==
                     DeclarativeConstructorMarkerKind.Auto)
                 {
+                    if (ConventionConstructorMappingPlanner.BuildMemberArgument(
+                            memberMappings, parameter, compilation, mapperType,
+                            out var memberCompatible) is { } memberArgument)
+                    {
+                        mappedArguments.Add(memberArgument);
+                        var memberRejection = memberCompatible
+                            ? ConstructorCandidateRejectionReason.None
+                            : ConstructorCandidateRejectionReason.IncompatibleArgument;
+                        if (!memberCompatible)
+                        {
+                            Reject(memberRejection);
+                        }
+                        parameterObservations.Add(new ConstructorParameterRuleObservation(
+                            parameter, parameter.Name, ConstructorParameterRuleOrigin.Value,
+                            memberArgument.RuleOriginNode, memberArgument.SourceMemberSymbol,
+                            ConventionConstructorMappingPlanner.FindAssociatedDestinationMember(
+                                destinationMembers, parameter.Name), memberCompatible, memberRejection));
+                        continue;
+                    }
+
                     var sourceMember =
                         ConventionConstructorMappingPlanner
                             .TryResolveSourceMember(

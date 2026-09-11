@@ -248,24 +248,6 @@ internal static class ExplicitStructuredConstructorPlanner
             var destinationMember =
                 parameterRules[probeParameter.Ordinal]
                     .DestinationMember;
-            if (ConventionConstructorMappingPlanner.BuildMemberArgument(
-                    memberMappings, destinationParameter, compilation, mapperType,
-                    out var memberCompatible) is { } memberArgument)
-            {
-                if (!memberCompatible)
-                {
-                    return Unsupported(ConstructorCandidateRejectionReason.IncompatibleArgument,
-                        destinationConstructor, parameterRules.ToImmutableArray());
-                }
-                arguments.Add(memberArgument);
-                parameterRules[probeParameter.Ordinal] = new ConstructorParameterRuleObservation(
-                    destinationParameter, destinationParameter.Name,
-                    ConstructorParameterRuleOrigin.Value, memberArgument.RuleOriginNode,
-                    memberArgument.SourceMemberSymbol, destinationMember, IsApplicable: true,
-                    ConstructorCandidateRejectionReason.None);
-                continue;
-            }
-
             var planArgument = planArguments[index];
             var targetType = DeclarativeIntrinsic
                     .TryGetWrapperTargetType(
@@ -322,6 +304,24 @@ internal static class ExplicitStructuredConstructorPlanner
                 if (markerKind ==
                     DeclarativeConstructorMarkerKind.Auto)
                 {
+                    if (ConventionConstructorMappingPlanner.BuildMemberArgument(
+                            memberMappings, destinationParameter, compilation, mapperType,
+                            out var memberCompatible) is { } memberArgument)
+                    {
+                        if (!memberCompatible)
+                        {
+                            return Unsupported(ConstructorCandidateRejectionReason.IncompatibleArgument,
+                                destinationConstructor, parameterRules.ToImmutableArray());
+                        }
+                        arguments.Add(memberArgument);
+                        parameterRules[probeParameter.Ordinal] = new ConstructorParameterRuleObservation(
+                            destinationParameter, destinationParameter.Name,
+                            ConstructorParameterRuleOrigin.Value, memberArgument.RuleOriginNode,
+                            memberArgument.SourceMemberSymbol, destinationMember, IsApplicable: true,
+                            ConstructorCandidateRejectionReason.None);
+                        continue;
+                    }
+
                     var sourceMember =
                         ConventionConstructorMappingPlanner
                             .TryResolveSourceMember(
@@ -462,27 +462,6 @@ internal static class ExplicitStructuredConstructorPlanner
                     RuleOriginNode: planArgument.Syntax,
                     RuleOrigin:
                         ConstructorParameterRuleOrigin.Value));
-        }
-
-        foreach (var parameter in destinationConstructor.Parameters)
-        {
-            if (arguments.Any(argument => argument.ParameterName == parameter.Name) ||
-                ConventionConstructorMappingPlanner.BuildMemberArgument(memberMappings,
-                    parameter, compilation, mapperType, out var compatible) is not { } memberArgument)
-            {
-                continue;
-            }
-            if (!compatible)
-            {
-                return Unsupported(ConstructorCandidateRejectionReason.IncompatibleArgument,
-                    destinationConstructor, parameterRules.ToImmutableArray());
-            }
-            arguments.Add(memberArgument);
-            parameterRules[parameter.Ordinal] = new ConstructorParameterRuleObservation(
-                parameter, parameter.Name, ConstructorParameterRuleOrigin.Value,
-                memberArgument.RuleOriginNode, memberArgument.SourceMemberSymbol,
-                parameterRules[parameter.Ordinal].DestinationMember, IsApplicable: true,
-                ConstructorCandidateRejectionReason.None);
         }
 
         var argumentModels = arguments.ToImmutable();

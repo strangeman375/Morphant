@@ -538,7 +538,8 @@ internal static class MembersControlFlowMappingPlanner
              rule.IsRequired &&
              mapping.CreateFailure?.Reason is
                  MappingFailureReason.ConstructorSelectionFailed or MappingFailureReason.ConstructorParameterRuleInvalid ||
-             ConstructorInitializationMappingPlan.FindCorrespondingParameter(
+             mapping.CreateFailure is not null &&
+                 ConstructorInitializationMappingPlan.FindCorrespondingParameter(
                  rule, plan.Observation, mapping.ConstructorObservation?.SelectedConstructor) is not null));
     }
 

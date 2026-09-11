@@ -283,6 +283,7 @@ internal static class MemberRecoveryPlanner
                  mapping.CreateFailure?.Reason is
                      MappingFailureReason.ConstructorSelectionFailed or MappingFailureReason.ConstructorParameterRuleInvalid ||
                  !runtimeResult &&
+                 mapping.CreateFailure is not null &&
                  ConstructorInitializationMappingPlan.FindCorrespondingParameter(
                      rule, plan.Observation, mapping.ConstructorObservation?.SelectedConstructor) is not null)) is
                 { } resultDependentRule)

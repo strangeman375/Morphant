@@ -1542,15 +1542,8 @@ internal readonly record struct ConstructorInitializationMappingPlan(
         ResultDependentCreationOnlyRules,
     MemberPlanningObservation Observation)
 {
-    public bool HasResultDependency(IMethodSymbol constructor)
-    {
-        var observation = Observation;
-        return !ResultDependentCreationOnlyRules.IsEmpty ||
-        observation.Rules.Any(rule =>
-            rule.InvalidReason == MemberRuleInvalidReason.None &&
-            rule.Lifecycle.HasFlag(MemberLifecycleDependency.Result) &&
-            FindCorrespondingParameter(rule, observation, constructor) is not null);
-    }
+    public bool HasResultDependency(IMethodSymbol constructor) =>
+        !ResultDependentCreationOnlyRules.IsEmpty;
 
     internal static IParameterSymbol? FindCorrespondingParameter(
         MemberRuleObservation rule,

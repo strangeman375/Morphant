@@ -1594,12 +1594,17 @@ internal static class ConventionConstructorMappingPlanner
                 continue;
             }
 
+            var explicitMemberRule = memberMappings.Observation.Rules.Any(rule =>
+                rule.InvalidReason == MemberRuleInvalidReason.None &&
+                rule.Origin is MemberRuleOrigin.Auto or MemberRuleOrigin.ExplicitValue or MemberRuleOrigin.NestedMapping &&
+                StringComparer.Ordinal.Equals(rule.DestinationMember.Name, mapping.DestinationMemberName));
+
             if (!correspondingMemberIndexes.Contains(index) ||
-                mapping.ExplicitValueExpression is not null ||
+                explicitMemberRule ||
                 mapping.IsRequired && !setsRequiredMembers)
             {
                 if (correspondingMemberIndexes.Contains(index) &&
-                    mapping.ExplicitValueExpression is null &&
+                    !explicitMemberRule &&
                     mapping.IsRequired &&
                     !setsRequiredMembers &&
                     correspondingArgumentIndexes[index] is
@@ -1608,10 +1613,17 @@ internal static class ConventionConstructorMappingPlanner
                     var argumentIndex = argumentIndexes[0];
                     var argument = arguments[argumentIndex];
 
-                    if (argument.ExplicitValueExpression is null &&
-                        StringComparer.Ordinal.Equals(
-                            argument.SourceMemberName,
-                            mapping.SourceMemberName))
+                    var destinationMember = destinationMembers.FirstOrDefault(member =>
+                        StringComparer.Ordinal.Equals(member.Name, mapping.DestinationMemberName));
+                    var memberType = destinationMember switch
+                    {
+                        IPropertySymbol property => property.Type,
+                        IFieldSymbol field => field.Type,
+                        _ => null
+                    };
+                    if (argument.ParameterSymbol is { } parameter && memberType is not null &&
+                        compilation.ClassifyConversion(parameter.Type, memberType) is
+                            { IsImplicit: true, IsDynamic: false })
                     {
                         sharedValues.Add(
                             (create.Count, argumentIndex));
