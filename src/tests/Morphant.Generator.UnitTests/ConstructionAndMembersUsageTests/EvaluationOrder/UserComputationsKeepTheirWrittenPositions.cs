@@ -110,8 +110,7 @@ namespace TestCase
                 value: source.Enabled switch
                 {
                     true => source.Read(3),
-                    false => source.Read(4)
-                })
+                    false => source.Read(4)})
             {
                 Value = source.Enabled ? source.Read(5) : source.Read(6)
             };
