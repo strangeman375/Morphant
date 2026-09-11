@@ -107,7 +107,11 @@ namespace TestCase
         {
             return new global::TestCase.Destination(
                 first: source.Read(source.Read(1)) + 2,
-                value: source.Enabled switch { true => source.Read(3), false => source.Read(4) })
+                value: source.Enabled switch
+                {
+                    true => source.Read(3),
+                    false => source.Read(4)
+                })
             {
                 Value = source.Enabled ? source.Read(5) : source.Read(6)
             };
