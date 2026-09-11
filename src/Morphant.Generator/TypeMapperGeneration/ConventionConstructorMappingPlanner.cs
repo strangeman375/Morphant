@@ -1215,7 +1215,7 @@ internal static class ConventionConstructorMappingPlanner
                 var sharedMember = MoveMemberValueToArguments(
                     argumentModels, memberMapping, matchingArguments,
                     usedValueLocalNames);
-                if (memberMapping.IsRequired && !setsRequiredMembers)
+                if (memberMapping.IsRequired)
                 {
                     memberModels.Add(sharedMember);
                 }
@@ -1587,7 +1587,7 @@ internal static class ConventionConstructorMappingPlanner
             {
                 var sharedMember = MoveMemberValueToArguments(
                     argumentModels, mapping, memberArguments, usedValueLocalNames);
-                if (mapping.IsRequired && !setsRequiredMembers)
+                if (mapping.IsRequired)
                 {
                     create.Add(sharedMember);
                 }

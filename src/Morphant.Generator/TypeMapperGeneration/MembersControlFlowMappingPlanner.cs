@@ -94,7 +94,8 @@ internal static class MembersControlFlowMappingPlanner
             }
         }
 
-        if (hasResultDependentControlFlow)
+        if (hasResultDependentControlFlow ||
+            CanConstructBeforeMembers(flatMappings.Values, members.Leaves.Values))
         {
             if (!TryBuildResultDependentControlFlow(
                     members,
@@ -197,6 +198,37 @@ internal static class MembersControlFlowMappingPlanner
             HelperMethodDeclarations = helperDeclarations.ToImmutable(),
             Failure = null
         };
+    }
+
+    private static bool CanConstructBeforeMembers(
+        IEnumerable<TypeMapperMappingModel> mappings,
+        IEnumerable<ConventionMemberMappingPlan> memberPlans)
+    {
+        // A member block can follow construction when no selected argument or
+        // creation-only initializer depends on that block.
+        if (memberPlans.Any(plan => plan.Observation.Rules.Any(rule =>
+                rule.Origin is not (MemberRuleOrigin.Convention or MemberRuleOrigin.Ignore) &&
+                rule.Lifecycle.HasFlag(MemberLifecycleDependency.Creation) &&
+                !rule.Lifecycle.HasFlag(MemberLifecycleDependency.ExistingDestination))))
+        {
+            return false;
+        }
+
+        bool Independent(TypeMapperControlFlowNode node)
+        {
+            if (node.Leaf is { } leaf)
+                return leaf.CreateFailure is null &&
+                    (leaf.CreateFactory is not null || leaf.CreateConstructor is { TupleConstruction: null } constructor &&
+                        constructor.Arguments.All(argument => argument.MemberValueTypeName is null));
+            if (node.EvaluationContinuation is { } evaluation) return Independent(evaluation);
+            if (node.Condition is not null) return Independent(node.WhenTrue!) && Independent(node.WhenFalse!);
+            if (node.SwitchExpression is not null)
+                return node.SwitchSections.All(section => Independent(section.Branch)) &&
+                    (node.SwitchContinuation is null || Independent(node.SwitchContinuation));
+            return true;
+        }
+
+        return mappings.All(mapping => Independent(SelectRoot(mapping, create: true)));
     }
 
     private static TypeMapperMappingModel ApplyMemberPlan(

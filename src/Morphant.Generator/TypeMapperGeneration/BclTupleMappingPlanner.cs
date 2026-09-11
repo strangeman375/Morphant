@@ -914,7 +914,8 @@ internal static class BclTupleMappingPlanner
             SourceMemberName: string.Empty,
             ValueLocalName: null,
             ExplicitValueExpression: $"default({typeName})",
-            ValueLocalTypeName: typeName,
+            ValueLocalTypeName: TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                element.Type.WithNullableAnnotation(NullableAnnotation.Annotated)),
             TargetTypeName: typeName,
             ParameterSymbol: parameter,
             RuleOriginNode: originNode,

@@ -1017,6 +1017,8 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        WriteMemberValueLocals(writer, mapping.CreatePostMemberMappings);
+
         foreach (var memberMapping in
                  mapping.CreatePostMemberMappings)
         {

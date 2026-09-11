@@ -85,6 +85,7 @@ internal static class TypeMapperModelBuilder
             configureSyntax.DescendantNodes()
                 .OfType<QueryExpressionSyntax>()
                 .Any());
+        model = GeneratedCodeReadabilityLowerer.Lower(model);
         var validation = TypeMapperTransferValidator.Validate(
             model,
             mappings.Policies,
@@ -121,11 +122,9 @@ internal static class TypeMapperModelBuilder
             MappingCompletenessDiagnosticAnalyzer.Build(
                 model,
                 cancellationToken);
-        var emissionModel = GeneratedCodeReadabilityLowerer.Lower(model);
-
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),
-            TypeMapperEmitter.Emit(emissionModel).ToString(),
+            TypeMapperEmitter.Emit(model).ToString(),
             callbackDiagnostics,
             constructionDiagnostics,
             memberDiagnostics,

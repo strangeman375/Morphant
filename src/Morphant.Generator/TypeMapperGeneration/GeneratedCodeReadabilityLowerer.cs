@@ -204,7 +204,7 @@ internal static class GeneratedCodeReadabilityLowerer
         var arguments = constructor.Arguments.Select(argument => argument with
         {
             ValueLocalName = argument.ValueLocalName ?? names.AllocateForSourcePathSegment(argument.ParameterName),
-            ValueLocalTypeName = argument.TargetTypeName ?? argument.ValueLocalTypeName,
+            ValueLocalTypeName = argument.ValueLocalTypeName ?? argument.TargetTypeName,
             IsEvaluationOnly = mapping.CreatePostMemberMappings.Any(member =>
                 StringComparer.Ordinal.Equals(member.DestinationMemberName, argument.ParameterName))
         }).ToImmutableArray();
