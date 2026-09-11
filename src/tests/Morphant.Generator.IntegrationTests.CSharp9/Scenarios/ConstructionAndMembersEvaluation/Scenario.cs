@@ -173,21 +173,21 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 });
     }
 
+    #pragma warning disable CS8509 // This scenario exercises the generated non-exhaustive switch exception.
     [MorphantMapper]
     public partial class UnmatchedSwitchMapper : TypeMapper<UnmatchedSwitchMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
                 .Construct(source => new(source, source.Next()))
-                .Members(source =>
+                .Members(source => source.Next() switch
                 {
-                    switch (source.Next())
-                    {
-                        case 0: return new() { Left = 10 };
-                    }
+                    0 => new() { Left = 10 }
                 })
                 .MemberSelection(MemberSelection.Explicit);
     }
+
+    #pragma warning restore CS8509
 
     public static class Scenario
     {
