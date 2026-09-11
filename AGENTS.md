@@ -35,10 +35,9 @@
   first priorities, equal to correctness. A passing test suite does not justify
   making generated code larger, more complicated or harder to read.
 - Preserve ordinary object initializers and direct assignments. Introduce a
-  temporary only to preserve required evaluation order or reuse, or to make a
-  genuinely complex expression readable. Do not materialize every value or
-  split initializers as a general policy. Keep separately written evaluations
-  independent without inlining oversized expressions into constructor calls.
+  temporary according to the expression rules below. Do not materialize every
+  value or split initializers as a general policy. Keep separately written
+  evaluations independent.
 - Review the generated-code diff before accepting snapshot changes. Limit
   output changes to the requested behavior and justified readability fixes;
   snapshots must enforce this standard rather than bless incidental rewrites.
@@ -106,6 +105,31 @@
   its generic interfaces can unify; independent legal pairs in the same mapper
   must still generate.
 
+## Expression locals (approved)
+
+- Pass literals, constants, existing variables and direct property reads,
+  including property paths, directly. Passing a property to a generated call
+  is not itself a reason to introduce a local.
+- Before a call formed by the generator, including a constructor call,
+  materialize other argument expressions in readable named locals. This
+  includes method calls, arithmetic, conversions and conditional expressions,
+  so their computed values can be inspected before the call.
+- Materialize an expression that spans multiple lines in the user's source,
+  regardless of its destination. Do not add a second local when the expression
+  already initializes a user-written local. Determine this from the original
+  expression, before rewriting or formatting; text length, identifier length
+  and generated line wrapping must not change the decision.
+- Keep single-line computations directly in member assignments and object
+  initializers unless another rule requires a local. Treat each user-written
+  expression as a whole; do not split its internal calls into extra locals.
+- Correctness takes precedence: capture values whenever required to preserve
+  evaluation order, conditional execution, a single evaluation shared by the
+  mapping contract, or reads before mutation. This can require capturing even
+  a property read. Preserve selected calls, conversions and independently
+  written evaluations; do not move computations out of their selected branch.
+- Preserve user-written locals. Keep generated supporting locals limited to
+  these rules, with names based on the argument or destination member.
+
 ## Construction and member composition (approved 2026-09-11)
 
 - Explicit constructor and member values are independent evaluations, even
@@ -119,7 +143,7 @@
   `SetsRequiredMembers` never suppresses an explicit member rule.
 - Preserve user-written shared locals and reads of the initial `result` when
   member expressions depend on it. Limit supporting temporaries to the cases
-  that need them; ordinary source-only member rules retain object initializers
+  that need them; single-line source-only member rules retain object initializers
   and direct assignments. Only automatic constructor dependencies justify early
   member values; diagnose cycles and unsupported initialization instead of
   inventing values.
