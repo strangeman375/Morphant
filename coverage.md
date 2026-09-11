@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/11/2026 - 13:18:50 |
-| Coverage date: | 09/11/2026 - 13:04:17 - 09/11/2026 - 13:18:45 |
+| Generated on: | 09/11/2026 - 13:51:39 |
+| Coverage date: | 09/11/2026 - 13:38:03 - 09/11/2026 - 13:51:34 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 371 |
 | Files: | 195 |
-| **Line coverage:** | 89% (38547 of 43306) |
-| Covered lines: | 38547 |
-| Uncovered lines: | 4759 |
-| Coverable lines: | 43306 |
-| Total lines: | 72045 |
-| **Branch coverage:** | 79.7% (13794 of 17297) |
-| Covered branches: | 13794 |
-| Total branches: | 17297 |
+| **Line coverage:** | 89% (38603 of 43372) |
+| Covered lines: | 38603 |
+| Uncovered lines: | 4769 |
+| Coverable lines: | 43372 |
+| Total lines: | 72152 |
+| **Branch coverage:** | 79.6% (13838 of 17363) |
+| Covered branches: | 13838 |
+| Total branches: | 17363 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -314,7 +314,7 @@
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticDescriptors|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticPipeline|100%|75%|
 |Morphant.Generator.TypeMapperGeneration.FlatteningIssueObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.GeneratedCodeReadabilityLowerer|93.8%|84.6%|
+|Morphant.Generator.TypeMapperGeneration.GeneratedCodeReadabilityLowerer|92.8%|81.1%|
 |Morphant.Generator.TypeMapperGeneration.GeneratedLocalNameAllocator|86.6%|72.9%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSet|88.7%|75%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSetResult|100%||
@@ -417,4 +417,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #301](https://github.com/strangeman375/Morphant/actions/runs/34601853531).
+Full HTML report: download the **coverage** artifact from [CI run #302](https://github.com/strangeman375/Morphant/actions/runs/34605043581).
