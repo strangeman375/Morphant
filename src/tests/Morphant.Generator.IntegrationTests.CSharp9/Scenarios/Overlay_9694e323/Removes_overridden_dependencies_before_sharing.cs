@@ -73,8 +73,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Overlay_9694e323
                 default(MappingContext));
 
             if (result.Seed != 12 ||
-                result.Value != 22 ||
-                result.Other != 32 ||
+                result.Value != 32 ||
+                result.Other != 22 ||
                 TestMapper.SharedCount != 3 ||
                 TestMapper.DiscardedCount != 0)
             {

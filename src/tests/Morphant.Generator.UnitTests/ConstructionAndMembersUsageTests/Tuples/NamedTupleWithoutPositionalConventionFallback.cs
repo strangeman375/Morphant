@@ -104,6 +104,10 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: NamedTupleWithoutPositionalConventionFallbackSurfaces);
+            expectedSurfaces: NamedTupleWithoutPositionalConventionFallbackSurfaces,
+            expectedDiagnostics: """
+MORPH0036 Error: ConstructorSelection.Explicit cannot select a constructor for mapping 'TestCase.Source -> System.ValueTuple<int, string>': destination construction must be configured explicitly.
+  at TestCase.cs(15,21-15,24); <no source>
+""");
     }
 }

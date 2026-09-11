@@ -111,6 +111,12 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: ValueTupleWithDifferentExpressionsForOneElementSurfaces);
+            expectedSurfaces: ValueTupleWithDifferentExpressionsForOneElementSurfaces,
+            expectedDiagnostics: """
+MORPH0037 Error: Rule for constructor parameter 'Id' is invalid in mapping 'TestCase.Source -> System.ValueTuple<int, string>': Auto could not find exactly one compatible source member.
+  at TestCase.cs(17,37-17,41); <no source>
+MORPH0037 Error: Rule for constructor parameter 'Name' is invalid in mapping 'TestCase.Source -> System.ValueTuple<int, string>': Auto could not find exactly one compatible source member.
+  at TestCase.cs(17,45-17,49); <no source>
+""");
     }
 }

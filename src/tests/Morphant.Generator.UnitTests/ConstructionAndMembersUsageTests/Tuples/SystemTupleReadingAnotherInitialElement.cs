@@ -118,6 +118,10 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: SystemTupleWithDifferentExpressionsForOneElementSurfaces);
+            expectedSurfaces: SystemTupleWithDifferentExpressionsForOneElementSurfaces,
+            expectedDiagnostics: """
+MORPH0037 Error: Rule for constructor parameter 'Item1' is invalid in mapping 'TestCase.Source -> System.Tuple<int, string>': Auto could not find exactly one compatible source member.
+  at TestCase.cs(25,42-25,46); <no source>
+""");
     }
 }

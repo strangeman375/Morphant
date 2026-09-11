@@ -251,7 +251,9 @@ internal static class MembersControlFlowMappingPlanner
         // creation-only initializer depends on that block.
         var tupleDestination = mappings.Any(mapping =>
             BclTupleShapePolicy.TryCreate(mapping.AnalysisContext.DestinationType) is not null);
-        if (memberPlans.Any(plan => plan.Failure is not null || plan.Observation.Rules.Any(rule =>
+        if (memberPlans.Any(plan => plan.Failure is not null ||
+                !plan.Observation.NestedMappings.IsDefaultOrEmpty && plan.Observation.NestedMappings.Any(nested =>
+                    nested.FailureKind != NestedMappingFailureKind.None) || plan.Observation.Rules.Any(rule =>
                 rule.InvalidReason != MemberRuleInvalidReason.None ||
                 rule.Origin is not (MemberRuleOrigin.Convention or MemberRuleOrigin.Ignore) &&
                 rule.Lifecycle.HasFlag(MemberLifecycleDependency.Creation) &&
@@ -768,7 +770,10 @@ internal static class MembersControlFlowMappingPlanner
         HashSet<string> pendingNames) => node with
         {
             MemberMappings = node.MemberMappings.IsDefault ? default : node.MemberMappings.Where(member =>
-                    pendingNames.Contains(member.DestinationMemberName))
+                    pendingNames.Contains(member.DestinationMemberName) ||
+                    node.MemberObservation?.Rules.LastOrDefault(rule =>
+                        StringComparer.Ordinal.Equals(rule.DestinationMember.Name,
+                            member.DestinationMemberName))?.Origin != MemberRuleOrigin.Convention)
                 .ToImmutableArray(),
             WhenTrue = node.WhenTrue is { } whenTrue
                 ? KeepPendingMembers(whenTrue, pendingNames) : null,

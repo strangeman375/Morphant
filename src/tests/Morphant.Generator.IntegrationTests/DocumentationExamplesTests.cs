@@ -176,7 +176,7 @@ public static class Scenario
 
         yield return new("docs/api/members.md", "## Reading `result`", 0,
 """
-public sealed class Source { }
+public sealed class Source { public int Value => 7; }
 public sealed class Destination
 {
     public Destination(int value) => Value = value;
@@ -194,11 +194,9 @@ public static class Scenario
         ITypeMapper<Source, Destination> mapper = new TestMapper();
         var source = new Source();
         var existing = new Destination(20);
-        if (mapper.Create(source).Value != 7 || mapper.Update(source, existing).Value != 30)
-            throw new Exception("The operation guard must use a constant for construction and result for reuse.");
-        try { mapper.Update(source, null); }
-        catch (Morphant.Exceptions.NullDestinationException) { return; }
-        throw new Exception("The documented result guard depends on rejecting null Update destinations.");
+        if (mapper.Create(source).Value != 17 || mapper.Update(source, existing).Value != 30 ||
+            mapper.Update(source, null).Value != 17)
+            throw new Exception("Independent construction must precede the result-dependent member rule.");
     }
 }
 """);
