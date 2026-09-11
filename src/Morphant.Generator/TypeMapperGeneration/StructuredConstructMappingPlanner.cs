@@ -308,8 +308,8 @@ internal static class StructuredConstructMappingPlanner
                                     ? MappingExecutionPathSet
                                         .UpdateWithPrevious
                                     : MappingExecutionPathSet.NoPrevious,
-                                MappingFailureReason
-                                    .ConstructorParameterRuleInvalid,
+                                BclTupleMappingPlanner.GetStructuredFailureReason(
+                                    tuplePlanning.Observation),
                                 tuplePlanning.Observation);
                     }
                     else if (ContainsMarker(
@@ -1040,7 +1040,8 @@ internal static class StructuredConstructMappingPlanner
                     sourceMapper,
                     creation,
                     paths,
-                    MappingFailureReason.ConstructorParameterRuleInvalid,
+                    BclTupleMappingPlanner.GetStructuredFailureReason(
+                        tuplePlanning.Observation),
                     tuplePlanning.Observation);
         }
 

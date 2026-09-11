@@ -420,9 +420,7 @@ internal static class BclTupleMappingPlanner
             ConstructorSelectionValue.Explicit,
             StrategyOrigin: null,
             ImmutableArray.Create(candidate),
-            rejection == ConstructorCandidateRejectionReason.None
-                ? logicalConstructor
-                : null,
+            logicalConstructor,
             Terminals: ImmutableArray<StructuredTerminalObservation>.Empty);
 
         return rejection != ConstructorCandidateRejectionReason.None
@@ -642,6 +640,15 @@ internal static class BclTupleMappingPlanner
                 reconstruction),
             finalObservation);
     }
+
+    internal static MappingFailureReason GetStructuredFailureReason(
+        ConstructorPlanningObservation observation) =>
+        observation.Candidates.SelectMany(static candidate => candidate.ParameterRules)
+            .Any(static rule => !rule.IsApplicable && rule.Origin is
+                ConstructorParameterRuleOrigin.Auto or ConstructorParameterRuleOrigin.Ignore or
+                ConstructorParameterRuleOrigin.Value)
+            ? MappingFailureReason.ConstructorParameterRuleInvalid
+            : MappingFailureReason.ConstructorSelectionFailed;
 
     private static ConstructorPlanningObservation
         KeepSurvivingInitialRules(

@@ -725,6 +725,14 @@ internal static class MembersControlFlowMappingPlanner
         var assignableNames = replacement
             ? replacementAssignableNames
             : createAssignableNames;
+        if ((create || replacement) && leaf.CreateConstructor is not null)
+        {
+            var pendingNames = new HashSet<string>(
+                leaf.CreateMemberMappings.Concat(leaf.CreatePostMemberMappings)
+                    .Select(static member => member.DestinationMemberName),
+                StringComparer.Ordinal);
+            post = KeepPendingMembers(post, pendingNames);
+        }
         var factory = leaf.CreateFactory;
 
         if (factory is { } factoryValue)
@@ -754,6 +762,26 @@ internal static class MembersControlFlowMappingPlanner
             }
         };
     }
+
+    private static TypeMapperMemberControlFlowNode KeepPendingMembers(
+        TypeMapperMemberControlFlowNode node,
+        HashSet<string> pendingNames) => node with
+        {
+            MemberMappings = node.MemberMappings.IsDefault ? default : node.MemberMappings.Where(member =>
+                    pendingNames.Contains(member.DestinationMemberName))
+                .ToImmutableArray(),
+            WhenTrue = node.WhenTrue is { } whenTrue
+                ? KeepPendingMembers(whenTrue, pendingNames) : null,
+            WhenFalse = node.WhenFalse is { } whenFalse
+                ? KeepPendingMembers(whenFalse, pendingNames) : null,
+            EvaluationContinuation = node.EvaluationContinuation is { } evaluation
+                ? KeepPendingMembers(evaluation, pendingNames) : null,
+            SwitchSections = node.SwitchSections.IsDefault ? default : node.SwitchSections.Select(section =>
+                    section with { Branch = KeepPendingMembers(section.Branch, pendingNames) })
+                .ToImmutableArray(),
+            SwitchContinuation = node.SwitchContinuation is { } continuation
+                ? KeepPendingMembers(continuation, pendingNames) : null
+        };
 
     private static bool AreEquivalentConstruction(
         TypeMapperControlFlowNode left,
