@@ -552,12 +552,19 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Inherited = source.Inherited;
-            destination.Settable = source.Settable;
-            destination.RequiredSet = source.RequiredSet;
-            destination.RequiredField = source.RequiredField;
-            destination.MutableField = source.MutableField;
-            destination.ReadonlySource = source.ReadonlySource;
+            int inherited = source.Inherited;
+            int settable = source.Settable;
+            int requiredSet = source.RequiredSet;
+            int requiredField = source.RequiredField;
+            int mutableField = source.MutableField;
+            int readonlySource = source.ReadonlySource;
+
+            destination.Inherited = inherited;
+            destination.Settable = settable;
+            destination.RequiredSet = requiredSet;
+            destination.RequiredField = requiredField;
+            destination.MutableField = mutableField;
+            destination.ReadonlySource = readonlySource;
 
             return destination;
         }

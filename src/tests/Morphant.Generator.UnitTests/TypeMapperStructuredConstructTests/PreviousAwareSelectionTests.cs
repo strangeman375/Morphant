@@ -124,10 +124,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            int destinationId = destination.Id;
-            int sourceId = source.Id;
-
-            if (destinationId == sourceId)
+            if (destination.Id == source.Id)
             {
                 destination.Name = source.Name;
 
@@ -136,7 +133,7 @@ namespace TestCase
             else
             {
                 return new global::TestCase.Destination(
-                    id: sourceId)
+                    id: source.Id)
                 {
                     Name = source.Name
                 };

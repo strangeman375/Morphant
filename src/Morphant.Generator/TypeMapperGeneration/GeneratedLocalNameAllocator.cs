@@ -37,7 +37,7 @@ internal sealed class GeneratedLocalNameAllocator
     {
         if (name is not null)
         {
-            _usedNames.Add(name);
+            _usedNames.Add(name.StartsWith("@", StringComparison.Ordinal) ? name.Substring(1) : name);
         }
     }
 

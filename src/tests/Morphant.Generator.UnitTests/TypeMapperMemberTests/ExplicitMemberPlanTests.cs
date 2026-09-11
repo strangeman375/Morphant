@@ -449,12 +449,11 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceId = source.Id + 10;
-
             return new global::TestCase.Destination(
-                id: sourceId)
+                id: source.Id)
             {
                 Field = source.Field + 1,
+                Id = source.Id + 10,
                 Name = source.Name,
                 Automatic = source.Automatic,
                 Initial = source.Initial,
@@ -467,11 +466,17 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Field = source.Field + 1;
-            destination.Id = source.Id + 10;
-            destination.Name = source.Name;
-            destination.Automatic = source.Automatic;
-            destination.Convention = source.Convention;
+            int field = source.Field + 1;
+            int id = source.Id + 10;
+            string name = source.Name;
+            int automatic = source.Automatic;
+            string convention = source.Convention;
+
+            destination.Field = field;
+            destination.Id = id;
+            destination.Name = name;
+            destination.Automatic = automatic;
+            destination.Convention = convention;
 
             return destination;
         }

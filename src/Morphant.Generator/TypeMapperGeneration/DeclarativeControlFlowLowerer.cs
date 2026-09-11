@@ -74,7 +74,8 @@ internal static class DeclarativeControlFlowLowerer
             TypeMapperMemberControlFlowLeafModel> buildLeaf,
         MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
-        out TypeMapperMemberControlFlowNode root)
+        out TypeMapperMemberControlFlowNode root,
+        IEnumerable<string>? reservedLocalNames = null)
     {
         TypeMapperControlFlowNode BuildLeaf(
             DeclarativeLeafSyntaxNode leaf)
@@ -125,7 +126,8 @@ internal static class DeclarativeControlFlowLowerer
                 BuildLeaf,
                 paths,
                 cancellationToken,
-                out var lowered))
+                out var lowered,
+                reservedLocalNames))
         {
             root = null!;
             return false;
@@ -154,7 +156,8 @@ internal static class DeclarativeControlFlowLowerer
             buildLeaf,
         MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
-        out TypeMapperControlFlowNode root)
+        out TypeMapperControlFlowNode root,
+        IEnumerable<string>? reservedLocalNames = null)
     {
         return TryBuild(
             program,
@@ -175,7 +178,8 @@ internal static class DeclarativeControlFlowLowerer
             buildCondition: null,
             paths,
             cancellationToken,
-            out root);
+            out root,
+            reservedLocalNames);
     }
 
     public static bool TryBuild(
@@ -202,7 +206,8 @@ internal static class DeclarativeControlFlowLowerer
             TypeMapperControlFlowNode?>? buildCondition,
         MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
-        out TypeMapperControlFlowNode root)
+        out TypeMapperControlFlowNode root,
+        IEnumerable<string>? reservedLocalNames = null)
     {
         var nestedMapUsages =
             new DeclarativeNestedMapUsageRegistry(paths);
@@ -731,7 +736,8 @@ internal static class DeclarativeControlFlowLowerer
             pruned,
             program,
             requiredLocals,
-            mapperType);
+            mapperType,
+            reservedLocalNames);
 
         root = RenameControlFlow(pruned, names);
         return true;
@@ -1054,11 +1060,13 @@ internal static class DeclarativeControlFlowLowerer
         TypeMapperControlFlowNode root,
         DeclarativeControlFlowProgram program,
         HashSet<string> requiredLocals,
-        INamedTypeSymbol mapperType)
+        INamedTypeSymbol mapperType,
+        IEnumerable<string>? reservedLocalNames)
     {
         var usedNames = UserResultMappingPlanner.BuildUsedLocalNames(
             mapperType);
         CollectDeclaredNames(root, usedNames);
+        if (reservedLocalNames is not null) usedNames.UnionWith(reservedLocalNames);
 
         foreach (var expression in EnumerateExpressions(
                      root,
@@ -1106,6 +1114,13 @@ internal static class DeclarativeControlFlowLowerer
                     usedNames));
         }
 
+        return names;
+    }
+
+    internal static IEnumerable<string> GetDeclaredNames(TypeMapperControlFlowNode node)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        CollectDeclaredNames(PreserveLocalNames(node), names);
         return names;
     }
 

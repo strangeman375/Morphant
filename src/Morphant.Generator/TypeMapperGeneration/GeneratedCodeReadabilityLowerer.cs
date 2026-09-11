@@ -190,6 +190,12 @@ internal static class GeneratedCodeReadabilityLowerer
         };
     }
 
+    private static string AllocateValueLocalName(GeneratedLocalNameAllocator names, string memberName)
+    {
+        var name = names.AllocateForSourcePathSegment(memberName);
+        return SyntaxFacts.GetKeywordKind(name) == SyntaxKind.None ? name : "@" + name;
+    }
+
     private static TypeMapperMappingModel CollapseTupleConstruction(
         TypeMapperMappingModel mapping,
         GeneratedLocalNameAllocator names)
@@ -203,7 +209,7 @@ internal static class GeneratedCodeReadabilityLowerer
 
         var arguments = constructor.Arguments.Select(argument => argument with
         {
-            ValueLocalName = argument.ValueLocalName ?? names.AllocateForSourcePathSegment(argument.ParameterName),
+            ValueLocalName = argument.ValueLocalName ?? AllocateValueLocalName(names, argument.ParameterName),
             ValueLocalTypeName = argument.ValueLocalTypeName ?? argument.TargetTypeName,
             IsEvaluationOnly = mapping.CreatePostMemberMappings.Any(member =>
                 StringComparer.Ordinal.Equals(member.DestinationMemberName, argument.ParameterName))
@@ -355,7 +361,7 @@ internal static class GeneratedCodeReadabilityLowerer
                             mapping.ConventionValueExpression?.Render(names) ??
                             sourceName + "." + (SyntaxFacts.GetKeywordKind(mapping.SourceMemberName) != SyntaxKind.None
                                 ? "@" : string.Empty) + mapping.SourceMemberName,
-                        ValueLocalName = names.AllocateForSourcePathSegment(mapping.DestinationMemberName),
+                        ValueLocalName = AllocateValueLocalName(names, mapping.DestinationMemberName),
                         SourceValueLocalName = null,
                         ConventionValueExpression = null
                     };

@@ -126,11 +126,15 @@ namespace TestCase
             global::TestCase.Box<global::TestCase.DerivedSource> source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination()
-            {
-                BeforeName = ((global::TestCase.BaseSource)(source.Head)).Before?.BeforeName,
-                AfterName = (source.Tail is { } tail && ((global::TestCase.BaseSource)(tail)).After is { } after ? after.AfterName : default(string?))
-            };
+            var result = new global::TestCase.Destination();
+
+            string? beforeName = ((global::TestCase.BaseSource)(source.Head)).Before?.BeforeName;
+            string? afterName = (source.Tail is { } tail && ((global::TestCase.BaseSource)(tail)).After is { } after ? after.AfterName : default(string?));
+
+            result.BeforeName = beforeName;
+            result.AfterName = afterName;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -138,8 +142,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.BeforeName = ((global::TestCase.BaseSource)(source.Head)).Before?.BeforeName;
-            destination.AfterName = (source.Tail is { } tail && ((global::TestCase.BaseSource)(tail)).After is { } after ? after.AfterName : default(string?));
+            string? beforeName = ((global::TestCase.BaseSource)(source.Head)).Before?.BeforeName;
+            string? afterName = (source.Tail is { } tail && ((global::TestCase.BaseSource)(tail)).After is { } after ? after.AfterName : default(string?));
+
+            destination.BeforeName = beforeName;
+            destination.AfterName = afterName;
 
             return destination;
         }

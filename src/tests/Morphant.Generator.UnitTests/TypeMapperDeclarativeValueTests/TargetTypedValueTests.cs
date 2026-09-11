@@ -412,16 +412,17 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceNumber = source.Number;
-            object value = (object)(sourceNumber);
+            var result = new global::TestCase.Destination(
+                boxed: (object)(source.Number),
+                transform: (global::System.Func<int, int>)(value => value + source.Number));
 
-            return new global::TestCase.Destination(
-                boxed: value,
-                transform: (global::System.Func<int, int>)(value => value + source.Number))
-            {
-                Text = (string? )(source.Text),
-                Copy = value
-            };
+            string? text = (string? )(source.Text);
+            object copy = (object)(source.Number);
+
+            result.Text = text;
+            result.Copy = copy;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -429,8 +430,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Text = (string? )(source.Text);
-            destination.Copy = (object)(source.Number);
+            string? text = (string? )(source.Text);
+            object copy = (object)(source.Number);
+
+            destination.Text = text;
+            destination.Copy = copy;
 
             return destination;
         }

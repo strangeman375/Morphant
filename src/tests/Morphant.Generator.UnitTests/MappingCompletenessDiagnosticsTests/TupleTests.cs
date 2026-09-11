@@ -48,7 +48,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Does_not_count_an_overridden_construction_rule_as_source_usage()
+    public void Counts_initial_constructor_reads_even_when_members_replace_the_element()
     {
         // lang=c#
         const string source =
@@ -60,14 +60,14 @@ using Morphant;
 
 namespace TestCase
 {
-    public sealed record Source(int Discarded, string Kept, int Replacement);
+    public sealed record Source(int Initial, string Kept, int Replacement);
 
     [MorphantMapper]
     public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, (int, string)>()
-                .Construct(source => new(source.Discarded, source.Kept))
+                .Construct(source => new(source.Initial, source.Kept))
                 .Members(source => new()
                 {
                     Item1 = source.Replacement
@@ -78,25 +78,9 @@ namespace TestCase
 """;
 
         var result = MappingCompletenessDiagnosticsGeneratorTest.Run(source);
-        var diagnostic = result.CompletenessDiagnostics.Single();
-
         Assert.Multiple(() =>
         {
-            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0047"));
-            Assert.That(
-                MappingCompletenessDiagnosticsGeneratorTest.SourceText(
-                    diagnostic.Location),
-                Is.EqualTo("Source"));
-            Assert.That(
-                diagnostic.AdditionalLocations.Select(
-                    MappingCompletenessDiagnosticsGeneratorTest.SourceText),
-                Is.EqualTo(new[] { "int Discarded" }));
-            Assert.That(
-                diagnostic.GetMessage(),
-                Is.EqualTo(
-                    "Source member 'TestCase.Source.Discarded' is not used " +
-                    "by mapping 'TestCase.Source -> " +
-                    "System.ValueTuple<int, string>'."));
+            Assert.That(result.CompletenessDiagnostics, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

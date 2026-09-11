@@ -409,15 +409,18 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.ChildSource sourceChild1 = source.Child;
-            global::TestCase.ChildDestination sourceChild = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild1);
+            var result = new global::TestCase.Destination(
+                child: new global::TestCase.ChildDestination(0));
 
-            return new global::TestCase.Destination(
-                child: sourceChild)
-            {
-                Reference = sourceChild,
-                Value = context.Mapper.Map<int, int>(source.Number)
-            };
+            global::TestCase.ChildDestination child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child);
+            object? reference = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child);
+            object value = context.Mapper.Map<int, int>(source.Number);
+
+            result.Child = child;
+            result.Reference = reference;
+            result.Value = value;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -428,9 +431,8 @@ namespace TestCase
             var result = new global::TestCase.Destination(
                 child: new global::TestCase.ChildDestination(40));
 
-            global::TestCase.ChildSource sourceChild = source.Child;
-
-            result.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild, destination: result.Child);
+            global::TestCase.ChildDestination child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: result.Child);
+            var childSource = source.Child;
             var referenceDestination = result.Reference switch
             {
                 null => default(global::TestCase.ChildDestination?),
@@ -444,9 +446,8 @@ namespace TestCase
                             global::Morphant.Context.MappingOperation.Update,
                             incompatibleReference),
             };
-
-            result.Reference = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
-                sourceChild,
+            object? reference = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+                childSource,
                 destination: referenceDestination);
             var numberSource = source.Number;
             var valueDestination = result.Value switch
@@ -465,10 +466,13 @@ namespace TestCase
                             global::Morphant.Context.MappingOperation.Update,
                             incompatibleValue),
             };
-
-            result.Value = context.Mapper.Map<int, int>(
+            object value = context.Mapper.Map<int, int>(
                 numberSource,
                 destination: valueDestination);
+
+            result.Child = child;
+            result.Reference = reference;
+            result.Value = value;
 
             return result;
         }

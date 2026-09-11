@@ -606,23 +606,20 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceValue = source.Value;
-
             var result = new global::TestCase.Destination(
-                seed: sourceValue);
+                seed: source.Value);
 
             const int delta = 1;
-            int resultSeed = result.Seed;
 
-            if (resultSeed > 0 && source.High)
+            if (result.Seed > 0 && source.High)
             {
-                result.Value = resultSeed + delta;
+                result.Value = result.Seed + delta;
 
                 return result;
             }
             else
             {
-                result.Value = sourceValue - delta;
+                result.Value = source.Value - delta;
 
                 return result;
             }
@@ -634,11 +631,10 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             const int delta = 1;
-            int destinationSeed = destination.Seed;
 
-            if (destinationSeed > 0 && source.High)
+            if (destination.Seed > 0 && source.High)
             {
-                destination.Value = destinationSeed + delta;
+                destination.Value = destination.Seed + delta;
 
                 return destination;
             }

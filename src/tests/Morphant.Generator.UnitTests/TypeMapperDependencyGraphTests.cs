@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests;
 internal sealed class TypeMapperDependencyGraphTests
 {
     [Test]
-    public async Task Emits_one_shared_local_across_construction_and_members()
+    public async Task Keeps_separately_written_calls_independent_across_construction_and_members()
     {
         // lang=c#
         const string source =
@@ -396,15 +396,16 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceValue = source.Value;
-            int value = global::TestCase.TestMapper.Share(sourceValue);
+            var result = new global::TestCase.Destination(
+                seed: global::TestCase.TestMapper.Share(source.Value));
 
-            return new global::TestCase.Destination(
-                seed: value)
-            {
-                Value = value,
-                Other = value
-            };
+            int value = global::TestCase.TestMapper.Share(source.Value);
+            int other = global::TestCase.TestMapper.Share(source.Value);
+
+            result.Value = value;
+            result.Other = other;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -412,11 +413,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceValue = source.Value;
-            int value = global::TestCase.TestMapper.Share(sourceValue);
+            int value = global::TestCase.TestMapper.Share(source.Value);
+            int other = global::TestCase.TestMapper.Share(source.Value);
 
             destination.Value = value;
-            destination.Other = value;
+            destination.Other = other;
 
             return destination;
         }

@@ -206,7 +206,8 @@ internal static class MembersControlFlowMappingPlanner
     {
         // A member block can follow construction when no selected argument or
         // creation-only initializer depends on that block.
-        if (memberPlans.Any(plan => plan.Observation.Rules.Any(rule =>
+        if (memberPlans.Any(plan => plan.Failure is not null || plan.Observation.Rules.Any(rule =>
+                rule.InvalidReason != MemberRuleInvalidReason.None ||
                 rule.Origin is not (MemberRuleOrigin.Convention or MemberRuleOrigin.Ignore) &&
                 rule.Lifecycle.HasFlag(MemberLifecycleDependency.Creation) &&
                 !rule.Lifecycle.HasFlag(MemberLifecycleDependency.ExistingDestination))))
@@ -551,7 +552,10 @@ internal static class MembersControlFlowMappingPlanner
                     },
                     paths,
                     currentCancellationToken,
-                    out root);
+                    out root,
+                    reservedLocalNames: existingDestination ? null : flatMappings.Values.SelectMany(flat =>
+                        DeclarativeControlFlowLowerer.GetDeclaredNames(SelectRoot(flat, create: true))
+                            .Concat(DeclarativeControlFlowLowerer.GetDeclaredNames(SelectRoot(flat, create: false)))));
         }
     }
 

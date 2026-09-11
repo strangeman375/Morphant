@@ -663,11 +663,15 @@ namespace TestCase
             global::TestCase.Dog source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.DogDto()
-            {
-                Value = source.Value,
-                Breed = source.Breed
-            };
+            var result = new global::TestCase.DogDto();
+
+            int value = source.Value;
+            string breed = source.Breed;
+
+            result.Value = value;
+            result.Breed = breed;
+
+            return result;
         }
     }
 }
