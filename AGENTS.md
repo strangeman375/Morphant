@@ -9,6 +9,20 @@
 - Define the contract and support boundary of each new feature before
   implementation. Unselected ideas are not roadmap commitments.
 
+## Scope and decisions
+
+- If the scope, intended behavior or completion criteria are unclear, ask the
+  user before implementing the affected work. Do not silently choose an
+  interpretation and proceed.
+- Consult the user on disputed or non-obvious decisions about design, public
+  API, behavior or generated-code form that existing agreements do not resolve.
+  Briefly explain the question, concrete alternatives and tradeoffs, then wait
+  for the user's decision before implementation.
+- Stay within the agreed scope. Ask before adding refactoring, optimization,
+  cleanup or redesign that the user has not requested or approved. Preserve
+  earlier agreements; do not reinterpret or cancel them without an explicit
+  user instruction.
+
 ## Test routing
 
 - Before changing tests, test infrastructure, generated-output expectations or
@@ -167,18 +181,23 @@
 
 - Preserve unrelated changes and work only in the canonical
   `/workspace/Morphant` checkout; scratch locations are disposable.
-- Publish coherent, reviewed and appropriately verified checkpoints directly
-  to remote `main`, and verify each publication. Do not publish broken or
-  unreviewed changes merely to satisfy a checkpoint schedule. This reflects
-  the user's 2026-09-11 instruction to push only good changes.
+- **Hard checkpoint rule:** every completed implementation stage and every
+  meaningful intermediate checkpoint must be committed and published directly
+  to remote `main` before the next stage starts. Never leave completed progress
+  only in the worktree, in the index, or in local-only commits. This rule still
+  applies when the checkpoint does not build, tests fail, or the repository is
+  temporarily inconsistent; record that state clearly in the commit message
+  and publish it anyway. Do not postpone publication until validation, cleanup,
+  a later stage, or the end of the task. After each publication, verify that the
+  checkpoint is present on remote `main`. Only an explicit user instruction
+  changes this rule; quality requirements do not suspend checkpoint publication.
 - Persist agreed design decisions and completion criteria before a long
   implementation when the repository does not already contain them.
-- Split long work into coherent checkpoints and publish verified progress
+- Split long work into coherent checkpoints and publish progress
   periodically. Preserve progress before long builds or external operations.
 - If a command or tool appears stalled, inspect or stop it instead of waiting
   indefinitely, and report a blocker when recovery is unclear.
-- Keep the user informed at meaningful milestones. Ask before resolving
-  ambiguities that materially affect public behavior.
+- Keep the user informed at meaningful milestones.
 - Keep release-review records minimal: only the state, inputs and findings
   needed to conduct or resume the check. Review artifacts are temporary;
   do not create detailed reports or duplicate evidence across documents.
