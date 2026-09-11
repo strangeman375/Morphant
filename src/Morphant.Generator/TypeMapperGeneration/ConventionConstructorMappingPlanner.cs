@@ -1623,7 +1623,9 @@ internal static class ConventionConstructorMappingPlanner
                     };
                     if (argument.ParameterSymbol is { } parameter && memberType is not null &&
                         compilation.ClassifyConversion(parameter.Type, memberType) is
-                            { IsImplicit: true, IsDynamic: false })
+                            { IsImplicit: true, IsDynamic: false } &&
+                        CanReuseRequiredValue(parameter, mapping, memberType,
+                            compilation, mapperType, cancellationToken))
                     {
                         sharedValues.Add(
                             (create.Count, argumentIndex));
@@ -1865,6 +1867,33 @@ internal static class ConventionConstructorMappingPlanner
         }
 
         return parameter.Type.WithNullableAnnotation(annotation);
+    }
+
+    private static bool CanReuseRequiredValue(
+        IParameterSymbol parameter,
+        TypeMapperMemberMappingModel member,
+        ITypeSymbol memberType,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        var parameterTypeName = BuildTargetValueLocalTypeName(parameter);
+        var memberTypeName = member.ExplicitValueTypeName ??
+            memberType.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable);
+        if (StringComparer.Ordinal.Equals(parameterTypeName, memberTypeName))
+            return true;
+
+        var tree = MapperProbeSyntax.Build(mapperType,
+            "Morphant.RequiredValueCompatibilityProbe.g.cs",
+            writer => writer.Line(
+                $"private static {memberTypeName} __MorphantRequiredValueProbe({parameterTypeName} value) => value;"));
+        var model = compilation.WithOptions(compilation.Options.WithReportSuppressedDiagnostics(true))
+            .AddSyntaxTrees(tree).GetSemanticModel(tree);
+        var expression = tree.GetRoot(cancellationToken).DescendantNodes()
+            .OfType<ArrowExpressionClauseSyntax>().Single().Expression;
+        return model.GetConversion(expression, cancellationToken) is { IsImplicit: true, IsDynamic: false } &&
+            !MappingExpressionCompatibility.HasNullableWarning(
+                model.GetDiagnostics(cancellationToken: cancellationToken), expression.Span);
     }
 
     private static bool HasAttribute(
