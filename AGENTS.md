@@ -81,6 +81,31 @@
   its generic interfaces can unify; independent legal pairs in the same mapper
   must still generate.
 
+## Construction and member composition (approved 2026-09-11)
+
+- Explicit constructor and member values are independent evaluations, even
+  when identical. Preserve the selected overload, conversions, side effects,
+  optional omissions and each location's `Ignore()` rule.
+- Automatic constructor arguments may share a member rule and its value.
+  Explicit `Members.Auto()` remains a separate operation after an explicit
+  constructor value; an unmentioned automatic member must not overwrite it.
+- Apply explicit init/required rules in the initializer. Reuse an associated
+  evaluated value only for a necessary synthesized required initializer.
+  `SetsRequiredMembers` never suppresses an explicit member rule.
+- Evaluate a selected member branch's values before applying its assignments;
+  adjacent expressions read the initial `result`. Preserve user-written shared
+  locals. Only automatic constructor dependencies justify early member values;
+  diagnose cycles and unsupported initialization instead of inventing values.
+- For tuples without `result` dependencies, evaluate initial and final element
+  values in locals and construct the final tuple once. When `result` is used,
+  materializing an initial tuple is allowed, including for element reads.
+- Reuse skips construction. Factories remain authoritative; standalone nested
+  updates mutate their target. Apply existing inheritance and lifecycle rules.
+- Completion requires readable full-source review snapshots, runtime coverage
+  of evaluation order and reuse, current concise docs, and the full build and
+  test suites. This contract replaces the former member-overrides-constructor
+  behavior.
+
 ## User documentation
 
 - Keep XML IntelliSense short and information-dense: purpose, decision-critical
