@@ -94,9 +94,9 @@
   literal expected sources and hint-name sets at the boundary.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes or compatibility branches without a user-facing need.
-- Keep generated invocations readable. Materialize synthetic `switch`,
-  conditional and throw-heavy argument expressions in named locals before a
-  call, and use statement blocks instead of oversized conditional expressions.
+- Keep synthesized checks, branches and invocations readable. Structure the
+  generated mapping algorithm explicitly where it needs separate operations;
+  do not use this as a reason to refactor user-written computations.
 - Diagnostics are part of the public contract. When C# can declare an
   `ITypeMapper<,>`, invalid or unsupported behavior must retain a complete
   mapper and use typed Morphant exception stubs. Do not generate construction,
@@ -105,30 +105,28 @@
   its generic interfaces can unify; independent legal pairs in the same mapper
   must still generate.
 
-## Expression locals (approved)
+## User-written code and supporting locals (approved)
 
-- Pass literals, constants, existing variables and direct property reads,
-  including property paths, directly. Passing a property to a generated call
-  is not itself a reason to introduce a local.
-- Before a call formed by the generator, including a constructor call,
-  materialize other argument expressions in readable named locals. This
-  includes method calls, arithmetic, conversions and conditional expressions,
-  so their computed values can be inspected before the call.
-- Materialize an expression that spans multiple lines in the user's source,
-  regardless of its destination. Do not add a second local when the expression
-  already initializes a user-written local. Determine this from the original
-  expression, before rewriting or formatting; text length, identifier length
-  and generated line wrapping must not change the decision.
-- Keep single-line computations directly in member assignments and object
-  initializers unless another rule requires a local. Treat each user-written
-  expression as a whole; do not split its internal calls into extra locals.
-- Correctness takes precedence: capture values whenever required to preserve
+- Preserve the structure of user-written expressions, locals and branches.
+  Change it only as necessary to implement the agreed mapping semantics.
+  The user controls how their computations are organized and inspected.
+- Calls, arithmetic, conversions, conditional and switch expressions,
+  multiline source and expression length are not reasons to introduce a
+  local. This applies equally to arguments, member assignments, object
+  initializers and return values. Do not add a result local solely for return.
+- Preserve user-written locals; do not inline their values or split the
+  internal calls of a user-written expression into additional computations.
+- Introduce supporting locals only when required by mapping operations,
   evaluation order, conditional execution, a single evaluation shared by the
-  mapping contract, or reads before mutation. This can require capturing even
-  a property read. Preserve selected calls, conversions and independently
-  written evaluations; do not move computations out of their selected branch.
-- Preserve user-written locals. Keep generated supporting locals limited to
-  these rules, with names based on the argument or destination member.
+  mapping contract, or reads before mutation. Preserve selected overloads,
+  conversions and independently written evaluations, even when their text
+  matches. Never move a computation out of its selected branch.
+- Name necessary supporting locals after their role, argument or destination
+  member. Keep ordinary object initializers and direct assignments whenever
+  they implement the required behavior.
+- Qualification, collision-safe renaming, necessary type conversions,
+  parentheses and formatting may adapt the code to its generated context.
+  These adaptations must preserve its semantics and computation structure.
 
 ## Construction and member composition (approved 2026-09-11)
 
@@ -143,12 +141,13 @@
   `SetsRequiredMembers` never suppresses an explicit member rule.
 - Preserve user-written shared locals and reads of the initial `result` when
   member expressions depend on it. Limit supporting temporaries to the cases
-  that need them; single-line source-only member rules retain object initializers
+  that need them; source-only member rules retain object initializers
   and direct assignments. Only automatic constructor dependencies justify early
   member values; diagnose cycles and unsupported initialization instead of
   inventing values.
-- For tuples without `result` dependencies, evaluate initial and final element
-  values in locals and construct the final tuple once. When `result` is used,
+- For tuples without `result` dependencies, preserve initial and final element
+  evaluations and construct the final tuple once, using supporting locals only
+  where required by that composition. When `result` is used,
   materializing an initial tuple is allowed, including for element reads.
 - Reuse skips construction. Factories remain authoritative; standalone nested
   updates mutate their target. Apply existing inheritance and lifecycle rules.
