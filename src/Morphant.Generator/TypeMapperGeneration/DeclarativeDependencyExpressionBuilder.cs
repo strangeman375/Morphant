@@ -605,6 +605,15 @@ internal static class DeclarativeDependencyExpressionBuilder
         operation = UnwrapTransparentOperation(operation);
         builder.Append('[');
         builder.Append(operation.Kind);
+        // Equal text at different locations still represents separate user
+        // evaluations. Only the same expression occurrence may be shared.
+        if (operation is not (ILocalReferenceOperation or IParameterReferenceOperation))
+        {
+            AppendSegment(builder, operation.Syntax.SyntaxTree.FilePath);
+            builder.Append(operation.Syntax.SpanStart);
+            builder.Append(':');
+            builder.Append(operation.Syntax.Span.Length);
+        }
         builder.Append('|');
         AppendType(
             builder,

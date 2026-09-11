@@ -171,7 +171,8 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
     int DeclarativeOrder = 0,
     ImmutableArray<ISymbol> SourcePathMembers = default,
     string? MemberValueTypeName = null,
-    string? ArgumentCastTypeName = null
+    string? ArgumentCastTypeName = null,
+    bool IsEvaluationOnly = false
 );
 
 internal readonly record struct TypeMapperMemberMappingModel

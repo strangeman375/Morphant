@@ -619,6 +619,7 @@ internal static class TypeMapperRuntimeEquality
                     rightArgument.EvaluationLocals) ||
                 leftArgument.TupleElementOrdinal !=
                     rightArgument.TupleElementOrdinal ||
+                leftArgument.IsEvaluationOnly != rightArgument.IsEvaluationOnly ||
                 leftArgument.DeclarativeOrder !=
                     rightArgument.DeclarativeOrder)
             {

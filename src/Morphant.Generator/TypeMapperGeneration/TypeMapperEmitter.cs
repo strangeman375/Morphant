@@ -731,6 +731,7 @@ internal static class TypeMapperEmitter
         GeneratedLocalNameAllocator localNames)
     {
         var hasValueLocals = false;
+        var declaredArgumentLocals = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var argument in constructor.Arguments)
         {
@@ -750,8 +751,10 @@ internal static class TypeMapperEmitter
 
             hasValueLocals = true;
             writer.Line(
-                (argument.ValueLocalTypeName ?? "var") +
-                $" {valueLocalName} = " +
+                (declaredArgumentLocals.Add(valueLocalName)
+                    ? (argument.ValueLocalTypeName ?? "var") + " "
+                    : string.Empty) +
+                $"{valueLocalName} = " +
                 ConstructorArgumentUncachedValueExpression(
                     mapping,
                     argument,
@@ -786,6 +789,7 @@ internal static class TypeMapperEmitter
         if (constructor.TupleConstruction is { } tupleConstruction)
         {
             var arguments = constructor.Arguments
+                .Where(static argument => !argument.IsEvaluationOnly)
                 .OrderBy(static argument => argument.TupleElementOrdinal)
                 .Select(argument => ConstructorArgumentValueExpression(
                     mapping,

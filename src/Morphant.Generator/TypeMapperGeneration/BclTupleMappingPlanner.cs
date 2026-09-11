@@ -454,6 +454,7 @@ internal static class BclTupleMappingPlanner
                 destination.Elements.Length);
         var survivingInitialElements = new HashSet<string>(
             StringComparer.Ordinal);
+        var pendingPostMappings = memberMappings.PostMappings.ToBuilder();
 
         var memberOrderBase = initialArguments.IsEmpty
             ? 0
@@ -498,6 +499,15 @@ internal static class BclTupleMappingPlanner
             if (hasMemberMapping &&
                 (!hasInitial || memberOrigin != MemberRuleOrigin.Convention))
             {
+                if (hasInitial && initialArgument.RuleOrigin is
+                    ConstructorParameterRuleOrigin.Value or ConstructorParameterRuleOrigin.Ignore)
+                {
+                    arguments.Add(initialArgument);
+                    survivingInitialElements.Add(element.Name);
+                    pendingPostMappings.Add(memberMapping);
+                    continue;
+                }
+
                 var memberIndex = memberMappings.InitializerMappings
                     .IndexOf(memberMapping);
                 arguments.Add(ToArgument(
@@ -565,8 +575,12 @@ internal static class BclTupleMappingPlanner
                 destination.Type),
             orderedArguments.ToImmutableArray(),
             TupleConstruction: tupleConstruction);
+        var postMappings = pendingPostMappings.OrderBy(mapping =>
+                memberMappings.Observation.Rules.TakeWhile(rule =>
+                    !StringComparer.Ordinal.Equals(rule.DestinationMember.Name, mapping.DestinationMemberName)).Count())
+            .ToImmutableArray();
         var reconstruction = destination.IsValueTuple ||
-                             memberMappings.PostMappings.IsEmpty
+                             postMappings.IsEmpty
             ? (TypeMapperTupleReconstructionModel?)null
             : new TypeMapperTupleReconstructionModel(
                 tupleConstruction,
@@ -575,7 +589,6 @@ internal static class BclTupleMappingPlanner
                             element.Name,
                             element.AccessPath))
                     .ToImmutableArray());
-        var postMappings = memberMappings.PostMappings;
 
         if (reconstruction is not null)
         {

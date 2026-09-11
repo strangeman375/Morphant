@@ -340,6 +340,7 @@ internal static class ConventionMemberMappingPlanner
                 candidate.DestinationMemberName,
                 group.IsRequired,
                 SourceValueLocalName: null,
+                ExplicitValueTypeName: TypeMapperMappingTypePolicy.GetGeneratedTypeName(group.Destination.Type),
                 ConventionValueExpression:
                     candidateValueExpressions[selectedIndex]);
 
@@ -549,6 +550,7 @@ internal static class ConventionMemberMappingPlanner
                 candidate.DestinationMemberName,
                 IsRequired: false,
                 SourceValueLocalName: null,
+                ExplicitValueTypeName: TypeMapperMappingTypePolicy.GetGeneratedTypeName(group.Destination.Type),
                 ConventionValueExpression:
                     candidateValueExpressions[selectedIndex],
                 DestinationAccessPath: BuildTupleDestinationAccessPath(

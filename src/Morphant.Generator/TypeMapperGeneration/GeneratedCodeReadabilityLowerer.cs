@@ -145,6 +145,25 @@ internal static class GeneratedCodeReadabilityLowerer
         TypeMapperMappingModel mapping,
         GeneratedLocalNameAllocator names)
     {
+        mapping = CollapseTupleConstruction(mapping, names);
+        if (mapping.CreateConstructor is { TupleConstruction: null } &&
+            mapping.CreateMemberMappings.Length + mapping.CreatePostMemberMappings.Length > 1 &&
+            mapping.PostMemberControlFlow is null && mapping.MemberObservation is { } observation &&
+            mapping.CreateMemberMappings.All(member => !member.IsRequired &&
+                observation.Rules.Any(rule =>
+                    StringComparer.Ordinal.Equals(rule.DestinationMember.Name, member.DestinationMemberName) &&
+                    rule.Lifecycle.HasFlag(MemberLifecycleDependency.ExistingDestination))))
+        {
+            mapping = mapping with
+            {
+                CreatePostMemberMappings = mapping.CreateMemberMappings.AddRange(mapping.CreatePostMemberMappings)
+                    .OrderBy(member => observation.Rules.TakeWhile(rule =>
+                        !StringComparer.Ordinal.Equals(rule.DestinationMember.Name, member.DestinationMemberName)).Count())
+                    .ToImmutableArray(),
+                CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty
+            };
+        }
+
         var constructor = mapping.CreateConstructor is
                 { } createConstructor
             ? createConstructor with
@@ -162,11 +181,54 @@ internal static class GeneratedCodeReadabilityLowerer
             CreateConstructor = constructor,
             CreatePostMemberMappings = LowerMembers(
                 mapping.CreatePostMemberMappings,
+                mapping.NonNullSourceName,
                 names),
             PostMemberControlFlow = mapping.PostMemberControlFlow is
                     { } postMemberControlFlow
-                ? LowerMemberNode(postMemberControlFlow, names)
+                ? LowerMemberNode(postMemberControlFlow, mapping.NonNullSourceName, names)
                 : null
+        };
+    }
+
+    private static TypeMapperMappingModel CollapseTupleConstruction(
+        TypeMapperMappingModel mapping,
+        GeneratedLocalNameAllocator names)
+    {
+        if (mapping.CreateConstructor is not { TupleConstruction: not null } constructor ||
+            mapping.PostMemberControlFlow is not null || mapping.CreatePostMemberMappings.IsEmpty ||
+            mapping.CreatePostMemberMappings.Any(member => member.IsResultDependent))
+        {
+            return mapping;
+        }
+
+        var arguments = constructor.Arguments.Select(argument => argument with
+        {
+            ValueLocalName = argument.ValueLocalName ?? names.AllocateForSourcePathSegment(argument.ParameterName),
+            ValueLocalTypeName = argument.TargetTypeName ?? argument.ValueLocalTypeName,
+            IsEvaluationOnly = mapping.CreatePostMemberMappings.Any(member =>
+                StringComparer.Ordinal.Equals(member.DestinationMemberName, argument.ParameterName))
+        }).ToImmutableArray();
+        var finalArguments = mapping.CreatePostMemberMappings.Select(member =>
+        {
+            var initial = arguments.Single(argument =>
+                StringComparer.Ordinal.Equals(argument.ParameterName, member.DestinationMemberName));
+            return initial with
+            {
+                SourceMemberName = member.SourceMemberName,
+                ExplicitValueExpression = member.SourceValueLocalName ?? member.ExplicitValueExpression,
+                ConventionValueExpression = member.ConventionValueExpression,
+                DependencyExpression = member.DependencyExpression,
+                EvaluationLocals = Normalize(member.EvaluationLocals).AddRange(Normalize(member.InvocationArgumentLocals)),
+                RuleOriginNode = null,
+                SourceMemberSymbol = null,
+                IsEvaluationOnly = false
+            };
+        });
+        return mapping with
+        {
+            CreateConstructor = constructor with { Arguments = arguments.AddRange(finalArguments) },
+            CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+            CreateTupleReconstruction = null
         };
     }
 
@@ -186,16 +248,18 @@ internal static class GeneratedCodeReadabilityLowerer
         {
             UpdateMemberMappings = LowerMembers(
                 mapping.UpdateMemberMappings,
+                mapping.NonNullSourceName,
                 names),
             PostMemberControlFlow = mapping.PostMemberControlFlow is
                     { } postMemberControlFlow
-                ? LowerMemberNode(postMemberControlFlow, names)
+                ? LowerMemberNode(postMemberControlFlow, mapping.NonNullSourceName, names)
                 : null
         };
     }
 
     private static TypeMapperMemberControlFlowNode LowerMemberNode(
         TypeMapperMemberControlFlowNode node,
+        string sourceName,
         GeneratedLocalNameAllocator names)
     {
         if (node.EvaluationContinuation is
@@ -203,6 +267,7 @@ internal static class GeneratedCodeReadabilityLowerer
         {
             var continuation = LowerMemberNode(
                 evaluationContinuation,
+                sourceName,
                 names);
 
             if (TryLowerGuardedEvaluation(
@@ -231,7 +296,7 @@ internal static class GeneratedCodeReadabilityLowerer
         {
             var continuation = node.SwitchContinuation is
                     { } switchContinuation
-                ? LowerMemberNode(switchContinuation, names)
+                ? LowerMemberNode(switchContinuation, sourceName, names)
                 : null;
 
             return node with
@@ -241,6 +306,7 @@ internal static class GeneratedCodeReadabilityLowerer
                     {
                         Branch = LowerMemberNode(
                             section.Branch,
+                            sourceName,
                             names.Clone())
                     })
                     .ToImmutableArray(),
@@ -254,9 +320,11 @@ internal static class GeneratedCodeReadabilityLowerer
             {
                 WhenTrue = LowerMemberNode(
                     node.WhenTrue!,
+                    sourceName,
                     names.Clone()),
                 WhenFalse = LowerMemberNode(
                     node.WhenFalse!,
+                    sourceName,
                     names.Clone())
             };
         }
@@ -265,6 +333,7 @@ internal static class GeneratedCodeReadabilityLowerer
         {
             MemberMappings = LowerMembers(
                 node.MemberMappings,
+                sourceName,
                 names)
         };
     }
@@ -272,11 +341,26 @@ internal static class GeneratedCodeReadabilityLowerer
     private static ImmutableArray<TypeMapperMemberMappingModel>
         LowerMembers(
         ImmutableArray<TypeMapperMemberMappingModel> mappings,
+        string sourceName,
         GeneratedLocalNameAllocator names)
     {
         return Normalize(mappings)
             .Select(mapping =>
             {
+                if (mappings.Length > 1 && mapping.ValueLocalName is null)
+                {
+                    mapping = mapping with
+                    {
+                        ExplicitValueExpression = mapping.SourceValueLocalName ?? mapping.ExplicitValueExpression ??
+                            mapping.ConventionValueExpression?.Render(names) ??
+                            sourceName + "." + (SyntaxFacts.GetKeywordKind(mapping.SourceMemberName) != SyntaxKind.None
+                                ? "@" : string.Empty) + mapping.SourceMemberName,
+                        ValueLocalName = names.AllocateForSourcePathSegment(mapping.DestinationMemberName),
+                        SourceValueLocalName = null,
+                        ConventionValueExpression = null
+                    };
+                }
+
                 if (mapping.ExplicitValueExpression is not
                         { } expression ||
                     !TryLowerMapInvocation(
