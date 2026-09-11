@@ -1,10 +1,10 @@
-namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Lifecycle;
+namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Tuples;
 
-internal sealed partial class LifecycleTests
+internal sealed partial class TuplesTests
 {
     [Test]
-    [Description("A tuple member value is active only on paths where previous is present.")]
-    public void TupleMemberRuleOnlyWhenPreviousExists()
+    [Description("Constructor element expressions run before a source-dependent branch, with one final tuple.")]
+    public void SystemTupleConstructorBeforeMemberCondition()
     {
         // lang=c#
         const string source =
@@ -31,14 +31,14 @@ namespace TestCase
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, (int Id, string Name)>()
+            builder.Map<Source, Tuple<int, string>>()
                 .MemberSelection(MemberSelection.Explicit)
                 .Construct(source => new(source.Id, source.FromConstruct()))
-                .Members((source, previous) =>
+                .Members(source =>
                 {
-                    if (previous.HasValue)
-                        return new() { Name = source.FromMembers() };
-                    return new() { Name = Ignore() };
+                    if (source.Id > 0)
+                        return new() { Item2 = source.FromMembers() };
+                    return new() { Item2 = "fallback" };
                 });
     }
 }
@@ -58,18 +58,18 @@ namespace TestCase
 namespace TestCase
 {
     public partial class Mapper :
-        global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)>
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Tuple<int, string>>
     {
         /// <inheritdoc/>
         protected override bool Supports(
             global::System.Type sourceType,
             global::System.Type destinationType) =>
                 (sourceType == typeof(global::TestCase.Source) &&
-                    destinationType == typeof((int Id, string Name))) ||
+                    destinationType == typeof(global::System.Tuple<int, string>)) ||
                 base.Supports(sourceType, destinationType);
 
         /// <inheritdoc/>
-        (int Id, string Name) global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)>.Create(
+        global::System.Tuple<int, string> global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Tuple<int, string>>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -82,9 +82,9 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        (int Id, string Name) global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)>.Update(
+        global::System.Tuple<int, string> global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Tuple<int, string>>.Update(
             global::TestCase.Source? source,
-            (int Id, string Name) destination,
+            global::System.Tuple<int, string>? destination,
             global::Morphant.Context.MappingContext context)
         {
             if (source is null)
@@ -92,25 +92,37 @@ namespace TestCase
                 return default!;
             }
 
+            if (destination is null)
+            {
+                return __Create(source, context);
+            }
+
             return __Update(source, destination, context);
         }
 
-        private (int Id, string Name) __Create(
+        private global::System.Tuple<int, string> __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int id = source.Id;
-            string name = source.FromConstruct();
+            int item1 = source.Id;
+            string item2 = source.FromConstruct();
 
-            return (Id: id, Name: name);
+            if (source.Id > 0)
+            {
+                return new global::System.Tuple<int, string>(item1, source.FromMembers());
+            }
+            else
+            {
+                return new global::System.Tuple<int, string>(item1, "fallback");
+            }
         }
 
-        private (int Id, string Name) __Update(
+        private global::System.Tuple<int, string> __Update(
             global::TestCase.Source source,
-            (int Id, string Name) destination,
+            global::System.Tuple<int, string> destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = source.FromMembers();
+            _ = source.Id > 0;
 
             return destination;
         }
@@ -118,6 +130,6 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: TupleMemberRuleOnlyWhenPreviousExistsSurfaces);
+            expectedSurfaces: SystemTupleWithDifferentExpressionsForOneElementSurfaces);
     }
 }
