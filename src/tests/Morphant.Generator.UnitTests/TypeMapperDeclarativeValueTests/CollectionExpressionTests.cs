@@ -603,13 +603,10 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int value = context.Operation == global::Morphant.Context.MappingOperation.Create ? 1 : 10;
-            global::System.Collections.Immutable.ImmutableArray<int> sourceValues = source.Values;
-
             return new global::TestCase.Destination(
-                constructed: (global::System.Collections.Immutable.ImmutableArray<int>)([value, ..sourceValues]))
+                constructed: (global::System.Collections.Immutable.ImmutableArray<int>)([context.Operation == global::Morphant.Context.MappingOperation.Create ? 1 : 10, ..source.Values]))
             {
-                Members = (global::System.Collections.Immutable.ImmutableArray<int>)([..sourceValues, context.Operation == global::Morphant.Context.MappingOperation.Create ? 2 : 20])
+                Members = (global::System.Collections.Immutable.ImmutableArray<int>)([..source.Values, context.Operation == global::Morphant.Context.MappingOperation.Create ? 2 : 20])
             };
         }
 
