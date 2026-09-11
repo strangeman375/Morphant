@@ -331,7 +331,7 @@ internal static class BclTupleMappingPlanner
                         element,
                         parameter,
                         ConstructorParameterRuleOrigin.Convention,
-                        originNode: null,
+                        originNode: objectArguments[0].Value,
                         sourceMember?.Symbol,
                         designatorNode: null,
                         isApplicable: false,
@@ -644,7 +644,8 @@ internal static class BclTupleMappingPlanner
     internal static MappingFailureReason GetStructuredFailureReason(
         ConstructorPlanningObservation observation) =>
         observation.Candidates.SelectMany(static candidate => candidate.ParameterRules)
-            .Any(static rule => !rule.IsApplicable && rule.Origin is
+            .Any(static rule => !rule.IsApplicable && rule.OriginNode is not null && rule.Origin is
+                ConstructorParameterRuleOrigin.Convention or
                 ConstructorParameterRuleOrigin.Auto or ConstructorParameterRuleOrigin.Ignore or
                 ConstructorParameterRuleOrigin.Value)
             ? MappingFailureReason.ConstructorParameterRuleInvalid

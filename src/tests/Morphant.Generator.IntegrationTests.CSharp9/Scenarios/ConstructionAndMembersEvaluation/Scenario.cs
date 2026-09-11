@@ -6,12 +6,13 @@ using Morphant;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndMembersEvaluation
 {
-    public enum Route { Expressions, Local, Condition, Factory, Swap }
+    public enum Route { Expressions, Local, Condition, Factory, Swap, Convention }
 
     public sealed class Source
     {
         public readonly List<string> Events = new List<string>();
         public int Reads { get; private set; }
+        public int Left => -100;
         public Tuple<int, int>? InitialTuple { get; private set; }
 
         public int Next()
@@ -114,6 +115,20 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
+    public partial class ConventionMapper : TypeMapper<ConventionMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Construct(source => new(source, source.Next()))
+                .Members((_, _, result) =>
+                {
+                    if (result.Left > 0)
+                        return new() { Right = result.Left };
+                    return new() { Left = 10, Right = 20 };
+                });
+    }
+
+    [MorphantMapper]
     public partial class TupleMapper : TypeMapper<TupleMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -169,6 +184,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 Route.Condition => new ConditionMapper(),
                 Route.Factory => new FactoryMapper(),
                 Route.Swap => new SwapMapper(),
+                Route.Convention => new ConventionMapper(),
                 _ => throw new ArgumentOutOfRangeException(nameof(route))
             };
             var source = new Source();
@@ -178,6 +194,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 Route.Local => "read:1,construct:1,read:2,left:2,right:2",
                 Route.Condition => "read:1,construct:1,read:2,left:10,right:20",
                 Route.Swap => "read:1,construct:1,left:99,right:1",
+                Route.Convention => "read:1,construct:1,right:1",
                 _ => "read:1,construct:1,read:2,read:3,left:2,right:3"
             };
             Equal(expected, string.Join(",", source.Events));
@@ -192,6 +209,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 Route.Local => $"read:{reads + 1},left:{reads + 1},right:{reads + 1}",
                 Route.Condition => $"read:{reads + 1},left:10,right:20",
                 Route.Swap => $"left:{previousRight},right:{previousLeft}",
+                Route.Convention => $"right:{previousLeft},left:-100",
                 _ => $"read:{reads + 1},read:{reads + 2},left:{reads + 1},right:{reads + 2}"
             };
             Equal(expected, string.Join(",", source.Events));

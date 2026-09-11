@@ -10,6 +10,7 @@ internal sealed class EvaluationOrderTests
     [TestCase(Route.Condition)]
     [TestCase(Route.Factory)]
     [TestCase(Route.Swap)]
+    [TestCase(Route.Convention)]
     public void Preserves_constructor_evaluations_then_member_values_then_assignments(Route route) => Scenario.Verify(route);
 
     [TestCase(false)]

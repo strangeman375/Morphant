@@ -741,6 +741,16 @@ internal static class ConstructionDiagnosticAnalyzer
             return true;
         }
 
+        if (rule.Origin == ConstructorParameterRuleOrigin.Convention)
+        {
+            diagnostic = new ParameterRuleDiagnostic(
+                parameterName,
+                GetMarkerNameLocation(origin, "ByConvention"),
+                "convention",
+                "ByConvention could not find exactly one compatible source member");
+            return true;
+        }
+
         if (rule.Origin == ConstructorParameterRuleOrigin.Ignore)
         {
             diagnostic = new ParameterRuleDiagnostic(
@@ -1434,7 +1444,8 @@ internal static class ConstructionDiagnosticAnalyzer
                rule.Origin is
                    ConstructorParameterRuleOrigin.Auto or
                    ConstructorParameterRuleOrigin.Ignore or
-                   ConstructorParameterRuleOrigin.Value;
+                   ConstructorParameterRuleOrigin.Value or
+                   ConstructorParameterRuleOrigin.Convention;
     }
 
     private static bool IsExplicitInvalidRule(
