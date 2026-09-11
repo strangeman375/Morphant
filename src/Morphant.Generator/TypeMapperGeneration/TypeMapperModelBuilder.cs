@@ -1424,6 +1424,7 @@ internal static class TypeMapperModelBuilder
         {
             return leaf.Failure is not null ||
                    leaf.CreateFailure is not null ||
+                   leaf.PostMemberControlFlow is { } post && ContainsGeneratedPostFailure(post) ||
                    leaf.CreateDirectExpression is null &&
                    leaf.CreateFactory is null &&
                    leaf.CreateConstructor is null;

@@ -705,25 +705,24 @@ namespace TestCase
             global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
+            var result = new global::TestCase.Destination(
+                seed: source.Value);
+
             var switchValue = source.Value;
 
             switch (switchValue)
             {
                 case 0:
                 {
-                    return new global::TestCase.Destination(
-                        seed: switchValue)
-                    {
-                        Value = 0
-                    };
+                    result.Value = 0;
+
+                    return result;
                 }
                 case > 0:
                 {
-                    return new global::TestCase.Destination(
-                        seed: switchValue)
-                    {
-                        Value = switchValue
-                    };
+                    result.Value = source.Value;
+
+                    return result;
                 }
             }
 
@@ -747,7 +746,7 @@ namespace TestCase
                 }
                 case > 0:
                 {
-                    destination.Value = switchValue;
+                    destination.Value = source.Value;
 
                     return destination;
                 }

@@ -173,6 +173,22 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 });
     }
 
+    [MorphantMapper]
+    public partial class UnmatchedSwitchMapper : TypeMapper<UnmatchedSwitchMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Construct(source => new(source, source.Next()))
+                .Members(source =>
+                {
+                    switch (source.Next())
+                    {
+                        case 0: return new() { Left = 10 };
+                    }
+                })
+                .MemberSelection(MemberSelection.Explicit);
+    }
+
     public static class Scenario
     {
         public static void Verify(Route route)
@@ -247,6 +263,25 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
                 string.Join(",", source.Events));
             if (created.Item1 != (condition ? 4 : 3) || created.Item2 != (condition ? 5 : 3))
                 throw new InvalidOperationException("Tuple member blocks must run after initial element evaluations.");
+        }
+
+        public static void VerifyUnmatchedSwitch(bool update)
+        {
+            ITypeMapper<Source, Destination> mapper = new UnmatchedSwitchMapper();
+            var source = new Source();
+            try
+            {
+                _ = update ? mapper.Update(source, null) : mapper.Create(source);
+            }
+            catch (Morphant.Exceptions.UnmatchedMappingSwitchException exception)
+            {
+                var expected = update ? Morphant.Context.MappingOperation.Update : Morphant.Context.MappingOperation.Create;
+                if (exception.Operation != expected)
+                    throw new InvalidOperationException("The member switch lost the original mapping operation.");
+                Equal("read:1,construct:1,read:2", string.Join(",", source.Events));
+                return;
+            }
+            throw new InvalidOperationException("An unmatched member switch must throw after construction.");
         }
 
         private static void Equal(string expected, string actual)

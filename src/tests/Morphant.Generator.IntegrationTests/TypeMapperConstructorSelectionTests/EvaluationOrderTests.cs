@@ -20,4 +20,9 @@ internal sealed class EvaluationOrderTests
     [TestCase(true)]
     public void Evaluates_initial_tuple_elements_before_member_locals_and_conditions(bool condition) =>
         Scenario.VerifyTupleBlock(condition);
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Preserves_the_original_operation_when_a_member_switch_does_not_match(bool update) =>
+        Scenario.VerifyUnmatchedSwitch(update);
 }
