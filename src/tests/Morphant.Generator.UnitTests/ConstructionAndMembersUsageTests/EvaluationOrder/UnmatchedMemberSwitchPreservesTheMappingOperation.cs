@@ -70,7 +70,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
         }
 
         /// <inheritdoc/>
@@ -86,7 +86,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
             }
 
             return __Update(source, destination, context);
@@ -94,6 +94,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
+            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
             var result = new global::TestCase.Destination(
@@ -117,7 +118,7 @@ namespace TestCase
                 }
             }
 
-            throw new global::Morphant.Exceptions.UnmatchedMappingSwitchException(global::Morphant.Context.MappingOperation.Create, typeof(global::TestCase.Source), typeof(global::TestCase.Destination));
+            throw new global::Morphant.Exceptions.UnmatchedMappingSwitchException(operation, typeof(global::TestCase.Source), typeof(global::TestCase.Destination));
         }
 
         private global::TestCase.Destination __Update(
