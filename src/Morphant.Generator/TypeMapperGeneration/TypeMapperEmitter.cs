@@ -775,6 +775,14 @@ internal static class TypeMapperEmitter
             writer.Line();
         }
 
+        if (constructor.DeferTupleConstruction)
+        {
+            WritePostMemberControlFlow(writer, mapping, mapping.PostMemberControlFlow!,
+                Identifier(mapping.ResultLocalName), localNames, operationExpression: operationExpression,
+                tupleReconstruction: mapping.CreateTupleReconstruction);
+            return;
+        }
+
         var hasPostMappings =
             !mapping.CreatePostMemberMappings.IsEmpty ||
             mapping.PostMemberControlFlow is not null ||
@@ -2559,7 +2567,7 @@ internal static class TypeMapperEmitter
                     mapping,
                     member,
                     localNames)
-                : resultExpression + "." + element.AccessPath)
+                : element.InitialValueExpression ?? resultExpression + "." + element.AccessPath)
             .ToImmutableArray();
         writer.Line(
             "return " +

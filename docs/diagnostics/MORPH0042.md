@@ -11,19 +11,20 @@ Ordinary Update that reuses a destination skips its `init`-only assignments;
 those rules alone do not produce this diagnostic.
 
 A value required during construction cannot read `result` before the
-destination exists. This includes a writable member corresponding to a
-constructor parameter. The restriction also applies to local dependencies and
-conditions selecting the value. The diagnostic identifies the affected rule
-and operations.
+destination exists. This occurs when an automatic constructor argument depends
+on a member value or condition that itself needs `result`, or when an
+initializer needs the not-yet-created destination. The diagnostic identifies
+the affected rule and operations.
 
 ## Fix
 
 Initialize creation-only members inside the runtime factory and remove their
 assignments from `Members`. Use a settable member if it must change afterward.
 
-For values needed during construction, use `source` or an available `previous`
-destination. Guard any `result` access with conditions that exclude every
-creation path. `Operation == Update` alone does not exclude `Update(null)` or
+Supply an independent constructor value from `source` or an available
+`previous` destination, then read `result` in a writable member rule.
+Alternatively, guard `result` access with conditions that exclude creation.
+`Operation == Update` alone does not exclude `Update(null)` or
 a replacement selected by `Resolve`. See
 [reading `result`](../api/members.md#reading-result) for valid examples.
 

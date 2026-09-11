@@ -56,8 +56,11 @@ See [current limitations](docs/limitations.md) for features not yet included.
   lambdas and local functions. Accept explicit static extension-method calls.
 - Preserve arithmetic and overload selection when simplifying constant
   conditions. Accept `context.Operation` inside constructor argument expressions.
-- Use a matching `Members` value for the constructor argument, evaluating it
-  once. Report `MORPH0042` when that value reads `result` before construction.
+- Preserve independent explicit constructor and member evaluations, even for
+  identical expressions. Share member values only with automatic constructor
+  arguments, and diagnose circular dependencies on `result`.
+- Preserve initial tuple values and evaluate member values before writable
+  assignments. Avoid an intermediate tuple when member rules do not need it.
 - Avoid generated-name conflicts across mappers, assemblies and nested types.
   IntelliSense offers aliases for reserved destination-member names.
 - Accept `Resolve` branches guarded by `previous.TryGetValue`.

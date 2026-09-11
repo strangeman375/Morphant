@@ -85,7 +85,7 @@ builder.Map<Source, (int Id, string Name)>()
         source.DisplayName));
 ```
 
-`Members` can provide some or all final constructor values as well:
+`Members` can provide final element values as well:
 
 ```csharp
 builder.Map<Source, (int Id, string Name)>()
@@ -96,8 +96,13 @@ builder.Map<Source, (int Id, string Name)>()
     });
 ```
 
-A `Members` value available before construction overrides the corresponding
-constructor argument. The overridden expression is not evaluated.
+Both explicit expressions are evaluated, including when they are identical.
+Morphant can compute the final element values before constructing one tuple.
+When `Members` reads `result`, it receives the initial tuple; `System.Tuple`
+may then require a second instance with the final values. Member expressions
+read the same initial result, before Morphant applies any element assignments.
+
+Automatic arguments follow the [constructor and member rules](api/members.md#constructor-parameters).
 
 ## Update
 

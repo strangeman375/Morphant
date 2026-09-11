@@ -39,42 +39,55 @@ one destination method, but not with `Convert`.
 
 ## Constructor parameters
 
-A constructor parameter and its corresponding destination member share one
-value rule. Names match exactly first, then by a unique case-insensitive match.
-A `Members` value available before construction overrides the corresponding
-constructor argument, including an argument supplied by `Construct` or a branch of
-`Resolve`. The overridden argument expression is not evaluated.
+Explicit constructor arguments and explicit member rules are independent:
 
-During construction, the value is evaluated once and passed to the constructor.
-The member is assigned again only when C# requires a `required` initializer;
-that assignment reuses the value. Update of an existing object applies
-the rule through the writable member; creation-only members keep their values.
+```csharp
+builder.Map<Source, Destination>()
+    .Construct(source => new(FromConstruct(source)))
+    .Members(source => new() { Name = Normalize(source.Name) });
+```
 
-Rules for members without a corresponding constructor parameter are applied
-to the selected destination.
+Construction evaluates `FromConstruct`; member initialization evaluates
+`Normalize`. Identical expressions written in both places also run twice.
+Creation-only initialization uses an object initializer. A constructor marked
+`SetsRequiredMembers` does not suppress an explicit member rule.
+
+Automatic constructor arguments can instead use the corresponding member
+rule: this applies to `Auto()`, unspecified `ByConvention()` arguments, and
+automatic constructor selection. The value is evaluated once and passed to the
+constructor; an ordinary setter is skipped. A necessary `required` initializer
+reuses that value. Names match exactly first, then by a unique case-insensitive
+match.
+
+An explicit `Auto()` member rule after an explicit constructor value remains a
+separate member operation. An unmentioned automatic member preserves its
+corresponding constructor value. `Ignore()` affects only the location where
+it is written; omitted optional constructor arguments keep their defaults.
+
+Reuse skips construction and applies eligible writable member rules.
 
 ## Reading `result`
 
-A value needed by an ordinary destination constructor must be available before
-that destination exists. Reading `result` in such a value produces
-[`MORPH0042`](../diagnostics/MORPH0042.md) on the affected creation paths.
-
-For a mapping that rejects a null Update destination, this rule is valid:
+A writable member can read the constructed destination:
 
 ```csharp
-builder.Map<Source, Destination>() // Destination(int value)
-    .NullDestinationHandling(NullDestinationHandling.Throw)
-    .Members((_, _, result, context) => new()
-    {
-        Value = context.Operation is MappingOperation.Create
-            ? 7
-            : result.Value + 10
-    });
+builder.Map<Source, Destination>()
+    .Construct(source => new(source.Value))
+    .Members((_, _, result) => new() { Value = result.Value + 10 });
 ```
 
-An Update may also need construction, for example for a null destination or
-a replacement selected by `Resolve`. Read `previous.Value` when a constructor
-argument needs the old destination's value, and check that it is present.
+An automatic constructor must obtain its arguments independently before a
+member value or condition can read `result`. A circular dependency, or an
+initializer that needs the not-yet-created result, produces
+[`MORPH0042`](../diagnostics/MORPH0042.md).
+
+Within a selected member branch, values are evaluated before writable member
+assignments. Adjacent expressions therefore read the initial `result`, so
+swapping two members works. Side effects inside user calls still apply.
+
+An Update may also construct a destination, for example for a null input or
+a replacement selected by `Resolve`. `previous` always refers to the original
+supplied destination; check that it is present before reading its value.
 
 Results returned by `ConstructUsing` or `ResolveUsing` follow the
 [factory result rules](construct-using.md#factory-result): creation-only

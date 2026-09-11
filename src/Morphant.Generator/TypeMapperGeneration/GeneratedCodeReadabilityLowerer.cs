@@ -201,10 +201,29 @@ internal static class GeneratedCodeReadabilityLowerer
         GeneratedLocalNameAllocator names)
     {
         if (mapping.CreateConstructor is not { TupleConstruction: not null } constructor ||
-            mapping.PostMemberControlFlow is not null || mapping.CreatePostMemberMappings.IsEmpty ||
+            mapping.PostMemberControlFlow is null && mapping.CreatePostMemberMappings.IsEmpty ||
             mapping.CreatePostMemberMappings.Any(member => member.IsResultDependent))
         {
             return mapping;
+        }
+
+        if (mapping.PostMemberControlFlow is { } controlFlow)
+        {
+            if (ReferencesResult(controlFlow, mapping.ResultLocalName)) return mapping;
+            var initialArguments = constructor.Arguments.Select(argument => argument with
+            {
+                ValueLocalName = argument.ValueLocalName ?? AllocateValueLocalName(names, argument.ParameterName),
+                ValueLocalTypeName = argument.ValueLocalTypeName ?? argument.TargetTypeName
+            }).ToImmutableArray();
+            return mapping with
+            {
+                CreateConstructor = constructor with { Arguments = initialArguments, DeferTupleConstruction = true },
+                CreateTupleReconstruction = new TypeMapperTupleReconstructionModel(
+                    constructor.TupleConstruction.Value,
+                    initialArguments.OrderBy(argument => argument.TupleElementOrdinal).Select(argument =>
+                        new TypeMapperTupleElementModel(argument.ParameterName, argument.ParameterName, argument.ValueLocalName))
+                        .ToImmutableArray())
+            };
         }
 
         var arguments = constructor.Arguments.Select(argument => argument with
@@ -236,6 +255,22 @@ internal static class GeneratedCodeReadabilityLowerer
             CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             CreateTupleReconstruction = null
         };
+    }
+
+    private static bool ReferencesResult(TypeMapperMemberControlFlowNode node, string resultName)
+    {
+        bool References(string? expression) => expression is not null &&
+            SyntaxFactory.ParseExpression(expression).DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
+                .Any(identifier => identifier.Identifier.ValueText == resultName &&
+                    !(identifier.Parent is MemberAccessExpressionSyntax access && access.Name == identifier));
+        return References(node.Condition) || References(node.SwitchExpression) || References(node.EvaluationExpression) ||
+            References(node.ThrowExpression) || node.Locals.Any(local => References(local.ValueExpression)) ||
+            node.MemberMappings.Any(member => member.IsResultDependent || References(member.ExplicitValueExpression)) ||
+            node.EvaluationContinuation is { } evaluation && ReferencesResult(evaluation, resultName) ||
+            node.WhenTrue is { } whenTrue && ReferencesResult(whenTrue, resultName) ||
+            node.WhenFalse is { } whenFalse && ReferencesResult(whenFalse, resultName) ||
+            Normalize(node.SwitchSections).Any(section => ReferencesResult(section.Branch, resultName)) ||
+            node.SwitchContinuation is { } continuation && ReferencesResult(continuation, resultName);
     }
 
     private static TypeMapperMappingModel LowerUpdateLeaf(

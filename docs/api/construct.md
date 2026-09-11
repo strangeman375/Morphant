@@ -38,8 +38,8 @@ The explicit name refers to the generated construction type, such as
 
 `Construct` runs for Create and for Update when no usable destination exists.
 It can be combined with [`Members`](members.md), but not with another
-destination method or `Convert`. A corresponding member rule can supply the
-constructor argument; see [constructor parameters](members.md#constructor-parameters).
+destination method or `Convert`. An automatic argument can use a corresponding
+member rule; see [constructor parameters](members.md#constructor-parameters).
 
 Related: [declarative expressions](declarative-expressions.md),
 [constructor selection](../settings/constructor-selection.md),

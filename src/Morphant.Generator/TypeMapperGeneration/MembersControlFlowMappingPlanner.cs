@@ -248,11 +248,13 @@ internal static class MembersControlFlowMappingPlanner
     {
         // A member block can follow construction when no selected argument or
         // creation-only initializer depends on that block.
+        var tupleDestination = mappings.Any(mapping =>
+            BclTupleShapePolicy.TryCreate(mapping.AnalysisContext.DestinationType) is not null);
         if (memberPlans.Any(plan => plan.Failure is not null || plan.Observation.Rules.Any(rule =>
                 rule.InvalidReason != MemberRuleInvalidReason.None ||
                 rule.Origin is not (MemberRuleOrigin.Convention or MemberRuleOrigin.Ignore) &&
                 rule.Lifecycle.HasFlag(MemberLifecycleDependency.Creation) &&
-                !rule.Lifecycle.HasFlag(MemberLifecycleDependency.ExistingDestination))))
+                !tupleDestination && !rule.Lifecycle.HasFlag(MemberLifecycleDependency.ExistingDestination))))
         {
             return false;
         }
@@ -261,8 +263,9 @@ internal static class MembersControlFlowMappingPlanner
         {
             if (node.Leaf is { } leaf)
                 return leaf.CreateFailure is null &&
-                    (leaf.CreateFactory is not null || leaf.CreateConstructor is { TupleConstruction: null } constructor &&
-                        constructor.Arguments.All(argument => argument.MemberValueTypeName is null));
+                    (leaf.CreateFactory is not null || leaf.CreateConstructor is { } constructor &&
+                        constructor.Arguments.All(argument => argument.MemberValueTypeName is null &&
+                            (constructor.TupleConstruction is null || argument.RuleOrigin is not null)));
             if (node.EvaluationContinuation is { } evaluation) return Independent(evaluation);
             if (node.Condition is not null) return Independent(node.WhenTrue!) && Independent(node.WhenFalse!);
             if (node.SwitchExpression is not null)

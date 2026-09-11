@@ -132,14 +132,13 @@ Code passed to `Construct`, `Resolve` and `Members` follows these rules:
 - use expressions, initialized locals, complete `if`/`switch` branches,
   returns and throws;
 - do not mutate `previous` or `result`;
-- do not capture local variables declared inside `Configure`;
-- do not rely on the order of independent member expressions or side effects.
+- do not capture local variables declared inside `Configure`.
 
-Only the selected branch is evaluated. Each expression needed by that branch
-is evaluated at most once; expressions used only by unselected branches or
-inapplicable rules are not evaluated. A local can express an explicit
-dependency. Use [`Convert`](api/convert.md) when loops, mutation, `try`,
-strict statement order or another ordinary C# algorithm would be clearer.
+Only the selected branch and applicable rules are evaluated. Separately
+written expressions remain separate evaluations; use a local to share a value.
+See [constructor and member composition](api/members.md#constructor-parameters)
+for automatic arguments and evaluation order. Use [`Convert`](api/convert.md)
+when loops, mutation, `try`, or another ordinary C# algorithm would be clearer.
 
 See [Nested mapping](nested-mapping.md) for `Map`, `Create` and `Update` rules,
 and [Constructor selection](settings/constructor-selection.md) for convention

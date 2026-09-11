@@ -120,7 +120,8 @@ internal readonly record struct TypeMapperConstructorMappingModel
     string ConstructedTypeName,
     ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments,
     ImmutableArray<TypeMapperLocalValueModel> ValueLocals = default,
-    TypeMapperTupleConstructionModel? TupleConstruction = null
+    TypeMapperTupleConstructionModel? TupleConstruction = null,
+    bool DeferTupleConstruction = false
 );
 
 internal readonly record struct TypeMapperTupleConstructionModel
@@ -139,7 +140,8 @@ internal readonly record struct TypeMapperTupleReconstructionModel
 internal readonly record struct TypeMapperTupleElementModel
 (
     string Name,
-    string AccessPath
+    string AccessPath,
+    string? InitialValueExpression = null
 );
 
 internal enum TypeMapperUpdateKind
