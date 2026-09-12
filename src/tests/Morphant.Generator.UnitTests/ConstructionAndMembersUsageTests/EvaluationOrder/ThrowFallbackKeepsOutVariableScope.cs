@@ -121,7 +121,10 @@ namespace TestCase
             }
             else
             {
-                throw new global::System.InvalidOperationException(int.TryParse(source.Name, out int parsed) ? parsed.ToString() : source.FromConstruct());
+                throw new global::System.InvalidOperationException(
+                    int.TryParse(source.Name, out int parsed)
+                        ? parsed.ToString()
+                        : source.FromConstruct());
             }
         }
 
@@ -138,7 +141,10 @@ namespace TestCase
             }
             else
             {
-                throw new global::System.InvalidOperationException(int.TryParse(source.Name, out int parsed) ? parsed.ToString() : source.FromConstruct());
+                throw new global::System.InvalidOperationException(
+                    int.TryParse(source.Name, out int parsed)
+                        ? parsed.ToString()
+                        : source.FromConstruct());
             }
         }
     }

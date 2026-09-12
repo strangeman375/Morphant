@@ -211,10 +211,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             return false;
         }
 
-        rewrittenExpression = rewritten
-            .WithoutTrivia()
-            .NormalizeWhitespace()
-            .ToFullString();
+        rewrittenExpression = UserExpressionLayout.Normalize(rewritten, expression).ToFullString();
         return true;
     }
 
@@ -257,10 +254,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             return false;
         }
 
-        rewrittenExpression = rewritten
-            .WithoutTrivia()
-            .NormalizeWhitespace()
-            .ToFullString();
+        rewrittenExpression = UserExpressionLayout.Normalize(rewritten, expression).ToFullString();
         return true;
     }
 

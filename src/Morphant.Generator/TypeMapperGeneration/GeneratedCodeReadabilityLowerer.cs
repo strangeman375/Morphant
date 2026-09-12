@@ -557,7 +557,7 @@ internal static class GeneratedCodeReadabilityLowerer
 
     private static bool NeedsMultilineFormatting(string expression)
     {
-        if (expression.Length <= 100) return false;
+        if (expression.Length <= 100 || UserExpressionLayout.HasLineBreak(expression)) return false;
 
         var evaluatedNodes = SyntaxFactory.ParseExpression(expression).DescendantNodesAndSelf(
             static node => node is not AnonymousFunctionExpressionSyntax).ToArray();

@@ -166,10 +166,7 @@ internal static class DeclarativeDependencyExpressionBuilder
                 return false;
             }
 
-            rewrittenExpression = directlyRewritten
-                .WithoutTrivia()
-                .NormalizeWhitespace()
-                .ToFullString();
+            rewrittenExpression = UserExpressionLayout.Normalize(directlyRewritten, expression).ToFullString();
             return true;
         }
 
@@ -203,9 +200,7 @@ internal static class DeclarativeDependencyExpressionBuilder
             return false;
         }
 
-        var normalized = (ExpressionSyntax)rewritten
-            .WithoutTrivia()
-            .NormalizeWhitespace();
+        var normalized = UserExpressionLayout.Normalize(rewritten, expression);
         var rewrittenCandidates = BuildRewrittenCandidates(
             normalized,
             candidates);
@@ -439,7 +434,6 @@ internal static class DeclarativeDependencyExpressionBuilder
                             replacements[original])
                         .WithTriviaFrom(original))
             .WithoutTrivia()
-            .NormalizeWhitespace()
             .ToFullString();
 
         return new TypeMapperDependencyExpressionNodeModel(
