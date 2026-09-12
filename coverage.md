@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/12/2026 - 14:21:16 |
-| Coverage date: | 09/12/2026 - 14:09:24 - 09/12/2026 - 14:21:12 |
+| Generated on: | 09/12/2026 - 16:53:44 |
+| Coverage date: | 09/12/2026 - 16:39:23 - 09/12/2026 - 16:53:39 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
-| Classes: | 372 |
-| Files: | 196 |
-| **Line coverage:** | 89.9% (39372 of 43759) |
-| Covered lines: | 39372 |
-| Uncovered lines: | 4387 |
-| Coverable lines: | 43759 |
-| Total lines: | 72769 |
-| **Branch coverage:** | 80.7% (14391 of 17824) |
-| Covered branches: | 14391 |
-| Total branches: | 17824 |
+| Classes: | 373 |
+| Files: | 197 |
+| **Line coverage:** | 90% (39432 of 43811) |
+| Covered lines: | 39432 |
+| Uncovered lines: | 4379 |
+| Coverable lines: | 43811 |
+| Total lines: | 72895 |
+| **Branch coverage:** | 80.7% (14454 of 17890) |
+| Covered branches: | 14454 |
+| Total branches: | 17890 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -67,11 +67,11 @@
 |Morphant.Build.Tasks.SnapshotException|100%||
 
 </details>
-<details><summary>Morphant.Generator - 89.8%</summary>
+<details><summary>Morphant.Generator - 89.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**89.8%**|**80.6%**|
+|**Morphant.Generator**|**89.9%**|**80.7%**|
 |Morphant.Generator.CodeWriter|100%|100%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -247,7 +247,7 @@
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticPipeline|75%|50%|
 |Morphant.Generator.TypeMapperGeneration.CallbackTransferFailureObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.CompletenessPlanningObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|75.7%|76.1%|
+|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|75.8%|76.3%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticAnalyzer|89.3%|80.5%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticDescriptors|100%||
@@ -307,14 +307,14 @@
 |Morphant.Generator.TypeMapperGeneration.DestinationOccupancyObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.ExplicitMemberMappingPlan|100%||
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlan|100%||
-|Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanne<br/>r|91.9%|75%|
+|Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanne<br/>r|92.2%|75%|
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanni<br/>ngResult|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticAnalyzer|100%|90%|
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticDescriptors|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticPipeline|100%|75%|
 |Morphant.Generator.TypeMapperGeneration.FlatteningIssueObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.GeneratedCodeReadabilityLowerer|94.6%|77.8%|
+|Morphant.Generator.TypeMapperGeneration.GeneratedCodeReadabilityLowerer|94.6%|78%|
 |Morphant.Generator.TypeMapperGeneration.GeneratedLocalNameAllocator|86.6%|72.9%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSet|88.7%|75%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSetResult|100%||
@@ -411,11 +411,12 @@
 |Morphant.Generator.TypeMapperGeneration.TypeMapperTupleElementModel|100%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperTupleReconstructionModel|100%||
 |Morphant.Generator.TypeMapperGeneration.UnsupportedDeclarativeControlFlow|100%||
-|Morphant.Generator.TypeMapperGeneration.UserResultMappingPlanner|14.3%|20.5%|
+|Morphant.Generator.TypeMapperGeneration.UserExpressionLayout|100%|94.6%|
+|Morphant.Generator.TypeMapperGeneration.UserResultMappingPlanner|14.4%|20.5%|
 |System.Collections.Generic.DictionaryExtensions|75%|50%|
 
 </details>
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #327](https://github.com/strangeman375/Morphant/actions/runs/34698277066).
+Full HTML report: download the **coverage** artifact from [CI run #337](https://github.com/strangeman375/Morphant/actions/runs/34705654211).
