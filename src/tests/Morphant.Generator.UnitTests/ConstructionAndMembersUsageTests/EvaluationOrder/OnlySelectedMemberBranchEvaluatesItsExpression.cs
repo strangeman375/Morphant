@@ -115,10 +115,8 @@ namespace TestCase
 
                 return result;
             }
-            else
-            {
-                throw new global::System.InvalidOperationException("blocked branch");
-            }
+
+            throw new global::System.InvalidOperationException("blocked branch");
         }
 
         private global::TestCase.Destination __Update(
@@ -132,10 +130,8 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                throw new global::System.InvalidOperationException("blocked branch");
-            }
+
+            throw new global::System.InvalidOperationException("blocked branch");
         }
     }
 }

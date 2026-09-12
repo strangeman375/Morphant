@@ -94,6 +94,9 @@
   literal expected sources and hint-name sets at the boundary.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes or compatibility branches without a user-facing need.
+- Omit redundant `else` blocks after terminating generated mapping branches
+  when the continuation does not need its own declaration scope. Preserve
+  conditional execution and user-written local scopes.
 - Keep synthesized checks, branches and invocations readable. Structure the
   generated mapping algorithm explicitly where it needs separate operations;
   do not use this as a reason to refactor user-written computations.

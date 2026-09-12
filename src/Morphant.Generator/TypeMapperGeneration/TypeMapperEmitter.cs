@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.Settings;
@@ -618,26 +619,19 @@ internal static class TypeMapperEmitter
 
         if (node.Condition is { } condition)
         {
-            writer.Line($"if ({condition})");
-            writer.Line("{");
-            writer.Indent();
-            WriteControlFlowCreateNode(
+            WriteTerminatingConditional(
                 writer,
-                node.WhenTrue!,
-                operationExpression,
-                localNames);
-            writer.Unindent();
-            writer.Line("}");
-            writer.Line("else");
-            writer.Line("{");
-            writer.Indent();
-            WriteControlFlowCreateNode(
-                writer,
-                node.WhenFalse!,
-                operationExpression,
-                localNames);
-            writer.Unindent();
-            writer.Line("}");
+                condition,
+                branchWriter => WriteControlFlowCreateNode(
+                    branchWriter,
+                    node.WhenTrue!,
+                    operationExpression,
+                    localNames),
+                branchWriter => WriteControlFlowCreateNode(
+                    branchWriter,
+                    node.WhenFalse!,
+                    operationExpression,
+                    localNames));
             return;
         }
 
@@ -656,6 +650,41 @@ internal static class TypeMapperEmitter
             node.Leaf!.Value,
             operationExpression,
             localNames);
+    }
+
+    private static void WriteTerminatingConditional(
+        CodeWriter writer,
+        string condition,
+        Action<CodeWriter> writeWhenTrue,
+        Action<CodeWriter> writeWhenFalse)
+    {
+        writer.OpenBlock($"if ({condition})");
+        writeWhenTrue(writer);
+        writer.CloseBlock();
+
+        var continuationWriter = new CodeWriter();
+        writeWhenFalse(continuationWriter);
+        var continuation = continuationWriter.ToString().TrimEnd('\r', '\n');
+
+        // Every mapping path returns or throws. The else only needs to stay
+        // when removing its block would widen a local's declaration scope.
+        var block = (BlockSyntax)SyntaxFactory.ParseStatement("{\r\n" + continuation + "\r\n}");
+        var requiresScope = block.Statements.SelectMany(statement =>
+                statement.DescendantNodesAndSelf(node => node is not
+                    (BlockSyntax or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
+            .Any(node => node is VariableDeclaratorSyntax or SingleVariableDesignationSyntax or
+                LocalFunctionStatementSyntax);
+
+        if (requiresScope)
+        {
+            writer.OpenBlock("else");
+            writer.Line(continuation);
+            writer.CloseBlock();
+            return;
+        }
+
+        writer.Line();
+        writer.Line(continuation);
     }
 
     private static void WriteControlFlowCreateLeaf(
@@ -2225,24 +2254,17 @@ internal static class TypeMapperEmitter
 
         if (node.Condition is { } condition)
         {
-            writer.Line($"if ({condition})");
-            writer.Line("{");
-            writer.Indent();
-            WriteControlFlowUpdateNode(
+            WriteTerminatingConditional(
                 writer,
-                node.WhenTrue!,
-                localNames);
-            writer.Unindent();
-            writer.Line("}");
-            writer.Line("else");
-            writer.Line("{");
-            writer.Indent();
-            WriteControlFlowUpdateNode(
-                writer,
-                node.WhenFalse!,
-                localNames);
-            writer.Unindent();
-            writer.Line("}");
+                condition,
+                branchWriter => WriteControlFlowUpdateNode(
+                    branchWriter,
+                    node.WhenTrue!,
+                    localNames),
+                branchWriter => WriteControlFlowUpdateNode(
+                    branchWriter,
+                    node.WhenFalse!,
+                    localNames));
             return;
         }
 
@@ -2458,34 +2480,27 @@ internal static class TypeMapperEmitter
 
         if (node.Condition is { } condition)
         {
-            writer.Line($"if ({condition})");
-            writer.Line("{");
-            writer.Indent();
-            WritePostMemberControlFlow(
+            WriteTerminatingConditional(
                 writer,
-                mapping,
-                node.WhenTrue!,
-                assignmentTarget,
-                localNames,
-                returnExpression,
-                operationExpression,
-                tupleReconstruction);
-            writer.Unindent();
-            writer.Line("}");
-            writer.Line("else");
-            writer.Line("{");
-            writer.Indent();
-            WritePostMemberControlFlow(
-                writer,
-                mapping,
-                node.WhenFalse!,
-                assignmentTarget,
-                localNames,
-                returnExpression,
-                operationExpression,
-                tupleReconstruction);
-            writer.Unindent();
-            writer.Line("}");
+                condition,
+                branchWriter => WritePostMemberControlFlow(
+                    branchWriter,
+                    mapping,
+                    node.WhenTrue!,
+                    assignmentTarget,
+                    localNames,
+                    returnExpression,
+                    operationExpression,
+                    tupleReconstruction),
+                branchWriter => WritePostMemberControlFlow(
+                    branchWriter,
+                    mapping,
+                    node.WhenFalse!,
+                    assignmentTarget,
+                    localNames,
+                    returnExpression,
+                    operationExpression,
+                    tupleReconstruction));
             return;
         }
 

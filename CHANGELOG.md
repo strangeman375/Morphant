@@ -25,6 +25,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Omit redundant `else` blocks on terminating mapping paths while preserving
+  local scopes.
 - Convert from `Destination` to the generated construction type, instead of
   `Option<Destination>`. In `Resolve`, return guarded `previous.Value` or the
   value from `TryGetValue`; unchanged local aliases are supported.
