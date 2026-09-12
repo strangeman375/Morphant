@@ -66,15 +66,19 @@ namespace TestCase
                     NonNullable = {|CS8625:null|},
                     DisallowsNull = {|CS8625:null|}
                 })
-                .Members(source => new()
+                .Members(source =>
                 {
-                    NonNullable = {|CS8604:(string?)null|},
-                    Nullable = (string?)null,
-                    AllowsNull = (string?)null,
-                    DisallowsNull = {|CS8604:(string?)null|},
-                    NullableValue = (int?)null
+                    string? value = ReadNullable();
+                    return new()
+                    {
+                        NonNullable = {|CS8604:value|},
+                        Nullable = value,
+                        AllowsNull = value,
+                        DisallowsNull = {|CS8604:value|},
+                        NullableValue = (int?)null
+                    };
                 })
-                .Members((source, result) =>
+                .Members((source, previous, result) =>
                 {
                     _ = source.GetType();
                     _ = result.GetType();
@@ -84,6 +88,8 @@ namespace TestCase
                     _ = {|CS8602:result.NestedNullable[0]|}.Length;
                     return new() { Nullable = result.Nullable };
                 });
+
+        private static string? ReadNullable() => null;
     }
 }
 """;

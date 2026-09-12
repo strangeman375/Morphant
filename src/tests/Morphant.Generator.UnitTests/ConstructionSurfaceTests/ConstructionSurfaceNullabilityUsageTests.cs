@@ -47,9 +47,13 @@ namespace TestCase
                 })
                 .Construct(source => new(
                     {|CS8625:null|}, null, null, {|CS8625:null|}, null))
-                .Construct(source => new(
-                    {|CS8604:(string?)null|}, (string?)null,
-                    (string?)null, {|CS8604:(string?)null|}, (int?)null))
+                .Construct(source =>
+                {
+                    string? value = ReadNullable();
+                    return new(
+                        {|CS8604:value|}, value,
+                        value, {|CS8604:value|}, (int?)null);
+                })
                 .Construct(source => {|CS8603:null|})
                 .Resolve((source, previous) =>
                 {
@@ -81,6 +85,8 @@ namespace TestCase
 
         private static Construction ConvertPossiblyNull(Destination? destination) =>
             {|CS8604:destination|};
+
+        private static string? ReadNullable() => null;
     }
 }
 """;
