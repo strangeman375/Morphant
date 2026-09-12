@@ -4,6 +4,11 @@ namespace Morphant.Generator.IntegrationTests;
 internal sealed class ConstructionDiagnosticsTests
 {
     [Test]
+    public void Unavailable_argument_reads_use_typed_recovery_and_keep_valid_updates() =>
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .StructuredResultValues.Scenario.VerifySuppressedUnavailableReads();
+
+    [Test]
     public void Previous_value_aliases_preserve_struct_copies_and_member_updates() =>
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
             .StructuredResultValues.Scenario.VerifyValueCopies();

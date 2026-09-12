@@ -812,7 +812,10 @@ internal static class DeclarativeControlFlowLowerer
                 ? MaterializeSwitchFallback(
                     result,
                     mapperType,
-                    mapping)
+                    mapping,
+                    reuseGoverningLocal: program.RuntimeLocals.Any(local =>
+                        local.CanReuseForSwitchFallback &&
+                        local.PlaceholderName == result.SwitchExpression))
                 : result;
         }
 
@@ -920,7 +923,8 @@ internal static class DeclarativeControlFlowLowerer
     private static TypeMapperControlFlowNode MaterializeSwitchFallback(
         TypeMapperControlFlowNode node,
         INamedTypeSymbol mapperType,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        bool reuseGoverningLocal)
     {
         var usedNames = UserResultMappingPlanner.BuildUsedLocalNames(
             mapperType);
@@ -936,6 +940,15 @@ internal static class DeclarativeControlFlowLowerer
             Leaf: null,
             ThrowExpression: BuildUnmatchedSwitchException(mapping),
             ThrowUsesCurrentMappingOperation: true);
+
+        if (reuseGoverningLocal)
+        {
+            return node with
+            {
+                SwitchContinuation = fallback,
+                SwitchRequiresFallback = false
+            };
+        }
 
         return node with
         {

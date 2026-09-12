@@ -132,6 +132,46 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             });
     }
 
+    [MorphantMapper]
+    public sealed partial class StoredGuardMapper : TypeMapper<StoredGuardMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>().Resolve((source, previous) =>
+            {
+                var available = previous.HasValue;
+                if (available && source.Matches(previous.Value)) return previous.Value;
+                return new(source.Id);
+            });
+    }
+
+    [MorphantMapper]
+    public sealed partial class StoredOutGuardMapper : TypeMapper<StoredOutGuardMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>().Resolve((source, previous) =>
+            {
+                var available = previous.TryGetValue(out var existing);
+                if (available && source.Matches(existing!)) return existing!;
+                return new(source.Id);
+            });
+    }
+
+    [MorphantMapper]
+    public sealed partial class StoredSwitchMapper : TypeMapper<StoredSwitchMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>().Resolve((source, previous) =>
+            {
+                global::Morphant.Generated.N_67f09af83af980a4facb4ee28cd92d98.DestinationConstruction selected =
+                    (source.BeforeSelection() && previous.HasValue && source.Matches(previous.Value)) switch
+                    {
+                        true => previous.Value,
+                        false => new global::Morphant.Generated.N_67f09af83af980a4facb4ee28cd92d98.DestinationConstruction(source.Id)
+                    };
+                return selected;
+            });
+    }
+
     public static class Scenario
     {
         public static void Verify()
@@ -143,12 +183,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             VerifyMapper(new ValueAliasMapper());
             VerifyMapper(new OutAliasMapper());
             VerifyMapper(new ConditionalAliasMapper());
-            VerifyStoredCondition();
+            VerifyMapper(new StoredGuardMapper());
+            VerifyMapper(new StoredOutGuardMapper());
+            VerifyStoredCondition(new AvailabilityAliasMapper());
+            VerifyStoredCondition(new StoredSwitchMapper());
         }
 
-        private static void VerifyStoredCondition()
+        private static void VerifyStoredCondition(ITypeMapper<Source, Destination> mapper)
         {
-            ITypeMapper<Source, Destination> mapper = new AvailabilityAliasMapper();
             var source = new Source { Id = 11 };
             Destination.Constructions = 0;
             var created = mapper.Create(source);
@@ -160,6 +202,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             if (!ReferenceEquals(created, mapper.Update(source, created)) ||
                 source.Selections != 3 || source.Comparisons != 1 || Destination.Constructions != 0)
                 throw new InvalidOperationException("A stored reuse condition was skipped or evaluated twice.");
+            source.Id = 17;
+            var replacement = mapper.Update(source, created);
+            if (ReferenceEquals(created, replacement) || replacement.Id != 17 ||
+                source.Selections != 4 || source.Comparisons != 2 || Destination.Constructions != 1)
+                throw new InvalidOperationException("A stored replacement condition changed evaluation count.");
         }
 
         private static void VerifyMapper(ITypeMapper<Source, Destination> mapper)
