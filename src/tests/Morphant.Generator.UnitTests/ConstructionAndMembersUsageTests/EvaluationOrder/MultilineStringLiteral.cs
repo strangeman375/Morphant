@@ -55,10 +55,10 @@ namespace TestCase
 }
 """;
 
-        var input = raw
-            ? source.Replace("@\"first\n  second\"",
-                "\"\"\"\n                        first\n                          second\n                        \"\"\"")
-            : source;
+        var input = source.Replace("\r\n", "\n");
+        if (raw)
+            input = input.Replace("@\"first\n  second\"",
+                "\"\"\"\n                        first\n                          second\n                        \"\"\"");
 
         // Complete mapper output; the companion surface snapshots cover the generated DSL.
         ConstructionAndMembersSnapshot.Verify(

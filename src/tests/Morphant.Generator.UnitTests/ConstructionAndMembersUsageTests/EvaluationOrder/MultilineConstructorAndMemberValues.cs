@@ -49,9 +49,11 @@ namespace TestCase
 }
 """;
 
+        var input = source.Replace("\r\n", "\n");
+
         // Complete mapper output; the companion surface snapshots cover the generated DSL.
         ConstructionAndMembersSnapshot.Verify(
-            crlf ? source.Replace("\n", "\r\n") : source,
+            crlf ? input.Replace("\n", "\r\n") : input,
             expectedMappers:
             [
             ("Morphant.Generated.TypeMapper.TestCase_Mapper.g.cs",
