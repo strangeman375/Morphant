@@ -488,13 +488,12 @@ internal static class StructuredConstructMappingPlanner
                             expression,
                             previousParameter,
                             configuration.Expression.SemanticModel,
-                            condition => TryEvaluateKnownCondition(
+                            condition => EvaluateStoredCondition(
                                 condition,
                                 previousParameter,
                                 previousAvailable,
                                 configuration.Expression.SemanticModel,
-                                cancellationToken,
-                                out var known) ? known : null,
+                                cancellationToken),
                             cancellationToken) is { } unavailableRead
                             ? BuildPreviousLeaf(
                                 mapping,
@@ -507,7 +506,14 @@ internal static class StructuredConstructMappingPlanner
                                         MappingPlanPhase.Construction),
                                     ImmutableArray<DeclarativeTerminalAliasSyntax>.Empty))
                             : null,
-                    preserveRuntimeLocals: true)
+                    preserveRuntimeLocals: true,
+                    evaluateStoredCondition: expression =>
+                        EvaluateStoredCondition(
+                            expression,
+                            previousParameter,
+                            previousAvailable,
+                            configuration.Expression.SemanticModel,
+                            cancellationToken))
                 ? DeclarativeControlFlowLowerer.PreserveLocalNames(
                     lowered)
                 : null;
@@ -753,6 +759,42 @@ internal static class StructuredConstructMappingPlanner
                 ThrowExpression: null,
                 ConditionDependency:
                     rewrittenCondition.Value.DependencyExpression);
+    }
+
+    private static bool? EvaluateStoredCondition(
+        ExpressionSyntax expression,
+        IParameterSymbol? previousParameter,
+        bool? previousAvailable,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        bool? Evaluate(ExpressionSyntax value) => EvaluateStoredCondition(
+            value, previousParameter, previousAvailable, semanticModel, cancellationToken);
+
+        if (TryEvaluateKnownCondition(expression, previousParameter,
+                previousAvailable, semanticModel, cancellationToken, out var known))
+        {
+            return known;
+        }
+
+        expression = UnwrapParentheses(expression);
+        if (expression is PrefixUnaryExpressionSyntax prefix &&
+            prefix.IsKind(SyntaxKind.LogicalNotExpression))
+        {
+            return !Evaluate(prefix.Operand);
+        }
+
+        if (expression is BinaryExpressionSyntax binary)
+        {
+            var left = Evaluate(binary.Left);
+            var right = Evaluate(binary.Right);
+            if (binary.IsKind(SyntaxKind.LogicalAndExpression) &&
+                (left == false || right == false)) return false;
+            if (binary.IsKind(SyntaxKind.LogicalOrExpression) &&
+                (left == true || right == true)) return true;
+        }
+
+        return null;
     }
 
     private static bool TryEvaluateKnownCondition(

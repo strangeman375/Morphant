@@ -7,6 +7,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     {
         public int Id { get; set; }
         public int Comparisons { get; set; }
+        public int Selections { get; set; }
+        public bool BeforeSelection() { Selections++; return true; }
         public bool Matches(Destination value)
         {
             Comparisons++;
@@ -116,6 +118,20 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             });
     }
 
+    [MorphantMapper]
+    public sealed partial class AvailabilityAliasMapper : TypeMapper<AvailabilityAliasMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>().Resolve((source, previous) =>
+            {
+                global::Morphant.Generated.N_67f09af83af980a4facb4ee28cd92d98.DestinationConstruction selected =
+                    source.BeforeSelection() && previous.HasValue && source.Matches(previous.Value)
+                        ? previous.Value
+                        : new global::Morphant.Generated.N_67f09af83af980a4facb4ee28cd92d98.DestinationConstruction(source.Id);
+                return selected;
+            });
+    }
+
     public static class Scenario
     {
         public static void Verify()
@@ -127,6 +143,23 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             VerifyMapper(new ValueAliasMapper());
             VerifyMapper(new OutAliasMapper());
             VerifyMapper(new ConditionalAliasMapper());
+            VerifyStoredCondition();
+        }
+
+        private static void VerifyStoredCondition()
+        {
+            ITypeMapper<Source, Destination> mapper = new AvailabilityAliasMapper();
+            var source = new Source { Id = 11 };
+            Destination.Constructions = 0;
+            var created = mapper.Create(source);
+            var fromNull = mapper.Update(source, null);
+            if (created.Id != 11 || fromNull.Id != 11 || source.Selections != 2 ||
+                source.Comparisons != 0 || Destination.Constructions != 2)
+                throw new InvalidOperationException("A stored reuse condition changed evaluation on an empty path.");
+            Destination.Constructions = 0;
+            if (!ReferenceEquals(created, mapper.Update(source, created)) ||
+                source.Selections != 3 || source.Comparisons != 1 || Destination.Constructions != 0)
+                throw new InvalidOperationException("A stored reuse condition was skipped or evaluated twice.");
         }
 
         private static void VerifyMapper(ITypeMapper<Source, Destination> mapper)

@@ -222,7 +222,8 @@ internal static class DeclarativeControlFlowPlanner
                                 "var",
                                 selector,
                                 IsConst: false,
-                                CanReuseForSwitchFallback: true));
+                                CanReuseForSwitchFallback: true,
+                                IsDslSelector: true));
                         declarationRuntimeLocalPlaceholders.Add(
                             local,
                             placeholder);
@@ -3105,7 +3106,8 @@ internal readonly record struct DeclarativeRuntimeLocalSyntax(
     string DeclarationType,
     ExpressionSyntax Initializer,
     bool IsConst,
-    bool CanReuseForSwitchFallback);
+    bool CanReuseForSwitchFallback,
+    bool IsDslSelector = false);
 
 internal readonly record struct DeclarativeBoundLocalSyntax(
     string PlaceholderName,

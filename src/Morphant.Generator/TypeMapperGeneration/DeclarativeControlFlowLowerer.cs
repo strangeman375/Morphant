@@ -210,7 +210,8 @@ internal static class DeclarativeControlFlowLowerer
         IEnumerable<string>? reservedLocalNames = null,
         Func<ExpressionSyntax, TypeMapperControlFlowNode?>?
             buildExpressionFailure = null,
-        bool preserveRuntimeLocals = false)
+        bool preserveRuntimeLocals = false,
+        Func<ExpressionSyntax, bool?>? evaluateStoredCondition = null)
     {
         var nestedMapUsages =
             new DeclarativeNestedMapUsageRegistry(paths);
@@ -596,6 +597,16 @@ internal static class DeclarativeControlFlowLowerer
                     return null;
                 }
 
+                if (conditional.Condition is IdentifierNameSyntax identifier &&
+                    program.RuntimeLocals.FirstOrDefault(local =>
+                        local.IsDslSelector &&
+                        local.PlaceholderName == identifier.Identifier.ValueText)
+                        is { Initializer: { } selector } &&
+                    evaluateStoredCondition?.Invoke(selector) is { } knownSelection)
+                {
+                    return knownSelection ? whenTrue : whenFalse;
+                }
+
                 if (buildCondition is not null &&
                     conditional.Condition.SyntaxTree == semanticModel.SyntaxTree)
                 {
@@ -743,7 +754,10 @@ internal static class DeclarativeControlFlowLowerer
             program.RuntimeLocals);
         if (preserveRuntimeLocals)
         {
-            requiredLocals.UnionWith(program.RuntimeLocals.Select(
+            requiredLocals.UnionWith(program.RuntimeLocals.Where(local =>
+                !local.IsDslSelector ||
+                lowered.DescendantLocal(local.PlaceholderName)?.ValueExpression
+                    is not ("true" or "false")).Select(
                 static local => local.PlaceholderName));
         }
 
