@@ -38,6 +38,7 @@ namespace TestCase
                 .ConstructUsing(source => new Destination(
                     string.Concat(
                         source.FromConstruct(),
+
                         source.Name))
                 {
                     Name = string.Concat(
@@ -125,6 +126,7 @@ namespace TestCase
         private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(
             string.Concat(
                 source.FromConstruct(),
+
                 source.Name))
         {
             Name = string.Concat(

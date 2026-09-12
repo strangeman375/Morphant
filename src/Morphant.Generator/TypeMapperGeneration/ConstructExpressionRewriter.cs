@@ -971,6 +971,19 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             .WithTriviaFrom(node);
     }
 
+    public override SyntaxNode? VisitLiteralExpression(LiteralExpressionSyntax node)
+    {
+        // Indenting a physical newline in a literal changes its value. Escape
+        // the token's content while preserving the surrounding expression layout.
+        return node.IsKind(SyntaxKind.StringLiteralExpression) &&
+               UserExpressionLayout.HasLineBreak(node.Token.Text)
+            ? SyntaxFactory.LiteralExpression(
+                    SyntaxKind.StringLiteralExpression,
+                    SyntaxFactory.Literal(node.Token.ValueText))
+                .WithTriviaFrom(node)
+            : base.VisitLiteralExpression(node);
+    }
+
     public override SyntaxNode? VisitImplicitObjectCreationExpression(
         ImplicitObjectCreationExpressionSyntax node)
     {

@@ -185,7 +185,8 @@ namespace TestCase
                 return null;
             }
 
-            if (context.Operation == global::Morphant.Context.MappingOperation.Update && previous.TryGetValue(out int value))
+            if (context.Operation == global::Morphant.Context.MappingOperation.Update &&
+                previous.TryGetValue(out int value))
             {
                 return value + source.Value;
             }

@@ -53,9 +53,15 @@ internal static class UserExpressionLayout
         return normalized.ReplaceNodes(replacements.Keys, (node, _) => replacements[node]);
     }
 
-    private static SyntaxTriviaList IndentTrivia(SyntaxTriviaList trivia, string indentation) =>
-        SyntaxFactory.ParseLeadingTrivia(trivia.ToFullString()
-            .Replace("\r\n", "\n").Replace("\n", "\r\n" + indentation));
+    private static SyntaxTriviaList IndentTrivia(SyntaxTriviaList trivia, string indentation)
+    {
+        var lines = trivia.ToFullString().Replace("\r\n", "\n").Split('\n');
+        for (var index = 1; index < lines.Length; index++)
+            lines[index] = index == lines.Length - 1 || !string.IsNullOrWhiteSpace(lines[index])
+                ? indentation + lines[index]
+                : string.Empty;
+        return SyntaxFactory.ParseLeadingTrivia(string.Join("\r\n", lines));
+    }
 
     public static T Normalize<T>(T syntax, SyntaxNode? source = null)
         where T : CSharpSyntaxNode

@@ -558,7 +558,9 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source, global::Morphant.Context.MappingContext context) => context.Operation == global::Morphant.Context.MappingOperation.Create ? this._factory() : new global::TestCase.Destination(2);
+        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source, global::Morphant.Context.MappingContext context) => context.Operation == global::Morphant.Context.MappingOperation.Create
+            ? this._factory()
+            : new global::TestCase.Destination(2);
     }
 }
 """;

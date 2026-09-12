@@ -103,7 +103,8 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
             => __ConvertDestination(source);
 
-        private global::TestCase.Destination __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(global::TestCase.TestMapper.Read(source));
+        private global::TestCase.Destination __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(
+            global::TestCase.TestMapper.Read(source));
 
         #pragma warning restore CS0618
     }
@@ -225,7 +226,8 @@ namespace TestCase
         private async global::System.Threading.Tasks.Task<int> __ConvertDestination(global::TestCase.Source? source)
         {
             await global::System.Threading.Tasks.Task.Yield();
-            return ((source!.ReadText()is { } conditionalReceiver ? global::TransferExtensions.TextExtensions.Measure(conditionalReceiver) : default(int? )) ?? 0) + source.Text.Length;
+            return ((source!.ReadText()is { } conditionalReceiver ? global::TransferExtensions.TextExtensions.Measure(conditionalReceiver) : default(int? )) ?? 0) +
+                source.Text.Length;
         }
 
         #pragma warning restore CS8602

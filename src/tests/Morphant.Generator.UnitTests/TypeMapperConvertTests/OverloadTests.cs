@@ -496,7 +496,9 @@ namespace TestCase
                     ? global::Morphant.Option<int>.None
                     : global::Morphant.Option<int>.Some(destination.Value));
 
-        private int? __ConvertDestination(global::TestCase.Source? source, global::Morphant.Option<int> previous) => previous.HasValue ? previous.Value + (source?.Value ?? 0) : source?.Value;
+        private int? __ConvertDestination(global::TestCase.Source? source, global::Morphant.Option<int> previous) => previous.HasValue
+            ? previous.Value + (source?.Value ?? 0)
+            : source?.Value;
     }
 }
 """;
