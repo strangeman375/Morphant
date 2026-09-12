@@ -17,6 +17,8 @@ internal sealed class ConstructionSurfaceNullabilityUsageTests
 
 using System.Diagnostics.CodeAnalysis;
 using Morphant;
+using Morphant.Context;
+using D = Morphant.Delegates;
 using Construction = Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationConstruction;
 
 namespace TestCase
@@ -77,14 +79,113 @@ namespace TestCase
                     return {|CS8604:existing|};
                 })
                 .Resolve((source, previous) => {|CS8603:null|})
-                .ConstructUsing(source => null)
-                .ResolveUsing((source, previous) => null);
+                .Construct((source, context) =>
+                {
+                    _ = source.GetType();
+                    _ = context.Operation;
+                    return new("name", null, null, "name", null);
+                })
+                .Resolve((source, previous, context) =>
+                {
+                    _ = source.GetType();
+                    _ = context.Operation;
+                    Option<Destination> supplied = previous;
+                    if (supplied.TryGetValue(out var existing))
+                        return existing;
+
+                    return new("name", null, null, "name", null);
+                })
+                .ConstructUsing(source =>
+                {
+                    _ = source.GetType();
+                    return null;
+                })
+                .ConstructUsing((source, context) =>
+                {
+                    _ = source.GetType();
+                    _ = context.Operation;
+                    return null;
+                })
+                .ResolveUsing((source, previous) =>
+                {
+                    _ = source.GetType();
+                    Option<Destination> supplied = previous;
+                    return supplied.TryGetValue(out var existing) ? existing : null;
+                })
+                .ResolveUsing((source, previous, context) =>
+                {
+                    _ = source.GetType();
+                    _ = context.Operation;
+                    Option<Destination> supplied = previous;
+                    return supplied.TryGetValue(out var existing) ? existing : null;
+                })
+                .Convert(source =>
+                {
+                    _ = {|CS8602:source|}.GetType();
+                    return null;
+                })
+                .Convert((source, previous) =>
+                {
+                    _ = {|CS8602:source|}.GetType();
+                    Option<Destination> supplied = previous;
+                    return supplied.TryGetValue(out var existing) ? existing : null;
+                })
+                .Convert((source, previous, context) =>
+                {
+                    _ = {|CS8602:source|}.GetType();
+                    _ = context.Operation;
+                    Option<Destination> supplied = previous;
+                    return supplied.TryGetValue(out var existing) ? existing : null;
+                });
 
         private static Construction ConvertExisting(Destination destination) =>
             destination;
 
         private static Construction ConvertPossiblyNull(Destination? destination) =>
             {|CS8604:destination|};
+
+        private static void CheckExtensionParameters(
+            MappingBuilder<TestMapper, Source?, Destination?> builder)
+        {
+            builder.Construct({|CS8604:Missing<D.Construct<Source, Construction>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Construct(Present<D.Construct<Source, Construction>>());
+            builder.Construct({|CS8604:Missing<D.Construct<Source, MappingContextMarker, Construction>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Construct(Present<D.Construct<Source, MappingContextMarker, Construction>>());
+            builder.Resolve({|CS8604:Missing<D.Resolve<Source, Destination, Construction>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Resolve(Present<D.Resolve<Source, Destination, Construction>>());
+            builder.Resolve({|CS8604:Missing<D.Resolve<Source, Destination, MappingContextMarker, Construction>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Resolve(Present<D.Resolve<Source, Destination, MappingContextMarker, Construction>>());
+            builder.ConstructUsing({|CS8604:Missing<D.ConstructUsing<Source, Destination?>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .ConstructUsing(Present<D.ConstructUsing<Source, Destination?>>());
+            builder.ConstructUsing({|CS8604:Missing<D.ConstructUsing<Source, MappingContext, Destination?>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .ConstructUsing(Present<D.ConstructUsing<Source, MappingContext, Destination?>>());
+            builder.ResolveUsing({|CS8604:Missing<D.ResolveUsing<Source, Destination, Destination?>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .ResolveUsing(Present<D.ResolveUsing<Source, Destination, Destination?>>());
+            builder.ResolveUsing({|CS8604:Missing<D.ResolveUsing<Source, Destination, MappingContext, Destination?>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .ResolveUsing(Present<D.ResolveUsing<Source, Destination, MappingContext, Destination?>>());
+            builder.Convert({|CS8604:Missing<D.Convert<Source?, Destination?>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Convert(Present<D.Convert<Source?, Destination?>>());
+            builder.Convert({|CS8604:Missing<D.Convert<Source?, Destination, Destination?>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Convert(Present<D.Convert<Source?, Destination, Destination?>>());
+            builder.Convert({|CS8604:Missing<D.Convert<Source?, Destination, MappingContext, Destination?>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Convert(Present<D.Convert<Source?, Destination, MappingContext, Destination?>>());
+        }
+
+        private static TValue? Missing<TValue>() where TValue : class => null;
+
+        private static TValue Present<TValue>() where TValue : class =>
+            throw new System.NotSupportedException();
 
         private static string? ReadNullable() => null;
     }

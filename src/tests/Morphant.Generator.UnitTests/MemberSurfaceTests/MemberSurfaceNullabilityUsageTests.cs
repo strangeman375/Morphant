@@ -18,6 +18,9 @@ internal sealed class MemberSurfaceNullabilityUsageTests
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using Morphant;
+using Morphant.Context;
+using D = Morphant.Delegates;
+using Members = Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers;
 
 namespace TestCase
 {
@@ -78,6 +81,28 @@ namespace TestCase
                         NullableValue = (int?)null
                     };
                 })
+                .Members((source, previous) =>
+                {
+                    _ = source.GetType();
+                    Option<Destination> supplied = previous;
+                    if (supplied.TryGetValue(out var existing))
+                    {
+                        _ = existing.GetType();
+                        return new() { Nullable = existing.Nullable };
+                    }
+
+                    return new();
+                })
+                .Members((source, previous, result, context) =>
+                {
+                    _ = source.GetType();
+                    _ = result.GetType();
+                    _ = context.Operation;
+                    Option<Destination> supplied = previous;
+                    return supplied.TryGetValue(out var existing)
+                        ? new() { Nullable = existing.Nullable }
+                        : new() { Nullable = result.Nullable };
+                })
                 .Members((source, previous, result) =>
                 {
                     _ = source.GetType();
@@ -88,6 +113,28 @@ namespace TestCase
                     _ = {|CS8602:result.NestedNullable[0]|}.Length;
                     return new() { Nullable = result.Nullable };
                 });
+
+        private static void CheckExtensionParameters(
+            MappingBuilder<TestMapper, Source?, Destination?> builder)
+        {
+            builder.Members({|CS8604:Missing<D.Members<Source, Members>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Members(Present<D.Members<Source, Members>>());
+            builder.Members({|CS8604:Missing<D.Members<Source, Destination, Members>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Members(Present<D.Members<Source, Destination, Members>>());
+            builder.Members({|CS8604:Missing<D.Members<Source, Destination, Destination, Members>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Members(Present<D.Members<Source, Destination, Destination, Members>>());
+            builder.Members({|CS8604:Missing<D.Members<Source, Destination, Destination, MappingContextMarker, Members>>()|});
+            {|CS8604:Missing<MappingBuilder<TestMapper, Source?, Destination?>>()|}
+                .Members(Present<D.Members<Source, Destination, Destination, MappingContextMarker, Members>>());
+        }
+
+        private static TValue? Missing<TValue>() where TValue : class => null;
+
+        private static TValue Present<TValue>() where TValue : class =>
+            throw new System.NotSupportedException();
 
         private static string? ReadNullable() => null;
     }
