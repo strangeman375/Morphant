@@ -128,6 +128,25 @@
   parentheses and formatting may adapt the code to its generated context.
   These adaptations must preserve its semantics and computation structure.
 
+## Structured construction results (approved)
+
+- The generated construction type converts implicitly from `Destination`,
+  not `Option<Destination>`. The incoming `previous` parameter remains
+  `Option<Destination>`; reuse returns its available value.
+- `Resolve` may return the existing destination from `previous.Value`, a
+  successful `previous.TryGetValue` binding, or an unchanged local alias of
+  either, as well as a generated `DestinationConstruction` expression.
+  `Construct` may return only a generated construction expression.
+- Arbitrary destination objects belong exclusively to `ConstructUsing` and
+  `ResolveUsing`. Diagnose other structured results with a dedicated error
+  directing the user to the corresponding factory method. Determine result
+  kind by semantic type and provenance, including aliases and branches;
+  never infer it from names or object-creation syntax alone, or inspect
+  arbitrary called methods to prove object identity.
+- Preserve the existing previous-availability and null/default construction
+  diagnostics. Cover valid reuse, invalid provenance, local aliases and
+  branches with diagnostics, runtime scenarios and complete source snapshots.
+
 ## Construction and member composition (approved 2026-09-11)
 
 - Explicit constructor and member values are independent evaluations, even
