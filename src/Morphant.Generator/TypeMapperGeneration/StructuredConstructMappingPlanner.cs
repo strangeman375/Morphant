@@ -807,6 +807,15 @@ internal static class StructuredConstructMappingPlanner
     {
         condition = UnwrapParentheses(condition);
 
+        if (StructuredPreviousValuePolicy.TryGetBooleanInitializer(
+                condition, semanticModel, cancellationToken, out var initializer) &&
+            EvaluateStoredCondition(initializer, previousParameter, previousAvailable,
+                semanticModel, cancellationToken) is { } storedValue)
+        {
+            value = storedValue;
+            return true;
+        }
+
         if (semanticModel.GetConstantValue(
                 condition,
                 cancellationToken) is

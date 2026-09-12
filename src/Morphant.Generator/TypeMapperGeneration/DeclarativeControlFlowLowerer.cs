@@ -217,7 +217,7 @@ internal static class DeclarativeControlFlowLowerer
             new DeclarativeNestedMapUsageRegistry(paths);
 
         TypeMapperRewrittenDependencyExpression?
-            RewriteDependency(ExpressionSyntax expression)
+            RewriteDependency(ExpressionSyntax expression, bool preserveBooleanLocal = false)
         {
             if (expression is IdentifierNameSyntax identifier &&
                 program.RuntimeLocalPlaceholders.Values.Contains(
@@ -281,7 +281,12 @@ internal static class DeclarativeControlFlowLowerer
                     sourceParameter,
                     sourceName,
                     previousParameter,
-                    previousSubstitution,
+                    preserveBooleanLocal && previousSubstitution is { } previous
+                        ? previous with
+                        {
+                            HasValueExpression = previous.OptionExpression + ".HasValue"
+                        }
+                        : previousSubstitution,
                     resultParameter,
                     resultName,
                     contextParameter,
@@ -376,6 +381,60 @@ internal static class DeclarativeControlFlowLowerer
             }
         }
 
+        TypeMapperControlFlowNode? CheckExpression(ExpressionSyntax? expression) =>
+            expression is not null && expression.SyntaxTree == semanticModel.SyntaxTree
+                ? buildExpressionFailure?.Invoke(expression) : null;
+
+        bool? EvaluateSelection(ExpressionSyntax expression)
+        {
+            if (expression is IdentifierNameSyntax identifier &&
+                program.RuntimeLocals.FirstOrDefault(local =>
+                    local.PlaceholderName == identifier.Identifier.ValueText)
+                    is { Initializer: { } initializer })
+            {
+                return evaluateStoredCondition?.Invoke(initializer);
+            }
+            return expression.SyntaxTree == semanticModel.SyntaxTree
+                ? evaluateStoredCondition?.Invoke(expression) : null;
+        }
+
+        DeclarativeControlFlowSyntaxNode? SelectKnownSwitch(DeclarativeSwitchSyntaxNode node)
+        {
+            if (EvaluateSelection(node.GoverningExpression) is not { } input)
+                return null;
+
+            var fallback = node.Continuation;
+            foreach (var section in node.Sections)
+            {
+                foreach (var label in section.Labels)
+                {
+                    if (label.Kind == DeclarativeSwitchLabelKind.Default)
+                    {
+                        fallback = section.Branch;
+                        continue;
+                    }
+                    var matches = label.Pattern is { } pattern
+                        ? DeclarativeExecutionFacts.MatchConstantPattern(
+                            input, pattern, semanticModel, cancellationToken)
+                        : label.Value is { } value &&
+                          semanticModel.GetConstantValue(value, cancellationToken)
+                              is { HasValue: true, Value: bool expected }
+                            ? input == expected : (bool?)null;
+                    if (matches is null) return null;
+                    if (matches == false) continue;
+                    if (label.WhenCondition is { } guard)
+                    {
+                        // A guard may have side effects. Leave it in the switch.
+                        if (semanticModel.GetConstantValue(guard, cancellationToken)
+                            is not { HasValue: true, Value: bool enabled }) return null;
+                        if (!enabled) continue;
+                    }
+                    return section.Branch;
+                }
+            }
+            return fallback;
+        }
+
         TypeMapperControlFlowNode? BuildNode(
             DeclarativeControlFlowSyntaxNode node)
         {
@@ -383,11 +442,13 @@ internal static class DeclarativeControlFlowLowerer
 
             if (node is DeclarativeLeafSyntaxNode leaf)
             {
-                return buildLeaf(leaf);
+                return CheckExpression(leaf.DirectExpression ?? leaf.ObjectCreation) ??
+                    buildLeaf(leaf);
             }
 
             if (node is DeclarativeThrowSyntaxNode throwNode)
             {
+                if (CheckExpression(throwNode.Expression) is { } failure) return failure;
                 var throwExpression =
                     RewriteDependency(throwNode.Expression);
 
@@ -406,6 +467,11 @@ internal static class DeclarativeControlFlowLowerer
 
             if (node is DeclarativeLocalDeclarationsSyntaxNode locals)
             {
+                if (!locals.Initializers.IsDefault)
+                {
+                    foreach (var expression in locals.Initializers)
+                        if (CheckExpression(expression) is { } failure) return failure;
+                }
                 var next = BuildNode(locals.Next);
 
                 if (next is null)
@@ -430,14 +496,11 @@ internal static class DeclarativeControlFlowLowerer
                         return null;
                     }
 
-                    if (buildExpressionFailure?.Invoke(local.Initializer) is
-                        { } expressionFailure)
-                    {
-                        return expressionFailure;
-                    }
-
                     var initializer =
-                        RewriteDependency(local.Initializer);
+                        RewriteDependency(local.Initializer,
+                            preserveBooleanLocal: preserveRuntimeLocals && !local.IsDslSelector &&
+                                semanticModel.GetTypeInfo(local.Initializer, cancellationToken)
+                                    .Type?.SpecialType == SpecialType.System_Boolean);
 
                     if (initializer is null)
                     {
@@ -529,6 +592,7 @@ internal static class DeclarativeControlFlowLowerer
 
             if (node is DeclarativeEvaluationSyntaxNode evaluation)
             {
+                if (CheckExpression(evaluation.Expression) is { } failure) return failure;
                 if (!DeclarativeNestedMapExpression
                         .IsNestedUpdateStatement(
                             evaluation.Expression,
@@ -588,6 +652,7 @@ internal static class DeclarativeControlFlowLowerer
 
             if (node is DeclarativeConditionalSyntaxNode conditional)
             {
+                if (CheckExpression(conditional.Condition) is { } failure) return failure;
                 var whenTrue = BuildNode(conditional.WhenTrue);
                 var whenFalse = BuildNode(conditional.WhenFalse);
 
@@ -665,6 +730,16 @@ internal static class DeclarativeControlFlowLowerer
             }
 
             var switchNode = (DeclarativeSwitchSyntaxNode)node;
+            if (CheckExpression(switchNode.GoverningExpression) is { } switchFailure)
+                return switchFailure;
+            if (SelectKnownSwitch(switchNode) is { } selectedSyntax)
+            {
+                var selected = BuildNode(selectedSyntax);
+                return selected is not null && buildCondition is not null &&
+                    switchNode.GoverningExpression.SyntaxTree == semanticModel.SyntaxTree
+                    ? buildCondition(switchNode.GoverningExpression, selected, selected)
+                    : selected;
+            }
             var governingExpression = RewriteDependency(
                 switchNode.GoverningExpression);
 
@@ -751,15 +826,8 @@ internal static class DeclarativeControlFlowLowerer
 
         var requiredLocals = CollectRequiredLocals(
             lowered,
-            program.RuntimeLocals);
-        if (preserveRuntimeLocals)
-        {
-            requiredLocals.UnionWith(program.RuntimeLocals.Where(local =>
-                !local.IsDslSelector ||
-                lowered.DescendantLocal(local.PlaceholderName)?.ValueExpression
-                    is not ("true" or "false")).Select(
-                static local => local.PlaceholderName));
-        }
+            program.RuntimeLocals,
+            preserveRuntimeLocals);
 
         var pruned = PruneLocals(lowered, requiredLocals);
         var names = AllocateLocalNames(
@@ -941,17 +1009,21 @@ internal static class DeclarativeControlFlowLowerer
 
     private static HashSet<string> CollectRequiredLocals(
         TypeMapperControlFlowNode root,
-        ImmutableArray<DeclarativeRuntimeLocalSyntax> locals)
+        ImmutableArray<DeclarativeRuntimeLocalSyntax> locals,
+        bool preserveRuntimeLocals)
     {
         var expressions = EnumerateExpressions(
                 root,
-                includeLocalInitializers: false)
+                includeLocalInitializers: preserveRuntimeLocals)
             .ToArray();
         var required = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var local in locals)
         {
-            if (expressions.Any(expression =>
+            if (preserveRuntimeLocals && (!local.IsDslSelector ||
+                    root.DescendantLocal(local.PlaceholderName)?.ValueExpression
+                        is not ("true" or "false")) ||
+                expressions.Any(expression =>
                     ReferencesIdentifier(
                         expression,
                         local.PlaceholderName)))

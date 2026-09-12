@@ -36,6 +36,17 @@ internal sealed class DeclarativeExecutionFacts(
         return false;
     }
 
+    public static bool? MatchConstantPattern(
+        object? input, PatternSyntax pattern, SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var facts = new DeclarativeExecutionFacts(semanticModel, null, null, null,
+            null, cancellationToken: cancellationToken);
+        return facts.TryPattern(input, pattern,
+            new HashSet<ISymbol>(SymbolEqualityComparer.Default), out var matches)
+            ? matches : null;
+    }
+
     public bool References(ExpressionSyntax expression, IParameterSymbol parameter)
     {
         var visiting = new HashSet<ISymbol>(SymbolEqualityComparer.Default);

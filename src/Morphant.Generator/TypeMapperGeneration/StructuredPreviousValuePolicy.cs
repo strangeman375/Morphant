@@ -23,6 +23,13 @@ internal static class StructuredPreviousValuePolicy
             return null;
         }
 
+        if (expression is InvocationExpressionSyntax
+            { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" } } &&
+            semanticModel.GetConstantValue(expression, cancellationToken).HasValue)
+        {
+            return null;
+        }
+
         if (expression is MemberAccessExpressionSyntax access &&
             semanticModel.GetSymbolInfo(access, cancellationToken).Symbol is
                 IPropertySymbol { Name: "Value" } property &&
@@ -53,6 +60,32 @@ internal static class StructuredPreviousValuePolicy
                     ? null : Find(binary.Right));
         }
 
+        if (expression is SwitchExpressionSyntax selection)
+        {
+            if (Find(selection.GoverningExpression) is { } inputRead)
+                return inputRead;
+
+            var input = evaluateCondition(selection.GoverningExpression);
+            foreach (var arm in selection.Arms)
+            {
+                var matches = input is { } value
+                    ? DeclarativeExecutionFacts.MatchConstantPattern(
+                        value, arm.Pattern, semanticModel, cancellationToken)
+                    : null;
+                if (matches == false) continue;
+                if (arm.WhenClause is { } guard)
+                {
+                    if (Find(guard.Condition) is { } guardRead) return guardRead;
+                    var enabled = evaluateCondition(guard.Condition);
+                    if (enabled == false) continue;
+                    if (enabled is null) matches = null;
+                }
+                if (Find(arm.Expression) is { } read) return read;
+                if (matches == true) break;
+            }
+            return null;
+        }
+
         foreach (var child in expression.DescendantNodes(
                      node => node == expression || node is not ExpressionSyntax)
                      .OfType<ExpressionSyntax>())
@@ -64,6 +97,24 @@ internal static class StructuredPreviousValuePolicy
         }
 
         return null;
+    }
+
+    public static bool TryGetBooleanInitializer(
+        ExpressionSyntax expression, SemanticModel semanticModel,
+        CancellationToken cancellationToken, out ExpressionSyntax initializer)
+    {
+        if (semanticModel.GetSymbolInfo(expression, cancellationToken).Symbol is
+                ILocalSymbol { Type.SpecialType: SpecialType.System_Boolean } local &&
+            local.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(cancellationToken)
+                is VariableDeclaratorSyntax { Initializer.Value: { } value } &&
+            value.Span.End < expression.SpanStart &&
+            IsUnchanged(local, expression, semanticModel, cancellationToken))
+        {
+            initializer = value;
+            return true;
+        }
+        initializer = null!;
+        return false;
     }
 
     public static bool TryGetOrigin(

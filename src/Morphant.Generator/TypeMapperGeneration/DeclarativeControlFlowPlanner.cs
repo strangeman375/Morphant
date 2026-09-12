@@ -1480,11 +1480,12 @@ internal static class DeclarativeControlFlowPlanner
             }
         }
 
-        return placeholders.Count == 0
-            ? next
-            : new DeclarativeLocalDeclarationsSyntaxNode(
-                placeholders.ToImmutable(),
-                next);
+        return new DeclarativeLocalDeclarationsSyntaxNode(
+            placeholders.ToImmutable(),
+            next,
+            declaration.Declaration.Variables
+                .Where(variable => variable.Initializer is not null)
+                .Select(variable => variable.Initializer!.Value).ToImmutableArray());
     }
 
     private static DeclarativeControlFlowSyntaxNode?
@@ -3117,7 +3118,8 @@ internal abstract record DeclarativeControlFlowSyntaxNode;
 
 internal sealed record DeclarativeLocalDeclarationsSyntaxNode(
     ImmutableArray<string> RuntimeLocalPlaceholders,
-    DeclarativeControlFlowSyntaxNode Next)
+    DeclarativeControlFlowSyntaxNode Next,
+    ImmutableArray<ExpressionSyntax> Initializers = default)
     : DeclarativeControlFlowSyntaxNode;
 
 internal sealed record DeclarativeEvaluationSyntaxNode(
