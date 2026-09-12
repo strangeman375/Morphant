@@ -807,8 +807,14 @@ internal static class StructuredConstructMappingPlanner
     {
         condition = UnwrapParentheses(condition);
 
-        if (StructuredPreviousValuePolicy.TryGetBooleanInitializer(
+        // Stored availability guards need specialization for Create and Update.
+        // Ordinary boolean locals retain their user-written branches.
+        if (previousParameter is not null && previousAvailable is not null &&
+            StructuredPreviousValuePolicy.TryGetBooleanInitializer(
                 condition, semanticModel, cancellationToken, out var initializer) &&
+            !semanticModel.GetConstantValue(initializer, cancellationToken).HasValue &&
+            ReferencesPreviousAvailability(initializer, previousParameter,
+                semanticModel, cancellationToken) &&
             EvaluateStoredCondition(initializer, previousParameter, previousAvailable,
                 semanticModel, cancellationToken) is { } storedValue)
         {
@@ -928,7 +934,11 @@ internal static class StructuredConstructMappingPlanner
                     access,
                     previousParameter,
                     semanticModel,
-                    cancellationToken));
+                    cancellationToken) ||
+                StructuredPreviousValuePolicy.TryGetBooleanInitializer(
+                    access, semanticModel, cancellationToken, out var initializer) &&
+                ReferencesPreviousAvailability(initializer, previousParameter,
+                    semanticModel, cancellationToken));
     }
 
     private static bool IsPreviousAvailabilityAccess(

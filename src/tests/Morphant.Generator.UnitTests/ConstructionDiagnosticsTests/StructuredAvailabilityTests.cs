@@ -6,6 +6,24 @@ namespace Morphant.Generator.UnitTests.ConstructionDiagnosticsTests;
 [TestFixture]
 internal sealed class StructuredAvailabilityTests
 {
+    [TestCase("Construct", "true")]
+    [TestCase("Construct", "false")]
+    [TestCase("Resolve", "true")]
+    [TestCase("Resolve", "false")]
+    public void Keeps_ordinary_boolean_local_branches(string method, string value)
+    {
+        var source = Source.Replace("__BODY__",
+            "var chooseFirst = " + value + "; if (chooseFirst) return new(\"first\"); return new(source.Name);");
+        if (method == "Construct")
+            source = source.Replace(".Resolve((source, previous)", ".Construct(source");
+        var result = GeneratorTestDriver.Run("ConstructionAndMembersReview", source, LanguageVersion.CSharp9);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
     [TestCase("var available = previous.HasValue; if (available) return previous.Value; return new(source.Name);")]
     [TestCase("var available = previous.TryGetValue(out var existing); if (available) return existing!; return new(source.Name);")]
     [TestCase("var available = previous.HasValue; var reuse = available && source.Reuse; if (reuse) return previous.Value; return new(source.Name);")]
