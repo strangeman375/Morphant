@@ -414,7 +414,8 @@ namespace TestCase
         {
             return new global::TestCase.Destination(
                 boxed: (object)(source.Number),
-                transform: (global::System.Func<int, int>)(value => value + source.Number))
+                transform: (global::System.Func<int, int>)(
+                    value => value + source.Number))
             {
                 Text = (string? )(source.Text),
                 Copy = (object)(source.Number)
