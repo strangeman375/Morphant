@@ -117,6 +117,9 @@
   multiline source and expression length are not reasons to introduce a
   local. This applies equally to arguments, member assignments, object
   initializers and return values. Do not add a result local solely for return.
+- Preserve user-written line breaks and relative indentation inside transferred
+  expressions. Adapt their outer indentation to the generated context. Do not
+  flatten or reflow multiline expressions; keep literal values unchanged.
 - Preserve user-written locals; do not inline their values or split the
   internal calls of a user-written expression into additional computations.
 - Introduce supporting locals only when required by mapping operations,

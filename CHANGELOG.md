@@ -32,8 +32,9 @@ See [current limitations](docs/limitations.md) for features not yet included.
   value from `TryGetValue`; unchanged local aliases are supported.
 - Simplify null checks in generated mappings where conditional access preserves
   the original behavior.
-- Preserve user-written expressions and locals in generated mappings. Add
-  supporting variables only where mapping semantics require them.
+- Preserve user-written expressions, locals and multiline expression layout in
+  generated mappings. Add supporting variables only where mapping semantics
+  require them.
 - Publish a Git snapshot for every successful compilation's target framework.
   Remove `MorphantGitSnapshotTargetFrameworks`; use MSBuild conditions on
   `MorphantGitSnapshot` to opt individual compilations in or out.

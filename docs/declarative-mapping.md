@@ -137,8 +137,9 @@ Code passed to `Construct`, `Resolve` and `Members` follows these rules:
 Only the selected branch and applicable rules are evaluated. Separately
 written expressions remain separate evaluations; use a local to share a value.
 User-written expressions, locals and branches keep their computation structure;
-the generator changes it only as required by mapping semantics. Introduce a
-local yourself when you want to inspect an intermediate value during debugging.
+the generator changes it only as required by mapping semantics. Line breaks and
+relative indentation inside your expressions are preserved. Introduce a local
+yourself when you want to inspect an intermediate value during debugging.
 See [constructor and member composition](api/members.md#constructor-parameters)
 for automatic arguments and evaluation order. Use [`Convert`](api/convert.md)
 when loops, mutation, `try`, or another ordinary C# algorithm would be clearer.
