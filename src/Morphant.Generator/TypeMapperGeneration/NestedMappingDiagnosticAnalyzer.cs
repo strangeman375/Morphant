@@ -713,6 +713,7 @@ internal static class NestedMappingDiagnosticAnalyzer
             MappingFailureReason.ConstructorSelectionFailed or
             MappingFailureReason.ConstructorParameterRuleInvalid or
             MappingFailureReason.TerminalPreviousWithoutValue or
+            MappingFailureReason.InvalidStructuredConstructionResult or
             MappingFailureReason.TerminalNullConstruction or
             MappingFailureReason.MemberRuleInvalid or
             MappingFailureReason.MemberLifecycleInvalid or

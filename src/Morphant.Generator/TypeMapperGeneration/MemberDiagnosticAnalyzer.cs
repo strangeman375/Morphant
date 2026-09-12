@@ -1243,6 +1243,7 @@ internal static class MemberDiagnosticAnalyzer
              MappingFailureReason.ConstructorSelectionFailed or
              MappingFailureReason.ConstructorParameterRuleInvalid or
              MappingFailureReason.TerminalPreviousWithoutValue or
+             MappingFailureReason.InvalidStructuredConstructionResult or
              MappingFailureReason.TerminalNullConstruction))
         {
             return false;

@@ -191,9 +191,9 @@ internal static class ConstructionPlanEmitter
         writer.Line(
             $"public static implicit operator {typeReference}(");
         writer.Line(
-            "    global::Morphant.Option<" +
+            "    " +
             model.DestinationTypeName +
-            "> previous) =>");
+            " previous) =>");
         writer.Line(
             "    throw new global::Morphant.Exceptions." +
             "RuntimeInvocationNotSupportedException();");

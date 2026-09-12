@@ -43,6 +43,13 @@ internal static class ConstructionDiagnosticDescriptors
             "Construct or Resolve returned null or default for mapping " +
             "'{0}'. Affected cases: {1}.");
 
+    public static readonly DiagnosticDescriptor InvalidStructuredResult =
+        Create(
+            "MORPH0062",
+            "Structured construction result is invalid",
+            "{0} for mapping '{1}' must return {2}. Use {0}Using to return " +
+            "another destination object.");
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

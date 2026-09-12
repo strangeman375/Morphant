@@ -867,22 +867,13 @@ internal static class StructuredConstructMappingPlanner
                 Name.Identifier.ValueText: "HasValue"
             })
         {
-            return IsParameterReference(
+            return StructuredPreviousValuePolicy.IsOption(
                 receiver, previousParameter, semanticModel, cancellationToken);
         }
 
-        return expression is InvocationExpressionSyntax
-               {
-                   Expression: MemberAccessExpressionSyntax { Expression: var option },
-                   ArgumentList.Arguments.Count: 1
-               } invocation &&
-               IsParameterReference(
-                   option, previousParameter, semanticModel, cancellationToken) &&
-               semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is
-                   IMethodSymbol { Name: "TryGetValue", Parameters.Length: 1 } method &&
-               method.Parameters[0].RefKind == RefKind.Out &&
-               SymbolNameHelper.GetFullMetadataName(method.ContainingType.OriginalDefinition) ==
-                   "Morphant.Option`1";
+        return expression is InvocationExpressionSyntax invocation &&
+               StructuredPreviousValuePolicy.IsTryGetValue(
+                   invocation, previousParameter, semanticModel, cancellationToken);
     }
 
     private static StructuredConstructPlanNode? BuildPlanNode(
@@ -966,11 +957,13 @@ internal static class StructuredConstructMappingPlanner
         }
 
         if (previousParameter is not null &&
-            IsParameterReference(
+            StructuredPreviousValuePolicy.TryGetOrigin(
                 expression,
                 previousParameter,
                 semanticModel,
-                cancellationToken))
+                cancellationToken,
+                out var previousOrigin,
+                out var previousAliases))
         {
             return new StructuredConstructLeafNode(
                 StructuredConstructLeafKind.Previous,
@@ -979,12 +972,14 @@ internal static class StructuredConstructMappingPlanner
                 Failure: null,
                 Terminal: new StructuredTerminalObservation(
                     StructuredTerminalKind.Previous,
-                    expression,
+                    previousOrigin,
                     new MappingAffectedPath(
                         paths,
                         MappingPlanPhase.Construction,
                         expression),
-                    aliases));
+                    previousAliases.AddRange(aliases.IsDefault
+                        ? ImmutableArray<DeclarativeTerminalAliasSyntax>.Empty
+                        : aliases)));
         }
 
         if (TryGetOmittedProducer(expression, out var omittedProducer))
@@ -998,8 +993,27 @@ internal static class StructuredConstructMappingPlanner
                 terminalAliases: aliases);
         }
 
+        var lambda = expression.Ancestors().OfType<LambdaExpressionSyntax>()
+            .FirstOrDefault();
+        var constructionType = lambda is null
+            ? null
+            : (semanticModel.GetTypeInfo(lambda, cancellationToken).ConvertedType
+                as INamedTypeSymbol)?.DelegateInvokeMethod?.ReturnType;
+
         if (expression is not BaseObjectCreationExpressionSyntax creation ||
-            creation.Initializer is not null)
+            !SymbolEqualityComparer.Default.Equals(
+                semanticModel.GetTypeInfo(creation, cancellationToken).Type,
+                constructionType))
+        {
+            return BuildUnsupportedPlanLeaf(
+                mapping,
+                sourceMapper,
+                expression,
+                paths,
+                MappingFailureReason.InvalidStructuredConstructionResult);
+        }
+
+        if (creation.Initializer is not null)
         {
             return BuildUnsupportedPlanLeaf(
                 mapping,

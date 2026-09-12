@@ -2819,19 +2819,6 @@ internal static class DeclarativeControlFlowPlanner
             return true;
         }
 
-        if (declarativeResultType is not null &&
-            semanticModel.ClassifyConversion(
-                    expression,
-                    declarativeResultType)
-                is
-                {
-                    IsImplicit: true,
-                    IsUserDefined: true
-                })
-        {
-            return true;
-        }
-
         if (expression is ConditionalExpressionSyntax conditional)
         {
             return ContainsDslLocalInitializer(

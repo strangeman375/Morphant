@@ -10,3 +10,4 @@ MORPH0058 | Morphant.Declaration | Error | Mapper self type is invalid
 MORPH0059 | Morphant.Declaration | Error | Mapper type is inaccessible to generated code
 MORPH0060 | Morphant.Registration | Error | Mapper family parameter is absent from mapping
 MORPH0061 | Morphant.Polymorphism | Error | Polymorphic branch relationship is not known
+MORPH0062 | Morphant.Construction | Error | Structured construction result is invalid

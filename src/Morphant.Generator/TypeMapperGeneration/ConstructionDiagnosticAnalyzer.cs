@@ -326,6 +326,28 @@ internal static class ConstructionDiagnosticAnalyzer
 
         switch (failure.Reason)
         {
+            case MappingFailureReason.InvalidStructuredConstructionResult:
+                var name = policy?.Kind == ResultPolicyKind.Resolve
+                    ? "Resolve"
+                    : "Construct";
+                var primary = (failure.OffendingNode ?? failure.OriginNode)
+                    .GetLocation();
+                result.Add(CreateCandidate(
+                    ConstructionDiagnosticKind.InvalidStructuredResult,
+                    context,
+                    failure,
+                    primary,
+                    failure.AdditionalLocations,
+                    detail: LocationIdentity(primary),
+                    GetContract(context.Pair, policy),
+                    parameterName: string.Empty,
+                    strategy: name,
+                    reason: name == "Resolve"
+                        ? "the existing destination from previous or a construction expression"
+                        : "a construction expression",
+                    affectedPaths));
+                return;
+
             case MappingFailureReason.MissingConstructionPolicy:
                 result.Add(BuildMissingConstructionCandidate(
                     context,

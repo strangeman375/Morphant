@@ -66,6 +66,8 @@ internal static class ConstructionDiagnosticPipeline
                 ConstructionDiagnosticDescriptors.PreviousUnavailable,
             ConstructionDiagnosticKind.NullConstructionPlan =>
                 ConstructionDiagnosticDescriptors.NullConstructionPlan,
+            ConstructionDiagnosticKind.InvalidStructuredResult =>
+                ConstructionDiagnosticDescriptors.InvalidStructuredResult,
             _ => throw new InvalidOperationException(
                 $"Unknown construction diagnostic kind: {candidate.Kind}.")
         };
@@ -90,6 +92,8 @@ internal static class ConstructionDiagnosticPipeline
                     candidate.Contract,
                     candidate.Reason
                 ],
+            ConstructionDiagnosticKind.InvalidStructuredResult =>
+                [candidate.Strategy, candidate.Contract, candidate.Reason],
             _ => []
         };
 
@@ -129,7 +133,8 @@ internal enum ConstructionDiagnosticKind
     ConventionUnavailable = 36,
     InvalidParameterRule = 37,
     PreviousUnavailable = 38,
-    NullConstructionPlan = 39
+    NullConstructionPlan = 39,
+    InvalidStructuredResult = 62
 }
 
 internal sealed record ConstructionDiagnosticCandidate(

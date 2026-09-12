@@ -113,6 +113,7 @@ internal enum MappingFailureReason
     ConstructorParameterRuleInvalid,
     TerminalPreviousWithoutValue,
     TerminalNullConstruction,
+    InvalidStructuredConstructionResult,
     MemberRuleInvalid,
     MemberLifecycleInvalid,
     TerminalNullMembers,
