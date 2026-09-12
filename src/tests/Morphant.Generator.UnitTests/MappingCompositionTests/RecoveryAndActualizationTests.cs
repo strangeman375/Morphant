@@ -57,7 +57,7 @@ namespace Morphant.Generated.N_8b1aa3d4519a36fd8b5e6e95629ccd05
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator DestinationConstruction(
-            global::Morphant.Option<global::TestCase.Destination> previous) =>
+            global::TestCase.Destination previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -99,7 +99,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
@@ -110,7 +110,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,

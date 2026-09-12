@@ -52,7 +52,7 @@ namespace TestCase
                 .Resolve((source, previous) =>
                 {
                     if (source.Reuse && previous.HasValue)
-                        return previous;
+                        return previous.Value;
                     return new();
                 })
                 .Members(source => new() { Child = Map<ChildDestination>(source.Child) });

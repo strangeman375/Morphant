@@ -480,7 +480,33 @@ internal static class StructuredConstructMappingPlanner
                         ? MappingExecutionPathSet.UpdateWithPrevious
                         : MappingExecutionPathSet.NoPrevious,
                     cancellationToken,
-                    out var lowered)
+                    out var lowered,
+                    buildExpressionFailure: expression =>
+                        previousAvailable == false &&
+                        previousParameter is not null &&
+                        StructuredPreviousValuePolicy.FindUnavailableRead(
+                            expression,
+                            previousParameter,
+                            configuration.Expression.SemanticModel,
+                            condition => TryEvaluateKnownCondition(
+                                condition,
+                                previousParameter,
+                                previousAvailable,
+                                configuration.Expression.SemanticModel,
+                                cancellationToken,
+                                out var known) ? known : null,
+                            cancellationToken) is { } unavailableRead
+                            ? BuildPreviousLeaf(
+                                mapping,
+                                memberMappings,
+                                create: true,
+                                new StructuredTerminalObservation(
+                                    StructuredTerminalKind.Previous,
+                                    unavailableRead,
+                                    MappingAffectedPath.NoPrevious(
+                                        MappingPlanPhase.Construction),
+                                    ImmutableArray<DeclarativeTerminalAliasSyntax>.Empty))
+                            : null)
                 ? DeclarativeControlFlowLowerer.PreserveLocalNames(
                     lowered)
                 : null;
@@ -2074,31 +2100,6 @@ internal static class StructuredConstructMappingPlanner
 
         return (!hasPrevious || previousParameter is not null) &&
                (!hasContext || contextParameter is not null);
-    }
-
-    private static bool IsParameterReference(
-        ExpressionSyntax expression,
-        IParameterSymbol parameter,
-        SemanticModel semanticModel,
-        CancellationToken cancellationToken)
-    {
-        while (expression is PostfixUnaryExpressionSyntax
-               {
-                   RawKind:
-                       (int)SyntaxKind.SuppressNullableWarningExpression,
-                   Operand: var operand
-               })
-        {
-            expression = UnwrapParentheses(operand);
-        }
-
-        return expression is IdentifierNameSyntax identifier &&
-               SymbolEqualityComparer.Default.Equals(
-                   semanticModel.GetSymbolInfo(
-                           identifier,
-                           cancellationToken)
-                       .Symbol,
-               parameter);
     }
 
     private static bool AreEquivalentPlanNodes(

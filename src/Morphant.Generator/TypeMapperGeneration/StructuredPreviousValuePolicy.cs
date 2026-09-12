@@ -7,6 +7,65 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class StructuredPreviousValuePolicy
 {
+    public static ExpressionSyntax? FindUnavailableRead(
+        ExpressionSyntax expression,
+        IParameterSymbol previous,
+        SemanticModel semanticModel,
+        Func<ExpressionSyntax, bool?> evaluateCondition,
+        CancellationToken cancellationToken)
+    {
+        ExpressionSyntax? Find(ExpressionSyntax value) => FindUnavailableRead(
+            value, previous, semanticModel, evaluateCondition, cancellationToken);
+
+        expression = Unwrap(expression);
+        if (expression is AnonymousFunctionExpressionSyntax)
+        {
+            return null;
+        }
+
+        if (expression is MemberAccessExpressionSyntax access &&
+            semanticModel.GetSymbolInfo(access, cancellationToken).Symbol is
+                IPropertySymbol { Name: "Value" } property &&
+            SymbolEqualityComparer.Default.Equals(property.ContainingType, previous.Type) &&
+            IsOption(access.Expression, previous, semanticModel, cancellationToken))
+        {
+            return access;
+        }
+
+        if (expression is ConditionalExpressionSyntax conditional)
+        {
+            return Find(conditional.Condition) ??
+                (evaluateCondition(conditional.Condition) switch
+                {
+                    true => Find(conditional.WhenTrue),
+                    false => Find(conditional.WhenFalse),
+                    _ => Find(conditional.WhenTrue) ?? Find(conditional.WhenFalse)
+                });
+        }
+
+        if (expression is BinaryExpressionSyntax binary &&
+            (binary.IsKind(SyntaxKind.LogicalAndExpression) ||
+             binary.IsKind(SyntaxKind.LogicalOrExpression)))
+        {
+            return Find(binary.Left) ??
+                (evaluateCondition(binary.Left) ==
+                    binary.IsKind(SyntaxKind.LogicalOrExpression)
+                    ? null : Find(binary.Right));
+        }
+
+        foreach (var child in expression.DescendantNodes(
+                     node => node == expression || node is not ExpressionSyntax)
+                     .OfType<ExpressionSyntax>())
+        {
+            if (Find(child) is { } read)
+            {
+                return read;
+            }
+        }
+
+        return null;
+    }
+
     public static bool TryGetOrigin(
         ExpressionSyntax expression,
         IParameterSymbol previous,
@@ -152,7 +211,9 @@ internal static class StructuredPreviousValuePolicy
                     local.Type.IsValueType &&
                     ancestor is InvocationExpressionSyntax invocation &&
                     invocation.Expression is MemberAccessExpressionSyntax access &&
-                    access.Expression.Span.Contains(identifier.Span))
+                    access.Expression.Span.Contains(identifier.Span) &&
+                    semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not
+                        IMethodSymbol { IsReadOnly: true })
                 {
                     return false;
                 }

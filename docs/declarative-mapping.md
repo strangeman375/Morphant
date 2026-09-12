@@ -41,7 +41,7 @@ builder.Map<SnapshotDto, Snapshot>()
     .Resolve((source, previous) =>
     {
         if (previous.HasValue && previous.Value.Id == source.Id)
-            return previous;
+            return previous.Value;
         return new(source.Id);
     });
 ```

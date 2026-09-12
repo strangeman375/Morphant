@@ -52,7 +52,7 @@ namespace Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator MutableConstruction(
-            global::Morphant.Option<global::TestCase.Mutable> previous) =>
+            global::TestCase.Mutable previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -93,7 +93,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
@@ -104,7 +104,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,

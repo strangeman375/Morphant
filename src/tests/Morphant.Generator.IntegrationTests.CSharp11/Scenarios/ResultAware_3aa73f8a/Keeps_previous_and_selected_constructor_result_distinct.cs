@@ -58,7 +58,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.ResultAware_3aa
                 {
                     if (previous.HasValue && source.Reuse)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
                     return new(seed: source.Id);

@@ -18,7 +18,8 @@ internal sealed class DescriptorTests
             ConstructionDiagnosticDescriptors.ConventionUnavailable,
             ConstructionDiagnosticDescriptors.InvalidParameterRule,
             ConstructionDiagnosticDescriptors.PreviousUnavailable,
-            ConstructionDiagnosticDescriptors.NullConstructionPlan
+            ConstructionDiagnosticDescriptors.NullConstructionPlan,
+            ConstructionDiagnosticDescriptors.InvalidStructuredResult
         };
 
         Assert.Multiple(() =>
@@ -31,7 +32,8 @@ internal sealed class DescriptorTests
                     "MORPH0036",
                     "MORPH0037",
                     "MORPH0038",
-                    "MORPH0039"
+                    "MORPH0039",
+                    "MORPH0062"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
@@ -42,7 +44,8 @@ internal sealed class DescriptorTests
                     "Constructor cannot be selected",
                     "Constructor parameter rule is invalid",
                     "Previous destination is unavailable",
-                    "Construct or Resolve returned no destination"
+                    "Construct or Resolve returned no destination",
+                    "Structured construction result is invalid"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
@@ -58,7 +61,9 @@ internal sealed class DescriptorTests
                     "'previous' is unavailable in mapping '{0}'. Affected " +
                     "cases: {1}.",
                     "Construct or Resolve returned null or default for " +
-                    "mapping '{0}'. Affected cases: {1}."
+                    "mapping '{0}'. Affected cases: {1}.",
+                    "{0} for mapping '{1}' must return {2}. Use {0}Using to return " +
+                    "another destination object."
                 }));
             Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),

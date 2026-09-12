@@ -38,7 +38,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_882420
                         previous.HasValue &&
                         TrackAfter())
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
                     return new(source.Id);

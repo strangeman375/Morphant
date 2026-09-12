@@ -87,7 +87,7 @@ namespace Morphant.Generated.N_fa9574037810e841db2c8ce3326f2fea
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction<T>(
-            global::Morphant.Option<(T, int)> previous) =>
+            (T, int) previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -254,7 +254,7 @@ namespace Morphant.Generated.N_38cb4a8e8bcb3b16557a42fe65c6d192
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction(
-            global::Morphant.Option<(int, string)> previous) =>
+            (int, string) previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -358,7 +358,7 @@ namespace Morphant.Generated.N_cc10a937bc217f0eb0d09673d9e6d4ed
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction(
-            global::Morphant.Option<global::System.Tuple<int, string>> previous) =>
+            global::System.Tuple<int, string> previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -1784,7 +1784,7 @@ namespace Morphant.Generated.N_9a91751c7f70e7c40be34a132e4bb85f
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction(
-            global::Morphant.Option<(global::PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP, int)> previous) =>
+            (global::PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP, int) previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

@@ -29,7 +29,7 @@ namespace Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator ChildDestinationConstruction(
-            global::Morphant.Option<global::TestCase.ChildDestination> previous) =>
+            global::TestCase.ChildDestination previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -90,7 +90,7 @@ namespace Morphant.Generated.N_6dd0dba0d3ceaedec7fc784138af1d4a
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction(
-            global::Morphant.Option<(global::TestCase.ChildDestination, int)> previous) =>
+            (global::TestCase.ChildDestination, int) previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -131,7 +131,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.ChildSource, global::TestCase.ChildDestination> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
@@ -142,7 +142,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.ChildSource, global::TestCase.ChildDestination> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
@@ -264,7 +264,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (global::TestCase.ChildDestination Child, int Id)> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (global::TestCase.ChildDestination Child, int Id)> builder,
@@ -275,7 +275,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (global::TestCase.ChildDestination Child, int Id)> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (global::TestCase.ChildDestination Child, int Id)> builder,

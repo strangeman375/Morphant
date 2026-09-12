@@ -73,7 +73,7 @@ namespace Morphant.Generated.N_dc55c1e071024b3d4b850cf5bd70bd94
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator CustomStructConstruction(
-            global::Morphant.Option<global::TestCase.CustomStruct> previous) =>
+            global::TestCase.CustomStruct previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -104,7 +104,7 @@ namespace Morphant.Generated.N_5f8d1638cf7f291e24070130607e3fa8
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator EmptyClassConstruction(
-            global::Morphant.Option<global::TestCase.EmptyClass> previous) =>
+            global::TestCase.EmptyClass previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -326,7 +326,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.CustomStruct> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.CustomStruct> builder,
@@ -337,7 +337,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.CustomStruct> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.CustomStruct> builder,
@@ -460,7 +460,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.EmptyClass> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.EmptyClass> builder,
@@ -471,7 +471,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.EmptyClass> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.EmptyClass> builder,
@@ -977,7 +977,7 @@ namespace Morphant.Generated.N_5e01468111660761710199b9666fe80e
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator DestinationConstruction(
-            global::Morphant.Option<global::TestCase.Destination> previous) =>
+            global::TestCase.Destination previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -1019,7 +1019,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Destination.TestMapper, global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Destination.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
@@ -1030,7 +1030,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Destination.TestMapper, global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Destination.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
@@ -1216,7 +1216,7 @@ namespace Morphant.Generated.N_5e01468111660761710199b9666fe80e
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator DestinationConstruction(
-            global::Morphant.Option<global::TestCase.Destination> previous) =>
+            global::TestCase.Destination previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -1258,7 +1258,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination?> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination?> builder,
@@ -1269,7 +1269,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination?> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination?> builder,
@@ -1392,7 +1392,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
@@ -1403,7 +1403,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,

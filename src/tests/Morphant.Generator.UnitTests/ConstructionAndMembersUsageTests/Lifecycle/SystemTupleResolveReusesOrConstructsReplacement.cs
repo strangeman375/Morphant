@@ -36,7 +36,7 @@ namespace TestCase
                 .Resolve((source, previous) =>
                 {
                     if (source.Id > 0 && previous.HasValue)
-                        return previous;
+                        return previous.Value;
                     return new(source.Id, source.FromConstruct());
                 })
                 .Members(source => new() { Item2 = source.FromMembers() });

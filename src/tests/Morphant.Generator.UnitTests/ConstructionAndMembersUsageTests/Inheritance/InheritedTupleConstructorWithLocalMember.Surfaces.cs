@@ -60,7 +60,7 @@ namespace Morphant.Generated.N_f43036daabec852e2112ca245ddd0c64
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction(
-            global::Morphant.Option<(int, string)> previous) =>
+            (int, string) previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -106,7 +106,7 @@ namespace Morphant
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, (int Id, string Name)> Resolve<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, (int Id, string Name)> builder,
@@ -119,7 +119,7 @@ namespace Morphant
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, (int Id, string Name)> Resolve<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, (int Id, string Name)> builder,

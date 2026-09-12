@@ -60,7 +60,7 @@ namespace Morphant.Generated.N_e29fb5d0c9547b37a3a3c46bffd4a841
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction(
-            global::Morphant.Option<(int, string)> previous) =>
+            (int, string) previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -101,7 +101,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Code, string Text)> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Code, string Text)> builder,
@@ -112,7 +112,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Code, string Text)> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Code, string Text)> builder,

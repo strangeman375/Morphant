@@ -8,7 +8,8 @@ affected Create or Update cases.
 
 ## Fix
 
-Return a destination on every affected path, reuse a non-empty `previous`, or
+Return a construction expression on every affected path, reuse the available
+value from `previous`, or
 throw when mapping cannot continue. Do not use `null` or `default` as a
 placeholder for an unhandled branch.
 

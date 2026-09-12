@@ -111,7 +111,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
                 {
                     if (previous.HasValue)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
                     return new(value: source.Value);

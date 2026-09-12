@@ -39,7 +39,7 @@ namespace TestCase
                 .Resolve((source, previous) =>
                 {
                     if (source.Reuse && previous.HasValue)
-                        return previous;
+                        return previous.Value;
                     return new(source.FromConstruct());
                 })
                 .Members(source => new() { Name = source.FromMembers() });

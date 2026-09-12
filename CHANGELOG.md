@@ -10,6 +10,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Added
 
+- Diagnose unsupported `Construct` and `Resolve` results with `MORPH0062`,
+  directing factories and cached objects to the corresponding `...Using` method.
 - Add first-class `ValueTuple` and `System.Tuple` mappings, including named,
   unnamed, long and nullable forms, Create and Update behavior, typed
   composition of multiple inputs and outputs, call-specific state, and a
@@ -23,6 +25,9 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Convert from `Destination` to the generated construction type, instead of
+  `Option<Destination>`. In `Resolve`, return guarded `previous.Value` or the
+  value from `TryGetValue`; unchanged local aliases are supported.
 - Simplify null checks in generated mappings where conditional access preserves
   the original behavior.
 - Preserve user-written expressions and locals in generated mappings. Add
@@ -72,6 +77,11 @@ See [current limitations](docs/limitations.md) for features not yet included.
   type arguments with `MORPH0061`.
 
 ### Migrating from 0.4.0
+
+Replace `return previous` in `Resolve` with `return previous.Value` after the
+availability check, or return the variable from `TryGetValue`. For a mixed
+conditional expression, name the construction type explicitly in its creation
+branch. Use `ConstructUsing` or `ResolveUsing` for arbitrary destination objects.
 
 Give each concrete mapper its own self type:
 

@@ -29,7 +29,7 @@ namespace TestCase
             builder.Map<Source, APrevious>()
                 .Resolve((source, previous) =>
                 {
-                    var first = previous;
+                    var first = previous.Value;
                     var second = first;
                     return second;
                 });
@@ -57,11 +57,11 @@ namespace TestCase
                 diagnostics.Select(diagnostic =>
                     ConstructionDiagnosticsGeneratorTest.SourceText(
                         diagnostic.Location)),
-                Is.EqualTo(new[] { "second", "null" }));
+                Is.EqualTo(new[] { "previous.Value", "null" }));
             Assert.That(
                 diagnostics[0].AdditionalLocations.Select(
                     ConstructionDiagnosticsGeneratorTest.SourceText),
-                Is.EqualTo(new[] { "previous", "first" }));
+                Is.Empty);
             Assert.That(
                 diagnostics[1].AdditionalLocations.Select(
                     ConstructionDiagnosticsGeneratorTest.SourceText),
@@ -96,7 +96,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
                 .Resolve((source, previous) =>
-                    source.Omit ? null! : previous);
+                    source.Omit ? null! : previous.Value);
     }
 }
 """;
@@ -113,7 +113,7 @@ namespace TestCase
                 diagnostics.Select(diagnostic =>
                     ConstructionDiagnosticsGeneratorTest.SourceText(
                         diagnostic.Location)),
-                Is.EqualTo(new[] { "previous", "null" }));
+                Is.EqualTo(new[] { "previous.Value", "null" }));
             Assert.That(
                 diagnostics[0].GetMessage(),
                 Does.EndWith(
@@ -156,7 +156,7 @@ namespace TestCase
                 .Resolve((source, previous) =>
                 {
                     if (previous.HasValue)
-                        return previous;
+                        return previous.Value;
 
                     return new();
                 });

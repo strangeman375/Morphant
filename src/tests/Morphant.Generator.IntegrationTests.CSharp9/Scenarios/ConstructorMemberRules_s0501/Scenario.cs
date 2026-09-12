@@ -130,17 +130,17 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorMembe
         {
             builder.Map<Source, MutableDestination>().Resolve((_, previous) =>
             {
-                if (previous.HasValue) return previous;
+                if (previous.HasValue) return previous.Value;
                 return new(ByConvention());
             }).Members(source => new() { Value = source.ReadRule() });
             builder.Map<Source, InitDestination>().Resolve((_, previous) =>
             {
-                if (previous.HasValue) return previous;
+                if (previous.HasValue) return previous.Value;
                 return new(ByConvention());
             }).Members(source => new() { Value = source.ReadRule() });
             builder.Map<Source, BranchDestination>().Resolve((_, previous) =>
             {
-                if (previous.HasValue) return previous;
+                if (previous.HasValue) return previous.Value;
                 return new(ByConvention());
             }).Members(source =>
             {
@@ -150,7 +150,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorMembe
             });
             builder.Map<Source, ConventionDestination>().Resolve((_, previous) =>
             {
-                if (previous.HasValue) return previous;
+                if (previous.HasValue) return previous.Value;
                 return new(ByConvention());
             });
         }

@@ -67,7 +67,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
 
                     if (previous.HasValue && source.Reuse)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
                     switch (source.Mode)

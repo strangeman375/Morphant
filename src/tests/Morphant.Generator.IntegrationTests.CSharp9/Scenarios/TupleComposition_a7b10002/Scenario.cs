@@ -82,7 +82,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
                 {
                     if (source.Reuse && previous.HasValue)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
                     return new(

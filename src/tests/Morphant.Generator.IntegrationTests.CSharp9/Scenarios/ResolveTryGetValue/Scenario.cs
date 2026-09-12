@@ -28,7 +28,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             builder.Map<Source, Destination>().Resolve((source, previous) =>
             {
                 if (previous.TryGetValue(out var value) && source.Matches(value))
-                    return previous;
+                    return value;
                 return new(source.Id);
             });
     }
@@ -41,7 +41,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             {
                 if (previous.TryGetValue(out var value))
                 {
-                    if (source.Matches(value)) return previous;
+                    if (source.Matches(value)) return value;
                 }
                 return new(source.Id);
             });
@@ -53,7 +53,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
                 previous.TryGetValue(out var value) && source.Matches(value)
-                    ? previous
+                    ? value
                     : new global::Morphant.Generated.N_67f09af83af980a4facb4ee28cd92d98.DestinationConstruction(source.Id));
     }
 
@@ -64,7 +64,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             builder.Map<Source, Destination>().Resolve((source, previous) =>
             {
                 if (!previous.TryGetValue(out var value)) return new(source.Id);
-                if (source.Matches(value)) return previous;
+                if (source.Matches(value)) return value;
                 return new(source.Id);
             });
     }

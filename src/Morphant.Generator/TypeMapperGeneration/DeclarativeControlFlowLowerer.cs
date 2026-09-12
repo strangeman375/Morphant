@@ -207,7 +207,9 @@ internal static class DeclarativeControlFlowLowerer
         MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
         out TypeMapperControlFlowNode root,
-        IEnumerable<string>? reservedLocalNames = null)
+        IEnumerable<string>? reservedLocalNames = null,
+        Func<ExpressionSyntax, TypeMapperControlFlowNode?>?
+            buildExpressionFailure = null)
     {
         var nestedMapUsages =
             new DeclarativeNestedMapUsageRegistry(paths);
@@ -424,6 +426,12 @@ internal static class DeclarativeControlFlowLowerer
                     if (local.PlaceholderName is null)
                     {
                         return null;
+                    }
+
+                    if (buildExpressionFailure?.Invoke(local.Initializer) is
+                        { } expressionFailure)
+                    {
+                        return expressionFailure;
                     }
 
                     var initializer =

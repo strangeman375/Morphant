@@ -61,7 +61,7 @@ internal static class PairConfigurationEmitter
                 "Resolve",
                 "resolve",
                 "Chooses reuse or construction on Create and Update.",
-                "Inline lambda returning previous or a construction expression.",
+                "Inline lambda returning the existing destination value or a construction expression.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.PreviousDestinationTypeName + ", " +
@@ -73,7 +73,7 @@ internal static class PairConfigurationEmitter
                 "Resolve",
                 "resolve",
                 "Chooses reuse or construction on Create and Update.",
-                "Inline lambda returning previous or a construction expression.",
+                "Inline lambda returning the existing destination value or a construction expression.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.PreviousDestinationTypeName + ", " +

@@ -182,7 +182,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Resolve((source, previous) => previous);
+                .Resolve((source, previous) => previous.Value);
     }
 }
 """;
@@ -196,7 +196,7 @@ namespace TestCase
             Assert.That(
                 ConstructionDiagnosticsGeneratorTest.SourceText(
                     diagnostic.Location),
-                Is.EqualTo("previous"));
+                Is.EqualTo("previous.Value"));
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(

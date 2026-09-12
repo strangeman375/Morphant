@@ -40,7 +40,7 @@ namespace TestCase
             builder.Map<Source, CRule>()
                 .Construct(source => new(Auto()));
             builder.Map<Source, DPrevious>()
-                .Resolve((source, previous) => previous);
+                .Resolve((source, previous) => previous.Value);
             builder.Map<Source, ENull>()
                 .Construct(source => default!);
         }
@@ -266,7 +266,7 @@ namespace TestCase
             builder.Map<Source<T>, IMissing<T>>();
             builder.Map<Source<T>, Convention<T>>();
             builder.Map<Source<T>, Previous<T>>()
-                .Resolve((source, previous) => previous);
+                .Resolve((source, previous) => previous.Value);
         }
     }
 

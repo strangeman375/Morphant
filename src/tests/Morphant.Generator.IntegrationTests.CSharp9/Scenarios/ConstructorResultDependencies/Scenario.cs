@@ -97,14 +97,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorResul
     public partial class ResolveMapper : TypeMapper<ResolveMapper>
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
-            .Resolve((source, previous) => { if (previous.HasValue && !source.Replace) return previous; return new(7); })
+            .Resolve((source, previous) => { if (previous.HasValue && !source.Replace) return previous.Value; return new(7); })
             .Members((_, previous, result) => new() { Value = previous.HasValue ? result.Value + 10 : 7 });
     }
     [MorphantMapper]
     public partial class PreviousValueMapper : TypeMapper<PreviousValueMapper>
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
-            .Resolve((source, previous) => { if (previous.HasValue && !source.Replace) return previous; return new(7); })
+            .Resolve((source, previous) => { if (previous.HasValue && !source.Replace) return previous.Value; return new(7); })
             .Members((_, previous) => new() { Value = previous.HasValue ? previous.Value.Value + 10 : 7 });
     }
     [MorphantMapper]

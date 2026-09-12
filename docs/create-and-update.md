@@ -33,7 +33,7 @@ reuse the existing destination:
 .Resolve((source, previous) =>
 {
     if (previous.TryGetValue(out var destination) && destination.Id == source.Id)
-        return previous;
+        return destination;
     return new(source.Id);
 });
 ```

@@ -34,7 +34,7 @@ public partial class TestMapper : TypeMapper<TestMapper>
         builder.Map<Source, RuleDestination>()
             .Construct(source => new(Auto()));
         builder.Map<Source, PreviousDestination>()
-            .Resolve((source, previous) => previous);
+            .Resolve((source, previous) => previous.Value);
         builder.Map<Source, NullPlanDestination>()
             .Construct(source => default!);
     }

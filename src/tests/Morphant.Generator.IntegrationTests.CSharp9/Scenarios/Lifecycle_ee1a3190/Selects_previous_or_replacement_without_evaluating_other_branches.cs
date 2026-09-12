@@ -39,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_ee1a31
                     if (previous.HasValue &&
                         previous.Value.Id == source.Id)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
                     return new(Track(source.Id));

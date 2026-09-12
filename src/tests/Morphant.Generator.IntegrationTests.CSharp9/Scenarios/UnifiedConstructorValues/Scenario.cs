@@ -71,7 +71,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
     public partial class ResolveMapper : TypeMapper<ResolveMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>().Resolve((_, previous) => { if (previous.HasValue) return previous; return new(Auto()); })
+            builder.Map<Source, Destination>().Resolve((_, previous) => { if (previous.HasValue) return previous.Value; return new(Auto()); })
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]

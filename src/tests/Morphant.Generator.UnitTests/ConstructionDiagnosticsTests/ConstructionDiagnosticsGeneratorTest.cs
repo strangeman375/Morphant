@@ -45,6 +45,7 @@ internal sealed record ConstructionDiagnosticsGeneratorResult :
                 "MORPH0036" or
                 "MORPH0037" or
                 "MORPH0038" or
-                "MORPH0039")
+                "MORPH0039" or
+                "MORPH0062")
             .ToImmutableArray();
 }

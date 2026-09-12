@@ -91,7 +91,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionDiag
                 .Resolve((source, previous) =>
                 {
                     if (source.UseInvalid)
-                        return previous;
+                        return previous.Value;
 
                     return new(source.Value);
                 });
@@ -102,7 +102,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionDiag
                         return default!;
 
                     if (previous.HasValue)
-                        return previous;
+                        return previous.Value;
 
                     return new(source.Value);
                 });

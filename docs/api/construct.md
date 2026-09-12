@@ -34,7 +34,9 @@ builder.Map<OrderDto, Order>()
 
 The explicit name refers to the generated construction type, such as
 `OrderConstruction`. To return an ordinary object such as
-`new Order(source.Id)`, use [`ConstructUsing`](construct-using.md).
+`new Order(source.Id)` or a cached instance, use
+[`ConstructUsing`](construct-using.md). Returning these values from `Construct`
+produces [`MORPH0062`](../diagnostics/MORPH0062.md).
 
 `Construct` runs for Create and for Update when no usable destination exists.
 It can be combined with [`Members`](members.md), but not with another

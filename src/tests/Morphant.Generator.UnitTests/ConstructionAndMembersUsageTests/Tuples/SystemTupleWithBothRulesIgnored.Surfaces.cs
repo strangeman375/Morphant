@@ -60,7 +60,7 @@ namespace Morphant.Generated.N_317029e87365878ea2c10522064e32b1
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction(
-            global::Morphant.Option<global::System.Tuple<int, string?>> previous) =>
+            global::System.Tuple<int, string?> previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -101,7 +101,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, global::System.Tuple<int, string?>> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, global::System.Tuple<int, string?>> builder,
@@ -112,7 +112,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, global::System.Tuple<int, string?>> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, global::System.Tuple<int, string?>> builder,

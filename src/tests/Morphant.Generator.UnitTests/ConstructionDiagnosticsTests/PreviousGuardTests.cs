@@ -6,10 +6,10 @@ namespace Morphant.Generator.UnitTests.ConstructionDiagnosticsTests;
 [TestFixture]
 internal sealed class PreviousGuardTests
 {
-    [TestCase("if (p.TryGetValue(out var d) && d.Id == s.Id) return p;", false)]
-    [TestCase("if (p.TryGetValue(out var d)) { if (d.Id == s.Id) return p; }", false)]
-    [TestCase("if (!p.TryGetValue(out var d)) return new(s.Id); if (d.Id == s.Id) return p;", false)]
-    [TestCase("if (s.TryGetValue(out var d) && d.Id == s.Id) return p;", true)]
+    [TestCase("if (p.TryGetValue(out var d) && d.Id == s.Id) return p.Value;", false)]
+    [TestCase("if (p.TryGetValue(out var d)) { if (d.Id == s.Id) return p.Value; }", false)]
+    [TestCase("if (!p.TryGetValue(out var d)) return new(s.Id); if (d.Id == s.Id) return p.Value;", false)]
+    [TestCase("if (s.TryGetValue(out var d) && d.Id == s.Id) return p.Value;", true)]
     public void Recognizes_only_the_previous_options_guard(string body, bool unavailable)
     {
         const string source =

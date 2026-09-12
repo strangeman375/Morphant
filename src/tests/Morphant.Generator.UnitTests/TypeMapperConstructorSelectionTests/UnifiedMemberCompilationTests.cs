@@ -32,7 +32,7 @@ internal sealed class UnifiedMemberCompilationTests
             "Value" => ".Construct(source => new(source.Obsolete()))",
             "ByConventionAuto" => ".Construct(_ => new(ByConvention(), new() { value = Auto() }))",
             "ByConventionValue" => ".Construct(source => new(ByConvention(), new() { value = source.Obsolete() }))",
-            "Resolve" => ".Resolve((_, previous) => { if (previous.HasValue) return previous; return new(Auto()); })",
+            "Resolve" => ".Resolve((_, previous) => { if (previous.HasValue) return previous.Value; return new(Auto()); })",
             "Omitted" => ".Construct(_ => new())",
             _ => throw new ArgumentOutOfRangeException(nameof(route))
         };

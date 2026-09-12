@@ -100,7 +100,7 @@ internal sealed class ConstructorResultDependencyTests
     public void Allows_result_from_an_independent_replacement()
     {
         var result = MemberDiagnosticsGeneratorTest.Run(Consumer(
-            ".Resolve((source, previous) => { if (previous.HasValue && source.Value > 0) return previous; return new(7); })", "",
+            ".Resolve((source, previous) => { if (previous.HasValue && source.Value > 0) return previous.Value; return new(7); })", "",
             "return new() { Value = previous.HasValue ? result.Value + 10 : 7 };"));
         Assert.Multiple(() =>
         {

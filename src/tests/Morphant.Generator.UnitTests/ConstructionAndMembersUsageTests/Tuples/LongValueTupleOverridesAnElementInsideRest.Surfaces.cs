@@ -109,7 +109,7 @@ namespace Morphant.Generated.N_2c5d3c2e0334da8638dc9c38632eb840
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator TupleConstruction(
-            global::Morphant.Option<(int, int, int, int, int, int, int, int, int)> previous) =>
+            (int, int, int, int, int, int, int, int, int) previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -150,7 +150,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth)> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth)> builder,
@@ -161,7 +161,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth)> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth)> builder,

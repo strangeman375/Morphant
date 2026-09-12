@@ -35,7 +35,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_d46efb
                 {
                     if (source.Reuse)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
                     return new(source.Id);

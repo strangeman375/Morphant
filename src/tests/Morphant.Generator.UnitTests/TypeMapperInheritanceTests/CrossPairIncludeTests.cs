@@ -92,7 +92,7 @@ namespace Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator AnimalDtoConstruction(
-            global::Morphant.Option<global::TestCase.AnimalDto> previous) =>
+            global::TestCase.AnimalDto previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -123,7 +123,7 @@ namespace Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0
         /// </summary>
         /// <param name="previous">The existing destination.</param>
         public static implicit operator DogDtoConstruction(
-            global::Morphant.Option<global::TestCase.DogDto> previous) =>
+            global::TestCase.DogDto previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -170,7 +170,7 @@ namespace Morphant
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Resolve<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
@@ -183,7 +183,7 @@ namespace Morphant
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Resolve<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
@@ -321,7 +321,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.DerivedMapper, global::TestCase.Dog, global::TestCase.DogDto> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.DerivedMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
@@ -332,7 +332,7 @@ namespace Morphant
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.DerivedMapper, global::TestCase.Dog, global::TestCase.DogDto> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.DerivedMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,

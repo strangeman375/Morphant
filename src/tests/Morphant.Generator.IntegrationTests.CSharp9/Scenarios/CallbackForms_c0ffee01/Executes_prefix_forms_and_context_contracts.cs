@@ -110,7 +110,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackForms_c0
 
                     if (previous.HasValue)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
                     return new(seed: source.Value + 100);
