@@ -593,7 +593,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                         TypeMapperMappingTypePolicy
                             .GetGeneratedTypeName(valueType)),
                     SyntaxFactory.ParenthesizedExpression(
-                        rewrittenValue.WithoutTrivia()))
+                        node.ArgumentList.OpenParenToken,
+                        rewrittenValue,
+                        node.ArgumentList.CloseParenToken))
                 .WithTriviaFrom(node);
         }
 
