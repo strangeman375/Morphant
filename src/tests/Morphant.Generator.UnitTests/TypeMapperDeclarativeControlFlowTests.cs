@@ -617,12 +617,10 @@ namespace TestCase
 
                 return result;
             }
-            else
-            {
-                result.Value = source.Value - delta;
 
-                return result;
-            }
+            result.Value = source.Value - delta;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -638,12 +636,10 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                destination.Value = source.Value - delta;
 
-                return destination;
-            }
+            destination.Value = source.Value - delta;
+
+            return destination;
         }
     }
 }

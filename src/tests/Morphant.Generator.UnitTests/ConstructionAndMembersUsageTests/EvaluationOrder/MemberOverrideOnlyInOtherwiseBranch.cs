@@ -113,13 +113,11 @@ namespace TestCase
 
                 return result;
             }
-            else
-            {
-                result.Name = "member";
-                result.Extra = "fallback";
 
-                return result;
-            }
+            result.Name = "member";
+            result.Extra = "fallback";
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -134,13 +132,11 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                destination.Name = "member";
-                destination.Extra = "fallback";
 
-                return destination;
-            }
+            destination.Name = "member";
+            destination.Extra = "fallback";
+
+            return destination;
         }
     }
 }

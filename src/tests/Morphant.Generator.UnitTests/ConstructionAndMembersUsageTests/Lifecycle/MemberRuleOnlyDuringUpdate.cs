@@ -115,10 +115,8 @@ namespace TestCase
 
                 return result;
             }
-            else
-            {
-                return result;
-            }
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -132,10 +130,8 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                return destination;
-            }
+
+            return destination;
         }
     }
 }

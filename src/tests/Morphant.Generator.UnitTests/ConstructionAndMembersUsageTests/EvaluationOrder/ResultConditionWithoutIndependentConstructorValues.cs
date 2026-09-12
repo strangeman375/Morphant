@@ -124,13 +124,11 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                destination.Left = 30;
-                destination.Right = 40;
 
-                return destination;
-            }
+            destination.Left = 30;
+            destination.Right = 40;
+
+            return destination;
         }
     }
 }

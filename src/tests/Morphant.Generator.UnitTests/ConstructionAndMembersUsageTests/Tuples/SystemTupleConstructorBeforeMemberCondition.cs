@@ -111,10 +111,8 @@ namespace TestCase
             {
                 return new global::System.Tuple<int, string>(item1, source.FromMembers());
             }
-            else
-            {
-                return new global::System.Tuple<int, string>(item1, "fallback");
-            }
+
+            return new global::System.Tuple<int, string>(item1, "fallback");
         }
 
         private global::System.Tuple<int, string> __Update(

@@ -127,14 +127,12 @@ namespace TestCase
 
                 return destination;
             }
-            else
+
+            return new global::TestCase.Destination(
+                name: source.FromConstruct())
             {
-                return new global::TestCase.Destination(
-                    name: source.FromConstruct())
-                {
-                    Name = source.FromMembers()
-                };
-            }
+                Name = source.FromMembers()
+            };
         }
     }
 }

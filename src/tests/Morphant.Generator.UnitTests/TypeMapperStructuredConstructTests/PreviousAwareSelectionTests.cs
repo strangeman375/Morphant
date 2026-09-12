@@ -130,14 +130,12 @@ namespace TestCase
 
                 return destination;
             }
-            else
+
+            return new global::TestCase.Destination(
+                id: source.Id)
             {
-                return new global::TestCase.Destination(
-                    id: source.Id)
-                {
-                    Name = source.Name
-                };
-            }
+                Name = source.Name
+            };
         }
     }
 }
@@ -484,17 +482,13 @@ namespace TestCase
                 {
                     return destination;
                 }
-                else
-                {
-                    return new global::TestCase.Destination(
-                        id: source.Id);
-                }
-            }
-            else
-            {
+
                 return new global::TestCase.Destination(
                     id: source.Id);
             }
+
+            return new global::TestCase.Destination(
+                id: source.Id);
         }
     }
 }
@@ -818,11 +812,9 @@ namespace TestCase
                     typeof(global::TestCase.Destination),
                     "'previous' is not available in this case.");
             }
-            else
-            {
-                return new global::TestCase.Destination(
-                    id: source.Id);
-            }
+
+            return new global::TestCase.Destination(
+                id: source.Id);
         }
 
         private global::TestCase.Destination __Update(
@@ -834,11 +826,9 @@ namespace TestCase
             {
                 return destination;
             }
-            else
-            {
-                return new global::TestCase.Destination(
-                    id: source.Id);
-            }
+
+            return new global::TestCase.Destination(
+                id: source.Id);
         }
     }
 }

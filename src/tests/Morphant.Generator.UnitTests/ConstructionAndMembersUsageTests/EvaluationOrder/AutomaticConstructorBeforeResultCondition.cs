@@ -116,13 +116,11 @@ namespace TestCase
 
                 return result;
             }
-            else
-            {
-                result.Left = 30;
-                result.Right = 40;
 
-                return result;
-            }
+            result.Left = 30;
+            result.Right = 40;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -137,13 +135,11 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                destination.Left = 30;
-                destination.Right = 40;
 
-                return destination;
-            }
+            destination.Left = 30;
+            destination.Right = 40;
+
+            return destination;
         }
     }
 }

@@ -110,14 +110,12 @@ namespace TestCase
                     Name = source.FromMembers()
                 };
             }
-            else
+
+            return new global::TestCase.Destination(
+                name: source.FromConstruct())
             {
-                return new global::TestCase.Destination(
-                    name: source.FromConstruct())
-                {
-                    Name = source.FromMembers()
-                };
-            }
+                Name = source.FromMembers()
+            };
         }
 
         private global::TestCase.Destination __Update(
@@ -135,14 +133,12 @@ namespace TestCase
                     Name = source.FromMembers()
                 };
             }
-            else
+
+            return new global::TestCase.Destination(
+                name: source.FromConstruct())
             {
-                return new global::TestCase.Destination(
-                    name: source.FromConstruct())
-                {
-                    Name = source.FromMembers()
-                };
-            }
+                Name = source.FromMembers()
+            };
         }
     }
 }

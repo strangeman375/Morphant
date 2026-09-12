@@ -101,10 +101,8 @@ namespace TestCase
             {
                 return new global::System.Tuple<int, string>(10, "positive");
             }
-            else
-            {
-                return new global::System.Tuple<int, string>(-10, "negative");
-            }
+
+            return new global::System.Tuple<int, string>(-10, "negative");
         }
 
         private global::System.Tuple<int, string> __Update(
