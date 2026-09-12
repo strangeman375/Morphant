@@ -630,9 +630,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             }
             else
             {
-                arguments = SyntaxFactory.SeparatedList(
-                    node.ArgumentList.Arguments.Select(
-                        argument => (ArgumentSyntax)Visit(argument)!));
+                arguments = ((ArgumentListSyntax)Visit(node.ArgumentList)!).Arguments;
             }
 
             if (nestedMap.GeneratedDestinationExpression is
@@ -685,8 +683,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                         " is { } " +
                         Identifier(guardVariable) +
                         " ? " +
-                        rewrittenInvocation.WithoutTrivia()
-                            .NormalizeWhitespace()
+                        UserExpressionLayout.Normalize(rewrittenInvocation, node)
                             .ToFullString() +
                         " : default(" +
                         nestedMap.DestinationTypeName +
@@ -743,19 +740,17 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         var rewrittenOrdinaryInvocation =
             (InvocationExpressionSyntax)base
                 .VisitInvocationExpression(node)!;
-        var rewrittenArguments = rewrittenOrdinaryInvocation
-            .ArgumentList.Arguments
-            .ToList();
+        var rewrittenArguments = rewrittenOrdinaryInvocation.ArgumentList.Arguments;
 
         AppendCallerInfoArguments(
-            rewrittenArguments,
+            ref rewrittenArguments,
             _semanticModel.GetOperation(node) as
                 IInvocationOperation);
 
         return PreserveMapperResultType(node,
             rewrittenOrdinaryInvocation.WithArgumentList(
                 rewrittenOrdinaryInvocation.ArgumentList.WithArguments(
-                    SyntaxFactory.SeparatedList(rewrittenArguments))));
+                    rewrittenArguments)));
     }
 
     public override SyntaxNode? VisitConditionalAccessExpression(
@@ -950,17 +945,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 SyntaxFactory.Token(SyntaxKind.RefKeyword));
         }
 
-        var arguments = new List<ArgumentSyntax>
-        {
-            receiverArgument
-        };
-
-        arguments.AddRange(
-            node.ArgumentList.Arguments.Select(argument =>
-                (ArgumentSyntax)Visit(argument)!));
+        var arguments = ((ArgumentListSyntax)Visit(node.ArgumentList)!).Arguments
+            .Insert(0, receiverArgument);
 
         AppendCallerInfoArguments(
-            arguments,
+            ref arguments,
             _semanticModel.GetOperation(node) as
                 IInvocationOperation);
 
@@ -978,7 +967,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     rewrittenMethodName))
             .WithArgumentList(
                 node.ArgumentList.WithArguments(
-                    SyntaxFactory.SeparatedList(arguments)))
+                    arguments))
             .WithTriviaFrom(node);
     }
 
@@ -988,16 +977,16 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         var rewritten =
             (ImplicitObjectCreationExpressionSyntax)base
                 .VisitImplicitObjectCreationExpression(node)!;
-        var arguments = rewritten.ArgumentList.Arguments.ToList();
+        var arguments = rewritten.ArgumentList.Arguments;
 
         AppendCallerInfoArguments(
-            arguments,
+            ref arguments,
             _semanticModel.GetOperation(node) as
                 IObjectCreationOperation);
 
         return rewritten.WithArgumentList(
             rewritten.ArgumentList.WithArguments(
-                SyntaxFactory.SeparatedList(arguments)));
+                arguments));
     }
 
     public override SyntaxNode? VisitCastExpression(
@@ -1050,7 +1039,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     }
 
     private static void AppendCallerInfoArguments(
-        ICollection<ArgumentSyntax> arguments,
+        ref SeparatedSyntaxList<ArgumentSyntax> arguments,
         IOperation? operation)
     {
         var operationArguments = operation switch
@@ -1077,7 +1066,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 continue;
             }
 
-            arguments.Add(
+            arguments = arguments.Add(
                 SyntaxFactory.Argument(expression)
                     .WithNameColon(
                         SyntaxFactory.NameColon(
@@ -1271,11 +1260,10 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     .VisitObjectCreationExpression(node)!;
         }
 
-        var arguments = rewritten.ArgumentList?.Arguments
-            .ToList() ?? [];
+        var arguments = rewritten.ArgumentList?.Arguments ?? default;
 
         AppendCallerInfoArguments(
-            arguments,
+            ref arguments,
             _semanticModel.GetOperation(node) as
                 IObjectCreationOperation);
 
@@ -1284,7 +1272,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             rewritten = rewritten.WithArgumentList(
                 (rewritten.ArgumentList ?? SyntaxFactory.ArgumentList())
                 .WithArguments(
-                    SyntaxFactory.SeparatedList(arguments)));
+                    arguments));
         }
 
         return rewritten.WithTriviaFrom(node);
@@ -1832,8 +1820,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         var rewrittenName = node.WithTypeArgumentList(
             node.TypeArgumentList.WithArguments(
                 SyntaxFactory.SeparatedList(
-                    node.TypeArgumentList.Arguments.Select(
-                        RewriteType))));
+                    node.TypeArgumentList.Arguments.Select(RewriteType),
+                    node.TypeArgumentList.Arguments.GetSeparators())));
 
         if (symbol is not null && !IsMemberName(node) &&
             TryRewriteMapperMember(rewrittenName, symbol, out var mapperMember))
