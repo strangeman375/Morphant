@@ -1,11 +1,15 @@
+using Microsoft.CodeAnalysis.CSharp;
+
 namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.EvaluationOrder;
 
 internal sealed partial class EvaluationOrderTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
+    [TestCase(false, false)]
+    [TestCase(true, false)]
+    [TestCase(false, true)]
+    [TestCase(true, true)]
     [Description("Expression layout preserves comments, blank lines and string literal values.")]
-    public void MultilineStringLiteral(bool crlf)
+    public void MultilineStringLiteral(bool crlf, bool raw)
     {
         // lang=c#
         const string source =
@@ -51,9 +55,14 @@ namespace TestCase
 }
 """;
 
+        var input = raw
+            ? source.Replace("@\"first\n  second\"",
+                "\"\"\"\n                        first\n                          second\n                        \"\"\"")
+            : source;
+
         // Complete mapper output; the companion surface snapshots cover the generated DSL.
         ConstructionAndMembersSnapshot.Verify(
-            crlf ? source.Replace("\n", "\r\n") : source,
+            crlf ? input.Replace("\n", "\r\n") : input,
             expectedMappers:
             [
             ("Morphant.Generated.TypeMapper.TestCase_Mapper.g.cs",
@@ -224,6 +233,7 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: ThrowingConstructorExpressionWithMemberOverrideSurfaces);
+            expectedSurfaces: ThrowingConstructorExpressionWithMemberOverrideSurfaces,
+            languageVersion: raw ? LanguageVersion.CSharp11 : LanguageVersion.CSharp9);
     }
 }
