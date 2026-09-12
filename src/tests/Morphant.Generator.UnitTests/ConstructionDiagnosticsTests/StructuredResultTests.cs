@@ -86,6 +86,35 @@ internal sealed class StructuredResultTests
         });
     }
 
+    [TestCase("if (previous.HasValue) { var alias = previous.Value; alias = source.Cached; return alias; } return new(source.Id);", "MORPH0032")]
+    [TestCase("if (previous.HasValue) { var alias = previous.Value; var changed = Replace(ref alias); return alias; } return new(source.Id);", "MORPH0032,MORPH0062")]
+    [TestCase("if (previous.TryGetValue(out var alias)) { var changed = Replace(ref alias); return alias; } return new(source.Id);", "MORPH0031,MORPH0062")]
+    public void Does_not_accept_reassigned_or_ref_modified_aliases(string body, string expected)
+    {
+        var result = Run("Resolve", body);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics.Select(d => d.Id),
+                Is.EquivalentTo(expected.Split(',')));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [TestCase("Construct", "null!")]
+    [TestCase("Construct", "default!")]
+    [TestCase("Resolve", "null!")]
+    [TestCase("Resolve", "default!")]
+    public void Keeps_the_null_and_default_construction_diagnostic(string method, string expression)
+    {
+        var result = Run(method, "return " + expression + ";");
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics.Select(d => d.Id),
+                Is.EqualTo(new[] { "MORPH0039" }));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
     [TestCase("ConstructUsing", "return source.Cached;")]
     [TestCase("ResolveUsing", "return source.Cached;")]
     [TestCase("ConstructUsing", "return Make(source);")]
@@ -108,6 +137,53 @@ internal sealed class StructuredResultTests
                 .Replace("__PARAMETERS__", method.StartsWith("Resolve", StringComparison.Ordinal)
                     ? "(source, previous)" : "source")
                 .Replace("__BODY__", body), LanguageVersion.CSharp9);
+
+    [TestCase("", "Read()", "MORPH0062")]
+    [TestCase("", "ReadProperty", "MORPH0062")]
+    [TestCase("readonly", "Read()", "")]
+    [TestCase("readonly", "ReadProperty", "")]
+    public void Struct_aliases_require_reads_that_preserve_the_copied_value(
+        string modifier, string read, string expectedDiagnostic)
+    {
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+using Morphant;
+public sealed class Source { public int Id { get; set; } }
+public struct Destination
+{
+    public Destination(int id) => Id = id;
+    public int Id { get; set; }
+    public __MODIFIER__ int Read() => Id;
+    public __MODIFIER__ int ReadProperty => Id;
+}
+[MorphantMapper]
+public partial class Mapper : TypeMapper<Mapper>
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Source, Destination>().Resolve((source, previous) =>
+        {
+            if (previous.HasValue)
+            {
+                var alias = previous.Value;
+                var value = alias.__READ__;
+                return alias;
+            }
+            return new(source.Id);
+        });
+}
+""";
+        var result = GeneratorTestDriver.Run("StructuredResultStructReads",
+            source.Replace("__MODIFIER__", modifier).Replace("__READ__", read),
+            LanguageVersion.CSharp9);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics.Select(d => d.Id), Is.EqualTo(
+                expectedDiagnostic.Length == 0 ? Array.Empty<string>() : new[] { expectedDiagnostic }));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
 
     private const string Source =
 """
@@ -142,6 +218,7 @@ public partial class Mapper : TypeMapper<Mapper>
         builder.Map<Source, Destination>().__METHOD__(__PARAMETERS__ => { __BODY__ });
     private static Destination Make(Source source) => new Destination(source.Id);
     private static Destination Identity(Destination value) => value;
+    private static bool Replace(ref Destination value) { value = new Destination(0); return true; }
 }
 """;
 }

@@ -4,6 +4,21 @@ namespace Morphant.Generator.IntegrationTests;
 internal sealed class ConstructionDiagnosticsTests
 {
     [Test]
+    public void Previous_value_aliases_preserve_struct_copies_and_member_updates() =>
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .StructuredResultValues.Scenario.VerifyValueCopies();
+
+    [Test]
+    public void Previous_nullable_values_distinguish_default_from_absence() =>
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .StructuredResultValues.Scenario.VerifyNullableValues();
+
+    [Test]
+    public void Suppressed_invalid_results_keep_valid_reuse_and_typed_failures() =>
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .StructuredResultValues.Scenario.VerifySuppressedInvalidResults();
+
+    [Test]
     public void Suppressed_construction_failures_keep_path_sensitive_recovery()
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
@@ -31,7 +46,8 @@ internal sealed class ConstructionDiagnosticsTests
                     "MORPH0036",
                     "MORPH0037",
                     "MORPH0038",
-                    "MORPH0039"
+                    "MORPH0039",
+                    "MORPH0062"
                 }));
             Assert.That(diagnostics, Has.All.Contains("warning MORPH"));
             Assert.That(build.GetGeneratedFiles(), Is.Not.Empty);

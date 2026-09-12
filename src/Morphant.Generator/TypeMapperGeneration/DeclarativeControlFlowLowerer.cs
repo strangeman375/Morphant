@@ -209,7 +209,8 @@ internal static class DeclarativeControlFlowLowerer
         out TypeMapperControlFlowNode root,
         IEnumerable<string>? reservedLocalNames = null,
         Func<ExpressionSyntax, TypeMapperControlFlowNode?>?
-            buildExpressionFailure = null)
+            buildExpressionFailure = null,
+        bool preserveRuntimeLocals = false)
     {
         var nestedMapUsages =
             new DeclarativeNestedMapUsageRegistry(paths);
@@ -595,7 +596,8 @@ internal static class DeclarativeControlFlowLowerer
                     return null;
                 }
 
-                if (buildCondition is not null)
+                if (buildCondition is not null &&
+                    conditional.Condition.SyntaxTree == semanticModel.SyntaxTree)
                 {
                     return buildCondition(
                         conditional.Condition,
@@ -739,6 +741,12 @@ internal static class DeclarativeControlFlowLowerer
         var requiredLocals = CollectRequiredLocals(
             lowered,
             program.RuntimeLocals);
+        if (preserveRuntimeLocals)
+        {
+            requiredLocals.UnionWith(program.RuntimeLocals.Select(
+                static local => local.PlaceholderName));
+        }
+
         var pruned = PruneLocals(lowered, requiredLocals);
         var names = AllocateLocalNames(
             pruned,

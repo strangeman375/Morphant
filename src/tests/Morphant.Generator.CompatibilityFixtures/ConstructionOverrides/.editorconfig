@@ -6,3 +6,4 @@ dotnet_diagnostic.MORPH0036.severity = warning
 dotnet_diagnostic.MORPH0037.severity = warning
 dotnet_diagnostic.MORPH0038.severity = warning
 dotnet_diagnostic.MORPH0039.severity = warning
+dotnet_diagnostic.MORPH0062.severity = warning

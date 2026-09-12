@@ -23,6 +23,8 @@ public sealed class PreviousDestination { }
 
 public sealed class NullPlanDestination { }
 
+public sealed class ArbitraryDestination { }
+
 [MorphantMapper]
 public partial class TestMapper : TypeMapper<TestMapper>
 {
@@ -37,5 +39,7 @@ public partial class TestMapper : TypeMapper<TestMapper>
             .Resolve((source, previous) => previous.Value);
         builder.Map<Source, NullPlanDestination>()
             .Construct(source => default!);
+        builder.Map<Source, ArbitraryDestination>()
+            .Construct(source => new ArbitraryDestination());
     }
 }

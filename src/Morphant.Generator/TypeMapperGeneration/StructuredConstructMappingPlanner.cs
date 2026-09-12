@@ -506,7 +506,8 @@ internal static class StructuredConstructMappingPlanner
                                     MappingAffectedPath.NoPrevious(
                                         MappingPlanPhase.Construction),
                                     ImmutableArray<DeclarativeTerminalAliasSyntax>.Empty))
-                            : null)
+                            : null,
+                    preserveRuntimeLocals: true)
                 ? DeclarativeControlFlowLowerer.PreserveLocalNames(
                     lowered)
                 : null;

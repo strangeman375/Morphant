@@ -69,6 +69,53 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             });
     }
 
+    [MorphantMapper]
+    public sealed partial class ValueAliasMapper : TypeMapper<ValueAliasMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>().Resolve((source, previous) =>
+            {
+                if (previous.HasValue)
+                {
+                    Destination selected = previous.Value;
+                    var alias = selected;
+                    if (source.Matches(alias)) return alias;
+                }
+                var id = source.Id;
+                return new(id);
+            });
+    }
+
+    [MorphantMapper]
+    public sealed partial class OutAliasMapper : TypeMapper<OutAliasMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>().Resolve((source, previous) =>
+            {
+                if (previous.TryGetValue(out var selected))
+                {
+                    var alias = selected;
+                    if (source.Matches(alias)) return alias;
+                }
+                return new(source.Id);
+            });
+    }
+
+    [MorphantMapper]
+    public sealed partial class ConditionalAliasMapper : TypeMapper<ConditionalAliasMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>().Resolve((source, previous) =>
+            {
+                if (!previous.TryGetValue(out var selected)) return new(source.Id);
+                global::Morphant.Generated.N_67f09af83af980a4facb4ee28cd92d98.DestinationConstruction construction =
+                    source.Matches(selected)
+                        ? selected
+                        : new global::Morphant.Generated.N_67f09af83af980a4facb4ee28cd92d98.DestinationConstruction(source.Id);
+                return construction;
+            });
+    }
+
     public static class Scenario
     {
         public static void Verify()
@@ -77,6 +124,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
             VerifyMapper(new NestedMapper());
             VerifyMapper(new ConditionalMapper());
             VerifyMapper(new NegatedMapper());
+            VerifyMapper(new ValueAliasMapper());
+            VerifyMapper(new OutAliasMapper());
+            VerifyMapper(new ConditionalAliasMapper());
         }
 
         private static void VerifyMapper(ITypeMapper<Source, Destination> mapper)

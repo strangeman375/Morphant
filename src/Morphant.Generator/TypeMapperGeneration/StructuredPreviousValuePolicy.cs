@@ -213,7 +213,12 @@ internal static class StructuredPreviousValuePolicy
                     invocation.Expression is MemberAccessExpressionSyntax access &&
                     access.Expression.Span.Contains(identifier.Span) &&
                     semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not
-                        IMethodSymbol { IsReadOnly: true })
+                        IMethodSymbol { IsReadOnly: true } ||
+                    local.Type.IsValueType &&
+                    ancestor is MemberAccessExpressionSyntax propertyAccess &&
+                    propertyAccess.Expression.Span.Contains(identifier.Span) &&
+                    semanticModel.GetSymbolInfo(propertyAccess, cancellationToken).Symbol is
+                        IPropertySymbol { GetMethod.IsReadOnly: false })
                 {
                     return false;
                 }
