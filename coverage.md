@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/12/2026 - 09:15:36 |
-| Coverage date: | 09/12/2026 - 09:01:08 - 09/12/2026 - 09:15:31 |
+| Generated on: | 09/12/2026 - 09:46:13 |
+| Coverage date: | 09/12/2026 - 09:31:49 - 09/12/2026 - 09:46:08 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 372 |
 | Files: | 196 |
-| **Line coverage:** | 89.9% (39343 of 43752) |
-| Covered lines: | 39343 |
+| **Line coverage:** | 89.9% (39351 of 43760) |
+| Covered lines: | 39351 |
 | Uncovered lines: | 4409 |
-| Coverable lines: | 43752 |
-| Total lines: | 72744 |
-| **Branch coverage:** | 80.6% (14357 of 17798) |
-| Covered branches: | 14357 |
-| Total branches: | 17798 |
+| Coverable lines: | 43760 |
+| Total lines: | 72754 |
+| **Branch coverage:** | 80.6% (14370 of 17810) |
+| Covered branches: | 14370 |
+| Total branches: | 17810 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -366,7 +366,7 @@
 |Morphant.Generator.TypeMapperGeneration.SourceDiscardObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.SourceUseObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.StructuredConstructLeafNode|100%||
-|Morphant.Generator.TypeMapperGeneration.StructuredConstructMappingPlanner|70.3%|62%|
+|Morphant.Generator.TypeMapperGeneration.StructuredConstructMappingPlanner|70.4%|63%|
 |Morphant.Generator.TypeMapperGeneration.StructuredConstructMappingResult|100%||
 |Morphant.Generator.TypeMapperGeneration.StructuredConstructorCandidatePlann<br/>ingResult|100%||
 |Morphant.Generator.TypeMapperGeneration.StructuredConstructorParameterRule|100%||
@@ -418,4 +418,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #321](https://github.com/strangeman375/Morphant/actions/runs/34684549081).
+Full HTML report: download the **coverage** artifact from [CI run #322](https://github.com/strangeman375/Morphant/actions/runs/34685873373).
