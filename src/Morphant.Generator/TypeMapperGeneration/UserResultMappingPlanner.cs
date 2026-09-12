@@ -343,7 +343,7 @@ internal static class UserResultMappingPlanner
                                         Identifier(delegateLocalName)))
                                 .WithInitializer(
                                     SyntaxFactory.EqualsValueClause(
-                                        SyntaxFactory.ParseExpression(
+                                        UserExpressionLayout.ParseExpression(
                                             rewrittenExpression))))));
         var delegateInvocation = SyntaxFactory.InvocationExpression(
             SyntaxFactory.IdentifierName(
@@ -530,13 +530,10 @@ internal static class UserResultMappingPlanner
     private static string NormalizeFunction(
         LocalFunctionStatementSyntax function)
     {
+        var normalized = function.WithoutTrivia().NormalizeWhitespace(
+            indentation: "    ", eol: "\r\n");
         return new NullableSuppressionTriviaRewriter()
-            .Visit(
-                function
-                    .WithoutTrivia()
-                    .NormalizeWhitespace(
-                        indentation: "    ",
-                        eol: "\r\n"))!
+            .Visit(UserExpressionLayout.Restore(function, normalized))!
             .ToFullString();
     }
 

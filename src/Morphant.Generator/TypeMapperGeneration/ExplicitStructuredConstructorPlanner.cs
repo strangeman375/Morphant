@@ -808,14 +808,12 @@ internal static class ExplicitStructuredConstructorPlanner
             return null;
         }
 
-        return SyntaxFactory.ParseExpression(
+        return UserExpressionLayout.Normalize(SyntaxFactory.ParseExpression(
                 "(" +
                 castType.ToDisplayString(
                     SymbolDisplayFormats.FullyQualifiedNullable) +
                 ")" +
-                rewrittenOperand)
-            .WithoutTrivia()
-            .NormalizeWhitespace()
+                rewrittenOperand))
             .ToFullString();
     }
 

@@ -235,7 +235,7 @@ internal static class RuntimeCallbackMethodPlanner
                                 SyntaxFactory.Identifier(delegateLocalName))
                             .WithInitializer(
                                 SyntaxFactory.EqualsValueClause(
-                                    SyntaxFactory.ParseExpression(
+                                    UserExpressionLayout.ParseExpression(
                                         rewrittenExpression))))));
         var invocationArguments = new List<ArgumentSyntax>
         {
@@ -525,6 +525,7 @@ internal static class RuntimeCallbackMethodPlanner
         // initializers. Reapply the public generated-source layout explicitly.
         var stableMethod = new MultilineObjectInitializerRewriter()
             .Visit(normalizedMethod)!;
+        stableMethod = UserExpressionLayout.Restore(method, stableMethod);
 
         return new NullableSuppressionTriviaRewriter()
             .Visit(stableMethod)!

@@ -6,6 +6,57 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class UserExpressionLayout
 {
+    private const string AnnotationKind = "MorphantUserExpressionLayout";
+
+    public static SyntaxNode Preserve(SyntaxNode source, SyntaxNode rewritten)
+    {
+        if (source is ExpressionSyntax &&
+            source.GetLocation().GetLineSpan() is var span &&
+            span.StartLinePosition.Line != span.EndLinePosition.Line)
+        {
+            return rewritten.WithAdditionalAnnotations(
+                new SyntaxAnnotation(AnnotationKind, GetIndentation(source)));
+        }
+
+        return rewritten;
+    }
+
+    public static ExpressionSyntax ParseExpression(string expression)
+    {
+        var syntax = SyntaxFactory.ParseExpression(expression);
+        return HasLineBreak(expression)
+            ? syntax.WithAdditionalAnnotations(new SyntaxAnnotation(AnnotationKind, string.Empty))
+            : syntax;
+    }
+
+    public static T Restore<T>(T original, T normalized)
+        where T : SyntaxNode
+    {
+        var replacements = new Dictionary<SyntaxNode, SyntaxNode>();
+        foreach (var expression in original.DescendantNodes().OfType<ExpressionSyntax>()
+                     .Where(node => node.HasAnnotations(AnnotationKind) &&
+                         !node.Ancestors().Any(parent => parent.HasAnnotations(AnnotationKind))))
+        {
+            var annotation = expression.GetAnnotations(AnnotationKind).First();
+            var target = normalized.GetAnnotatedNodes(annotation).FirstOrDefault();
+            if (target is null) continue;
+
+            var preserved = Normalize(expression);
+            var indentation = GetIndentation(target);
+            var tokens = preserved.DescendantTokens().ToArray();
+            preserved = preserved.ReplaceTokens(tokens, (token, _) => token
+                .WithLeadingTrivia(IndentTrivia(token.LeadingTrivia, indentation))
+                .WithTrailingTrivia(IndentTrivia(token.TrailingTrivia, indentation)));
+            replacements.Add(target, preserved.WithTriviaFrom(target));
+        }
+
+        return normalized.ReplaceNodes(replacements.Keys, (node, _) => replacements[node]);
+    }
+
+    private static SyntaxTriviaList IndentTrivia(SyntaxTriviaList trivia, string indentation) =>
+        SyntaxFactory.ParseLeadingTrivia(trivia.ToFullString()
+            .Replace("\r\n", "\n").Replace("\n", "\r\n" + indentation));
+
     public static T Normalize<T>(T syntax, SyntaxNode? source = null)
         where T : CSharpSyntaxNode
     {
@@ -21,7 +72,9 @@ internal static class UserExpressionLayout
         }
 
         var normalizedTokens = normalized.DescendantTokens().ToArray();
-        var indentation = GetIndentation(source ?? syntax);
+        var indentation = source is not null
+            ? GetIndentation(source)
+            : syntax.GetAnnotations(AnnotationKind).FirstOrDefault()?.Data ?? GetIndentation(syntax);
         var replacements = new Dictionary<SyntaxToken, SyntaxToken>();
 
         for (var index = 0; index < normalizedTokens.Length; index++)

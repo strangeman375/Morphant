@@ -543,6 +543,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
         var rewritten = base.Visit(node);
+        if (node is not null && rewritten is not null)
+            rewritten = UserExpressionLayout.Preserve(node, rewritten);
 
         return node is not null &&
                rewritten is not null &&
