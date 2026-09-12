@@ -262,12 +262,12 @@ internal static class StructuredPreviousValuePolicy
                     local.Type.IsValueType &&
                     ancestor is InvocationExpressionSyntax invocation &&
                     invocation.Expression is MemberAccessExpressionSyntax access &&
-                    access.Expression.Span.Contains(identifier.Span) &&
-                    semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not
-                        IMethodSymbol { IsReadOnly: true } ||
+                    IsWritableReceiver(access.Expression, local, semanticModel, cancellationToken) &&
+                    MayMutateReceiver(semanticModel.GetSymbolInfo(invocation, cancellationToken)
+                        .Symbol as IMethodSymbol) ||
                     local.Type.IsValueType &&
                     ancestor is MemberAccessExpressionSyntax propertyAccess &&
-                    propertyAccess.Expression.Span.Contains(identifier.Span) &&
+                    IsWritableReceiver(propertyAccess.Expression, local, semanticModel, cancellationToken) &&
                     semanticModel.GetSymbolInfo(propertyAccess, cancellationToken).Symbol is
                         IPropertySymbol { GetMethod.IsReadOnly: false })
                 {
@@ -277,6 +277,27 @@ internal static class StructuredPreviousValuePolicy
         }
 
         return true;
+    }
+
+    private static bool MayMutateReceiver(IMethodSymbol? method) =>
+        method?.ReducedFrom is { } extension
+            ? extension.Parameters[0].RefKind == RefKind.Ref
+            : method is not { IsReadOnly: true };
+
+    private static bool IsWritableReceiver(
+        ExpressionSyntax receiver, ILocalSymbol local, SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        receiver = Unwrap(receiver);
+        var symbol = semanticModel.GetSymbolInfo(receiver, cancellationToken).Symbol;
+        if (SymbolEqualityComparer.Default.Equals(symbol, local)) return true;
+
+        // A field can be part of the same struct storage. Ordinary properties
+        // return copies, and reference-type members refer to separate objects.
+        return receiver is MemberAccessExpressionSyntax access &&
+            (symbol is IFieldSymbol { IsReadOnly: false, Type.IsValueType: true } ||
+             symbol is IPropertySymbol { ReturnsByRef: true, Type.IsValueType: true }) &&
+            IsWritableReceiver(access.Expression, local, semanticModel, cancellationToken);
     }
 
     private static ExpressionSyntax Unwrap(ExpressionSyntax expression)

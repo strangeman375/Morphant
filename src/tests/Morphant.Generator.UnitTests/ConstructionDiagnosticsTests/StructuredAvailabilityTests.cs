@@ -14,6 +14,11 @@ internal sealed class StructuredAvailabilityTests
     [TestCase("Construction selected = previous.HasValue switch { true => previous.Value, false => new Construction(source.Name) }; return selected;")]
     [TestCase("Construction selected = previous.HasValue ? previous.Value : new Construction(source.Name); return selected;")]
     [TestCase("Construction selected = previous.HasValue ? new Construction(previous.Value.Name) : new Construction(source.Name); return selected;")]
+    [TestCase("if (!previous.HasValue) return new(source.Name); Construction selected = source.Reuse switch { true => previous.Value, false => new Construction(source.Name) }; return selected;")]
+    [TestCase("switch (previous.HasValue) { default: return new(source.Name); case true: return previous.Value; }")]
+    [TestCase("return previous.HasValue switch { not false => previous.Value, _ => new Construction(source.Name) };")]
+    [TestCase("var name = previous.HasValue switch { true => previous.Value.Name, false => source.Name }; return new(name);")]
+    [TestCase("var name = nameof(previous.Value); return new(name);")]
     public void Accepts_available_values_through_stored_guards_and_selections(string body)
     {
         var result = Run(body);
@@ -30,6 +35,7 @@ internal sealed class StructuredAvailabilityTests
     [TestCase("return new(previous.Value.Name);")]
     [TestCase("if (previous.Value.Name == source.Name) return new(source.Name); return new(source.Name);")]
     [TestCase("var available = source.Reuse; if (available) return previous.Value; return new(source.Name);")]
+    [TestCase("return previous.HasValue switch { false => previous.Value, true => new Construction(source.Name) };")]
     public void Rejects_reads_before_an_availability_guard(string body)
     {
         var result = Run(body);
@@ -39,6 +45,8 @@ internal sealed class StructuredAvailabilityTests
                 Is.EqualTo(new[] { "MORPH0038" }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
+        Assert.That(GeneratorTestDriver.GetSourceText(result.EffectiveDiagnostics.Single().Location),
+            Is.EqualTo("previous.Value"));
     }
 
     private static GeneratorTestDriverResult Run(string body) =>

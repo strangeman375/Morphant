@@ -142,6 +142,12 @@ internal sealed class StructuredResultTests
     [TestCase("", "ReadProperty", "MORPH0062")]
     [TestCase("readonly", "Read()", "")]
     [TestCase("readonly", "ReadProperty", "")]
+    [TestCase("", "Text.Trim()", "")]
+    [TestCase("", "Copy.Read()", "")]
+    [TestCase("", "Field.Read()", "MORPH0062")]
+    [TestCase("", "ReadonlyField.Read()", "")]
+    [TestCase("", "ReadCopy()", "")]
+    [TestCase("", "Change()", "MORPH0062")]
     public void Struct_aliases_require_reads_that_preserve_the_copied_value(
         string modifier, string read, string expectedDiagnostic)
     {
@@ -153,10 +159,24 @@ using Morphant;
 public sealed class Source { public int Id { get; set; } }
 public struct Destination
 {
-    public Destination(int id) => Id = id;
+    public Destination(int id) { Id = id; Field = default; ReadonlyField = default; }
     public int Id { get; set; }
     public __MODIFIER__ int Read() => Id;
     public __MODIFIER__ int ReadProperty => Id;
+    public readonly string Text => Id.ToString();
+    public readonly Counter Copy => default;
+    public Counter Field;
+    public readonly Counter ReadonlyField;
+}
+public struct Counter
+{
+    public int Value;
+    public int Read() => ++Value;
+}
+public static class DestinationExtensions
+{
+    public static int ReadCopy(this Destination value) => value.Id;
+    public static int Change(this ref Destination value) => ++value.Id;
 }
 [MorphantMapper]
 public partial class Mapper : TypeMapper<Mapper>

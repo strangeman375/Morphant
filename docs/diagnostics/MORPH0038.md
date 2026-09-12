@@ -8,7 +8,7 @@ create a replacement for a null destination.
 
 ## Fix
 
-Check `previous.HasValue` or `TryGetValue` before using its value and provide a
+Check `previous.HasValue` or `TryGetValue` before using its value and provide
 a construction expression or throw on the empty path. Put the check before
 any local initializer that reads `previous.Value`. Alternatively, restrict the mapping
 to operations where a destination is guaranteed and use

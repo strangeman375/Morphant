@@ -48,6 +48,10 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Correct `previous` availability checks through local guards and switches,
+  including reads in arguments and initializers before a guard.
+- Accept reuse of struct aliases after calls on separate copies or
+  reference-type members, while rejecting calls that can modify the alias.
 - Clarify documentation, shorten IntelliSense, and verify mapping examples.
 - Package the correct generator and build task assemblies with custom build
   output paths.

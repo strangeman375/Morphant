@@ -20,8 +20,9 @@ Use [`ConstructUsing`](../api/construct-using.md) or
 [`ResolveUsing`](../api/resolve-using.md) for factories, cached objects,
 `new Order(...)`, or helper calls returning a destination. Morphant does not
 inspect helper implementations to prove that they return the existing object.
-For a value-type alias, instance methods and getters used before reuse must
-be `readonly`, so reading the copy cannot change the value being returned.
+For a value-type alias, instance methods and getters acting on the alias itself
+must be `readonly`. Methods receiving a separate copy, or acting on a
+reference-type member, do not change the struct value being returned.
 
 See [`Resolve`](../api/resolve.md) for a reuse example.
 
