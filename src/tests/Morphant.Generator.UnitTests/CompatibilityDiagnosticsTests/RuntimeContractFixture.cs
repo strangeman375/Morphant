@@ -98,7 +98,7 @@ internal sealed class RuntimeContractFixture
             RuntimeContractDefect.WrongSourceSelector => new Replacement(
                 "Func<TState, TSource?> sourceSelector", "Func<TState, bool> sourceSelector"),
             RuntimeContractDefect.MissingCapturedSelector => new Replacement(
-                "void UpdateExisting<TSource, TDestination>", "void MissingUpdateExisting<TSource, TDestination>"),
+                "void UpdateInPlace<TSource, TDestination>", "void MissingUpdateInPlace<TSource, TDestination>"),
             RuntimeContractDefect.InternalMapperAttribute => new Replacement(
                 "public sealed class MorphantMapperAttribute : Attribute",
                 "internal sealed class MorphantMapperAttribute : Attribute"),

@@ -672,18 +672,18 @@ namespace Morphant.Exceptions
     }
 }
 
-namespace Morphant.Runtime
+namespace Morphant.GeneratedCode
 {
     public static class MappingHelpers
     {
-        public static void UpdateExisting<TState, TSource, TDestination>(
+        public static void UpdateInPlace<TState, TSource, TDestination>(
             TDestination? destination,
             TState state,
             Func<TState, TSource?> sourceSelector,
             Morphant.Context.MappingContext context)
             where TDestination : class { }
 
-        public static void UpdateExisting<TSource, TDestination>(
+        public static void UpdateInPlace<TSource, TDestination>(
             TDestination? destination,
             Func<TSource?> sourceSelector,
             Morphant.Context.MappingContext context)

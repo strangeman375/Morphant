@@ -12,7 +12,7 @@ internal sealed class PublicApiBaselineTests
     [Test]
     public void Runtime_mapping_helpers_are_hidden_from_IntelliSense()
     {
-        var type = typeof(Runtime.MappingHelpers);
+        var type = typeof(GeneratedCode.MappingHelpers);
         Assert.That(type.IsAbstract && type.IsSealed, Is.True);
         Assert.That(type.GetCustomAttribute<System.ComponentModel.EditorBrowsableAttribute>()?.State,
             Is.EqualTo(System.ComponentModel.EditorBrowsableState.Never));
@@ -454,9 +454,9 @@ T Morphant.Option<T>
   P T Value { get; }
   M Morphant.Option<T> Some(T)
   M System.Boolean TryGetValue(T&)
-T Morphant.Runtime.MappingHelpers
-  M System.Void UpdateExisting<TSource, TDestination>(TDestination, System.Func<TSource>, Morphant.Context.MappingContext)
-  M System.Void UpdateExisting<TState, TSource, TDestination>(TDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
+T Morphant.GeneratedCode.MappingHelpers
+  M System.Void UpdateInPlace<TSource, TDestination>(TDestination, System.Func<TSource>, Morphant.Context.MappingContext)
+  M System.Void UpdateInPlace<TState, TSource, TDestination>(TDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
 T Morphant.TypeMapperExtensions
   M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
   M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)

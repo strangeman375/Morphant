@@ -408,7 +408,7 @@ namespace TestCase
                     destination: nestedDestination);
             }
 
-            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
                 result.Empty,
                 source,
                 static s => global::TestCase.TestMapper.ThrowIfEvaluated(s),
@@ -443,7 +443,7 @@ namespace TestCase
                     destination: nestedDestination);
             }
 
-            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
                 destination.Empty,
                 source,
                 static s => global::TestCase.TestMapper.ThrowIfEvaluated(s),

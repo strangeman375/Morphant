@@ -177,7 +177,7 @@ namespace TestCase
                 item1: new global::TestCase.ChildDestination(),
                 item2: 7);
 
-            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
                 result.Item1,
                 source,
                 static s => s.Child,
@@ -191,7 +191,7 @@ namespace TestCase
             global::System.Tuple<global::TestCase.ChildDestination, int> destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
                 destination.Item1,
                 source,
                 static s => s.Child,

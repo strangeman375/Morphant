@@ -237,9 +237,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
             try
             {
                 if (capture)
-                    Runtime.MappingHelpers.UpdateExisting(destination, () => Read(), default);
+                    GeneratedCode.MappingHelpers.UpdateInPlace(destination, () => Read(), default);
                 else
-                    Runtime.MappingHelpers.UpdateExisting(destination, events,
+                    GeneratedCode.MappingHelpers.UpdateInPlace(destination, events,
                         static state => { state.Add("read"); return new ChildSource(state); }, default);
                 if (hasChild) throw new InvalidOperationException("The invalid context was not accessed.");
             }

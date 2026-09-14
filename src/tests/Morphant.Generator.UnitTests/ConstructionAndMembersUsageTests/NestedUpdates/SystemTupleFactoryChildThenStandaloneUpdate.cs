@@ -180,7 +180,7 @@ namespace TestCase
                 return default!;
             }
 
-            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
                 result.Item1,
                 source,
                 static s => s.Child,
@@ -194,7 +194,7 @@ namespace TestCase
             global::System.Tuple<global::TestCase.ChildDestination, int> destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
                 destination.Item1,
                 source,
                 static s => s.Child,

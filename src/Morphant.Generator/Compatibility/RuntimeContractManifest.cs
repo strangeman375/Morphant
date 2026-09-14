@@ -78,7 +78,7 @@ internal static class RuntimeContractManifest
             TypeKind.Interface,
             IsTypeMapperInterface),
         Requirement("Morphant.Mapper", TypeKind.Class, IsMapper),
-        Requirement("Morphant.Runtime.MappingHelpers", TypeKind.Class, IsMappingHelpers),
+        Requirement("Morphant.GeneratedCode.MappingHelpers", TypeKind.Class, IsMappingHelpers),
         EnumRequirement(
             "Morphant.MappingMode",
             ("Default", 0),
@@ -1103,13 +1103,13 @@ internal static class RuntimeContractManifest
 
     private static bool IsMappingHelpers(INamedTypeSymbol symbol) =>
         symbol.IsStatic &&
-        HasMethod(symbol, "UpdateExisting", Accessibility.Public, isStatic: true, arity: 3, Void,
+        HasMethod(symbol, "UpdateInPlace", Accessibility.Public, isStatic: true, arity: 3, Void,
             [Parameter(MethodTypeParameter(2)), Parameter(MethodTypeParameter(0)),
                 Parameter(Named("System.Func`2", MethodTypeParameter(0), MethodTypeParameter(1))),
                 Parameter(Named("Morphant.Context.MappingContext"))],
             method => method.TypeParameters[2].HasReferenceTypeConstraint &&
                 !HasConstraints(method.TypeParameters[0]) && !HasConstraints(method.TypeParameters[1])) &&
-        HasMethod(symbol, "UpdateExisting", Accessibility.Public, isStatic: true, arity: 2, Void,
+        HasMethod(symbol, "UpdateInPlace", Accessibility.Public, isStatic: true, arity: 2, Void,
             [Parameter(MethodTypeParameter(1)), Parameter(Named("System.Func`1", MethodTypeParameter(0))),
                 Parameter(Named("Morphant.Context.MappingContext"))],
             method => method.TypeParameters[1].HasReferenceTypeConstraint &&

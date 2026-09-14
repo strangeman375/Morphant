@@ -185,9 +185,9 @@ namespace Morphant
         RuntimeContractDefect.MissingMapperAttribute,
         "Morphant.MorphantMapperAttribute",
         "is missing")]
-    [TestCase(RuntimeContractDefect.MissingMappingHelpers, "Morphant.Runtime.MappingHelpers", "is missing")]
-    [TestCase(RuntimeContractDefect.WrongSourceSelector, "Morphant.Runtime.MappingHelpers", "has an incompatible shape")]
-    [TestCase(RuntimeContractDefect.MissingCapturedSelector, "Morphant.Runtime.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.MissingMappingHelpers, "Morphant.GeneratedCode.MappingHelpers", "is missing")]
+    [TestCase(RuntimeContractDefect.WrongSourceSelector, "Morphant.GeneratedCode.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.MissingCapturedSelector, "Morphant.GeneratedCode.MappingHelpers", "has an incompatible shape")]
     [TestCase(
         RuntimeContractDefect.InternalMapperAttribute,
         "Morphant.MorphantMapperAttribute",

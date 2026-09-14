@@ -100,6 +100,13 @@
   variable mutations and the mapping context. Prefer static selectors with
   explicit state when that preserves semantics. Do not call the whole
   `__Update` from `__Create` to share this operation. Approved on 2026-09-14.
+- Keep generated-code support helpers in `Morphant.GeneratedCode`. Name the
+  standalone nested update `UpdateInPlace`, including its checked overloads
+  for a destination declared as a base type or interface. Evaluate the lazy
+  source before checking the non-null destination's type; preserve the existing
+  nested mismatch exception. Use `UpdateDerived` for a selected `ForDerived`
+  branch: retain source selection in generated code, preserve destination
+  compatibility and null handling, and return the selected mapping's result.
 - Omit redundant `else` blocks after terminating generated mapping branches
   when the continuation does not need its own declaration scope. Preserve
   conditional execution and user-written local scopes.

@@ -181,7 +181,7 @@ namespace TestCase
             var result = new global::TestCase.Destination(
                 child: new global::TestCase.ChildDestination());
 
-            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
                 result.Child,
                 (source, context),
                 static state => state.source.ReadChild(state.context.Operation),
@@ -195,7 +195,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
                 destination.Child,
                 (source, context),
                 static state => state.source.ReadChild(state.context.Operation),

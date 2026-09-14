@@ -160,7 +160,7 @@ internal static class RuntimeMappingHelperLowerer
         if (state is not null) arguments.Add(state);
         arguments.Add(selector);
         arguments.Add("context");
-        return "global::Morphant.Runtime.MappingHelpers.UpdateExisting" + typeArguments + "(\r\n" +
+        return "global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace" + typeArguments + "(\r\n" +
             string.Join(",\r\n", arguments.Select(argument => indent + "    " +
                 Unindent(argument, expressionIndent).Replace("\r\n", "\r\n" + indent + "    "))) + ");";
     }
