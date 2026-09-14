@@ -4,7 +4,7 @@ using Morphant.Generator.UnitTests.TestUtils;
 namespace Morphant.Generator.UnitTests.TypeMapperStructuredConstructTests;
 
 [TestFixture]
-internal sealed class SharedConstructionTests
+internal sealed partial class SharedConstructionTests
 {
     [Test]
     public void TenArgumentsAndInitializer()

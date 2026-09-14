@@ -137,7 +137,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
                 });
     }
 
-    public static class Scenario
+    public static partial class Scenario
     {
         public static void VerifyOrder(int operation, bool before, bool after, int throwAt)
         {

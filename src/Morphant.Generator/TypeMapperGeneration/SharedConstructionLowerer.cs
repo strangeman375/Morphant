@@ -33,6 +33,11 @@ internal static class SharedConstructionLowerer
         var names = new HashSet<string>(methods.Keys, StringComparer.Ordinal);
         foreach (var mapping in model.Mappings)
         {
+            for (var type = mapping.AnalysisContext.TargetMapper; type is not null; type = type.ContainingType)
+            {
+                names.Add(type.Name);
+                names.UnionWith(type.TypeParameters.Select(parameter => parameter.Name));
+            }
             for (var type = mapping.AnalysisContext.TargetMapper; type is not null; type = type.BaseType)
             {
                 names.UnionWith(type.GetMembers().Select(member => member.Name));
@@ -125,7 +130,11 @@ internal static class SharedConstructionLowerer
                         candidate.Parameters.All(value => value.Name != "operation")
                             ? "global::Morphant.Context.MappingOperation.Update"
                             : (parameter.ByReference ? "ref " : string.Empty) + parameter.Name);
-                    var call = "return " + name + "(" + string.Join(", ", arguments) + ");";
+                    var shadowed = semanticModel.LookupSymbols(candidate.Syntax.Span.Start, name: name)
+                        .Any(symbol => symbol is ILocalSymbol or IParameterSymbol or
+                            IMethodSymbol { MethodKind: MethodKind.LocalFunction });
+                    var call = "return " + (shadowed ? "this." : string.Empty) + name +
+                        "(" + string.Join(", ", arguments) + ");";
                     var span = candidate.Syntax.Span;
                     if (candidate.Syntax.First.Parent is BlockSyntax { Parent: ElseClauseSyntax @else } block &&
                         candidate.Syntax.First == block.Statements[0] &&

@@ -5,6 +5,17 @@ namespace Morphant.Generator.IntegrationTests.TypeMapperStructuredConstructTests
 [TestFixture]
 internal sealed class SharedConstructionTests
 {
+    [TestCase(false, 0, false)]
+    [TestCase(false, 1, false)]
+    [TestCase(false, 2, false)]
+    [TestCase(false, 2, true)]
+    [TestCase(true, 0, false)]
+    [TestCase(true, 1, false)]
+    [TestCase(true, 2, false)]
+    [TestCase(true, 2, true)]
+    public void Calls_the_mapper_method_when_a_user_delegate_has_the_same_name(bool construct, int operation, bool reuse) =>
+        Scenario.VerifyShadowing(construct, operation, reuse);
+
     [TestCase(0, false, false, 0)]
     [TestCase(0, false, true, 0)]
     [TestCase(0, true, false, 0)]
