@@ -232,6 +232,9 @@ internal static class TypeMapperRuntimeEquality
                leftMapping.CreateImplUsesOperation ==
                    rightMapping.CreateImplUsesOperation &&
                AreEquivalent(
+                   leftMapping.SharedConstructionMethodDeclarations,
+                   rightMapping.SharedConstructionMethodDeclarations) &&
+               AreEquivalent(
                    leftMapping.HelperMethodDeclarations,
                    rightMapping.HelperMethodDeclarations) &&
                AreEquivalent(

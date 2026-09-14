@@ -222,16 +222,27 @@ internal static class TypeMapperEmitter
             WriteTryUpdatePolymorphic(writer, mapping);
         }
 
-        if (mapping.CreateImplMethodName is not null)
+        if (!mapping.SharedConstructionMethodDeclarations.IsDefaultOrEmpty)
         {
-            writer.Line();
-            WriteCreateImpl(writer, mapping);
+            foreach (var declaration in mapping.SharedConstructionMethodDeclarations)
+            {
+                writer.Line();
+                WriteMultilineDeclaration(writer, declaration);
+            }
         }
-
-        if (mapping.UpdateImplMethodName is not null)
+        else
         {
-            writer.Line();
-            WriteUpdateImpl(writer, mapping);
+            if (mapping.CreateImplMethodName is not null)
+            {
+                writer.Line();
+                WriteCreateImpl(writer, mapping);
+            }
+
+            if (mapping.UpdateImplMethodName is not null)
+            {
+                writer.Line();
+                WriteUpdateImpl(writer, mapping);
+            }
         }
 
         if (mapping.EffectiveSettings.IsMappingModeValid &&

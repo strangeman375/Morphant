@@ -277,6 +277,7 @@ internal static class TypeMapperTransferValidator
             CreateImplMethodName = null,
             UpdateImplMethodName = null,
             CreateImplUsesOperation = false,
+            SharedConstructionMethodDeclarations = default,
             HelperMethodDeclarations = ImmutableArray<string>.Empty,
             TransferredWarningSuppressions = ImmutableArray<string>.Empty
         };
