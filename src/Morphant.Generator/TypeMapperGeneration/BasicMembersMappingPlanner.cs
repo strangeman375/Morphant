@@ -405,7 +405,8 @@ internal static class BasicMembersMappingPlanner
             return true;
         }
 
-        foreach (var leaf in EnumerateLeaves(controlFlow.Root))
+        // Conditional evaluations can share the same continuation leaf.
+        foreach (var leaf in EnumerateLeaves(controlFlow.Root).Distinct())
         {
             if (!BuildLeaf(leaf))
             {
