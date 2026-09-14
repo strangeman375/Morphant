@@ -1113,7 +1113,20 @@ internal static class RuntimeContractManifest
             [Parameter(MethodTypeParameter(1)), Parameter(Named("System.Func`1", MethodTypeParameter(0))),
                 Parameter(Named("Morphant.Context.MappingContext"))],
             method => method.TypeParameters[1].HasReferenceTypeConstraint &&
-                !HasConstraints(method.TypeParameters[0]));
+                !HasConstraints(method.TypeParameters[0])) &&
+        HasMethod(symbol, "UpdateInPlace", Accessibility.Public, isStatic: true, arity: 3, Void,
+            [Parameter(Named("System.Object")), Parameter(MethodTypeParameter(0)),
+                Parameter(Named("System.Func`2", MethodTypeParameter(0), MethodTypeParameter(1))),
+                Parameter(Named("Morphant.Context.MappingContext"))],
+            method => method.TypeParameters.All(parameter => !HasConstraints(parameter))) &&
+        HasMethod(symbol, "UpdateInPlace", Accessibility.Public, isStatic: true, arity: 2, Void,
+            [Parameter(Named("System.Object")), Parameter(Named("System.Func`1", MethodTypeParameter(0))),
+                Parameter(Named("Morphant.Context.MappingContext"))],
+            method => method.TypeParameters.All(parameter => !HasConstraints(parameter))) &&
+        HasMethod(symbol, "UpdateDerived", Accessibility.Public, isStatic: true, arity: 4, MethodTypeParameter(3),
+            [Parameter(MethodTypeParameter(2)), Parameter(Named("System.Object")),
+                Parameter(Named("Morphant.Context.MappingContext"))],
+            method => method.TypeParameters.All(parameter => !HasConstraints(parameter)));
 
     private static bool HasConstraints(ITypeParameterSymbol parameter) =>
         parameter.HasReferenceTypeConstraint || parameter.HasValueTypeConstraint ||

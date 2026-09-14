@@ -96,9 +96,21 @@ internal sealed class RuntimeContractFixture
             RuntimeContractDefect.MissingMappingHelpers => new Replacement(
                 "public static class MappingHelpers", "public static class MissingMappingHelpers"),
             RuntimeContractDefect.WrongSourceSelector => new Replacement(
-                "Func<TState, TSource?> sourceSelector", "Func<TState, bool> sourceSelector"),
+                "TDestination? destination,\n            TState state,\n            Func<TState, TSource?> sourceSelector",
+                "TDestination? destination,\n            TState state,\n            Func<TState, bool> sourceSelector"),
             RuntimeContractDefect.MissingCapturedSelector => new Replacement(
-                "void UpdateInPlace<TSource, TDestination>", "void MissingUpdateInPlace<TSource, TDestination>"),
+                "void UpdateInPlace<TSource, TDestination>(\n            TDestination? destination",
+                "void MissingUpdateInPlace<TSource, TDestination>(\n            TDestination? destination"),
+            RuntimeContractDefect.MissingCheckedStateSelector => new Replacement(
+                "void UpdateInPlace<TState, TSource, TDestination>(\n            object? destination",
+                "void MissingUpdateInPlace<TState, TSource, TDestination>(\n            object? destination"),
+            RuntimeContractDefect.MissingCheckedCapturedSelector => new Replacement(
+                "void UpdateInPlace<TSource, TDestination>(\n            object? destination",
+                "void MissingUpdateInPlace<TSource, TDestination>(\n            object? destination"),
+            RuntimeContractDefect.MissingDerivedUpdate => new Replacement(
+                "TBranchDestination UpdateDerived<", "TBranchDestination MissingUpdateDerived<"),
+            RuntimeContractDefect.WrongDerivedResult => new Replacement(
+                "TBranchDestination UpdateDerived<", "object UpdateDerived<"),
             RuntimeContractDefect.InternalMapperAttribute => new Replacement(
                 "public sealed class MorphantMapperAttribute : Attribute",
                 "internal sealed class MorphantMapperAttribute : Attribute"),
@@ -189,6 +201,10 @@ internal enum RuntimeContractDefect
     MissingMappingHelpers,
     WrongSourceSelector,
     MissingCapturedSelector,
+    MissingCheckedStateSelector,
+    MissingCheckedCapturedSelector,
+    MissingDerivedUpdate,
+    WrongDerivedResult,
     MissingMapperAttribute,
     InternalMapperAttribute,
     ConfigureReturnsInt,

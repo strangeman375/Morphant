@@ -688,5 +688,21 @@ namespace Morphant.GeneratedCode
             Func<TSource?> sourceSelector,
             Morphant.Context.MappingContext context)
             where TDestination : class { }
+
+        public static void UpdateInPlace<TState, TSource, TDestination>(
+            object? destination,
+            TState state,
+            Func<TState, TSource?> sourceSelector,
+            Morphant.Context.MappingContext context) { }
+
+        public static void UpdateInPlace<TSource, TDestination>(
+            object? destination,
+            Func<TSource?> sourceSelector,
+            Morphant.Context.MappingContext context) { }
+
+        public static TBranchDestination UpdateDerived<TSource, TDestination, TBranchSource, TBranchDestination>(
+            TBranchSource source,
+            object? destination,
+            Morphant.Context.MappingContext context) => default!;
     }
 }

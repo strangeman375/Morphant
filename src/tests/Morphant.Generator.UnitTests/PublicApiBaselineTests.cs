@@ -406,6 +406,12 @@ T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
 T Morphant.IMapperDeclaration
   M System.Boolean Supports(System.Type, System.Type)
+T Morphant.GeneratedCode.MappingHelpers
+  M System.Void UpdateInPlace<TSource, TDestination>(System.Object, System.Func<TSource>, Morphant.Context.MappingContext)
+  M System.Void UpdateInPlace<TSource, TDestination>(TDestination, System.Func<TSource>, Morphant.Context.MappingContext)
+  M System.Void UpdateInPlace<TState, TSource, TDestination>(System.Object, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
+  M System.Void UpdateInPlace<TState, TSource, TDestination>(TDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
+  M TBranchDestination UpdateDerived<TSource, TDestination, TBranchSource, TBranchDestination>(TBranchSource, System.Object, Morphant.Context.MappingContext)
 T Morphant.IMappingBuilder<TMapper, TSource, TDestination>
 T Morphant.ITypeMapper<TSource, TDestination>
   M TDestination Create(TSource, Morphant.Context.MappingContext)
@@ -454,9 +460,6 @@ T Morphant.Option<T>
   P T Value { get; }
   M Morphant.Option<T> Some(T)
   M System.Boolean TryGetValue(T&)
-T Morphant.GeneratedCode.MappingHelpers
-  M System.Void UpdateInPlace<TSource, TDestination>(TDestination, System.Func<TSource>, Morphant.Context.MappingContext)
-  M System.Void UpdateInPlace<TState, TSource, TDestination>(TDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
 T Morphant.TypeMapperExtensions
   M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
   M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)
