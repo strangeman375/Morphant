@@ -15,7 +15,7 @@ internal static class SharedConstructionLowerer
         CSharpParseOptions? parseOptions,
         CancellationToken cancellationToken)
     {
-        if (!model.Mappings.Any(mapping => mapping.ControlFlow is not null))
+        if (!model.Mappings.Any(CanShare))
         {
             return model;
         }
@@ -49,7 +49,7 @@ internal static class SharedConstructionLowerer
         {
             cancellationToken.ThrowIfCancellationRequested();
             var mapping = mappings[index];
-            if (mapping.ControlFlow is null)
+            if (!CanShare(mapping))
             {
                 continue;
             }
@@ -157,6 +157,8 @@ internal static class SharedConstructionLowerer
                 }
             }
 
+            ShareUpdate(mapping, implementations, text, semanticModel, changes, cancellationToken);
+
             if (changes.Count == 0)
             {
                 continue;
@@ -199,6 +201,108 @@ internal static class SharedConstructionLowerer
         }
 
         return model with { Mappings = mappings.ToImmutableArray() };
+    }
+
+    private static bool CanShare(TypeMapperMappingModel mapping) =>
+        mapping.ControlFlow is not null || mapping.PostMemberControlFlow is not null;
+
+    private static void ShareUpdate(
+        TypeMapperMappingModel mapping,
+        MethodDeclarationSyntax[] implementations,
+        SourceText text,
+        SemanticModel semanticModel,
+        List<TextChange> changes,
+        CancellationToken cancellationToken)
+    {
+        var create = implementations.FirstOrDefault(method =>
+            method.Identifier.ValueText == mapping.CreateImplMethodName);
+        var update = implementations.FirstOrDefault(method =>
+            method.Identifier.ValueText == mapping.UpdateImplMethodName);
+        if (create?.Body is null || update?.Body is null ||
+            !mapping.AnalysisContext.DestinationType.IsReferenceType ||
+            update.Body.Statements.Count < 2 ||
+            update.Body.Statements.Last() is not ReturnStatementSyntax
+                { Expression: IdentifierNameSyntax { Identifier.ValueText: "destination" } } ||
+            changes.Any(change => update.Span.Contains(change.Span)))
+        {
+            return;
+        }
+
+        var updateCandidate = CandidateFor(update, update.Body.Statements.ToArray());
+        var boundUpdate = Bind(updateCandidate, mapping, semanticModel, cancellationToken);
+        if (boundUpdate is null || boundUpdate.Parameters.Any(parameter =>
+                parameter.ByReference || parameter.Symbol is not IParameterSymbol))
+        {
+            return;
+        }
+
+        foreach (var block in create.Body.DescendantNodesAndSelf(node => node is not
+                     (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)).OfType<BlockSyntax>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (block.Statements.Count < update.Body.Statements.Count ||
+                block.Statements.Last() is not ReturnStatementSyntax
+                    { Expression: IdentifierNameSyntax result } ||
+                semanticModel.GetSymbolInfo(result, cancellationToken).Symbol is not ILocalSymbol target)
+            {
+                continue;
+            }
+
+            var candidate = CandidateFor(create,
+                block.Statements.Skip(block.Statements.Count - update.Body.Statements.Count).ToArray());
+            if (changes.Any(change => change.Span.OverlapsWith(candidate.Span)))
+            {
+                continue;
+            }
+
+            // Compare the complete existing update body, changing only bound
+            // references to the new destination. Other values and execution
+            // facts must already agree; construction and initializers stay put.
+            var uses = block.DescendantNodes().OfType<IdentifierNameSyntax>()
+                .Where(identifier => candidate.Span.Contains(identifier.Span) &&
+                    SymbolEqualityComparer.Default.Equals(
+                        semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol, target)).ToArray();
+            if (uses.Any(identifier => identifier.Ancestors().OfType<InvocationExpressionSyntax>()
+                    .Any(invocation => invocation.Expression is IdentifierNameSyntax
+                        { Identifier.ValueText: "nameof" })))
+            {
+                continue;
+            }
+
+            var body = text.GetSubText(candidate.Span).WithChanges(uses.Select(identifier => new TextChange(
+                new TextSpan(identifier.SpanStart - candidate.Span.Start, identifier.Span.Length), "destination")));
+            if (!StringComparer.Ordinal.Equals(
+                    Unindent(body.ToString(), Column(text, candidate.Span.Start)), updateCandidate.Body))
+            {
+                continue;
+            }
+
+            var bound = Bind(candidate, mapping, semanticModel, cancellationToken);
+            if (bound is null || bound.Parameters.Length != boundUpdate.Parameters.Length ||
+                !bound.Parameters.Zip(boundUpdate.Parameters, (actual, expected) =>
+                    !actual.ByReference && actual.TypeName == expected.TypeName &&
+                    (expected.Name == "destination"
+                        ? SymbolEqualityComparer.Default.Equals(actual.Symbol, target)
+                        : actual.Symbol is IParameterSymbol && actual.Name == expected.Name)).All(equal => equal))
+            {
+                continue;
+            }
+
+            var name = update.Identifier.ValueText;
+            var shadowed = semanticModel.LookupSymbols(candidate.Span.Start, name: name)
+                .Any(symbol => symbol is ILocalSymbol or IParameterSymbol or
+                    IMethodSymbol { MethodKind: MethodKind.LocalFunction });
+            changes.Add(new TextChange(candidate.Span,
+                "return " + (shadowed ? "this." : string.Empty) + name + "(" +
+                mapping.NonNullSourceName + ", " + result.Identifier.Text + ", context);"));
+        }
+
+        Candidate CandidateFor(MethodDeclarationSyntax method, StatementSyntax[] statements)
+        {
+            var span = TextSpan.FromBounds(statements[0].SpanStart, statements.Last().Span.End);
+            return new Candidate(method, statements[0], statements.Last(), span,
+                Unindent(text.ToString(span), Column(text, span.Start)));
+        }
     }
 
     private static IEnumerable<(int Index, string Key)> Diagnostics(
