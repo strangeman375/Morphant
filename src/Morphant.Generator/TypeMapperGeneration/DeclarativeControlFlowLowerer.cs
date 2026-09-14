@@ -298,7 +298,7 @@ internal static class DeclarativeControlFlowLowerer
                     nestedMapUsageRegistry: nestedMapUsages,
                     cancellationToken,
                     out var rewritten,
-                    out var dependency, mapping.KnownExecutionPath)
+                    out var dependency, mapping.KnownExecutionPath ?? paths)
                 ? new TypeMapperRewrittenDependencyExpression(
                     rewritten,
                     dependency)

@@ -3,8 +3,8 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Lifecycl
 internal sealed partial class LifecycleTests
 {
     [Test]
-    [Description("Members is ignored on Create but runs for Update, including Update with a null destination.")]
-    public void MemberRuleOnlyDuringUpdate()
+    [Description("Members runs only on Create; both Update paths leave the member rule unused.")]
+    public void MemberRuleOnlyDuringCreate()
     {
         // lang=c#
         const string source =
@@ -38,7 +38,7 @@ namespace TestCase
                 .Construct(source => new(source.FromConstruct()))
                 .Members((source, previous, result, context) =>
                 {
-                    if (context.Operation == MappingOperation.Update)
+                    if (context.Operation != MappingOperation.Update)
                         return new() { Name = source.FromMembers() };
                     return new() { Name = Ignore() };
                 });
@@ -109,7 +109,7 @@ namespace TestCase
             var result = new global::TestCase.Destination(
                 name: source.FromConstruct());
 
-            if (context.Operation == global::Morphant.Context.MappingOperation.Update)
+            if (context.Operation != global::Morphant.Context.MappingOperation.Update)
             {
                 result.Name = source.FromMembers();
 
@@ -124,8 +124,6 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = source.FromMembers();
-
             return destination;
         }
     }

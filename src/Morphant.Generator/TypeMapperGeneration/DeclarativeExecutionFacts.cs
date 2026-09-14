@@ -182,7 +182,9 @@ internal sealed class DeclarativeExecutionFacts(
             if (previousParameter is not null && hasPrevious is { } available &&
                 member.Name.Identifier.ValueText == "HasValue" && SymbolEqualityComparer.Default.Equals(receiver, previousParameter))
             { value = available; return true; }
-            if (contextParameter is not null && executionPath is { } path && path != MappingExecutionPathSet.NoPrevious &&
+            if (contextParameter is not null && executionPath is { } path &&
+                path is MappingExecutionPathSet.Create or MappingExecutionPathSet.UpdateWithoutPrevious or
+                    MappingExecutionPathSet.UpdateWithPrevious or MappingExecutionPathSet.Update &&
                 member.Name.Identifier.ValueText == "Operation" && SymbolEqualityComparer.Default.Equals(receiver, contextParameter))
             { value = path == MappingExecutionPathSet.Create ? 1 : 2; return true; }
         }

@@ -3,8 +3,8 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Lifecycl
 internal sealed partial class LifecycleTests
 {
     [Test]
-    [Description("Members is ignored on Create but runs for Update, including Update with a null destination.")]
-    public void MemberRuleOnlyDuringUpdate()
+    [Description("A known true Update guard skips the later user condition and preserves it for Create.")]
+    public void MemberOperationGuardSkipsUnneededCondition()
     {
         // lang=c#
         const string source =
@@ -20,6 +20,7 @@ namespace TestCase
     public sealed class Source
     {
         public string Name => "from convention";
+        public bool ShouldMap() => true;
         public string FromConstruct() => "from constructor";
         public string FromMembers() => "from members";
     }
@@ -38,7 +39,7 @@ namespace TestCase
                 .Construct(source => new(source.FromConstruct()))
                 .Members((source, previous, result, context) =>
                 {
-                    if (context.Operation == MappingOperation.Update)
+                    if (context.Operation == MappingOperation.Update || source.ShouldMap())
                         return new() { Name = source.FromMembers() };
                     return new() { Name = Ignore() };
                 });
@@ -109,7 +110,7 @@ namespace TestCase
             var result = new global::TestCase.Destination(
                 name: source.FromConstruct());
 
-            if (context.Operation == global::Morphant.Context.MappingOperation.Update)
+            if (context.Operation == global::Morphant.Context.MappingOperation.Update || source.ShouldMap())
             {
                 result.Name = source.FromMembers();
 

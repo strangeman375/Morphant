@@ -53,6 +53,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Remove redundant operation checks from member branches when the mapping
+  operation is already known, preserving conditional evaluation.
 - Label generated BCL tuple constructor arguments, including nested
   constructor arguments in long tuples.
 - Avoid unnecessary locals for untouched tuple literals when combining
