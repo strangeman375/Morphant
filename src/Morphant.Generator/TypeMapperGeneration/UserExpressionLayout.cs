@@ -12,8 +12,8 @@ internal static class UserExpressionLayout
     {
         if (source is ExpressionSyntax &&
             (source is SwitchExpressionSyntax ||
-            source.GetLocation().GetLineSpan() is var span &&
-            span.StartLinePosition.Line != span.EndLinePosition.Line))
+                source.GetLocation().GetLineSpan() is var span &&
+                span.StartLinePosition.Line != span.EndLinePosition.Line))
         {
             return rewritten.WithAdditionalAnnotations(
                 new SyntaxAnnotation(AnnotationKind, GetIndentation(source)));

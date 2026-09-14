@@ -111,7 +111,7 @@ namespace TestCase
                 first: first,
                 value: source.Read(source.Enabled switch { true => source.Read(source.Read(5)), false => source.Read(source.Read(6))}))
             {
-                Value = (source.Enabled switch { true => source.Read(source.Read(7) + source.Read(8)), false => source.Read(source.Read(9) + source.Read(10))})
+                Value = source.Enabled switch { true => source.Read(source.Read(7) + source.Read(8)), false => source.Read(source.Read(9) + source.Read(10))}
             };
         }
 
@@ -120,7 +120,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Value = (source.Enabled switch { true => source.Read(source.Read(7) + source.Read(8)), false => source.Read(source.Read(9) + source.Read(10))});
+            destination.Value = source.Enabled switch { true => source.Read(source.Read(7) + source.Read(8)), false => source.Read(source.Read(9) + source.Read(10))};
 
             return destination;
         }
