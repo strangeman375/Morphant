@@ -114,7 +114,7 @@ namespace TestCase
             (int, int, int, int, int, int, int, int, int) destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Item8 = source.Id + 100;
+            destination.Rest.Item1 = source.Id + 100;
 
             return destination;
         }
