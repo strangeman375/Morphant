@@ -101,7 +101,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            _ = source.Before(out var id);
+            _ = source.Before(out int id);
 
             return __Construct(source, id, context);
         }
@@ -111,7 +111,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (source.Before(out var id))
+            if (source.Before(out int id))
             {
                 if (source.After(id))
                 {

@@ -146,6 +146,13 @@ internal static class SharedConstructionLowerer
                         span = TextSpan.FromBounds(@if.Statement.Span.End, @else.Span.End);
                         call = "\r\n\r\n" + new string(' ', Column(text, @if.SpanStart)) + call;
                     }
+                    else if (candidate.Syntax.First.Parent is BlockSyntax { Parent: BlockSyntax } scope &&
+                             candidate.Syntax.First == scope.Statements[0])
+                    {
+                        // The shared fallback no longer declares locals here.
+                        // Its standalone declaration scope can disappear too.
+                        span = scope.Span;
+                    }
                     changes.Add(new TextChange(span, call));
                 }
             }
