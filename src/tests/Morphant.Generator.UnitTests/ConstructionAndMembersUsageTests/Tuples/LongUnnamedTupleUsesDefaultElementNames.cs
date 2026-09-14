@@ -3,8 +3,8 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Tuples;
 internal sealed partial class TuplesTests
 {
     [Test]
-    [Description("An unnamed tuple uses Item1 and Item2 for configuration.")]
-    public void UnnamedValueTupleWithConstructorAndMemberValues()
+    [Description("Every unnamed tuple element is labelled, including elements beyond the first physical segment.")]
+    public void LongUnnamedTupleUsesDefaultElementNames()
     {
         // lang=c#
         const string source =
@@ -31,10 +31,10 @@ namespace TestCase
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, (int, string)>()
+            builder.Map<Source, (int, int, int, int, int, int, int, int, int)>()
                 .MemberSelection(MemberSelection.Explicit)
-                .Construct(source => new(source.Id, Auto()))
-                .Members(source => new() { Item2 = source.FromMembers() });
+                .Construct(_ => new(1, 2, 3, 4, 5, 6, 7, 8, 9))
+                .Members(source => new() { Item8 = source.Id + 100 });
     }
 }
 """;
@@ -53,18 +53,18 @@ namespace TestCase
 namespace TestCase
 {
     public partial class Mapper :
-        global::Morphant.ITypeMapper<global::TestCase.Source, (int, string)>
+        global::Morphant.ITypeMapper<global::TestCase.Source, (int, int, int, int, int, int, int, int, int)>
     {
         /// <inheritdoc/>
         protected override bool Supports(
             global::System.Type sourceType,
             global::System.Type destinationType) =>
                 (sourceType == typeof(global::TestCase.Source) &&
-                    destinationType == typeof((int, string))) ||
+                    destinationType == typeof((int, int, int, int, int, int, int, int, int))) ||
                 base.Supports(sourceType, destinationType);
 
         /// <inheritdoc/>
-        (int, string) global::Morphant.ITypeMapper<global::TestCase.Source, (int, string)>.Create(
+        (int, int, int, int, int, int, int, int, int) global::Morphant.ITypeMapper<global::TestCase.Source, (int, int, int, int, int, int, int, int, int)>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -77,9 +77,9 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        (int, string) global::Morphant.ITypeMapper<global::TestCase.Source, (int, string)>.Update(
+        (int, int, int, int, int, int, int, int, int) global::Morphant.ITypeMapper<global::TestCase.Source, (int, int, int, int, int, int, int, int, int)>.Update(
             global::TestCase.Source? source,
-            (int, string) destination,
+            (int, int, int, int, int, int, int, int, int) destination,
             global::Morphant.Context.MappingContext context)
         {
             if (source is null)
@@ -90,21 +90,31 @@ namespace TestCase
             return __Update(source, destination, context);
         }
 
-        private (int, string) __Create(
+        private (int, int, int, int, int, int, int, int, int) __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
+            int item8 = 8;
+            item8 = source.Id + 100;
+
             return (
-                Item1: source.Id,
-                Item2: source.FromMembers());
+                Item1: 1,
+                Item2: 2,
+                Item3: 3,
+                Item4: 4,
+                Item5: 5,
+                Item6: 6,
+                Item7: 7,
+                Item8: item8,
+                Item9: 9);
         }
 
-        private (int, string) __Update(
+        private (int, int, int, int, int, int, int, int, int) __Update(
             global::TestCase.Source source,
-            (int, string) destination,
+            (int, int, int, int, int, int, int, int, int) destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Item2 = source.FromMembers();
+            destination.Item8 = source.Id + 100;
 
             return destination;
         }
@@ -112,6 +122,6 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: UnnamedValueTupleWithConstructorAndMemberValuesSurfaces);
+            expectedSurfaces: LongUnnamedTupleUsesDefaultElementNamesSurfaces);
     }
 }

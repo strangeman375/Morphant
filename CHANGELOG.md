@@ -53,6 +53,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Label all generated tuple elements and constructor arguments, including
+  unnamed elements and nested constructor arguments in long tuples.
 - Avoid unnecessary locals for untouched tuple literals when combining
   constructor and member rules; format generated tuple elements on separate lines.
 - Keep user-written single-line switch expressions on one line in generated

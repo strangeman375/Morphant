@@ -105,6 +105,8 @@
   do not use this as a reason to refactor user-written computations.
 - Format generated tuple construction with one element per line, like ordinary
   constructor arguments. Preserve layout inside each user-written element.
+  Always label tuple literal elements with their semantic name or `ItemN`.
+  For BCL constructor calls, use their parameter names (`itemN`, `rest`).
 - Diagnostics are part of the public contract. When C# can declare an
   `ITypeMapper<,>`, invalid or unsupported behavior must retain a complete
   mapper and use typed Morphant exception stubs. Do not generate construction,

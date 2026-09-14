@@ -3033,9 +3033,8 @@ internal static class TypeMapperEmitter
                 arguments.Select((argument, index) =>
                 {
                     var value = UserExpressionLayout.Indent(argument, "    ");
-                    return tuple.ElementNames[index] is { } name
-                        ? value.Insert(4, Identifier(name) + ": ")
-                        : value;
+                    var name = tuple.ElementNames[index] ?? "Item" + (index + 1);
+                    return value.Insert(4, Identifier(name) + ": ");
                 })) + ")";
         }
 
@@ -3094,8 +3093,9 @@ internal static class TypeMapperEmitter
 
         return "new " + typePrefix + "<" +
                string.Join(", ", typeArguments) + ">(\r\n" +
-               string.Join(",\r\n", valueArguments.Select(argument =>
-                   UserExpressionLayout.Indent(argument, "    "))) + ")";
+               string.Join(",\r\n", valueArguments.Select((argument, index) =>
+                   UserExpressionLayout.Indent(argument, "    ").Insert(4,
+                       (index < 7 ? "item" + (index + 1) : "rest") + ": "))) + ")";
     }
 
     private static string BuildTupleTypeName(

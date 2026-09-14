@@ -1,10 +1,10 @@
-namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Tuples;
+namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Lifecycle;
 
-internal sealed partial class TuplesTests
+internal sealed partial class LifecycleTests
 {
     [Test]
-    [Description("An unnamed tuple uses Item1 and Item2 for configuration.")]
-    public void UnnamedValueTupleWithConstructorAndMemberValues()
+    [Description("A constructor property is read before later callbacks can change its value.")]
+    public void NullableTupleCapturesPropertyBeforeCallbacks()
     {
         // lang=c#
         const string source =
@@ -19,22 +19,22 @@ namespace TestCase
 {
     public sealed class Source
     {
-        public int Id => 7;
+        public int Id { get; private set; } = 7;
         public string Name => "from convention";
         public int Item1 => 7;
         public string Item2 => "from convention";
-        public string FromConstruct() => "from constructor";
-        public string FromMembers() => "from members";
+        public string FromConstruct() { Id = 11; return "from constructor"; }
+        public string FromMembers() { Id = 23; return "from members"; }
     }
 
     [MorphantMapper]
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, (int, string)>()
+            builder.Map<Source, (int Id, string Name)?>()
                 .MemberSelection(MemberSelection.Explicit)
-                .Construct(source => new(source.Id, Auto()))
-                .Members(source => new() { Item2 = source.FromMembers() });
+                .Construct(source => new(source.Id, source.FromConstruct()))
+                .Members(source => new() { Name = source.FromMembers() });
     }
 }
 """;
@@ -53,18 +53,18 @@ namespace TestCase
 namespace TestCase
 {
     public partial class Mapper :
-        global::Morphant.ITypeMapper<global::TestCase.Source, (int, string)>
+        global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)?>
     {
         /// <inheritdoc/>
         protected override bool Supports(
             global::System.Type sourceType,
             global::System.Type destinationType) =>
                 (sourceType == typeof(global::TestCase.Source) &&
-                    destinationType == typeof((int, string))) ||
+                    destinationType == typeof((int Id, string Name)?)) ||
                 base.Supports(sourceType, destinationType);
 
         /// <inheritdoc/>
-        (int, string) global::Morphant.ITypeMapper<global::TestCase.Source, (int, string)>.Create(
+        (int Id, string Name)? global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)?>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -77,9 +77,9 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        (int, string) global::Morphant.ITypeMapper<global::TestCase.Source, (int, string)>.Update(
+        (int Id, string Name)? global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)?>.Update(
             global::TestCase.Source? source,
-            (int, string) destination,
+            (int Id, string Name)? destination,
             global::Morphant.Context.MappingContext context)
         {
             if (source is null)
@@ -87,24 +87,33 @@ namespace TestCase
                 return default!;
             }
 
-            return __Update(source, destination, context);
+            if (destination is null)
+            {
+                return __Create(source, context);
+            }
+
+            return __Update(source, destination.Value, context);
         }
 
-        private (int, string) __Create(
+        private (int Id, string Name)? __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
+            int id = source.Id;
+            string name = source.FromConstruct();
+            name = source.FromMembers();
+
             return (
-                Item1: source.Id,
-                Item2: source.FromMembers());
+                Id: id,
+                Name: name);
         }
 
-        private (int, string) __Update(
+        private (int Id, string Name)? __Update(
             global::TestCase.Source source,
-            (int, string) destination,
+            (int Id, string Name) destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Item2 = source.FromMembers();
+            destination.Name = source.FromMembers();
 
             return destination;
         }
@@ -112,6 +121,6 @@ namespace TestCase
 }
 """)
             ],
-            expectedSurfaces: UnnamedValueTupleWithConstructorAndMemberValuesSurfaces);
+            expectedSurfaces: NullableValueTupleCreatesOrUpdatesItsContainedValueSurfaces);
     }
 }
