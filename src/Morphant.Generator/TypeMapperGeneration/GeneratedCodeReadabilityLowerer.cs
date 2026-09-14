@@ -493,11 +493,22 @@ internal static class GeneratedCodeReadabilityLowerer
         return lowered.ToImmutableArray();
     }
 
-    private static bool CanDelayLiteralArgument(TypeMapperConstructorArgumentMappingModel argument) =>
-        argument.ExplicitValueExpression is { } expression &&
-        UnwrapParentheses(SyntaxFactory.ParseExpression(expression)) is LiteralExpressionSyntax &&
-        argument.ParameterSymbol?.Type.SpecialType is
+    private static bool CanDelayLiteralArgument(TypeMapperConstructorArgumentMappingModel argument)
+    {
+        if (argument.ExplicitValueExpression is not { } expression ||
+            UnwrapParentheses(SyntaxFactory.ParseExpression(expression)) is not LiteralExpressionSyntax)
+            return false;
+
+        var targetType = argument.ParameterSymbol?.Type;
+        // Tuple parameters come from the DSL surface, which wraps the actual
+        // element type. Preserve conversions to objects and user-defined types.
+        if (argument.TupleElementOrdinal > 0 && targetType is INamedTypeSymbol wrapper &&
+            SymbolNameHelper.GetFullMetadataName(wrapper.OriginalDefinition) == MetadataNames.ConstructorParameter)
+            targetType = wrapper.TypeArguments[0];
+
+        return targetType?.SpecialType is
             not null and not SpecialType.None and not SpecialType.System_Object;
+    }
 
     private static bool SourceMayBeReassigned(TypeMapperConstructorArgumentMappingModel argument)
     {
