@@ -214,7 +214,9 @@ internal static class GeneratedCodeReadabilityLowerer
             if (ReferencesResult(controlFlow, mapping.ResultLocalName)) return mapping;
             var initialArguments = constructor.Arguments.Select(argument => argument with
             {
-                ValueLocalName = argument.ValueLocalName ?? AllocateValueLocalName(names, argument.ParameterName),
+                ValueLocalName = argument.ValueLocalName ?? (CanDelayLiteralArgument(argument)
+                    ? null
+                    : AllocateValueLocalName(names, argument.ParameterName)),
                 ValueLocalTypeName = argument.ValueLocalTypeName ?? argument.TargetTypeName
             }).ToImmutableArray();
             return mapping with
@@ -223,17 +225,24 @@ internal static class GeneratedCodeReadabilityLowerer
                 CreateTupleReconstruction = new TypeMapperTupleReconstructionModel(
                     constructor.TupleConstruction.Value,
                     initialArguments.OrderBy(argument => argument.TupleElementOrdinal).Select(argument =>
-                        new TypeMapperTupleElementModel(argument.ParameterName, argument.ParameterName, argument.ValueLocalName))
+                        new TypeMapperTupleElementModel(argument.ParameterName, argument.ParameterName,
+                            argument.ValueLocalName ?? argument.ExplicitValueExpression))
                         .ToImmutableArray())
             };
         }
 
-        var arguments = constructor.Arguments.Select(argument => argument with
+        var arguments = constructor.Arguments.Select(argument =>
         {
-            ValueLocalName = argument.ValueLocalName ?? AllocateValueLocalName(names, argument.ParameterName),
-            ValueLocalTypeName = argument.ValueLocalTypeName ?? argument.TargetTypeName,
-            IsEvaluationOnly = mapping.CreatePostMemberMappings.Any(member =>
-                StringComparer.Ordinal.Equals(member.DestinationMemberName, argument.ParameterName))
+            var hasMemberValue = mapping.CreatePostMemberMappings.Any(member =>
+                StringComparer.Ordinal.Equals(member.DestinationMemberName, argument.ParameterName));
+            return argument with
+            {
+                ValueLocalName = argument.ValueLocalName ?? (!hasMemberValue && CanDelayLiteralArgument(argument)
+                    ? null
+                    : AllocateValueLocalName(names, argument.ParameterName)),
+                ValueLocalTypeName = argument.ValueLocalTypeName ?? argument.TargetTypeName,
+                IsEvaluationOnly = hasMemberValue
+            };
         }).ToImmutableArray();
         var finalArguments = mapping.CreatePostMemberMappings.Select(member =>
         {
@@ -469,10 +478,7 @@ internal static class GeneratedCodeReadabilityLowerer
             var argument = lowered[index];
             if (argument.ValueLocalName is not null ||
                 canDelaySourceRead && argument.ExplicitValueExpression == sourceName ||
-                argument.ExplicitValueExpression is { } expression &&
-                SyntaxFactory.ParseExpression(expression) is LiteralExpressionSyntax &&
-                argument.ParameterSymbol?.Type.SpecialType is
-                    not null and not SpecialType.None and not SpecialType.System_Object)
+                CanDelayLiteralArgument(argument))
             {
                 continue;
             }
@@ -486,6 +492,12 @@ internal static class GeneratedCodeReadabilityLowerer
 
         return lowered.ToImmutableArray();
     }
+
+    private static bool CanDelayLiteralArgument(TypeMapperConstructorArgumentMappingModel argument) =>
+        argument.ExplicitValueExpression is { } expression &&
+        UnwrapParentheses(SyntaxFactory.ParseExpression(expression)) is LiteralExpressionSyntax &&
+        argument.ParameterSymbol?.Type.SpecialType is
+            not null and not SpecialType.None and not SpecialType.System_Object;
 
     private static bool SourceMayBeReassigned(TypeMapperConstructorArgumentMappingModel argument)
     {

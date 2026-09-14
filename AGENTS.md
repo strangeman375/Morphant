@@ -103,6 +103,8 @@
 - Keep synthesized checks, branches and invocations readable. Structure the
   generated mapping algorithm explicitly where it needs separate operations;
   do not use this as a reason to refactor user-written computations.
+- Format generated tuple construction with one element per line, like ordinary
+  constructor arguments. Preserve layout inside each user-written element.
 - Diagnostics are part of the public contract. When C# can declare an
   `ITypeMapper<,>`, invalid or unsupported behavior must retain a complete
   mapper and use typed Morphant exception stubs. Do not generate construction,

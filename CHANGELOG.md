@@ -53,6 +53,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Avoid unnecessary locals for untouched tuple literals when combining
+  constructor and member rules; format generated tuple elements on separate lines.
 - Keep user-written single-line switch expressions on one line in generated
   mappings, including long expressions and transferred callbacks.
 - Correct `previous` availability checks through local guards and switches,

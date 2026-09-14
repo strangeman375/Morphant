@@ -3028,12 +3028,15 @@ internal static class TypeMapperEmitter
         if (tuple.Kind == BclTupleKind.ValueTuple &&
             arguments.Length >= 2)
         {
-            return "(" + string.Join(
-                ", ",
+            return "(\r\n" + string.Join(
+                ",\r\n",
                 arguments.Select((argument, index) =>
-                    tuple.ElementNames[index] is { } name
-                        ? Identifier(name) + ": " + argument
-                        : argument)) + ")";
+                {
+                    var value = UserExpressionLayout.Indent(argument, "    ");
+                    return tuple.ElementNames[index] is { } name
+                        ? value.Insert(4, Identifier(name) + ": ")
+                        : value;
+                })) + ")";
         }
 
         return BuildTupleConstructionExpression(
@@ -3090,8 +3093,9 @@ internal static class TypeMapperEmitter
         }
 
         return "new " + typePrefix + "<" +
-               string.Join(", ", typeArguments) + ">(" +
-               string.Join(", ", valueArguments) + ")";
+               string.Join(", ", typeArguments) + ">(\r\n" +
+               string.Join(",\r\n", valueArguments.Select(argument =>
+                   UserExpressionLayout.Indent(argument, "    "))) + ")";
     }
 
     private static string BuildTupleTypeName(

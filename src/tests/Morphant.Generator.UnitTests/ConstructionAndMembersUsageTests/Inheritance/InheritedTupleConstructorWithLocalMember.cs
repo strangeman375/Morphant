@@ -99,11 +99,12 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int id = 7;
             string name = source.Read("base constructor");
             name = source.Read("local member");
 
-            return (Id: id, Name: name);
+            return (
+                Id: 7,
+                Name: name);
         }
 
         private (int Id, string Name) __Update(
