@@ -180,7 +180,16 @@ namespace TestCase
                 return default!;
             }
 
-            return __Update1(source, result, context);
+            if (result.Item1 is { } item1Destination)
+            {
+                var childSource = source.Child;
+
+                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+                    childSource,
+                    destination: item1Destination);
+            }
+
+            return result;
         }
 
         private global::System.Tuple<global::TestCase.ChildDestination, int> __Update1(

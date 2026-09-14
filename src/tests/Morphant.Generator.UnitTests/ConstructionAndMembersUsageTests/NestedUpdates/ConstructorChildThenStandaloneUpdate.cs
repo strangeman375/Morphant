@@ -180,7 +180,16 @@ namespace TestCase
             var result = new global::TestCase.Destination(
                 child: new global::TestCase.ChildDestination());
 
-            return __Update1(source, result, context);
+            if (result.Child is { } childDestination)
+            {
+                var childSource = source.Child;
+
+                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+                    childSource,
+                    destination: childDestination);
+            }
+
+            return result;
         }
 
         private global::TestCase.Destination __Update1(
