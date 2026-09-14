@@ -39,6 +39,8 @@ internal static class TypeMapperRuntimeEquality
                StringComparer.Ordinal.Equals(
                    left.EvaluationExpression,
                    right.EvaluationExpression) &&
+               StringComparer.Ordinal.Equals(left.EvaluationCondition, right.EvaluationCondition) &&
+               AreEquivalent(left.EvaluationLocals, right.EvaluationLocals) &&
                AreEquivalentNode(
                    left.EvaluationContinuation,
                    right.EvaluationContinuation) &&
@@ -341,6 +343,8 @@ internal static class TypeMapperRuntimeEquality
                StringComparer.Ordinal.Equals(
                    left.EvaluationExpression,
                    right.EvaluationExpression) &&
+               StringComparer.Ordinal.Equals(left.EvaluationCondition, right.EvaluationCondition) &&
+               AreEquivalent(left.EvaluationLocals, right.EvaluationLocals) &&
                AreEquivalent(
                    left.EvaluationContinuation,
                    right.EvaluationContinuation) &&

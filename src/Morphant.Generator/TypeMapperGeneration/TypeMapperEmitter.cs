@@ -628,19 +628,14 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (node.Condition is { } condition)
+        if (node.Condition is not null)
         {
-            WriteTerminatingConditional(
+            WriteControlFlowConditional(
                 writer,
-                condition,
-                branchWriter => WriteControlFlowCreateNode(
+                node,
+                (branchWriter, branch) => WriteControlFlowCreateNode(
                     branchWriter,
-                    node.WhenTrue!,
-                    operationExpression,
-                    localNames),
-                branchWriter => WriteControlFlowCreateNode(
-                    branchWriter,
-                    node.WhenFalse!,
+                    branch,
                     operationExpression,
                     localNames));
             return;
@@ -663,6 +658,48 @@ internal static class TypeMapperEmitter
             localNames);
     }
 
+    private static void WriteControlFlowConditional(
+        CodeWriter writer,
+        TypeMapperControlFlowNode node,
+        Action<CodeWriter, TypeMapperControlFlowNode> writeBranch)
+    {
+        var conditions = new List<string> { node.Condition! };
+        var selected = node.WhenTrue!;
+        var continuation = node.WhenFalse!;
+        while (selected.Locals.IsDefaultOrEmpty && selected.Condition is { } nextCondition &&
+               TypeMapperRuntimeEquality.AreEquivalent(selected.WhenFalse!, continuation))
+        {
+            conditions.Add(nextCondition);
+            selected = selected.WhenTrue!;
+        }
+
+        if (conditions.Count == 1)
+        {
+            WriteTerminatingConditional(writer, node.Condition!,
+                branchWriter => writeBranch(branchWriter, selected),
+                branchWriter => writeBranch(branchWriter, continuation));
+            return;
+        }
+
+        // Specializing a short-circuit condition can give nested guards the
+        // same fallback. Keep their evaluation and scopes, then emit that
+        // continuation once, after every guard has finished.
+        foreach (var condition in conditions)
+        {
+            writer.OpenBlock($"if ({condition})");
+        }
+
+        writeBranch(writer, selected);
+        for (var index = 0; index < conditions.Count; index++)
+        {
+            writer.CloseBlock();
+        }
+
+        WriteConditionalContinuation(writer,
+            branchWriter => writeBranch(branchWriter, continuation),
+            precedingBranchTerminates: false);
+    }
+
     private static void WriteTerminatingConditional(
         CodeWriter writer,
         string condition,
@@ -673,12 +710,20 @@ internal static class TypeMapperEmitter
         writeWhenTrue(writer);
         writer.CloseBlock();
 
+        WriteConditionalContinuation(writer, writeWhenFalse, precedingBranchTerminates: true);
+    }
+
+    private static void WriteConditionalContinuation(
+        CodeWriter writer,
+        Action<CodeWriter> writeContinuation,
+        bool precedingBranchTerminates)
+    {
         var continuationWriter = new CodeWriter();
-        writeWhenFalse(continuationWriter);
+        writeContinuation(continuationWriter);
         var continuation = continuationWriter.ToString().TrimEnd('\r', '\n');
 
-        // Every mapping path returns or throws. The else only needs to stay
-        // when removing its block would widen a local's declaration scope.
+        // Keep the original declaration scope. A shared fallback follows the
+        // guards unconditionally, so its scope must be a block, not an else.
         var block = (BlockSyntax)SyntaxFactory.ParseStatement("{\r\n" + continuation + "\r\n}");
         var requiresScope = block.Statements.SelectMany(statement =>
                 statement.DescendantNodesAndSelf(node => node is not
@@ -688,7 +733,9 @@ internal static class TypeMapperEmitter
 
         if (requiresScope)
         {
-            writer.OpenBlock("else");
+            writer.Line(precedingBranchTerminates ? "else" : string.Empty);
+            writer.Line("{");
+            writer.Indent();
             writer.Line(continuation);
             writer.CloseBlock();
             return;
@@ -2263,18 +2310,14 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (node.Condition is { } condition)
+        if (node.Condition is not null)
         {
-            WriteTerminatingConditional(
+            WriteControlFlowConditional(
                 writer,
-                condition,
-                branchWriter => WriteControlFlowUpdateNode(
+                node,
+                (branchWriter, branch) => WriteControlFlowUpdateNode(
                     branchWriter,
-                    node.WhenTrue!,
-                    localNames),
-                branchWriter => WriteControlFlowUpdateNode(
-                    branchWriter,
-                    node.WhenFalse!,
+                    branch,
                     localNames));
             return;
         }

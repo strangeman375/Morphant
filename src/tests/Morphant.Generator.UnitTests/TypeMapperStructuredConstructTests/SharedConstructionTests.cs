@@ -125,8 +125,6 @@ namespace TestCase
                 {
                     return destination;
                 }
-
-                return __Construct(source, context);
             }
 
             return __Construct(source, context);
