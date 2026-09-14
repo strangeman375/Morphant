@@ -671,3 +671,22 @@ namespace Morphant.Exceptions
         public Type ActualSourceType => throw new NotSupportedException();
     }
 }
+
+namespace Morphant.Runtime
+{
+    public static class MappingHelpers
+    {
+        public static void UpdateExisting<TState, TSource, TDestination>(
+            TDestination? destination,
+            TState state,
+            Func<TState, TSource?> sourceSelector,
+            Morphant.Context.MappingContext context)
+            where TDestination : class { }
+
+        public static void UpdateExisting<TSource, TDestination>(
+            TDestination? destination,
+            Func<TSource?> sourceSelector,
+            Morphant.Context.MappingContext context)
+            where TDestination : class { }
+    }
+}

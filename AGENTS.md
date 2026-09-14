@@ -94,6 +94,12 @@
   literal expected sources and hint-name sets at the boundary.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes or compatibility branches without a user-facing need.
+- Runtime helpers may replace repeated mapping algorithms. For standalone
+  read-only nested updates, use a lazy source selector: read the destination
+  once, skip source evaluation when it is null, and preserve evaluation order,
+  variable mutations and the mapping context. Prefer static selectors with
+  explicit state when that preserves semantics. Do not call the whole
+  `__Update` from `__Create` to share this operation. Approved on 2026-09-14.
 - Omit redundant `else` blocks after terminating generated mapping branches
   when the continuation does not need its own declaration scope. Preserve
   conditional execution and user-written local scopes.

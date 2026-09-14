@@ -93,6 +93,12 @@ internal sealed class RuntimeContractFixture
 
         var replacement = defect switch
         {
+            RuntimeContractDefect.MissingMappingHelpers => new Replacement(
+                "public static class MappingHelpers", "public static class MissingMappingHelpers"),
+            RuntimeContractDefect.WrongSourceSelector => new Replacement(
+                "Func<TState, TSource?> sourceSelector", "Func<TState, bool> sourceSelector"),
+            RuntimeContractDefect.MissingCapturedSelector => new Replacement(
+                "void UpdateExisting<TSource, TDestination>", "void MissingUpdateExisting<TSource, TDestination>"),
             RuntimeContractDefect.InternalMapperAttribute => new Replacement(
                 "public sealed class MorphantMapperAttribute : Attribute",
                 "internal sealed class MorphantMapperAttribute : Attribute"),
@@ -180,6 +186,9 @@ internal sealed class RuntimeContractFixture
 
 internal enum RuntimeContractDefect
 {
+    MissingMappingHelpers,
+    WrongSourceSelector,
+    MissingCapturedSelector,
     MissingMapperAttribute,
     InternalMapperAttribute,
     ConfigureReturnsInt,
