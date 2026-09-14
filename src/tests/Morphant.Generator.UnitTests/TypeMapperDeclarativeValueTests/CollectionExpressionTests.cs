@@ -710,14 +710,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination(
-                constructed: (global::System.Collections.Immutable.ImmutableArray<int>)(
-                    [
-                        context.Operation == global::Morphant.Context.MappingOperation.Create
-                            ? 3
-                            : 30,
-                        ..source.Values
-                    ]));
+            return __Create(source, context);
         }
     }
 }
