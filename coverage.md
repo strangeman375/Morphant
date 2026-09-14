@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/14/2026 - 09:04:58 |
-| Coverage date: | 09/14/2026 - 08:50:04 - 09/14/2026 - 09:04:52 |
+| Generated on: | 09/14/2026 - 11:29:29 |
+| Coverage date: | 09/14/2026 - 11:15:03 - 09/14/2026 - 11:29:24 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 374 |
 | Files: | 198 |
-| **Line coverage:** | 90% (39684 of 44068) |
-| Covered lines: | 39684 |
+| **Line coverage:** | 90% (39707 of 44091) |
+| Covered lines: | 39707 |
 | Uncovered lines: | 4384 |
-| Coverable lines: | 44068 |
-| Total lines: | 73380 |
-| **Branch coverage:** | 80.9% (14691 of 18138) |
-| Covered branches: | 14691 |
-| Total branches: | 18138 |
+| Coverable lines: | 44091 |
+| Total lines: | 73416 |
+| **Branch coverage:** | 81% (14721 of 18158) |
+| Covered branches: | 14721 |
+| Total branches: | 18158 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -71,7 +71,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**89.9%**|**80.9%**|
+|**Morphant.Generator**|**89.9%**|**81%**|
 |Morphant.Generator.CodeWriter|100%|100%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -314,7 +314,7 @@
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticDescriptors|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticPipeline|100%|75%|
 |Morphant.Generator.TypeMapperGeneration.FlatteningIssueObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.GeneratedCodeReadabilityLowerer|94.6%|78.6%|
+|Morphant.Generator.TypeMapperGeneration.GeneratedCodeReadabilityLowerer|94.8%|81.8%|
 |Morphant.Generator.TypeMapperGeneration.GeneratedLocalNameAllocator|86.6%|72.9%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSet|88.7%|75%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSetResult|100%||
@@ -412,7 +412,7 @@
 |Morphant.Generator.TypeMapperGeneration.TypeMapperTupleElementModel|100%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperTupleReconstructionModel|100%||
 |Morphant.Generator.TypeMapperGeneration.UnsupportedDeclarativeControlFlow|100%||
-|Morphant.Generator.TypeMapperGeneration.UserExpressionLayout|100%|94.6%|
+|Morphant.Generator.TypeMapperGeneration.UserExpressionLayout|100%|95.1%|
 |Morphant.Generator.TypeMapperGeneration.UserResultMappingPlanner|14.4%|20.5%|
 |System.Collections.Generic.DictionaryExtensions|75%|50%|
 
@@ -420,4 +420,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #348](https://github.com/strangeman375/Morphant/actions/runs/34824358288).
+Full HTML report: download the **coverage** artifact from [CI run #355](https://github.com/strangeman375/Morphant/actions/runs/34836825273).
