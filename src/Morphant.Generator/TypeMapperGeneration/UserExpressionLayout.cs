@@ -11,8 +11,9 @@ internal static class UserExpressionLayout
     public static SyntaxNode Preserve(SyntaxNode source, SyntaxNode rewritten)
     {
         if (source is ExpressionSyntax &&
+            (source is SwitchExpressionSyntax ||
             source.GetLocation().GetLineSpan() is var span &&
-            span.StartLinePosition.Line != span.EndLinePosition.Line)
+            span.StartLinePosition.Line != span.EndLinePosition.Line))
         {
             return rewritten.WithAdditionalAnnotations(
                 new SyntaxAnnotation(AnnotationKind, GetIndentation(source)));
@@ -24,7 +25,7 @@ internal static class UserExpressionLayout
     public static ExpressionSyntax ParseExpression(string expression)
     {
         var syntax = SyntaxFactory.ParseExpression(expression);
-        return HasLineBreak(expression)
+        return HasLineBreak(expression) || ContainsSwitchExpression(syntax)
             ? syntax.WithAdditionalAnnotations(new SyntaxAnnotation(AnnotationKind, string.Empty))
             : syntax;
     }
@@ -78,7 +79,7 @@ internal static class UserExpressionLayout
         var normalized = original.NormalizeWhitespace(indentation: "    ", eol: "\r\n");
         var originalTokens = original.DescendantTokens().ToArray();
 
-        if (!originalTokens.Any(token =>
+        if (!ContainsSwitchExpression(original) && !originalTokens.Any(token =>
                 HasLineBreak(token.LeadingTrivia.ToFullString()) ||
                 HasLineBreak(token.TrailingTrivia.ToFullString())))
         {
@@ -111,6 +112,9 @@ internal static class UserExpressionLayout
 
     public static bool HasLineBreak(string text) =>
         text.IndexOf('\r') >= 0 || text.IndexOf('\n') >= 0;
+
+    public static bool ContainsSwitchExpression(SyntaxNode syntax) =>
+        syntax.DescendantNodesAndSelf().Any(static node => node is SwitchExpressionSyntax);
 
     private static SyntaxTriviaList PreserveGap(
         string original,

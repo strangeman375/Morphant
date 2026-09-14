@@ -559,9 +559,14 @@ internal static class GeneratedCodeReadabilityLowerer
     {
         if (expression.Length <= 100 || UserExpressionLayout.HasLineBreak(expression)) return false;
 
-        var evaluatedNodes = SyntaxFactory.ParseExpression(expression).DescendantNodesAndSelf(
+        var syntax = SyntaxFactory.ParseExpression(expression);
+        // Keep a user-written switch on its original line, including switches
+        // nested inside calls and lambdas that normalization would otherwise expand.
+        if (UserExpressionLayout.ContainsSwitchExpression(syntax)) return false;
+
+        var evaluatedNodes = syntax.DescendantNodesAndSelf(
             static node => node is not AnonymousFunctionExpressionSyntax).ToArray();
-        return evaluatedNodes.Any(static node => node is ConditionalExpressionSyntax or SwitchExpressionSyntax) ||
+        return evaluatedNodes.Any(static node => node is ConditionalExpressionSyntax) ||
             evaluatedNodes.OfType<InvocationExpressionSyntax>().Skip(1).Any();
     }
 

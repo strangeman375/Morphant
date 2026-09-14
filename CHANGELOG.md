@@ -53,6 +53,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Keep user-written single-line switch expressions on one line in generated
+  mappings, including long expressions and transferred callbacks.
 - Correct `previous` availability checks through local guards and switches,
   including reads in arguments and initializers before a guard.
 - Accept reuse of struct aliases after calls on separate copies or
