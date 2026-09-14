@@ -88,9 +88,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CheckedNestedUpd
 
     public static class Scenario
     {
-        public static ChildDestination UpdateChild(ChildSource source, Option<ChildDestination> previous, MappingContext context)
+        public static ChildDestination UpdateChild(ChildSource? source, Option<ChildDestination> previous, MappingContext context)
         {
-            if (!previous.HasValue || context.Operation != MappingOperation.Update)
+            if (source is null || !previous.HasValue || context.Operation != MappingOperation.Update)
                 throw new InvalidOperationException("The child must receive Update with its existing destination.");
             source.Events.Add("update");
             previous.Value.Value = 42;
