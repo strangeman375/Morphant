@@ -408,14 +408,11 @@ namespace TestCase
                     destination: nestedDestination);
             }
 
-            if (result.Empty is { } emptyDestination)
-            {
-                var childSource = global::TestCase.TestMapper.ThrowIfEvaluated(source);
-
-                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
-                    childSource,
-                    destination: emptyDestination);
-            }
+            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+                result.Empty,
+                source,
+                static s => global::TestCase.TestMapper.ThrowIfEvaluated(s),
+                context);
 
             return result;
         }
@@ -446,14 +443,11 @@ namespace TestCase
                     destination: nestedDestination);
             }
 
-            if (destination.Empty is { } emptyDestination)
-            {
-                var childSource = global::TestCase.TestMapper.ThrowIfEvaluated(source);
-
-                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
-                    childSource,
-                    destination: emptyDestination);
-            }
+            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+                destination.Empty,
+                source,
+                static s => global::TestCase.TestMapper.ThrowIfEvaluated(s),
+                context);
 
             return destination;
         }

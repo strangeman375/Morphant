@@ -53,6 +53,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Reduce generated read-only nested updates with shared runtime helpers,
+  preserving lazy source evaluation and destination identity.
 - Remove redundant operation checks from member branches when the mapping
   operation is already known, preserving conditional evaluation.
 - Label generated BCL tuple constructor arguments, including nested
