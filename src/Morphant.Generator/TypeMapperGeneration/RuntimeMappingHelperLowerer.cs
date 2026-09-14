@@ -109,6 +109,7 @@ internal static class RuntimeMappingHelperLowerer
             .Select(node => (Node: node, Symbol: semanticModel.GetSymbolInfo(node, cancellationToken).Symbol)).ToArray();
         var inputs = identifiers.Select(item => item.Symbol)
             .Where(symbol => symbol is ILocalSymbol or IParameterSymbol &&
+                symbol is not ILocalSymbol { IsConst: true } &&
                 !symbol.DeclaringSyntaxReferences.Any(reference => source.Span.Contains(reference.Span)))
             .Distinct(SymbolEqualityComparer.Default).ToArray();
         var capture = source.DescendantNodesAndSelf().Any(node => node is ThisExpressionSyntax or BaseExpressionSyntax) ||

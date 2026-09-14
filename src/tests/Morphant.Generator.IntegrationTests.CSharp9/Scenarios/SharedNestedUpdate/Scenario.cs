@@ -34,6 +34,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
             Events.Add("source:" + operation);
             return new ChildSource(Events);
         }
+
+        public ChildSource ReadConstant(byte value) { Events.Add("byte"); return new ChildSource(Events); }
+        public ChildSource ReadConstant(object value) => throw new InvalidOperationException("The constant lost its conversion.");
     }
 
     public sealed class ChildSource
@@ -246,6 +249,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
 
             ChildSource Read() { events.Add("read"); return new ChildSource(events); }
         }
+
+        public static void VerifyConstant(string operation)
+        {
+            var source = new Source { HasChild = true };
+            var previous = operation == "UpdateExisting" ? new Destination(source.CreateChild(), source.Events) : null;
+            ITypeMapper<Source, Destination> mapper = new ConstantMapper();
+            _ = operation == "Create" ? mapper.Create(source) : mapper.Update(source, previous);
+            if (!source.Events.Contains("byte")) throw new InvalidOperationException("The selected overload was not called.");
+        }
     }
 
     public struct MutableSource
@@ -299,6 +311,26 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
         {
             calls++;
             return source.ReadChild(MappingOperation.Update);
+        }
+    }
+
+    [MorphantMapper]
+    public partial class ConstantMapper : TypeMapper<ConstantMapper>
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<ChildSource, ChildDestination>()
+                .Members((source, previous, result, context) => new() { Name = source.ReadName(context.Operation) });
+            builder.Map<Source, Destination>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Construct(source => new(source.CreateChild(), source.Events))
+                .Members((source, _) =>
+                {
+                    const int value = 7;
+                    var members = new DestinationMembers();
+                    Update<ChildDestination>(source.ReadConstant(value), members.Child);
+                    return members;
+                });
         }
     }
 }

@@ -32,4 +32,10 @@ internal sealed class ReadOnlyMemberTests
         [Values(false, true)] bool capture,
         [Values(false, true)] bool hasChild) =>
         CSharp9.Scenarios.SharedNestedUpdate.Scenario.VerifyContextAccess(capture, hasChild);
+
+    [TestCase("Create")]
+    [TestCase("UpdateNull")]
+    [TestCase("UpdateExisting")]
+    public void Preserves_constant_conversions_in_source_selectors(string operation) =>
+        CSharp9.Scenarios.SharedNestedUpdate.Scenario.VerifyConstant(operation);
 }
