@@ -401,17 +401,17 @@ T Morphant.Exceptions.UnmatchedPolymorphicMappingException
   M Morphant.Exceptions.UnmatchedPolymorphicMappingException Create<TSource, TDestination>(Morphant.Context.MappingOperation, System.Object)
 T Morphant.Flattening
   V Default, Auto, None
-T Morphant.IMapper
-  M TDestination Map<TSource, TDestination>(TSource)
-  M TDestination Map<TSource, TDestination>(TSource, TDestination)
-T Morphant.IMapperDeclaration
-  M System.Boolean Supports(System.Type, System.Type)
 T Morphant.GeneratedCode.MappingHelpers
   M System.Void UpdateInPlace<TSource, TDestination>(System.Object, System.Func<TSource>, Morphant.Context.MappingContext)
   M System.Void UpdateInPlace<TSource, TDestination>(TDestination, System.Func<TSource>, Morphant.Context.MappingContext)
   M System.Void UpdateInPlace<TState, TSource, TDestination>(System.Object, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
   M System.Void UpdateInPlace<TState, TSource, TDestination>(TDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
   M TBranchDestination UpdateDerived<TSource, TDestination, TBranchSource, TBranchDestination>(TBranchSource, System.Object, Morphant.Context.MappingContext)
+T Morphant.IMapper
+  M TDestination Map<TSource, TDestination>(TSource)
+  M TDestination Map<TSource, TDestination>(TSource, TDestination)
+T Morphant.IMapperDeclaration
+  M System.Boolean Supports(System.Type, System.Type)
 T Morphant.IMappingBuilder<TMapper, TSource, TDestination>
 T Morphant.ITypeMapper<TSource, TDestination>
   M TDestination Create(TSource, Morphant.Context.MappingContext)

@@ -138,52 +138,26 @@ namespace TestCase
             switch (source)
             {
                 case global::TestCase.Dog polymorphicSource:
-                {
-                    var polymorphicDestination = destination switch
-                    {
-                        null => default(global::TestCase.DogDto),
-                        global::TestCase.DogDto compatibleDestination =>
-                            compatibleDestination,
-                        _ => throw global::Morphant.Exceptions
-                            .PolymorphicDestinationTypeMismatchException
-                            .CreateForUpdate<
-                                global::TestCase.Animal,
-                                global::TestCase.AnimalDto,
-                                global::TestCase.Dog,
-                                global::TestCase.DogDto>(
-                                polymorphicSource,
-                                destination)
-                    };
-
-                    result = context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
+                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                        global::TestCase.Animal,
+                        global::TestCase.AnimalDto,
+                        global::TestCase.Dog,
+                        global::TestCase.DogDto>(
                         polymorphicSource,
-                        polymorphicDestination);
+                        destination,
+                        context);
                     return true;
-                }
 
                 case global::TestCase.Cat polymorphicSource:
-                {
-                    var polymorphicDestination = destination switch
-                    {
-                        null => default(global::TestCase.CatDto),
-                        global::TestCase.CatDto compatibleDestination =>
-                            compatibleDestination,
-                        _ => throw global::Morphant.Exceptions
-                            .PolymorphicDestinationTypeMismatchException
-                            .CreateForUpdate<
-                                global::TestCase.Animal,
-                                global::TestCase.AnimalDto,
-                                global::TestCase.Cat,
-                                global::TestCase.CatDto>(
-                                polymorphicSource,
-                                destination)
-                    };
-
-                    result = context.Mapper.Map<global::TestCase.Cat, global::TestCase.CatDto>(
+                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                        global::TestCase.Animal,
+                        global::TestCase.AnimalDto,
+                        global::TestCase.Cat,
+                        global::TestCase.CatDto>(
                         polymorphicSource,
-                        polymorphicDestination);
+                        destination,
+                        context);
                     return true;
-                }
 
                 default:
                     result = default!;
@@ -436,28 +410,15 @@ namespace TestCase
             switch (source)
             {
                 case global::TestCase.Dog polymorphicSource:
-                {
-                    var polymorphicDestination = destination switch
-                    {
-                        null => default(global::TestCase.DogDto),
-                        global::TestCase.DogDto compatibleDestination =>
-                            compatibleDestination,
-                        _ => throw global::Morphant.Exceptions
-                            .PolymorphicDestinationTypeMismatchException
-                            .CreateForUpdate<
-                                global::TestCase.Animal,
-                                global::TestCase.AnimalDto,
-                                global::TestCase.Dog,
-                                global::TestCase.DogDto>(
-                                polymorphicSource,
-                                destination)
-                    };
-
-                    result = context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
+                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                        global::TestCase.Animal,
+                        global::TestCase.AnimalDto,
+                        global::TestCase.Dog,
+                        global::TestCase.DogDto>(
                         polymorphicSource,
-                        polymorphicDestination);
+                        destination,
+                        context);
                     return true;
-                }
 
                 case { } when source.GetType() !=
                     typeof(global::TestCase.Animal):
@@ -640,53 +601,27 @@ namespace TestCase
             {
                 case global::TestCase.IWorking polymorphicSource
                     when source is not global::TestCase.IPet:
-                {
-                    var polymorphicDestination = destination switch
-                    {
-                        null => default(global::TestCase.WorkingDto),
-                        global::TestCase.WorkingDto compatibleDestination =>
-                            compatibleDestination,
-                        _ => throw global::Morphant.Exceptions
-                            .PolymorphicDestinationTypeMismatchException
-                            .CreateForUpdate<
-                                global::TestCase.IRoot,
-                                global::TestCase.RootDto,
-                                global::TestCase.IWorking,
-                                global::TestCase.WorkingDto>(
-                                polymorphicSource,
-                                destination)
-                    };
-
-                    result = context.Mapper.Map<global::TestCase.IWorking, global::TestCase.WorkingDto>(
+                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                        global::TestCase.IRoot,
+                        global::TestCase.RootDto,
+                        global::TestCase.IWorking,
+                        global::TestCase.WorkingDto>(
                         polymorphicSource,
-                        polymorphicDestination);
+                        destination,
+                        context);
                     return true;
-                }
 
                 case global::TestCase.IPet polymorphicSource
                     when source is not global::TestCase.IWorking:
-                {
-                    var polymorphicDestination = destination switch
-                    {
-                        null => default(global::TestCase.PetDto),
-                        global::TestCase.PetDto compatibleDestination =>
-                            compatibleDestination,
-                        _ => throw global::Morphant.Exceptions
-                            .PolymorphicDestinationTypeMismatchException
-                            .CreateForUpdate<
-                                global::TestCase.IRoot,
-                                global::TestCase.RootDto,
-                                global::TestCase.IPet,
-                                global::TestCase.PetDto>(
-                                polymorphicSource,
-                                destination)
-                    };
-
-                    result = context.Mapper.Map<global::TestCase.IPet, global::TestCase.PetDto>(
+                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                        global::TestCase.IRoot,
+                        global::TestCase.RootDto,
+                        global::TestCase.IPet,
+                        global::TestCase.PetDto>(
                         polymorphicSource,
-                        polymorphicDestination);
+                        destination,
+                        context);
                     return true;
-                }
 
                 case { } when source is global::TestCase.IWorking ||
                     source is global::TestCase.IPet:

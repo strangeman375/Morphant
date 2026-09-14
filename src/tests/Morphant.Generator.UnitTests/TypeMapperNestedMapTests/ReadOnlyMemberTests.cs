@@ -387,21 +387,14 @@ namespace TestCase
         {
             var result = new global::TestCase.Destination();
 
-            if (result.Existing is { } existingDestination)
-            {
-                var childSource = source.Child;
-                var nestedDestination = existingDestination switch
-                {
-                    global::TestCase.ChildDestination compatibleExisting => compatibleExisting,
-                    var incompatibleExisting => throw
-                        global::Morphant.Exceptions
-                            .NestedDestinationTypeMismatchException
-                            .Create<
-                                global::TestCase.ChildSource,
-                                global::TestCase.ChildDestination>(
-                                global::Morphant.Context.MappingOperation.Update,
-                                incompatibleExisting),
-                };
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace<
+                global::TestCase.Source,
+                global::TestCase.ChildSource,
+                global::TestCase.ChildDestination>(
+                result.Existing,
+                source,
+                static s => s.Child,
+                context);;
 
                 _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
                     childSource,
@@ -422,21 +415,14 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (destination.Existing is { } existingDestination)
-            {
-                var childSource = source.Child;
-                var nestedDestination = existingDestination switch
-                {
-                    global::TestCase.ChildDestination compatibleExisting => compatibleExisting,
-                    var incompatibleExisting => throw
-                        global::Morphant.Exceptions
-                            .NestedDestinationTypeMismatchException
-                            .Create<
-                                global::TestCase.ChildSource,
-                                global::TestCase.ChildDestination>(
-                                global::Morphant.Context.MappingOperation.Update,
-                                incompatibleExisting),
-                };
+            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace<
+                global::TestCase.Source,
+                global::TestCase.ChildSource,
+                global::TestCase.ChildDestination>(
+                destination.Existing,
+                source,
+                static s => s.Child,
+                context);;
 
                 _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
                     childSource,

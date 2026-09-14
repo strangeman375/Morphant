@@ -30,7 +30,7 @@ internal static class RuntimeMappingHelperLowerer
                 foreach (var guard in method.DescendantNodes(node => node is not
                              (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)).OfType<IfStatementSyntax>())
                 {
-                    if (!TryGetUpdate(guard, out _, out _, out _)) continue;
+                    if (!TryGetUpdate(guard, out _, out _, out _, out _)) continue;
                     if (!candidates.TryGetValue(index, out var list)) candidates.Add(index, list = []);
                     list.Add((method, guard));
                 }
@@ -93,13 +93,15 @@ internal static class RuntimeMappingHelperLowerer
         SourceText text,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUpdate(guard, out var target, out var invocation, out var source) ||
+        if (!TryGetUpdate(guard, out var target, out var invocation, out var source, out var conversion) ||
             semanticModel.GetOperation(invocation, cancellationToken) is not IInvocationOperation call ||
             call.TargetMethod.ContainingType.ToDisplayString() != "Morphant.IMapper" ||
             call.TargetMethod.TypeArguments.Length != 2 ||
             semanticModel.GetTypeInfo(target, cancellationToken).Type is not { IsReferenceType: true } targetType ||
             targetType.TypeKind == TypeKind.Dynamic ||
-            !SymbolEqualityComparer.Default.Equals(targetType, call.TargetMethod.TypeArguments[1]))
+            (conversion is null
+                ? !SymbolEqualityComparer.Default.Equals(targetType, call.TargetMethod.TypeArguments[1])
+                : !IsDestinationCheck(conversion, call.TargetMethod.TypeArguments, semanticModel, cancellationToken)))
             return null;
 
         var flow = semanticModel.AnalyzeDataFlow(source);
@@ -143,8 +145,9 @@ internal static class RuntimeMappingHelperLowerer
             selector = "static " + parameter + " => " + expression;
         }
 
+        var indent = new string(' ', Column(text, guard.SpanStart));
         var typeArguments = string.Empty;
-        if (!SymbolEqualityComparer.Default.Equals(
+        if (conversion is not null || !SymbolEqualityComparer.Default.Equals(
                 semanticModel.GetTypeInfo(source, cancellationToken).Type, call.TargetMethod.TypeArguments[0]))
         {
             var types = new List<string>();
@@ -152,9 +155,8 @@ internal static class RuntimeMappingHelperLowerer
                 types.Add(inputs.Length == 1 ? TypeName(TypeOf(inputs[0]!)!) :
                     "(" + string.Join(", ", inputs.Select(symbol => TypeName(TypeOf(symbol!)!) + " " + Identifier(symbol!.Name))) + ")");
             types.AddRange(call.TargetMethod.TypeArguments.Select(TypeName));
-            typeArguments = "<" + string.Join(", ", types) + ">";
+            typeArguments = "<\r\n" + string.Join(",\r\n", types.Select(type => indent + "    " + type)) + ">";
         }
-        var indent = new string(' ', Column(text, guard.SpanStart));
         var expressionIndent = Column(text, source.Ancestors().OfType<StatementSyntax>().First().SpanStart);
         var arguments = new List<string> { text.ToString(target.Span) };
         if (state is not null) arguments.Add(state);
@@ -166,15 +168,16 @@ internal static class RuntimeMappingHelperLowerer
     }
 
     private static bool TryGetUpdate(IfStatementSyntax guard, out ExpressionSyntax target,
-        out InvocationExpressionSyntax invocation, out ExpressionSyntax source)
+        out InvocationExpressionSyntax invocation, out ExpressionSyntax source, out SwitchExpressionSyntax? conversion)
     {
         target = source = null!;
         invocation = null!;
+        conversion = null;
         if (guard.Else is not null || guard.Condition is not IsPatternExpressionSyntax
             { Expression: MemberAccessExpressionSyntax member, Pattern: RecursivePatternSyntax
                 { Type: null, PropertyPatternClause: { Subpatterns.Count: 0 },
                     Designation: SingleVariableDesignationSyntax designation } } ||
-            guard.Statement is not BlockSyntax body || body.Statements.Count is < 1 or > 2 ||
+            guard.Statement is not BlockSyntax body || body.Statements.Count is < 1 or > 3 ||
             body.Statements.Last() is not ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax
                 { Left: IdentifierNameSyntax { Identifier.ValueText: "_" }, Right: InvocationExpressionSyntax map } } ||
             map.Expression is not MemberAccessExpressionSyntax { Name: GenericNameSyntax
@@ -184,22 +187,70 @@ internal static class RuntimeMappingHelperLowerer
             map.ArgumentList.Arguments.Count != 2 ||
             map.ArgumentList.Arguments[0].NameColon?.Name.Identifier.ValueText is not (null or "source") ||
             map.ArgumentList.Arguments[1].NameColon?.Name.Identifier.ValueText != "destination" ||
-            map.ArgumentList.Arguments[1].Expression is not IdentifierNameSyntax destination ||
-            destination.Identifier.ValueText != designation.Identifier.ValueText)
+            map.ArgumentList.Arguments[1].Expression is not IdentifierNameSyntax destination)
             return false;
 
-        source = map.ArgumentList.Arguments[0].Expression;
-        if (body.Statements.Count == 2)
+        var precedingStatements = body.Statements.Count - 1;
+        if (destination.Identifier.ValueText != designation.Identifier.ValueText)
         {
-            if (body.Statements[0] is not LocalDeclarationStatementSyntax
-                { Declaration.Variables: { Count: 1 } variables } ||
-                variables[0].Initializer is null || source is not IdentifierNameSyntax value ||
-                value.Identifier.ValueText != variables[0].Identifier.ValueText)
+            if (precedingStatements == 0 ||
+                !TryGetInitializer(body.Statements[precedingStatements - 1], destination.Identifier.ValueText,
+                    out var initializer) ||
+                initializer is not SwitchExpressionSyntax
+                { GoverningExpression: IdentifierNameSyntax checkedDestination } check ||
+                checkedDestination.Identifier.ValueText != designation.Identifier.ValueText)
                 return false;
-            source = variables[0].Initializer!.Value;
+            conversion = check;
+            precedingStatements--;
         }
+
+        source = map.ArgumentList.Arguments[0].Expression;
+        if (precedingStatements == 1)
+        {
+            if (source is not IdentifierNameSyntax value ||
+                !TryGetInitializer(body.Statements[0], value.Identifier.ValueText, out source))
+                return false;
+        }
+        else if (precedingStatements != 0) return false;
         target = member;
         invocation = map;
+        return true;
+    }
+
+    private static bool TryGetInitializer(StatementSyntax statement, string name, out ExpressionSyntax value)
+    {
+        value = null!;
+        if (statement is not LocalDeclarationStatementSyntax
+            { Declaration.Variables: { Count: 1 } variables } ||
+            variables[0].Identifier.ValueText != name || variables[0].Initializer is not { } initializer)
+            return false;
+        value = initializer.Value;
+        return true;
+    }
+
+    private static bool IsDestinationCheck(SwitchExpressionSyntax check,
+        ImmutableArray<ITypeSymbol> mappingTypes, SemanticModel semanticModel, CancellationToken token)
+    {
+        if (check.Arms.Count != 2 || check.Arms.Any(arm => arm.WhenClause is not null) ||
+            check.Arms[0] is not
+            { Pattern: DeclarationPatternSyntax { Type: var type,
+                Designation: SingleVariableDesignationSyntax compatible }, Expression: IdentifierNameSyntax value } ||
+            compatible.Identifier.ValueText != value.Identifier.ValueText ||
+            !SymbolEqualityComparer.Default.Equals(semanticModel.GetTypeInfo(type, token).Type, mappingTypes[1]) ||
+            check.Arms[1] is not
+            { Pattern: VarPatternSyntax { Designation: SingleVariableDesignationSyntax incompatible },
+                Expression: ThrowExpressionSyntax { Expression: InvocationExpressionSyntax failure } } ||
+            semanticModel.GetOperation(failure, token) is not IInvocationOperation call ||
+            call.TargetMethod.ContainingType.ToDisplayString() != "Morphant.Exceptions.NestedDestinationTypeMismatchException" ||
+            call.TargetMethod.Name != "Create" ||
+            !call.TargetMethod.TypeArguments.SequenceEqual(mappingTypes, SymbolEqualityComparer.Default) ||
+            failure.ArgumentList.Arguments.Count != 2 ||
+            semanticModel.GetSymbolInfo(failure.ArgumentList.Arguments[0].Expression, token).Symbol is not
+                IFieldSymbol { Name: "Update", ContainingType: { } operationType } ||
+            operationType.ToDisplayString() != "Morphant.Context.MappingOperation" ||
+            failure.ArgumentList.Arguments[1].Expression is not IdentifierNameSyntax actual ||
+            actual.Identifier.ValueText != incompatible.Identifier.ValueText)
+            return false;
         return true;
     }
 
