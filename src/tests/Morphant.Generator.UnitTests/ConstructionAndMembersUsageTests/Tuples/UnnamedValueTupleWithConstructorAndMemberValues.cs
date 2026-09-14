@@ -95,8 +95,8 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             return (
-                Item1: source.Id,
-                Item2: source.FromMembers());
+                source.Id,
+                source.FromMembers());
         }
 
         private (int, string) __Update(

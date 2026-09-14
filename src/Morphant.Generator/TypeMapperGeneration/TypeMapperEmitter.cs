@@ -3033,8 +3033,9 @@ internal static class TypeMapperEmitter
                 arguments.Select((argument, index) =>
                 {
                     var value = UserExpressionLayout.Indent(argument, "    ");
-                    var name = tuple.ElementNames[index] ?? "Item" + (index + 1);
-                    return value.Insert(4, Identifier(name) + ": ");
+                    return tuple.ElementNames[index] is { } name
+                        ? value.Insert(4, Identifier(name) + ": ")
+                        : value;
                 })) + ")";
         }
 

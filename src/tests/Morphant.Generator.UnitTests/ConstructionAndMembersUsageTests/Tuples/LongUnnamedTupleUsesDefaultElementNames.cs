@@ -3,7 +3,7 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Tuples;
 internal sealed partial class TuplesTests
 {
     [Test]
-    [Description("Every unnamed tuple element is labelled, including elements beyond the first physical segment.")]
+    [Description("Default ItemN names configure unnamed elements, including elements beyond the first physical segment.")]
     public void LongUnnamedTupleUsesDefaultElementNames()
     {
         // lang=c#
@@ -98,15 +98,15 @@ namespace TestCase
             item8 = source.Id + 100;
 
             return (
-                Item1: 1,
-                Item2: 2,
-                Item3: 3,
-                Item4: 4,
-                Item5: 5,
-                Item6: 6,
-                Item7: 7,
-                Item8: item8,
-                Item9: 9);
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                item8,
+                9);
         }
 
         private (int, int, int, int, int, int, int, int, int) __Update(
