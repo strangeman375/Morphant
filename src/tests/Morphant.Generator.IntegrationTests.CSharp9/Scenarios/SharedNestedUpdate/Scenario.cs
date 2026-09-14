@@ -58,6 +58,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
     {
         private readonly List<string> _events;
         internal readonly ChildDestination? OriginalChild;
+        public int Observed { get; set; }
 
         public Destination(ChildDestination? child, List<string> events)
         {
@@ -203,6 +204,101 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
             var result = update ? mapper.Update(source, null) : mapper.Create(source);
             if (result is not null || string.Join(",", source.Events) != "factory")
                 throw new InvalidOperationException("A null factory result must skip all nested work.");
+        }
+
+        public static void VerifyMutableState(string operation, bool local)
+        {
+            var events = new List<string>();
+            var previous = operation == "UpdateExisting" ? new Destination(new ChildDestination(events), events) : null;
+            Destination result;
+            if (local)
+            {
+                ITypeMapper<Source, Destination> mapper = new MutableLocalMapper();
+                var source = new Source { HasChild = true };
+                result = operation == "Create" ? mapper.Create(source) : mapper.Update(source, previous);
+            }
+            else
+            {
+                ITypeMapper<MutableSource, Destination> mapper = new MutableSourceMapper();
+                var source = new MutableSource { Events = events };
+                result = operation == "Create" ? mapper.Create(source) : mapper.Update(source, previous);
+            }
+            if (result.Observed != 2 || result.OriginalChild?.Name != "updated")
+                throw new InvalidOperationException("Nested source mutations were copied or lost.");
+        }
+
+        public static void VerifyContextAccess(bool capture, bool hasChild)
+        {
+            var events = new List<string>();
+            var destination = hasChild ? new ChildDestination(events) : null;
+            try
+            {
+                if (capture)
+                    Runtime.MappingHelpers.UpdateExisting(destination, () => Read(), default);
+                else
+                    Runtime.MappingHelpers.UpdateExisting(destination, events,
+                        static state => { state.Add("read"); return new ChildSource(state); }, default);
+                if (hasChild) throw new InvalidOperationException("The invalid context was not accessed.");
+            }
+            catch (Exceptions.InvalidMappingContextException) when (hasChild) { }
+            if (string.Join(",", events) != (hasChild ? "read" : ""))
+                throw new InvalidOperationException("Source evaluation must follow the null guard and precede context access.");
+
+            ChildSource Read() { events.Add("read"); return new ChildSource(events); }
+        }
+    }
+
+    public struct MutableSource
+    {
+        public List<string> Events;
+        public int Calls;
+        public ChildSource ReadChild() { Calls++; return new ChildSource(Events); }
+    }
+
+    [MorphantMapper]
+    public partial class MutableSourceMapper : TypeMapper<MutableSourceMapper>
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<ChildSource, ChildDestination>()
+                .Members((source, previous, result, context) => new() { Name = source.ReadName(context.Operation) });
+            builder.Map<MutableSource, Destination>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Construct(source => new(new ChildDestination(source.Events), source.Events))
+                .Members((source, _) =>
+                {
+                    var members = new DestinationMembers();
+                    Update<ChildDestination>(source.ReadChild(), members.Child);
+                    Update<ChildDestination>(source.ReadChild(), members.Child);
+                    return members with { Observed = source.Calls };
+                });
+        }
+    }
+
+    [MorphantMapper]
+    public partial class MutableLocalMapper : TypeMapper<MutableLocalMapper>
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<ChildSource, ChildDestination>()
+                .Members((source, previous, result, context) => new() { Name = source.ReadName(context.Operation) });
+            builder.Map<Source, Destination>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Construct(source => new(source.CreateChild(), source.Events))
+                .Members((source, _) =>
+                {
+                    var calls = 0;
+                    var members = new DestinationMembers();
+                    Update<ChildDestination>(ReadChild(source, ref calls), members.Child);
+                    Update<ChildDestination>(ReadChild(source, ref calls), members.Child);
+                    return members with { Observed = calls };
+                });
+        }
+
+        private static ChildSource ReadChild(Source source, ref int calls)
+        {
+            calls++;
+            return source.ReadChild(MappingOperation.Update);
         }
     }
 }

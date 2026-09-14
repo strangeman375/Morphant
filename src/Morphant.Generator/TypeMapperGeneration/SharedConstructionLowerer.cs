@@ -174,9 +174,8 @@ internal static class SharedConstructionLowerer
         }
 
         var shared = model with { Mappings = mappings.ToImmutableArray() };
-        if (!mappings.Where((mapping, index) =>
-                !mapping.SharedConstructionMethodDeclarations.IsDefaultOrEmpty &&
-                model.Mappings[index].SharedConstructionMethodDeclarations.IsDefaultOrEmpty).Any())
+        if (!mappings.Where((mapping, index) => mapping.SharedConstructionMethodDeclarations !=
+                model.Mappings[index].SharedConstructionMethodDeclarations).Any())
         {
             return model;
         }

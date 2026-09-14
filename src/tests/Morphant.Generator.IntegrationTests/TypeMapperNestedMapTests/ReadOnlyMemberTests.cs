@@ -20,4 +20,16 @@ internal sealed class ReadOnlyMemberTests
     [TestCase(true)]
     public void Skips_nested_updates_after_a_null_factory_result(bool update) =>
         CSharp9.Scenarios.SharedNestedUpdate.Scenario.VerifyNullFactory(update);
+
+    [Test]
+    public void Preserves_mutations_of_struct_sources_and_user_locals(
+        [Values("Create", "UpdateNull", "UpdateExisting")] string operation,
+        [Values(false, true)] bool local) =>
+        CSharp9.Scenarios.SharedNestedUpdate.Scenario.VerifyMutableState(operation, local);
+
+    [Test]
+    public void Evaluates_the_source_between_the_null_guard_and_context_access(
+        [Values(false, true)] bool capture,
+        [Values(false, true)] bool hasChild) =>
+        CSharp9.Scenarios.SharedNestedUpdate.Scenario.VerifyContextAccess(capture, hasChild);
 }

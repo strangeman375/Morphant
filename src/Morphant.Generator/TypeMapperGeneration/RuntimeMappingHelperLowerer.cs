@@ -16,6 +16,7 @@ internal static class RuntimeMappingHelperLowerer
         CancellationToken cancellationToken)
     {
         var text = TypeMapperEmitter.EmitTransferProbe(model);
+        if (text.ToString().IndexOf("_ = context.Mapper.Map<", StringComparison.Ordinal) < 0) return model;
         var tree = CSharpSyntaxTree.ParseText(text, parseOptions, cancellationToken: cancellationToken);
         var methods = tree.GetRoot(cancellationToken).DescendantNodes().OfType<MethodDeclarationSyntax>()
             .Where(method => method.ExplicitInterfaceSpecifier is null)
@@ -62,7 +63,7 @@ internal static class RuntimeMappingHelperLowerer
                         return Unindent(text.GetSubText(method.Span).WithChanges(changes
                             .Where(change => method.Span.Contains(change.Span))
                             .Select(change => new TextChange(new TextSpan(change.Span.Start - method.SpanStart,
-                                change.Span.Length), change.NewText))).ToString(), Column(text, method.SpanStart));
+                                change.Span.Length), change.NewText!))).ToString(), Column(text, method.SpanStart));
                     }).ToImmutableArray()
             };
         }
@@ -113,6 +114,7 @@ internal static class RuntimeMappingHelperLowerer
         var capture = source.DescendantNodesAndSelf().Any(node => node is ThisExpressionSyntax or BaseExpressionSyntax) ||
             inputs.Any(symbol => flow.WrittenInside.Contains(symbol, SymbolEqualityComparer.Default) ||
                 flow.CapturedInside.Contains(symbol, SymbolEqualityComparer.Default) ||
+                flow.CapturedOutside.Contains(symbol, SymbolEqualityComparer.Default) ||
                 TypeOf(symbol!) is not { } type ||
                 !type.IsReferenceType && type.SpecialType == SpecialType.None && type.TypeKind != TypeKind.Enum &&
                     type is not INamedTypeSymbol { IsReadOnly: true }) ||
