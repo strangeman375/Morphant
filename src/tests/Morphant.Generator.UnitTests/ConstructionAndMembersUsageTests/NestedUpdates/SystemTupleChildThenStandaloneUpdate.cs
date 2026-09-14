@@ -177,14 +177,11 @@ namespace TestCase
                 item1: new global::TestCase.ChildDestination(),
                 item2: 7);
 
-            if (result.Item1 is { } item1Destination)
-            {
-                var childSource = source.Child;
-
-                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
-                    childSource,
-                    destination: item1Destination);
-            }
+            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+                result.Item1,
+                source,
+                static s => s.Child,
+                context);
 
             return result;
         }
@@ -194,14 +191,11 @@ namespace TestCase
             global::System.Tuple<global::TestCase.ChildDestination, int> destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (destination.Item1 is { } item1Destination)
-            {
-                var childSource = source.Child;
-
-                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
-                    childSource,
-                    destination: item1Destination);
-            }
+            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+                destination.Item1,
+                source,
+                static s => s.Child,
+                context);
 
             return destination;
         }

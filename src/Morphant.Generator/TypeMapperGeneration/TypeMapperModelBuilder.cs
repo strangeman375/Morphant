@@ -86,6 +86,11 @@ internal static class TypeMapperModelBuilder
                 .OfType<QueryExpressionSyntax>()
                 .Any());
         model = GeneratedCodeReadabilityLowerer.Lower(model);
+        model = RuntimeMappingHelperLowerer.Lower(
+            model,
+            compilation,
+            configureSyntax.SyntaxTree.Options as CSharpParseOptions,
+            cancellationToken);
         model = SharedConstructionLowerer.Lower(
             model,
             compilation,

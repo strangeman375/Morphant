@@ -184,14 +184,11 @@ namespace TestCase
                 return default!;
             }
 
-            if (result.Child is { } childDestination)
-            {
-                var childSource = source.Child;
-
-                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
-                    childSource,
-                    destination: childDestination);
-            }
+            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+                result.Child,
+                source,
+                static s => s.Child,
+                context);
 
             return result;
         }
@@ -201,14 +198,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (destination.Child is { } childDestination)
-            {
-                var childSource = source.Child;
-
-                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
-                    childSource,
-                    destination: childDestination);
-            }
+            global::Morphant.Runtime.MappingHelpers.UpdateExisting(
+                destination.Child,
+                source,
+                static s => s.Child,
+                context);
 
             return destination;
         }
