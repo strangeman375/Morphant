@@ -24,7 +24,11 @@ namespace TestCase
         public bool Choose { get; init; }
         public int Mode { get; init; }
         public string? Name { get; init; }
-        public bool Check(int index) => index > 0;
+        public bool Check(int index)
+        {
+            if (index == 3) Enabled = true;
+            return index > 0;
+        }
     }
 
     public sealed class Destination
@@ -42,7 +46,7 @@ namespace TestCase
                 {
                     if ((source.Check(0) || source.Check(1)) && previous.HasValue &&
                         (source.Optional ?? source.Check(2)) &&
-                        (source.Enabled = source.Check(3)) &&
+                        source.Check(3) &&
                         (source.Choose ? source.Check(4) : source.Check(5)) &&
                         (source.Mode switch
                         {
@@ -126,7 +130,7 @@ namespace TestCase
         {
             if ((source.Check(0) || source.Check(1)) &&
                 (source.Optional ?? source.Check(2)) &&
-                (source.Enabled = source.Check(3)) &&
+                source.Check(3) &&
                 (source.Choose ? source.Check(4) : source.Check(5)) &&
                 (source.Mode switch
                 {

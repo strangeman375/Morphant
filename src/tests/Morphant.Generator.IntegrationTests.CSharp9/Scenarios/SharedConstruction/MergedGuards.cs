@@ -18,7 +18,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
         public bool Choose { get; init; }
         public int Mode { get; init; }
         public string? Name { get; init; }
-        public bool Check(int index) { Events.Add(index.ToString()); return (Mask & (1 << index)) != 0; }
+        public bool Check(int index)
+        {
+            Events.Add(index.ToString());
+            var value = (Mask & (1 << index)) != 0;
+            if (index == 3) Enabled = value;
+            return value;
+        }
         public bool TryRead([NotNullWhen(true)] out string? name)
         {
             Events.Add("read");
@@ -59,7 +65,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
                 {
                     if ((source.Check(0) || source.Check(1)) && previous.HasValue &&
                         (source.Optional ?? source.Check(2)) &&
-                        (source.Enabled = source.Check(3)) &&
+                        source.Check(3) &&
                         (source.Choose ? source.Check(4) : source.Check(5)) &&
                         (source.Mode switch
                         {
