@@ -5,6 +5,22 @@ namespace Morphant.Generator.IntegrationTests.TypeMapperStructuredConstructTests
 [TestFixture]
 internal sealed class SharedConstructionTests
 {
+    [Test]
+    public void Shared_fallback_preserves_out_values_and_short_circuit_order(
+        [Values(0, 1, 2)] int operation,
+        [Values] bool before,
+        [Values] bool after,
+        [Values] bool last) =>
+        Scenario.VerifyOutGuard(operation, before, after, last);
+
+    [Test]
+    public void Shared_fallback_preserves_branch_locals_and_terminating_reuse(
+        [Values(0, 1, 2)] int operation,
+        [Values] bool before,
+        [Values] bool after,
+        [Values(-1, 42)] int id) =>
+        Scenario.VerifyScopedGuard(operation, before, after, id);
+
     [TestCase(false, 0, false)]
     [TestCase(false, 1, false)]
     [TestCase(false, 2, false)]
