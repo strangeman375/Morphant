@@ -99,7 +99,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::System.Tuple<int, string>(source.Id, source.FromMembers());
+            return new global::System.Tuple<int, string>(
+                source.Id,
+                source.FromMembers());
         }
 
         private global::System.Tuple<int, string> __Update(

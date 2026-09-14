@@ -130,7 +130,9 @@ namespace TestCase
             string item2 = source.FromConstruct();
             item2 = source.FromMembers();
 
-            return new global::System.Tuple<int, string>(item1, item2);
+            return new global::System.Tuple<int, string>(
+                item1,
+                item2);
         }
     }
 }

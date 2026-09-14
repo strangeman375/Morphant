@@ -98,7 +98,9 @@ namespace TestCase
             string tupleMembers = source.FromConstruct();
             tupleMembers = source.FromMembers();
 
-            return (Id: id, TupleMembers: tupleMembers);
+            return (
+                Id: id,
+                TupleMembers: tupleMembers);
         }
 
         private (int Id, string TupleMembers) __Update(

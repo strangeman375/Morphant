@@ -164,10 +164,11 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             global::TestCase.ChildDestination child = new global::TestCase.ChildDestination();
-            int id = 7;
             child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child);
 
-            return (Child: child, Id: id);
+            return (
+                Child: child,
+                Id: 7);
         }
 
         private (global::TestCase.ChildDestination Child, int Id) __Update1(

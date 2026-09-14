@@ -102,7 +102,9 @@ namespace TestCase
             int id = source.Id;
             string name = source.FromConstruct();
 
-            return (Id: id, Name: name);
+            return (
+                Id: id,
+                Name: name);
         }
 
         private (int Id, string Name) __Update(

@@ -94,18 +94,19 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int first = 1;
-            int second = 2;
-            int third = 3;
-            int fourth = 4;
-            int fifth = 5;
-            int sixth = 6;
-            int seventh = 7;
             int eighth = 8;
-            int ninth = 9;
             eighth = source.Id + 100;
 
-            return (First: first, Second: second, Third: third, Fourth: fourth, Fifth: fifth, Sixth: sixth, Seventh: seventh, Eighth: eighth, Ninth: ninth);
+            return (
+                First: 1,
+                Second: 2,
+                Third: 3,
+                Fourth: 4,
+                Fifth: 5,
+                Sixth: 6,
+                Seventh: 7,
+                Eighth: eighth,
+                Ninth: 9);
         }
 
         private (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) __Update(

@@ -99,7 +99,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::System.Tuple<int, string?>(7, default(string?));
+            return new global::System.Tuple<int, string?>(
+                7,
+                default(string?));
         }
 
         private global::System.Tuple<int, string?> __Update(

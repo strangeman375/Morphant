@@ -94,7 +94,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return (Id: source.Id, Name: source.FromConstruct());
+            return (
+                Id: source.Id,
+                Name: source.FromConstruct());
         }
 
         private (int Id, string Name) __Update(

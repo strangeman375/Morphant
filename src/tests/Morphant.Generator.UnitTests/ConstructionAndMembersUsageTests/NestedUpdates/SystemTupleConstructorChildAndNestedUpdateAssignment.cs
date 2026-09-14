@@ -168,9 +168,13 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::System.Tuple<global::TestCase.ChildDestination, int> result = new global::System.Tuple<global::TestCase.ChildDestination, int>(new global::TestCase.ChildDestination(), 7);
+            global::System.Tuple<global::TestCase.ChildDestination, int> result = new global::System.Tuple<global::TestCase.ChildDestination, int>(
+                new global::TestCase.ChildDestination(),
+                7);
 
-            return new global::System.Tuple<global::TestCase.ChildDestination, int>(context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, result.Item1), result.Item2);
+            return new global::System.Tuple<global::TestCase.ChildDestination, int>(
+                context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, result.Item1),
+                result.Item2);
         }
 
         private global::System.Tuple<global::TestCase.ChildDestination, int> __Update1(

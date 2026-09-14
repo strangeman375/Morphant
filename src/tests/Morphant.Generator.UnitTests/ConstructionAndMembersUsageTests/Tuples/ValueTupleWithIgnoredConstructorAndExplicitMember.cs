@@ -98,7 +98,9 @@ namespace TestCase
             string? name = default(string);
             name = source.FromMembers();
 
-            return (Id: id, Name: name);
+            return (
+                Id: id,
+                Name: name);
         }
 
         private (int Id, string Name) __Update(

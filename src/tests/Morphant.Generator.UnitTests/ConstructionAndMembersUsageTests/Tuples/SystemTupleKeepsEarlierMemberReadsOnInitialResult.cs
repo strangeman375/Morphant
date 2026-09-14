@@ -90,12 +90,16 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(7, "initial");
+            global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(
+                7,
+                "initial");
 
             int item1 = 42;
             string item2 = result.Item1.ToString();
 
-            return new global::System.Tuple<int, string>(item1, item2);
+            return new global::System.Tuple<int, string>(
+                item1,
+                item2);
         }
 
         private global::System.Tuple<int, string> __Update(

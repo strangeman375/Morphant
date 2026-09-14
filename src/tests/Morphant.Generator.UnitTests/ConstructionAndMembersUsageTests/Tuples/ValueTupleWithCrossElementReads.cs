@@ -98,7 +98,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            (int Id, string Name) result = (Id: source.Id, Name: source.FromConstruct());
+            (int Id, string Name) result = (
+                Id: source.Id,
+                Name: source.FromConstruct());
 
             int id = result.Name.Length;
             string name = result.Id.ToString();

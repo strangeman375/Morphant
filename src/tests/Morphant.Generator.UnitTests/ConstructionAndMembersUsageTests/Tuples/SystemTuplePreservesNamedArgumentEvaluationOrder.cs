@@ -99,7 +99,9 @@ namespace TestCase
             tupleItem1 = source.NextId();
             tupleItem2 = source.NextName();
 
-            return new global::System.Tuple<int, string>(tupleItem1, tupleItem2);
+            return new global::System.Tuple<int, string>(
+                tupleItem1,
+                tupleItem2);
         }
 
         private global::System.Tuple<int, string> __Update(

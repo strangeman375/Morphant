@@ -99,18 +99,20 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int item1 = 1;
-            int item2 = 2;
-            int item3 = 3;
-            int item4 = 4;
-            int item5 = 5;
-            int item6 = 6;
-            int item7 = 7;
             int item8 = 8;
-            int item9 = 9;
             item8 = source.Id + 100;
 
-            return new global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>(item1, item2, item3, item4, item5, item6, item7, new global::System.Tuple<int, int>(item8, item9));
+            return new global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>(
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                new global::System.Tuple<int, int>(
+                    item8,
+                    9));
         }
 
         private global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>> __Update(
