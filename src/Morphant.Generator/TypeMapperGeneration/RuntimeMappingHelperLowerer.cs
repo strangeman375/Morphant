@@ -243,7 +243,7 @@ internal static class RuntimeMappingHelperLowerer
             semanticModel.GetOperation(failure, token) is not IInvocationOperation call ||
             call.TargetMethod.ContainingType.ToDisplayString() != "Morphant.Exceptions.NestedDestinationTypeMismatchException" ||
             call.TargetMethod.Name != "Create" ||
-            !call.TargetMethod.TypeArguments.SequenceEqual(mappingTypes, SymbolEqualityComparer.Default) ||
+            !Enumerable.SequenceEqual<ITypeSymbol>(call.TargetMethod.TypeArguments, mappingTypes, SymbolEqualityComparer.Default) ||
             failure.ArgumentList.Arguments.Count != 2 ||
             semanticModel.GetSymbolInfo(failure.ArgumentList.Arguments[0].Expression, token).Symbol is not
                 IFieldSymbol { Name: "Update", ContainingType: { } operationType } ||
