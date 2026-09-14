@@ -189,6 +189,8 @@ namespace TestCase
                     (source, context),
                     static state => state.source.ReadChild(state.context.Operation),
                     context);
+
+                return result;
             }
 
             return result;
