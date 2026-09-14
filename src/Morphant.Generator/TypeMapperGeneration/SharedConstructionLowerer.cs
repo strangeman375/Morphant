@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Morphant.Generator.TypeMapperGeneration;
@@ -100,7 +101,7 @@ internal static class SharedConstructionLowerer
                     for (var parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++)
                     {
                         var parameter = parameters[parameterIndex];
-                        writer.Line(parameter.TypeName + " " + parameter.Name +
+                        writer.Line((parameter.ByReference ? "ref " : string.Empty) + parameter.TypeName + " " + parameter.Name +
                             (parameterIndex == parameters.Length - 1 ? ")" : ","));
                     }
                     writer.Unindent();
@@ -121,11 +122,22 @@ internal static class SharedConstructionLowerer
 
                     var arguments = parameters.Select(parameter =>
                         parameter.Name == "operation" &&
-                        candidate.Syntax.Method.Identifier.ValueText == mapping.UpdateImplMethodName
+                        candidate.Parameters.All(value => value.Name != "operation")
                             ? "global::Morphant.Context.MappingOperation.Update"
-                            : parameter.Name);
-                    changes.Add(new TextChange(candidate.Syntax.Span,
-                        "return " + name + "(" + string.Join(", ", arguments) + ");"));
+                            : (parameter.ByReference ? "ref " : string.Empty) + parameter.Name);
+                    var call = "return " + name + "(" + string.Join(", ", arguments) + ");";
+                    var span = candidate.Syntax.Span;
+                    if (candidate.Syntax.First.Parent is BlockSyntax { Parent: ElseClauseSyntax @else } block &&
+                        candidate.Syntax.First == block.Statements[0] &&
+                        @else.Parent is IfStatementSyntax @if &&
+                        semanticModel.AnalyzeControlFlow(@if.Statement) is { EndPointIsReachable: false })
+                    {
+                        // Extraction removed the declarations that required this
+                        // else scope. Its call can now be the continuation.
+                        span = TextSpan.FromBounds(@if.Statement.Span.End, @else.Span.End);
+                        call = "\r\n\r\n" + new string(' ', Column(text, @if.SpanStart)) + call;
+                    }
+                    changes.Add(new TextChange(span, call));
                 }
             }
 
@@ -139,7 +151,7 @@ internal static class SharedConstructionLowerer
                 var methodText = text.GetSubText(method.Span);
                 var methodChanges = changes.Where(change => method.Span.Contains(change.Span))
                     .Select(change => new TextChange(
-                        new TextSpan(change.Span.Start - method.Span.Start, change.Span.Length), change.NewText));
+                        new TextSpan(change.Span.Start - method.Span.Start, change.Span.Length), change.NewText!));
                 return Unindent(methodText.WithChanges(methodChanges).ToString(), Column(text, method.SpanStart));
             }).Concat(helpers).ToImmutableArray();
             mappings[index] = mapping with { SharedConstructionMethodDeclarations = declarations };
@@ -160,14 +172,13 @@ internal static class SharedConstructionLowerer
             cancellationToken: cancellationToken);
         var sharedSemanticModel = compilation.AddSyntaxTrees(sharedTree).GetSemanticModel(sharedTree);
         var originalDiagnostics = Diagnostics(semanticModel, cancellationToken)
-            .GroupBy(diagnostic => diagnostic.Index)
-            .ToDictionary(group => group.Key, group => group.Select(item => item.Key).ToImmutableHashSet());
-        foreach (var diagnostic in Diagnostics(sharedSemanticModel, cancellationToken))
+            .GroupBy(diagnostic => diagnostic)
+            .ToDictionary(group => group.Key, group => group.Count());
+        foreach (var group in Diagnostics(sharedSemanticModel, cancellationToken).GroupBy(diagnostic => diagnostic))
         {
-            if (!originalDiagnostics.TryGetValue(diagnostic.Index, out var originals) ||
-                !originals.Contains(diagnostic.Key))
+            if (!originalDiagnostics.TryGetValue(group.Key, out var count) || group.Count() > count)
             {
-                mappings[diagnostic.Index] = model.Mappings[diagnostic.Index];
+                mappings[group.Key.Index] = model.Mappings[group.Key.Index];
             }
         }
 
@@ -245,6 +256,25 @@ internal static class SharedConstructionLowerer
         {
             return null;
         }
+        foreach (var expression in candidate.First.Parent.DescendantNodes().OfType<ExpressionSyntax>()
+                     .Where(expression => candidate.Span.Contains(expression.Span) &&
+                         expression is InvocationExpressionSyntax or ObjectCreationExpressionSyntax))
+        {
+            var arguments = semanticModel.GetOperation(expression, cancellationToken) switch
+            {
+                IInvocationOperation invocation => invocation.Arguments,
+                IObjectCreationOperation creation => creation.Arguments,
+                _ => ImmutableArray<IArgumentOperation>.Empty
+            };
+            if (arguments.Any(argument => argument.IsImplicit && argument.Parameter is { } parameter &&
+                    parameter.GetAttributes().Any(attribute => attribute.AttributeClass?.ToDisplayString() is
+                        "System.Runtime.CompilerServices.CallerMemberNameAttribute" or
+                        "System.Runtime.CompilerServices.CallerFilePathAttribute" or
+                        "System.Runtime.CompilerServices.CallerLineNumberAttribute")))
+            {
+                return null;
+            }
+        }
         var parameters = ImmutableArray.CreateBuilder<Parameter>();
         var seen = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
 
@@ -258,20 +288,22 @@ internal static class SharedConstructionLowerer
                 ILocalSymbol { RefKind: RefKind.None, IsConst: false } local => local.Type,
                 _ => null
             };
+            var byReference = flow.CapturedOutside.Contains(symbol, SymbolEqualityComparer.Default);
             if (type is null || type is INamedTypeSymbol { IsAnonymousType: true } ||
-                flow.CapturedOutside.Contains(symbol, SymbolEqualityComparer.Default))
+                byReference && flow.CapturedInside.Contains(symbol, SymbolEqualityComparer.Default))
             {
                 return false;
             }
 
-            if (use is not null && semanticModel.GetTypeInfo(use, cancellationToken).Nullability.FlowState ==
+            if (!byReference && use is not null && semanticModel.GetTypeInfo(use, cancellationToken).Nullability.FlowState ==
                 NullableFlowState.NotNull)
             {
                 type = type.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
             }
 
             parameters.Add(new Parameter(symbol, TypeMapperMappingTypePolicy.GetGeneratedTypeName(type),
-                SyntaxFacts.GetKeywordKind(symbol.Name) == SyntaxKind.None ? symbol.Name : "@" + symbol.Name));
+                SyntaxFacts.GetKeywordKind(symbol.Name) == SyntaxKind.None ? symbol.Name : "@" + symbol.Name,
+                byReference));
             return true;
         }
 
@@ -323,11 +355,12 @@ internal static class SharedConstructionLowerer
         TextSpan Span,
         string Body);
 
-    private sealed record Parameter(ISymbol Symbol, string TypeName, string Name);
+    private sealed record Parameter(ISymbol Symbol, string TypeName, string Name, bool ByReference = false);
 
     private sealed record BoundCandidate(Candidate Syntax, ImmutableArray<Parameter> Parameters)
     {
         public string Key => Syntax.Body + "\n" + string.Join("\n",
-            Parameters.Select(parameter => parameter.TypeName + " " + parameter.Name));
+            Parameters.Select(parameter => (parameter.ByReference ? "ref " : string.Empty) +
+                parameter.TypeName + " " + parameter.Name));
     }
 }

@@ -124,11 +124,7 @@ namespace TestCase
                 return destination;
             }
 
-            return new global::TestCase.Destination(
-                name: source.FromConstruct())
-            {
-                Name = source.FromMembers()
-            };
+            return __Create(source, context);
         }
     }
 }

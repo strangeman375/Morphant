@@ -106,11 +106,7 @@ namespace TestCase
         {
             _ = source.Id > 0;
 
-            int item1 = source.Id;
-            string item2 = source.FromConstruct();
-            item2 = source.FromMembers();
-
-            return new global::System.Tuple<int, string>(item1, item2);
+            return __Construct(source, context);
         }
 
         private global::System.Tuple<int, string> __Update(
@@ -122,14 +118,19 @@ namespace TestCase
             {
                 return destination;
             }
-            else
-            {
-                int item1 = source.Id;
-                string item2 = source.FromConstruct();
-                item2 = source.FromMembers();
 
-                return new global::System.Tuple<int, string>(item1, item2);
-            }
+            return __Construct(source, context);
+        }
+
+        private global::System.Tuple<int, string> __Construct(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            int item1 = source.Id;
+            string item2 = source.FromConstruct();
+            item2 = source.FromMembers();
+
+            return new global::System.Tuple<int, string>(item1, item2);
         }
     }
 }

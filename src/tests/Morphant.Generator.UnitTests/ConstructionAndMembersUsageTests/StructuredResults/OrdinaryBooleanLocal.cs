@@ -123,22 +123,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            var chooseFirst = false;
-
-            if (chooseFirst)
-            {
-                return new global::TestCase.Destination(
-                    name: "first")
-                {
-                    Name = source.FromMembers()
-                };
-            }
-
-            return new global::TestCase.Destination(
-                name: source.FromConstruct())
-            {
-                Name = source.FromMembers()
-            };
+            return __Create(source, context);
         }
     }
 }

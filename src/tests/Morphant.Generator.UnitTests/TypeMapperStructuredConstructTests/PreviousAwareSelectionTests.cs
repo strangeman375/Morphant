@@ -131,11 +131,7 @@ namespace TestCase
                 return destination;
             }
 
-            return new global::TestCase.Destination(
-                id: source.Id)
-            {
-                Name = source.Name
-            };
+            return __Create(source, context);
         }
     }
 }
@@ -467,8 +463,7 @@ namespace TestCase
         {
             _ = global::TestCase.TestMapper.TrackBefore();
 
-            return new global::TestCase.Destination(
-                id: source.Id);
+            return __Construct(source, context);
         }
 
         private global::TestCase.Destination __Update(
@@ -483,10 +478,16 @@ namespace TestCase
                     return destination;
                 }
 
-                return new global::TestCase.Destination(
-                    id: source.Id);
+                return __Construct(source, context);
             }
 
+            return __Construct(source, context);
+        }
+
+        private global::TestCase.Destination __Construct(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
             return new global::TestCase.Destination(
                 id: source.Id);
         }
@@ -813,8 +814,7 @@ namespace TestCase
                     "'previous' is not available in this case.");
             }
 
-            return new global::TestCase.Destination(
-                id: source.Id);
+            return __Construct(source, context);
         }
 
         private global::TestCase.Destination __Update(
@@ -827,6 +827,13 @@ namespace TestCase
                 return destination;
             }
 
+            return __Construct(source, context);
+        }
+
+        private global::TestCase.Destination __Construct(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
             return new global::TestCase.Destination(
                 id: source.Id);
         }

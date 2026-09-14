@@ -25,6 +25,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Share common destination construction across Create, Update and repeated
+  selection branches while preserving evaluation order and local values.
 - Omit redundant `else` blocks on terminating mapping paths while preserving
   local scopes.
 - Convert from `Destination` to the generated construction type, instead of

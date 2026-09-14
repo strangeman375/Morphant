@@ -109,11 +109,7 @@ namespace TestCase
         {
             _ = source.Reuse;
 
-            return new global::TestCase.Destination(
-                name: source.FromConstruct())
-            {
-                Name = source.FromMembers()
-            };
+            return __Construct(source, context);
         }
 
         private global::TestCase.Destination __Update(
@@ -126,6 +122,13 @@ namespace TestCase
                 return destination;
             }
 
+            return __Construct(source, context);
+        }
+
+        private global::TestCase.Destination __Construct(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
             return new global::TestCase.Destination(
                 name: source.FromConstruct())
             {

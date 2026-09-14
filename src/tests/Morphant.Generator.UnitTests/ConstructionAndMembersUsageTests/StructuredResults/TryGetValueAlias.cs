@@ -106,13 +106,7 @@ namespace TestCase
         {
             _ = global::Morphant.Option<global::TestCase.Destination>.None.TryGetValue(out global::TestCase.Destination? existing) && source.Reuse;
 
-            var name = source.FromConstruct();
-
-            return new global::TestCase.Destination(
-                name: name)
-            {
-                Name = source.FromMembers()
-            };
+            return __Construct(source, context);
         }
 
         private global::TestCase.Destination __Update(
@@ -128,16 +122,21 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                var name = source.FromConstruct();
 
-                return new global::TestCase.Destination(
-                    name: name)
-                {
-                    Name = source.FromMembers()
-                };
-            }
+            return __Construct(source, context);
+        }
+
+        private global::TestCase.Destination __Construct(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            var name = source.FromConstruct();
+
+            return new global::TestCase.Destination(
+                name: name)
+            {
+                Name = source.FromMembers()
+            };
         }
     }
 }

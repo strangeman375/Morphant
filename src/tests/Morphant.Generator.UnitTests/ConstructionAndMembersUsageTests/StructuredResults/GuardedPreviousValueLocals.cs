@@ -128,16 +128,8 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                var name = source.FromConstruct();
 
-                return new global::TestCase.Destination(
-                    name: name)
-                {
-                    Name = source.FromMembers()
-                };
-            }
+            return __Create(source, context);
         }
     }
 }
