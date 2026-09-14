@@ -176,6 +176,10 @@
   materializing an initial tuple is allowed, including for element reads.
 - Reuse skips construction. Factories remain authoritative; standalone nested
   updates mutate their target. Apply existing inheritance and lifecycle rules.
+- Share common destination construction across generated Create and Update
+  paths and repeated selection branches. Keep selection effects, user locals,
+  previous-dependent values, nullable flow and constructor/member evaluation
+  order intact; sharing code must not share separately written evaluations.
 - Completion requires readable full-source review snapshots, runtime coverage
   of evaluation order and reuse, current concise docs, and the full build and
   test suites. This contract replaces the former member-overrides-constructor
