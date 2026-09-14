@@ -90,6 +90,19 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
                 throw new InvalidOperationException(
                     "The derived pair could not return a replacement.");
             }
+
+            try
+            {
+                animalMapper.Update(new Dog(), new AnimalDto(), default);
+                throw new InvalidOperationException("An incompatible derived destination was accepted.");
+            }
+            catch (PolymorphicDestinationTypeMismatchException exception)
+            {
+                if (exception.SourceType != typeof(Animal) || exception.DestinationType != typeof(AnimalDto) ||
+                    exception.ActualSourceType != typeof(Dog) || exception.BranchSourceType != typeof(Dog) ||
+                    exception.ExpectedDestinationType != typeof(DogDto) || exception.ActualDestinationType != typeof(AnimalDto))
+                    throw new InvalidOperationException("The derived mismatch lost its base or selected mapping pair.");
+            }
         }
     }
 }

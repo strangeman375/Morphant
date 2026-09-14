@@ -38,4 +38,18 @@ internal sealed class ReadOnlyMemberTests
     [TestCase("UpdateExisting")]
     public void Preserves_constant_conversions_in_source_selectors(string operation) =>
         CSharp9.Scenarios.SharedNestedUpdate.Scenario.VerifyConstant(operation);
+
+    [Test]
+    public void Preserves_checked_update_order_failures_mutations_and_identity(
+        [Values(false, true)] bool capture,
+        [Values("Create", "UpdateNull", "UpdateExisting")] string operation,
+        [Values(0, 1, 2)] int destinationKind,
+        [Values(false, true)] bool throwSource) =>
+        CSharp9.Scenarios.CheckedNestedUpdate.Scenario.Verify(capture, operation, destinationKind, throwSource);
+
+    [Test]
+    public void Checks_wide_destinations_before_accessing_the_mapper(
+        [Values(false, true)] bool capture,
+        [Values(0, 1, 2)] int destinationKind) =>
+        CSharp9.Scenarios.CheckedNestedUpdate.Scenario.VerifyContextAccess(capture, destinationKind);
 }

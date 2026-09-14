@@ -4,7 +4,7 @@ using Morphant.Generator.UnitTests.TestUtils;
 namespace Morphant.Generator.UnitTests.TypeMapperNestedMapTests;
 
 [TestFixture]
-internal sealed class ReadOnlyMemberTests
+internal sealed class ReadOnlyCapturedMemberTests
 {
     [Test]
     public async Task Emits_guarded_conversion_for_wide_read_only_member()
@@ -36,7 +36,10 @@ namespace TestCase
         public int Value { get; set; }
     }
 
-    public sealed record Source(ChildSource Child);
+    public sealed record Source(ChildSource Child)
+    {
+        public ChildSource ReadChild(ref int reads) { reads++; return Child; }
+    }
 
     public sealed class Destination
     {
@@ -52,9 +55,10 @@ namespace TestCase
             builder.Map<Source, Destination>()
                 .Members((source, _) =>
                 {
+                    var reads = 0;
                     var members = new DestinationMembers();
 
-                    Update<ChildDestination>(source.Child, members.Existing);
+                    Update<ChildDestination>(source.ReadChild(ref reads), members.Existing);
                     Update<ChildDestination>(
                         ThrowIfEvaluated(source),
                         members.Empty);
@@ -387,13 +391,13 @@ namespace TestCase
         {
             var result = new global::TestCase.Destination();
 
+            var reads = 0;
+
             global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace<
-                global::TestCase.Source,
                 global::TestCase.ChildSource,
                 global::TestCase.ChildDestination>(
                 result.Existing,
-                source,
-                static s => s.Child,
+                () => source.ReadChild(ref reads),
                 context);
 
             global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
@@ -410,13 +414,13 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
+            var reads = 0;
+
             global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace<
-                global::TestCase.Source,
                 global::TestCase.ChildSource,
                 global::TestCase.ChildDestination>(
                 destination.Existing,
-                source,
-                static s => s.Child,
+                () => source.ReadChild(ref reads),
                 context);
 
             global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
