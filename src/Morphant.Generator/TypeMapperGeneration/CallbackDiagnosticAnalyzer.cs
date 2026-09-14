@@ -755,7 +755,7 @@ internal static class CallbackDiagnosticAnalyzer
         }
 
         foreach (var unsupported in EnumerateUnsupportedStatements(
-                     lambda.Block,
+                     lambda.Block.Statements,
                      lambda,
                      readOnlyMutationSpans,
                      context.Expression.SemanticModel,
@@ -1889,13 +1889,13 @@ internal static class CallbackDiagnosticAnalyzer
 
     private static IEnumerable<UnsupportedSyntaxSite>
         EnumerateUnsupportedStatements(
-            BlockSyntax block,
+            IEnumerable<StatementSyntax> statements,
             LambdaExpressionSyntax lambda,
             ISet<TextSpanKey> readOnlyMutationSpans,
             SemanticModel semanticModel,
             CancellationToken cancellationToken)
     {
-        foreach (var statement in block.Statements)
+        foreach (var statement in statements)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -1933,7 +1933,7 @@ internal static class CallbackDiagnosticAnalyzer
 
                 case BlockSyntax nestedBlock:
                     foreach (var nested in EnumerateUnsupportedStatements(
-                                 nestedBlock,
+                                 nestedBlock.Statements,
                                  lambda,
                                  readOnlyMutationSpans,
                                  semanticModel,
@@ -1982,11 +1982,8 @@ internal static class CallbackDiagnosticAnalyzer
                 case SwitchStatementSyntax switchStatement:
                     foreach (var section in switchStatement.Sections)
                     {
-                        var syntheticBlock = SyntaxFactory.Block(
-                            section.Statements);
-
                         foreach (var nested in EnumerateUnsupportedStatements(
-                                     syntheticBlock,
+                                     section.Statements,
                                      lambda,
                                      readOnlyMutationSpans,
                                      semanticModel,
@@ -2219,10 +2216,8 @@ internal static class CallbackDiagnosticAnalyzer
             SemanticModel semanticModel,
             CancellationToken cancellationToken)
     {
-        var block = statement as BlockSyntax ?? SyntaxFactory.Block(statement);
-
         return EnumerateUnsupportedStatements(
-            block,
+            new[] { statement },
             lambda,
             readOnlyMutationSpans,
             semanticModel,
