@@ -119,12 +119,10 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (source.Before())
+            if (source.Before() &&
+                source.After())
             {
-                if (source.After())
-                {
-                    return destination;
-                }
+                return destination;
             }
 
             return __Construct(source, context);

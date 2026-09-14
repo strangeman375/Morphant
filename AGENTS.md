@@ -97,6 +97,9 @@
 - Omit redundant `else` blocks after terminating generated mapping branches
   when the continuation does not need its own declaration scope. Preserve
   conditional execution and user-written local scopes.
+- Merge consecutive generated guards with a common fallback into one
+  short-circuit condition when evaluation, operator binding and declaration
+  scopes stay unchanged. Prefer this form to unnecessary nested `if` blocks.
 - Keep synthesized checks, branches and invocations readable. Structure the
   generated mapping algorithm explicitly where it needs separate operations;
   do not use this as a reason to refactor user-written computations.

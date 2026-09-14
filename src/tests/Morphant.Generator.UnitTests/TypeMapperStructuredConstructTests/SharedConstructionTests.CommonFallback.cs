@@ -111,15 +111,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (source.Before(out int id))
+            if (source.Before(out int id) &&
+                source.After(id) &&
+                source.Last())
             {
-                if (source.After(id))
-                {
-                    if (source.Last())
-                    {
-                        return destination;
-                    }
-                }
+                return destination;
             }
 
             return __Construct(source, id, context);
@@ -443,19 +439,17 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (source.Before())
+            if (source.Before() &&
+                source.After())
             {
-                if (source.After())
+                var id = source.Read();
+
+                if (id < 0)
                 {
-                    var id = source.Read();
-
-                    if (id < 0)
-                    {
-                        throw new global::System.InvalidOperationException("blocked reuse");
-                    }
-
-                    return destination;
+                    throw new global::System.InvalidOperationException("blocked reuse");
                 }
+
+                return destination;
             }
 
             return __Construct(source, context);

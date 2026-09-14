@@ -758,7 +758,9 @@ internal static class StructuredConstructMappingPlanner
                 Leaf: null,
                 ThrowExpression: null,
                 ConditionDependency:
-                    rewrittenCondition.Value.DependencyExpression);
+                    rewrittenCondition.Value.DependencyExpression,
+                ConditionIsBoolean: semanticModel.GetTypeInfo(condition, cancellationToken)
+                    .Type?.SpecialType == SpecialType.System_Boolean);
     }
 
     private static bool? EvaluateStoredCondition(

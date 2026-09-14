@@ -17,6 +17,7 @@ internal static class TypeMapperRuntimeEquality
                StringComparer.Ordinal.Equals(
                    left.Condition,
                    right.Condition) &&
+               left.ConditionIsBoolean == right.ConditionIsBoolean &&
                AreEquivalentNode(left.WhenTrue, right.WhenTrue) &&
                AreEquivalentNode(left.WhenFalse, right.WhenFalse) &&
                AreEquivalent(left.Leaf, right.Leaf) &&

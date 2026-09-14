@@ -471,12 +471,10 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (global::TestCase.TestMapper.TrackBefore())
+            if (global::TestCase.TestMapper.TrackBefore() &&
+                global::TestCase.TestMapper.TrackAfter())
             {
-                if (global::TestCase.TestMapper.TrackAfter())
-                {
-                    return destination;
-                }
+                return destination;
             }
 
             return __Construct(source, context);

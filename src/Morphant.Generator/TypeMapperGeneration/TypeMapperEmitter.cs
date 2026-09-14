@@ -664,11 +664,17 @@ internal static class TypeMapperEmitter
         Action<CodeWriter, TypeMapperControlFlowNode> writeBranch)
     {
         var conditions = new List<string> { node.Condition! };
+        var canCombine = node.ConditionIsBoolean;
         var selected = node.WhenTrue!;
         var continuation = node.WhenFalse!;
         while (selected.Locals.IsDefaultOrEmpty && selected.Condition is { } nextCondition &&
                TypeMapperRuntimeEquality.AreEquivalent(selected.WhenFalse!, continuation))
         {
+            // An inner declaration must keep its scope. Custom truth operators
+            // also differ from the built-in bool short-circuit operation.
+            canCombine &= selected.ConditionIsBoolean &&
+                !SyntaxFactory.ParseExpression(nextCondition).DescendantNodesAndSelf()
+                    .Any(syntax => syntax is SingleVariableDesignationSyntax);
             conditions.Add(nextCondition);
             selected = selected.WhenTrue!;
         }
@@ -681,9 +687,16 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        // Specializing a short-circuit condition can give nested guards the
-        // same fallback. Keep their evaluation and scopes, then emit that
-        // continuation once, after every guard has finished.
+        if (canCombine)
+        {
+            var combined = string.Join(" &&\r\n    ", conditions.Select(AndOperand));
+            conditions.Clear();
+            conditions.Add(combined);
+        }
+
+        // Keep the same short-circuit evaluations and emit the shared fallback
+        // once. Retain separate guards when their truth operators or scopes
+        // prevent combining them.
         foreach (var condition in conditions)
         {
             writer.OpenBlock($"if ({condition})");
@@ -698,6 +711,15 @@ internal static class TypeMapperEmitter
         WriteConditionalContinuation(writer,
             branchWriter => writeBranch(branchWriter, continuation),
             precedingBranchTerminates: false);
+    }
+
+    private static string AndOperand(string condition)
+    {
+        var syntax = SyntaxFactory.ParseExpression(condition);
+        return syntax is AssignmentExpressionSyntax or ConditionalExpressionSyntax or SwitchExpressionSyntax ||
+               syntax.IsKind(SyntaxKind.LogicalOrExpression) || syntax.IsKind(SyntaxKind.CoalesceExpression)
+            ? "(" + condition + ")"
+            : condition;
     }
 
     private static void WriteTerminatingConditional(

@@ -238,7 +238,8 @@ internal sealed record TypeMapperControlFlowNode
     TypeMapperDependencyExpressionModel? EvaluationDependency = null,
     bool ThrowUsesCurrentMappingOperation = false,
     string? EvaluationCondition = null,
-    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
+    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default,
+    bool ConditionIsBoolean = false
 );
 
 internal readonly record struct TypeMapperMemberControlFlowLeafModel(

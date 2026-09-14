@@ -27,8 +27,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 - Share common destination construction across Create, Update and repeated
   selection branches while preserving evaluation order and local values.
-- Omit redundant `else` blocks on terminating mapping paths while preserving
-  local scopes.
+- Omit redundant `else` blocks and combine compatible nested guards while
+  preserving short-circuit evaluation and local scopes.
 - Convert from `Destination` to the generated construction type, instead of
   `Option<Destination>`. In `Resolve`, return guarded `previous.Value` or the
   value from `TryGetValue`; unchanged local aliases are supported.
