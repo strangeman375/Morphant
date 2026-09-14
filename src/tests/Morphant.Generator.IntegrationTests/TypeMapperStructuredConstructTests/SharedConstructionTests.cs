@@ -6,6 +6,26 @@ namespace Morphant.Generator.IntegrationTests.TypeMapperStructuredConstructTests
 internal sealed class SharedConstructionTests
 {
     [Test]
+    public void Combined_guards_preserve_precedence_side_effects_and_nullable_flow(
+        [Values(0, 1, 2)] int operation,
+        [Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)] int sample) =>
+        Scenario.VerifyCombinedGuard(operation, sample);
+
+    [Test]
+    public void Inner_guard_declarations_preserve_scope_and_nullable_flow(
+        [Values(0, 1, 2)] int operation,
+        [Values] bool before,
+        [Values(null, "", "mapped")] string? name) =>
+        Scenario.VerifyInnerDeclaration(operation, before, name);
+
+    [Test]
+    public void Custom_truth_guards_preserve_operator_calls(
+        [Values(0, 1, 2)] int operation,
+        [Values] bool before,
+        [Values] bool truth) =>
+        Scenario.VerifyTruthGuard(operation, before, truth);
+
+    [Test]
     public void Shared_fallback_preserves_out_values_and_short_circuit_order(
         [Values(0, 1, 2)] int operation,
         [Values] bool before,

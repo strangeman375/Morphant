@@ -63,6 +63,14 @@ internal static class UserExpressionLayout
         return SyntaxFactory.ParseLeadingTrivia(string.Join("\r\n", lines));
     }
 
+    public static string Indent(string expression, string indentation)
+    {
+        var syntax = SyntaxFactory.ParseExpression(expression);
+        return indentation + syntax.ReplaceTokens(syntax.DescendantTokens(), (token, _) => token
+            .WithLeadingTrivia(IndentTrivia(token.LeadingTrivia, indentation))
+            .WithTrailingTrivia(IndentTrivia(token.TrailingTrivia, indentation))).ToFullString();
+    }
+
     public static T Normalize<T>(T syntax, SyntaxNode? source = null)
         where T : CSharpSyntaxNode
     {

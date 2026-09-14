@@ -689,7 +689,8 @@ internal static class TypeMapperEmitter
 
         if (canCombine)
         {
-            var combined = string.Join(" &&\r\n    ", conditions.Select(AndOperand));
+            var combined = string.Join(" &&\r\n", conditions.Select((condition, index) =>
+                index == 0 ? AndOperand(condition) : UserExpressionLayout.Indent(AndOperand(condition), "    ")));
             conditions.Clear();
             conditions.Add(combined);
         }
