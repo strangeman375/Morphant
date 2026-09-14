@@ -7,13 +7,22 @@ using Morphant.Context;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberOperationGuards
 {
-    public enum GuardKind { UpdateOnly, CreateOnly, OperationFirstOr, CallFirstOr, OperationFirstAnd, CallFirstAnd }
+    public enum GuardKind { UpdateOnly, CreateOnly, OperationFirstOr, CallFirstOr, OperationFirstAnd, CallFirstAnd, UserDefinedAnd }
     public sealed class UpdateOnly { }
     public sealed class CreateOnly { }
     public sealed class OperationFirstOr { }
     public sealed class CallFirstOr { }
     public sealed class OperationFirstAnd { }
     public sealed class CallFirstAnd { }
+    public sealed class UserDefinedAnd { }
+
+    public readonly struct Truth
+    {
+        public static implicit operator Truth(bool value) => default;
+        public static Truth operator &(Truth left, Truth right) => default;
+        public static bool operator true(Truth value) => true;
+        public static bool operator false(Truth value) => false;
+    }
 
     public sealed class Source
     {
@@ -22,6 +31,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberOperationG
         public string FromConstruct() { Events.Add("construct"); return "constructor"; }
         public string FromMembers() { Events.Add("member"); return "member"; }
         public bool ShouldMap() { Events.Add("condition"); return Allowed; }
+        public Truth CustomCondition() { Events.Add("condition"); return default; }
     }
 
     public sealed class Destination<T>
@@ -89,6 +99,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberOperationG
                         return new() { Name = source.FromMembers() };
                     return new() { Name = Ignore() };
                 });
+            builder.Map<Source, Destination<UserDefinedAnd>>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Construct(source => new(source.FromConstruct()))
+                .Members((source, previous, result, context) =>
+                {
+                    if (context.Operation != MappingOperation.Update && source.CustomCondition())
+                        return new() { Name = source.FromMembers() };
+                    return new() { Name = Ignore() };
+                });
         }
     }
 
@@ -117,6 +136,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberOperationG
                 case GuardKind.CallFirstAnd:
                     Verify((ITypeMapper<Source, Destination<CallFirstAnd>>)mapper, kind, operation, allowed);
                     break;
+                case GuardKind.UserDefinedAnd:
+                    Verify((ITypeMapper<Source, Destination<UserDefinedAnd>>)mapper, kind, operation, allowed);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind));
             }
@@ -138,6 +160,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberOperationG
             {
                 GuardKind.UpdateOnly => update,
                 GuardKind.CreateOnly => !update,
+                GuardKind.UserDefinedAnd => true,
                 GuardKind.OperationFirstOr or GuardKind.CallFirstOr => update || allowed,
                 _ => !update && allowed
             };

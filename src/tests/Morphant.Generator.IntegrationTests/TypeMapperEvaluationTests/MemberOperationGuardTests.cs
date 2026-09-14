@@ -22,4 +22,11 @@ public sealed class MemberOperationGuardTests
     {
         Scenario.Verify(kind, operation, allowed);
     }
+
+    [Test]
+    public void Preserves_user_defined_logical_operators(
+        [Values("Create", "UpdateNull", "UpdateExisting")] string operation)
+    {
+        Scenario.Verify(GuardKind.UserDefinedAnd, operation, allowed: false);
+    }
 }

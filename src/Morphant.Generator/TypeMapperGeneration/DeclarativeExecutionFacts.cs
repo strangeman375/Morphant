@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -191,7 +192,10 @@ internal sealed class DeclarativeExecutionFacts(
         if (expression is PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.LogicalNotExpression } unary &&
             TryConstant(unary.Operand, visiting, out var operand) && operand is bool operandBoolean)
         { value = !operandBoolean; return true; }
-        if (expression is BinaryExpressionSyntax binary && TryConstant(binary.Left, visiting, out var left))
+        if (expression is BinaryExpressionSyntax binary &&
+            (binary.SyntaxTree != semanticModel.SyntaxTree ||
+             semanticModel.GetOperation(binary, cancellationToken) is not IBinaryOperation { OperatorMethod: not null }) &&
+            TryConstant(binary.Left, visiting, out var left))
         {
             if (binary.IsKind(SyntaxKind.LogicalAndExpression) && left is false) { value = false; return true; }
             if (binary.IsKind(SyntaxKind.LogicalOrExpression) && left is true) { value = true; return true; }
