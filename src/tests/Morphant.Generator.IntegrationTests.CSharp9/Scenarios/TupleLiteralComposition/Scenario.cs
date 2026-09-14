@@ -55,7 +55,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleLiteralComp
                 {
                     if (source.Choose())
                         return new() { Item4 = source.FinalName() };
-                    return new() { Item4 = Ignore() };
+                    return new() { Item4 = "fallback" };
                 });
     }
 
@@ -82,7 +82,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleLiteralComp
             }
 
             var updatesName = branch && (creates || !referenceTuple);
-            var expectedName = updatesName ? "final" : creates ? "initial" : "old";
+            var expectedName = creates ? (referenceTuple ? "fallback" : "initial") : "old";
+            if (updatesName) expectedName = "final";
             var expected = creates ? (7, 3, 30, expectedName) : (101, 102, 103, expectedName);
             var events = (creates ? "id,operand,conversion,constructor," : "") +
                 "condition" + (updatesName ? ",member" : "");
