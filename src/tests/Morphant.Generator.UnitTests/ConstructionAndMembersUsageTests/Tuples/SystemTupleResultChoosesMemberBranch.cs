@@ -96,19 +96,19 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(
-                7,
-                "initial");
+                item1: 7,
+                item2: "initial");
 
             if (result.Item1 > 0)
             {
                 return new global::System.Tuple<int, string>(
-                    10,
-                    "positive");
+                    item1: 10,
+                    item2: "positive");
             }
 
             return new global::System.Tuple<int, string>(
-                -10,
-                "negative");
+                item1: -10,
+                item2: "negative");
         }
 
         private global::System.Tuple<int, string> __Update(

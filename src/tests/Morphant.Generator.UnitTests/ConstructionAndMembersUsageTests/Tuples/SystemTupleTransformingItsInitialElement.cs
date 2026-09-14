@@ -100,12 +100,12 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(
-                source.Id,
-                source.FromConstruct());
+                item1: source.Id,
+                item2: source.FromConstruct());
 
             return new global::System.Tuple<int, string>(
-                result.Item1,
-                result.Item2.ToUpperInvariant());
+                item1: result.Item1,
+                item2: result.Item2.ToUpperInvariant());
         }
 
         private global::System.Tuple<int, string> __Update(

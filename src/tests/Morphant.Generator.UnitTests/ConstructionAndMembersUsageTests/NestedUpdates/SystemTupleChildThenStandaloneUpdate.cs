@@ -174,8 +174,8 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             global::System.Tuple<global::TestCase.ChildDestination, int> result = new global::System.Tuple<global::TestCase.ChildDestination, int>(
-                new global::TestCase.ChildDestination(),
-                7);
+                item1: new global::TestCase.ChildDestination(),
+                item2: 7);
 
             if (result.Item1 is { } item1Destination)
             {

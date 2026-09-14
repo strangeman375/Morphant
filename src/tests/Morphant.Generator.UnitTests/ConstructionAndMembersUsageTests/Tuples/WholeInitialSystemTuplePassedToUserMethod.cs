@@ -94,12 +94,12 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(
-                7,
-                "initial");
+                item1: 7,
+                item2: "initial");
 
             return new global::System.Tuple<int, string>(
-                result.Item1,
-                source.Analyze(result));
+                item1: result.Item1,
+                item2: source.Analyze(result));
         }
 
         private global::System.Tuple<int, string> __Update(

@@ -104,15 +104,15 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(
-                source.Id,
-                source.FromConstruct());
+                item1: source.Id,
+                item2: source.FromConstruct());
 
             int item1 = result.Item2.Length;
             string item2 = result.Item1.ToString();
 
             return new global::System.Tuple<int, string>(
-                item1,
-                item2);
+                item1: item1,
+                item2: item2);
         }
 
         private global::System.Tuple<int, string> __Update(

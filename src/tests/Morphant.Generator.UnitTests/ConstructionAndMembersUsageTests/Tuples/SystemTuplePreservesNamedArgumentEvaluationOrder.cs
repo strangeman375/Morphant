@@ -100,8 +100,8 @@ namespace TestCase
             tupleItem2 = source.NextName();
 
             return new global::System.Tuple<int, string>(
-                tupleItem1,
-                tupleItem2);
+                item1: tupleItem1,
+                item2: tupleItem2);
         }
 
         private global::System.Tuple<int, string> __Update(

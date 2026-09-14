@@ -109,13 +109,13 @@ namespace TestCase
             if (source.Id > 0)
             {
                 return new global::System.Tuple<int, string>(
-                    7,
-                    source.FromMembers());
+                    item1: 7,
+                    item2: source.FromMembers());
             }
 
             return new global::System.Tuple<int, string>(
-                7,
-                "fallback");
+                item1: 7,
+                item2: "fallback");
         }
 
         private global::System.Tuple<int, string> __Update(

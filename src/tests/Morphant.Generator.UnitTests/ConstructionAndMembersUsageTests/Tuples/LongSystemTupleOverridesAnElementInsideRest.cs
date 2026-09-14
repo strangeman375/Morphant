@@ -103,16 +103,16 @@ namespace TestCase
             item8 = source.Id + 100;
 
             return new global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>(
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                new global::System.Tuple<int, int>(
-                    item8,
-                    9));
+                item1: 1,
+                item2: 2,
+                item3: 3,
+                item4: 4,
+                item5: 5,
+                item6: 6,
+                item7: 7,
+                rest: new global::System.Tuple<int, int>(
+                    item1: item8,
+                    item2: 9));
         }
 
         private global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>> __Update(

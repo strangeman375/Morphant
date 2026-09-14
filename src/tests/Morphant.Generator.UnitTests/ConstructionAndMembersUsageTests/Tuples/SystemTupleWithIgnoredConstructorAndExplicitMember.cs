@@ -104,8 +104,8 @@ namespace TestCase
             item2 = source.FromMembers();
 
             return new global::System.Tuple<int, string>(
-                item1,
-                item2);
+                item1: item1,
+                item2: item2);
         }
 
         private global::System.Tuple<int, string> __Update(
