@@ -214,11 +214,11 @@ namespace Morphant
             LanguageVersion.CSharp11,
             source,
             (
-                "Morphant.Generated.Member.Destination.g.cs",
+                "Morphant.Generated.Member.Destination__9016466ae8472111cdf5bfa8e45d5a1d.g.cs",
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.Source__Destination__TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__dfa746a73e37f37c28d50f0a86095af4.g.cs",
                 extension
             ));
     }
@@ -363,8 +363,8 @@ namespace Morphant
         await MemberSurfaceGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            ("Morphant.Generated.Member.TestCase_Destination.g.cs", members),
-            ("Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs", extension));
+            ("Morphant.Generated.Member.Destination__5e01468111660761710199b9666fe80e.g.cs", members),
+            ("Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__179f7c4ce68cca25117a5a70b04440a2.g.cs", extension));
     }
 
     [Test]
@@ -588,19 +588,19 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Member.TestCase_URL.g.cs",
+                "Morphant.Generated.Member.URL__22991bac47a8192a7ecf117ee2eaaefb.g.cs",
                 upperMembers
             ),
             (
-                "Morphant.Generated.Member.TestCase_Url__e9fae35bfd70d886.g.cs",
+                "Morphant.Generated.Member.Url__264e3af5698663c4ced047a79636ab8a.g.cs",
                 titleMembers
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_URL__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToURL__78499937665771577e82545e2e3b822f.g.cs",
                 upperExtension
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Url__TestCase_TestMapper__ee8804ccc8fe9172.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToUrl__4172caf9724ced4d07c5caa30a5ae53a.g.cs",
                 titleExtension
             ));
     }

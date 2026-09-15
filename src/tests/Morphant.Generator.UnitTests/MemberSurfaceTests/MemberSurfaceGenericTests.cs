@@ -191,15 +191,15 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Member.TestCase_Destination_1.g.cs",
+                "Morphant.Generated.Member.Destination__44357adb1d8d62d938f9f3f63376f435.g.cs",
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source_System_Int32___TestCase_Destination_System_Int32___TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__a69a6a85a6b09ae9e979858fc1fb08e4.g.cs",
                 intExtension
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source_System_String___TestCase_Destination_System_String___TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__6252741a9912fa06a9e5fe660133e0bc.g.cs",
                 stringExtension
             ));
     }
@@ -409,15 +409,15 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Member.TestCase_Destination_1.g.cs",
+                "Morphant.Generated.Member.Destination__44357adb1d8d62d938f9f3f63376f435.g.cs",
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source_T___TestCase_Destination_T___TestCase_ReferenceMapper_T_.g.cs",
+                "Morphant.Generated.MemberExtension.ReferenceMapper.SourceToDestination__ff647a4b70d5502d241fc6392d5b981e.g.cs",
                 referenceExtension
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source_T___TestCase_Destination_T___TestCase_ValueMapper_T_.g.cs",
+                "Morphant.Generated.MemberExtension.ValueMapper.SourceToDestination__077624e7b2efa0e0792a58526270a2c8.g.cs",
                 valueExtension
             ));
     }
@@ -576,11 +576,11 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Member.TestCase_Outer_1_Destination_1.g.cs",
+                "Morphant.Generated.Member.Destination__60682802995f3765fb783994a88689c6.g.cs",
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source_TValue___TestCase_Outer_TestCase_IContract__Destination_TValue___TestCase_TestMapper_TValue_.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__56eeb0ab09c04a3f553b6e9c16432e94.g.cs",
                 extension
             ));
     }

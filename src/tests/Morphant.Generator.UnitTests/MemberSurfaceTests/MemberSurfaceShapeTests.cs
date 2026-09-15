@@ -140,11 +140,11 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Member.TestCase_Destination.g.cs",
+                "Morphant.Generated.Member.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__179f7c4ce68cca25117a5a70b04440a2.g.cs",
                 extension
             ));
     }
@@ -274,11 +274,11 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Member.TestCase_IDestination.g.cs",
+                "Morphant.Generated.Member.IDestination__e4d4fdc3bb1314a291f1c840145d01b2.g.cs",
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_IDestination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToIDestination__b74df0adf01f694e64b36f2fdf375be5.g.cs",
                 extension
             ));
     }
