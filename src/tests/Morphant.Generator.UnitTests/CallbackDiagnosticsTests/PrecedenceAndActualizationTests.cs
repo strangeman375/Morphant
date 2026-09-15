@@ -175,11 +175,9 @@ namespace TestCase
                 visibleSources.Select(static source => source.HintName),
                 Is.EqualTo(new[]
                 {
-                    "Morphant.Generated.Construction." +
-                    "TestCase_Destination.g.cs",
-                    "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-                    "Morphant.Generated.TypeMapper." +
-                    "TestCase_TestMapper.g.cs"
+                    "Morphant.Generated.Construction.Destination__17fbb67411e1e232593b768778eabb50.g.cs",
+                    "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__045c8ddc6d3bd2389959dca1e52fe4d8.g.cs",
+                    "Morphant.Generated.TypeMapper.TestMapper__3716cfd39450e4dd725a4e5fa8513843.g.cs"
                 }));
             Assert.That(
                 visibleSources.Single(static source =>

@@ -241,7 +241,7 @@ namespace TestCase
 """;
 
         const string hintName =
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper_1.g.cs";
+            "Morphant.Generated.TypeMapper.TestMapper__16c48231b2846fde9289e7b63b7fc5e5.g.cs";
 
         RunAndAssert(
             LanguageVersion.CSharp9,

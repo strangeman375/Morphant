@@ -37,20 +37,20 @@ internal sealed class RenameLifecycleActualizationTests
 
     private static readonly string[] InitialHints =
     [
-        "Morphant.Generated.Construction.Initial_Destination.g.cs",
-        "Morphant.Generated.MappingExtension.Initial_Source__Initial_Destination__Initial_TestMapper.g.cs",
-        "Morphant.Generated.Member.Initial_Destination.g.cs",
-        "Morphant.Generated.MemberExtension.Initial_Source__Initial_Destination__Initial_TestMapper.g.cs",
-        "Morphant.Generated.TypeMapper.Initial_TestMapper.g.cs"
+        "Morphant.Generated.Construction.Destination__59053fd17e26306a849ae9f6114f73e9.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__bea394c6fc155061bd7f88dc657c4ede.g.cs",
+        "Morphant.Generated.Member.Destination__59053fd17e26306a849ae9f6114f73e9.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__bea394c6fc155061bd7f88dc657c4ede.g.cs",
+        "Morphant.Generated.TypeMapper.TestMapper__829a5d2eb615686f772dd6b2fe9668b1.g.cs"
     ];
 
     private static readonly string[] RenamedHints =
     [
-        "Morphant.Generated.Construction.Renamed_DestinationV2.g.cs",
-        "Morphant.Generated.MappingExtension.Renamed_SourceV2__Renamed_DestinationV2__Renamed_MapperV2.g.cs",
-        "Morphant.Generated.Member.Renamed_DestinationV2.g.cs",
-        "Morphant.Generated.MemberExtension.Renamed_SourceV2__Renamed_DestinationV2__Renamed_MapperV2.g.cs",
-        "Morphant.Generated.TypeMapper.Renamed_MapperV2.g.cs"
+        "Morphant.Generated.Construction.DestinationV2__b5eabc011a74308affd3e74295e68a70.g.cs",
+        "Morphant.Generated.MappingExtension.MapperV2.SourceV2ToDestinationV2__aaec3066671ee31dc66fc97b7879520b.g.cs",
+        "Morphant.Generated.Member.DestinationV2__b5eabc011a74308affd3e74295e68a70.g.cs",
+        "Morphant.Generated.MemberExtension.MapperV2.SourceV2ToDestinationV2__aaec3066671ee31dc66fc97b7879520b.g.cs",
+        "Morphant.Generated.TypeMapper.MapperV2__40e342d292ba8eb693422ca13026867b.g.cs"
     ];
 
     // lang=c#

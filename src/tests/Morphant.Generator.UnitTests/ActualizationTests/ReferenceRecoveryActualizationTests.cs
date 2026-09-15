@@ -10,11 +10,11 @@ internal sealed class ReferenceRecoveryActualizationTests
 {
     private static readonly string[] GeneratedFiles =
     [
-        "Morphant.Generated.Construction.ExternalModels_Destination.g.cs",
-        "Morphant.Generated.MappingExtension.TestCase_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.Member.ExternalModels_Destination.g.cs",
-        "Morphant.Generated.MemberExtension.TestCase_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+        "Morphant.Generated.Construction.Destination__31cd2b83a124f88dc007fa312625999a.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__45e996a3453b44c2c6c615c111247bc9.g.cs",
+        "Morphant.Generated.Member.Destination__31cd2b83a124f88dc007fa312625999a.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__45e996a3453b44c2c6c615c111247bc9.g.cs",
+        "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs"
     ];
 
     [Test]

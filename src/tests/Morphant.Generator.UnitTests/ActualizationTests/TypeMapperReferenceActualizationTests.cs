@@ -196,7 +196,7 @@ namespace TestCase
             "ExternalModels",
             referenceV2Source);
         const string hint =
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+            "Morphant.Generated.TypeMapper.TestMapper__8b93ae82351cc47360988bc8ad40d3e3.g.cs";
 
         RunAndAssert(
             LanguageVersion.CSharp9,
