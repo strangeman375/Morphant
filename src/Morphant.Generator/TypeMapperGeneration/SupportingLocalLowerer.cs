@@ -52,7 +52,11 @@ internal static class SupportingLocalLowerer
                 semantic.GetDeclaredSymbol(declaration, cancellationToken) is not ILocalSymbol copy ||
                 semantic.GetSymbolInfo(original, cancellationToken).Symbol is not ILocalSymbol source ||
                 copy.RefKind != RefKind.None || source.RefKind != RefKind.None ||
-                !SymbolEqualityComparer.IncludeNullability.Equals(copy.Type, source.Type) ||
+                !SymbolEqualityComparer.IncludeNullability.Equals(copy.Type,
+                    source.Type.WithNullableAnnotation(copy.Type.NullableAnnotation)) ||
+                copy.NullableAnnotation == NullableAnnotation.NotAnnotated &&
+                    source.NullableAnnotation == NullableAnnotation.Annotated &&
+                    semantic.GetTypeInfo(original, cancellationToken).Nullability.FlowState != NullableFlowState.NotNull ||
                 !semantic.GetConversion(original, cancellationToken).IsIdentity ||
                 dataFlow is not { Succeeded: true } ||
                 dataFlow.Captured.Any(symbol => SymbolEqualityComparer.Default.Equals(symbol, source)) ||
