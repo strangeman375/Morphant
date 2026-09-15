@@ -758,23 +758,23 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                "Morphant.Generated.Construction.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 expectedConstruction
             ),
-            ("Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs", expectedMappingExtension1),
-            ("Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_SwitchMapper.g.cs", expectedMappingExtension2),
+            ("Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__179f7c4ce68cca25117a5a70b04440a2.g.cs", expectedMappingExtension1),
+            ("Morphant.Generated.MappingExtension.SwitchMapper.SourceToDestination__5224f72eb4a914e170bb14a8c47321df.g.cs", expectedMappingExtension2),
             (
-                "Morphant.Generated.Member.TestCase_Destination.g.cs",
+                "Morphant.Generated.Member.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 expectedMember
             ),
-            ("Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs", expectedMemberExtension1),
-            ("Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_SwitchMapper.g.cs", expectedMemberExtension2),
+            ("Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__179f7c4ce68cca25117a5a70b04440a2.g.cs", expectedMemberExtension1),
+            ("Morphant.Generated.MemberExtension.SwitchMapper.SourceToDestination__5224f72eb4a914e170bb14a8c47321df.g.cs", expectedMemberExtension2),
             (
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                "Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs",
                 expectedTypeMapper
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_SwitchMapper.g.cs",
+                "Morphant.Generated.TypeMapper.SwitchMapper__ab6b819638774c1a274fd8ad1127755d.g.cs",
                 expectedSwitchMapper
             ));
     }

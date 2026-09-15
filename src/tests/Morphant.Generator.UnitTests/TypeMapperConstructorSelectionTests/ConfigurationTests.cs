@@ -131,7 +131,7 @@ is_global = true
 build_property.MorphantConstructorSelection = Parameterless
 """,
                 (
-                    "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                    "Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs",
                     expected
                 ));
     }

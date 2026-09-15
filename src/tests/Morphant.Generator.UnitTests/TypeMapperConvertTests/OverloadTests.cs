@@ -594,24 +594,24 @@ namespace TestCase
         await ProductionGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            ("Morphant.Generated.MappingExtension.TestCase_Source__System_Nullable_System_Int32___TestCase_SourceOnlyMapper.g.cs", expectedMappingExtension1),
-            ("Morphant.Generated.MappingExtension.TestCase_Source__System_Nullable_System_Int32___TestCase_PreviousMapper.g.cs", expectedMappingExtension2),
-            ("Morphant.Generated.MappingExtension.TestCase_Source__System_Nullable_System_Int32___TestCase_CreateOnlyMapper.g.cs", expectedMappingExtension3),
-            ("Morphant.Generated.MappingExtension.TestCase_Source__System_Nullable_System_Int32___TestCase_UpdateOnlyMapper.g.cs", expectedMappingExtension4),
+            ("Morphant.Generated.MappingExtension.SourceOnlyMapper.SourceToNullable__eaf9ad12e7bd4d492c7df41d2aeba5a1.g.cs", expectedMappingExtension1),
+            ("Morphant.Generated.MappingExtension.PreviousMapper.SourceToNullable__b7648775ba74def29b856bf6927b9b02.g.cs", expectedMappingExtension2),
+            ("Morphant.Generated.MappingExtension.CreateOnlyMapper.SourceToNullable__2645488f030ba41fcdb77244018d9922.g.cs", expectedMappingExtension3),
+            ("Morphant.Generated.MappingExtension.UpdateOnlyMapper.SourceToNullable__a5065f4139bc95512c862d07f0b0f683.g.cs", expectedMappingExtension4),
             (
-                "Morphant.Generated.TypeMapper.TestCase_SourceOnlyMapper.g.cs",
+                "Morphant.Generated.TypeMapper.SourceOnlyMapper__3c43e7b72504856d6e2d540a23070f36.g.cs",
                 expectedSourceOnlyMapper
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_PreviousMapper.g.cs",
+                "Morphant.Generated.TypeMapper.PreviousMapper__96fc8a3d9ace0ec76bee496ae411853e.g.cs",
                 expectedPreviousMapper
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_CreateOnlyMapper.g.cs",
+                "Morphant.Generated.TypeMapper.CreateOnlyMapper__75b11483106a9f94477105e7cf2236c3.g.cs",
                 expectedCreateOnlyMapper
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_UpdateOnlyMapper.g.cs",
+                "Morphant.Generated.TypeMapper.UpdateOnlyMapper__f30c3c240a2e9e7048a3d51d5dedfc00.g.cs",
                 expectedUpdateOnlyMapper
             ));
     }
