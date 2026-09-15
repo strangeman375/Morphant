@@ -174,7 +174,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingValues
                 else
                 {
                     ITypeMapper<Source, (int Id, string Name)> mapper = resolve ? new ResolveValueTupleMapper() : new ConstructValueTupleMapper();
-                    var result = operation == "Create" ? mapper.Create(source) : mapper.Update(source, (40, "old"));
+                    (int Id, string Name) result = operation == "Create" ? mapper.Create(source) : mapper.Update(source, (40, "old"));
                     id = result.Id; name = result.Name;
                 }
             }

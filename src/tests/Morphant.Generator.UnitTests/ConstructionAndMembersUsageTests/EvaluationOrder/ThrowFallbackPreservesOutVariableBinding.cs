@@ -3,7 +3,7 @@ namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Evaluati
 internal sealed partial class EvaluationOrderTests
 {
     [Test]
-    [Description("A declaration inside the throwing expression retains its branch scope.")]
+    [Description("An out variable in a throwing continuation retains its binding without an unnecessary else.")]
     public void ThrowFallbackPreservesOutVariableBinding()
     {
         // lang=c#
