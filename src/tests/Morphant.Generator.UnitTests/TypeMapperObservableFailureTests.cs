@@ -460,7 +460,7 @@ is_global = true
 build_property.MorphantMappingMode = Unexpected
 """,
             (
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                "Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs",
                 expected
             ));
     }
@@ -570,7 +570,7 @@ namespace TestCase
             source,
             "is_global = true",
             (
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper_1.g.cs",
+                "Morphant.Generated.TypeMapper.TestMapper__8e66a42e760ac07d883dcf09571348a5.g.cs",
                 expected
             ));
     }
