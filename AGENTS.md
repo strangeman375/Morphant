@@ -109,6 +109,14 @@
   hint-name sets at the boundary.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes or compatibility branches without a user-facing need.
+- Suppress obsolete warnings caused only by technical references in generated
+  declarations and signatures. Preserve copied `Obsolete` attributes and
+  diagnostics at user call sites, including errors. Keep diagnostics for
+  obsolete constructors and members selected by conventions; generated
+  implementation warnings must not be suppressed wholesale.
+- Private generated helpers take only parameters required by their bodies or
+  calls to other helpers. Preserve interface signatures and parameter uses in
+  user code, including `nameof`. Approved on 2026-09-15.
 - Runtime helpers may replace repeated mapping algorithms. For standalone
   read-only nested updates, use a lazy source selector: read the destination
   once, skip source evaluation when it is null, and preserve evaluation order,
@@ -162,6 +170,8 @@
 - Preserve user-written line breaks and relative indentation inside transferred
   expressions. Adapt their outer indentation to the generated context. Do not
   flatten or reflow multiline expressions; keep literal values unchanged.
+- Correct spacing artifacts in synthesized syntax without reformatting
+  user-written expression layout or comments.
 - Preserve user-written locals; do not inline their values or split the
   internal calls of a user-written expression into additional computations.
 - Introduce supporting locals only when required by mapping operations,
@@ -172,6 +182,11 @@
 - Name necessary supporting locals after their role, argument or destination
   member. Keep ordinary object initializers and direct assignments whenever
   they implement the required behavior.
+- Reuse an existing user local instead of copying it into supporting locals
+  only when its value cannot change before the corresponding writes and the
+  selected conversions remain unchanged. Retain copies for captured or
+  otherwise mutable bindings and observable conversions. Preserve the user
+  local itself and separately written evaluations. Approved on 2026-09-15.
 - Qualification, collision-safe renaming, necessary type conversions,
   parentheses and formatting may adapt the code to its generated context.
   These adaptations must preserve its semantics and computation structure.
@@ -194,6 +209,12 @@
 - Preserve the existing previous-availability and null/default construction
   diagnostics. Cover valid reuse, invalid provenance, local aliases and
   branches with diagnostics, runtime scenarios and complete source snapshots.
+- Simplify the standard `Morphant.Option.TryGetValue` on `previous` when its
+  availability is known. Preserve live out bindings, their scope, assignment
+  order, nullable flow and short-circuit behavior; a failed check must not
+  evaluate its skipped operand. Remove an unused binding together with its
+  unreachable branch. Do not generalize this to arbitrary TryGetValue calls
+  or custom logical operators. Approved on 2026-09-15.
 
 ## Construction and member composition (approved 2026-09-11)
 
