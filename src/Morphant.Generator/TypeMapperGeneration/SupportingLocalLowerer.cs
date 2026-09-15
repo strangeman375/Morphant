@@ -12,8 +12,11 @@ internal static class SupportingLocalLowerer
     {
         var tree = CSharpSyntaxTree.ParseText(TypeMapperEmitter.EmitTransferProbe(model), options,
             cancellationToken: cancellationToken);
+        var root = tree.GetRoot(cancellationToken);
+        if (!root.DescendantNodes().OfType<VariableDeclaratorSyntax>()
+                .Any(variable => variable.Initializer?.Value is IdentifierNameSyntax)) return model;
         var semantic = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
-        var methods = tree.GetRoot(cancellationToken).DescendantNodes().OfType<MethodDeclarationSyntax>()
+        var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>()
             .Where(method => method.ExplicitInterfaceSpecifier is null && method.Body is not null)
             .ToDictionary(method => method.Identifier.ValueText, StringComparer.Ordinal);
         HashSet<string> Find(string? name) => name is not null && methods.TryGetValue(name, out var method)
@@ -43,6 +46,9 @@ internal static class SupportingLocalLowerer
     private static HashSet<string> FindSafeCopies(MethodDeclarationSyntax method,
         SemanticModel semantic, CancellationToken cancellationToken)
     {
+        var declarations = method.Body!.DescendantNodes().OfType<VariableDeclaratorSyntax>().ToArray();
+        if (!declarations.Any(variable => variable.Initializer?.Value is IdentifierNameSyntax))
+            return new HashSet<string>(StringComparer.Ordinal);
         var identifiers = method.Body!.DescendantNodes().OfType<IdentifierNameSyntax>().ToArray();
         var dataFlow = semantic.AnalyzeDataFlow(method.Body);
         bool Safe(VariableDeclaratorSyntax declaration)
@@ -99,7 +105,7 @@ internal static class SupportingLocalLowerer
 
         // A generated name may occur in independent branch scopes. Every
         // declaration of that name must be safe before changing the model.
-        return new HashSet<string>(method.Body.DescendantNodes().OfType<VariableDeclaratorSyntax>()
+        return new HashSet<string>(declarations
             .GroupBy(variable => variable.Identifier.ValueText, StringComparer.Ordinal)
             .Where(group => group.All(Safe)).Select(group => group.Key), StringComparer.Ordinal);
     }

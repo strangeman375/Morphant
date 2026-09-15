@@ -1535,6 +1535,15 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         return node.WithType(RewriteType(node.Type));
     }
 
+    public override SyntaxNode? VisitDeclarationExpression(DeclarationExpressionSyntax node)
+    {
+        // An explicitly non-nullable discard can warn for MaybeNullWhen(false)
+        // out parameters on newer compilers. Preserve the user's inference.
+        return node.Type.IsVar && node.Designation is DiscardDesignationSyntax
+            ? node
+            : base.VisitDeclarationExpression(node);
+    }
+
     public override SyntaxNode? VisitVariableDeclaration(
         VariableDeclarationSyntax node)
     {

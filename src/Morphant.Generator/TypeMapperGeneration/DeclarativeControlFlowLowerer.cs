@@ -839,10 +839,18 @@ internal static class DeclarativeControlFlowLowerer
             return false;
         }
 
+        bool IsMappingSelector(DeclarativeRuntimeLocalSyntax local) => local.IsDslSelector ||
+            local.Initializer.DescendantNodesAndSelf().OfType<MemberAccessExpressionSyntax>().Any(access =>
+                access.Name.Identifier.ValueText == "HasValue" && previousParameter is not null &&
+                    SymbolEqualityComparer.Default.Equals(semanticModel.GetSymbolInfo(access.Expression, cancellationToken).Symbol, previousParameter) ||
+                access.Name.Identifier.ValueText == "Operation" && contextParameter is not null &&
+                    SymbolEqualityComparer.Default.Equals(semanticModel.GetSymbolInfo(access.Expression, cancellationToken).Symbol, contextParameter));
+
         var requiredLocals = CollectRequiredLocals(
             lowered,
             program.RuntimeLocals,
-            preserveRuntimeLocals);
+            preserveRuntimeLocals,
+            IsMappingSelector);
         requiredLocals.UnionWith(program.BoundLocals.Select(local => local.PlaceholderName));
 
         var pruned = PruneLocals(lowered, requiredLocals);
@@ -1036,7 +1044,8 @@ internal static class DeclarativeControlFlowLowerer
     private static HashSet<string> CollectRequiredLocals(
         TypeMapperControlFlowNode root,
         ImmutableArray<DeclarativeRuntimeLocalSyntax> locals,
-        bool preserveRuntimeLocals)
+        bool preserveRuntimeLocals,
+        Func<DeclarativeRuntimeLocalSyntax, bool> isMappingSelector)
     {
         var expressions = EnumerateExpressions(
                 root,
@@ -1046,7 +1055,7 @@ internal static class DeclarativeControlFlowLowerer
 
         foreach (var local in locals)
         {
-            if (preserveRuntimeLocals && (!local.IsDslSelector ||
+            if (preserveRuntimeLocals && (!isMappingSelector(local) ||
                     root.DescendantLocal(local.PlaceholderName)?.ValueExpression
                         is not ("true" or "false")) ||
                 expressions.Any(expression =>

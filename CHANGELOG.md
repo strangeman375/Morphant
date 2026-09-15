@@ -25,6 +25,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Simplify known `previous.TryGetValue` guards and omit unnecessary supporting
+  copies and private helper parameters while preserving evaluation order.
 - Use short readable labels and permanent stable IDs for generated filenames.
   Similar names and long Unicode names remain distinct without renaming
   existing files when registrations change. Generated namespaces are unchanged.
@@ -58,6 +60,13 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Preserve effects in member callback local initializers even when their
+  values are not used by a member rule.
+- Suppress obsolete warnings from technical generated declarations while
+  retaining diagnostics for user API use and conventions.
+- Preserve discarded `out var` inference and user-defined logical operators
+  in previous-value guards.
+- Correct synthesized nullable type spacing without changing user layout.
 - Preserve sequential member assignments when `Resolve` replaces the destination,
   including setter effects on later adaptive mappings and source reads.
 - Reduce generated read-only nested and polymorphic Update code with shared

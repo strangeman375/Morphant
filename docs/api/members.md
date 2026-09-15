@@ -66,6 +66,9 @@ it is written; omitted optional constructor arguments keep their defaults.
 
 Reuse skips construction and applies eligible writable member rules.
 
+Ordinary local initializers in a selected callback path are evaluated even
+when the returned member rules do not use that local.
+
 Nested `Map` uses a current child prepared by construction or a factory, even
 during outer Create. Its returned value is retained. See
 [nested operation selection](../nested-mapping.md#how-map-chooses-an-operation).
