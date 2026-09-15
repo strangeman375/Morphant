@@ -99,8 +99,7 @@ namespace TestCase
 
         private global::System.Tuple<int, string> __Create(
             global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             global::System.Tuple<int, string> result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<int, string>>.None);
 
@@ -118,8 +117,7 @@ namespace TestCase
 
         private global::System.Tuple<int, string> __Update(
             global::TestCase.Source source,
-            global::System.Tuple<int, string> destination,
-            global::Morphant.Context.MappingContext context)
+            global::System.Tuple<int, string> destination)
         {
             global::System.Tuple<int, string> result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<int, string>>.Some(destination));
 

@@ -93,8 +93,7 @@ namespace TestCase
         }
 
         private (int Id, string Name) __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             (int Id, string Name) result = __ResolveUsing(source, global::Morphant.Option<(int Id, string Name)>.None);
 
@@ -105,8 +104,7 @@ namespace TestCase
 
         private (int Id, string Name) __Update(
             global::TestCase.Source source,
-            (int Id, string Name) destination,
-            global::Morphant.Context.MappingContext context)
+            (int Id, string Name) destination)
         {
             (int Id, string Name) result = __ResolveUsing(source, global::Morphant.Option<(int Id, string Name)>.Some(destination));
 
