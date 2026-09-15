@@ -764,14 +764,32 @@ internal static class TypeMapperEmitter
         writeContinuation(continuationWriter);
         var continuation = continuationWriter.ToString().TrimEnd('\r', '\n');
 
-        // Keep the original declaration scope. A shared fallback follows the
-        // guards unconditionally, so its scope must be a block, not an else.
+        // A continuation needs its own scope when its declarations would
+        // shadow preceding references or declarations in sibling branches.
         var block = (BlockSyntax)SyntaxFactory.ParseStatement("{\r\n" + continuation + "\r\n}");
-        var requiresScope = block.Statements.SelectMany(statement =>
+        var declarations = new HashSet<string>(block.Statements.SelectMany(statement =>
                 statement.DescendantNodesAndSelf(node => node is not
                     (BlockSyntax or AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
-            .Any(node => node is VariableDeclaratorSyntax or SingleVariableDesignationSyntax or
-                LocalFunctionStatementSyntax);
+            .Select(node => node switch
+            {
+                VariableDeclaratorSyntax variable => variable.Identifier.ValueText,
+                SingleVariableDesignationSyntax variable => variable.Identifier.ValueText,
+                LocalFunctionStatementSyntax function => function.Identifier.ValueText,
+                _ => string.Empty
+            }).Where(name => name.Length > 0), StringComparer.Ordinal);
+        var requiresScope = false;
+        if (declarations.Count > 0)
+        {
+            var preceding = writer.ToString();
+            var unit = SyntaxFactory.ParseCompilationUnit(preceding);
+            // The writer may contain a whole mapper or only a buffered branch.
+            // Ignore completed methods: their local names have separate scopes.
+            SyntaxNode scope = unit.DescendantNodes().OfType<MethodDeclarationSyntax>()
+                .LastOrDefault(method => method.Body is { CloseBraceToken.IsMissing: true }) ??
+                (SyntaxNode)SyntaxFactory.ParseStatement("{\r\n" + preceding + "\r\n}");
+            requiresScope = scope.DescendantTokens().Any(token =>
+                token.IsKind(SyntaxKind.IdentifierToken) && declarations.Contains(token.ValueText));
+        }
 
         if (requiresScope)
         {

@@ -145,6 +145,18 @@ internal static class GeneratedCodeReadabilityLowerer
         TypeMapperMappingModel mapping,
         GeneratedLocalNameAllocator names)
     {
+        if (mapping.PostMemberControlFlow is
+            {
+                Locals.IsDefaultOrEmpty: true,
+                MemberMappings.IsDefaultOrEmpty: true,
+                EvaluationLocals.IsDefaultOrEmpty: true,
+                Condition: null, SwitchExpression: null, EvaluationExpression: null,
+                ThrowExpression: null, Failure: null
+            })
+        {
+            mapping = mapping with { PostMemberControlFlow = null };
+        }
+
         mapping = CollapseTupleConstruction(mapping, names);
         if (mapping.CreateConstructor is { TupleConstruction: null } &&
             mapping.CreatePostMemberMappings.Any(static member => member.IsResultDependent) &&
