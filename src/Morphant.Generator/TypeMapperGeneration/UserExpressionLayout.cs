@@ -33,6 +33,7 @@ internal static class UserExpressionLayout
     public static T Restore<T>(T original, T normalized)
         where T : SyntaxNode
     {
+        normalized = RestoreNullableSpacing(original, normalized);
         var replacements = new Dictionary<SyntaxNode, SyntaxNode>();
         foreach (var expression in original.DescendantNodes().OfType<ExpressionSyntax>()
                      .Where(node => node.HasAnnotations(AnnotationKind) &&
@@ -76,7 +77,8 @@ internal static class UserExpressionLayout
         where T : CSharpSyntaxNode
     {
         var original = syntax.WithoutTrivia();
-        var normalized = original.NormalizeWhitespace(indentation: "    ", eol: "\r\n");
+        var normalized = RestoreNullableSpacing(original,
+            original.NormalizeWhitespace(indentation: "    ", eol: "\r\n"));
         var originalTokens = original.DescendantTokens().ToArray();
 
         if (!ContainsSwitchExpression(original) && !originalTokens.Any(token =>
@@ -108,6 +110,29 @@ internal static class UserExpressionLayout
 
         return normalized.ReplaceTokens(normalizedTokens,
             (token, _) => replacements[token]);
+    }
+
+    private static T RestoreNullableSpacing<T>(T original, T normalized) where T : SyntaxNode
+    {
+        var before = original.DescendantTokens().ToArray();
+        var after = normalized.DescendantTokens().ToArray();
+        if (before.Length != after.Length) return normalized;
+        var replacements = new Dictionary<SyntaxToken, SyntaxToken>();
+        for (var index = 1; index < before.Length; index++)
+        {
+            if (before[index - 1].Parent is not NullableTypeSyntax ||
+                !before[index - 1].IsKind(SyntaxKind.QuestionToken) ||
+                !before[index].IsKind(SyntaxKind.CloseParenToken) ||
+                before[index - 1].TrailingTrivia.ToFullString().Length != 0 ||
+                before[index].LeadingTrivia.ToFullString().Length != 0)
+                continue;
+
+            // Normalization can insert a space after the nullable '?' even
+            // though these tokens already form valid synthesized syntax.
+            replacements[after[index - 1]] = after[index - 1].WithTrailingTrivia(default(SyntaxTriviaList));
+            replacements[after[index]] = after[index].WithLeadingTrivia(default(SyntaxTriviaList));
+        }
+        return normalized.ReplaceTokens(replacements.Keys, (token, _) => replacements[token]);
     }
 
     public static bool HasLineBreak(string text) =>

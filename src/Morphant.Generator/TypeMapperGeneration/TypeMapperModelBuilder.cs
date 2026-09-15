@@ -84,7 +84,14 @@ internal static class TypeMapperModelBuilder
             mappings.Models,
             configureSyntax.DescendantNodes()
                 .OfType<QueryExpressionSyntax>()
-                .Any());
+                .Any())
+        {
+            ObsoleteWarnings = ObsoleteTypeWarnings.CollectDeclarations(
+                mappings.Models.SelectMany(mapping => new[]
+                {
+                    mapping.AnalysisContext.SourceType, mapping.AnalysisContext.DestinationType
+                }).Prepend(mapperType).ToArray())
+        };
         model = GeneratedCodeReadabilityLowerer.Lower(model);
         model = RuntimeMappingHelperLowerer.Lower(
             model,

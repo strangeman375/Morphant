@@ -15,7 +15,11 @@ internal readonly record struct TypeMapperModel
     string TypeParameterList,
     ImmutableArray<TypeMapperMappingModel> Mappings,
     bool RequiresSystemLinq
-);
+)
+{
+    public ImmutableArray<ObsoleteTypeWarning> ObsoleteWarnings { get; init; } =
+        ImmutableArray<ObsoleteTypeWarning>.Empty;
+}
 
 internal readonly record struct TypeMapperContainingTypeModel
 (

@@ -106,7 +106,8 @@ internal static class TypeMapperEmitter
             writer.CloseBlock();
         }
 
-        return SourceText.From(writer.ToString(), Encoding.UTF8);
+        return SourceText.From(ObsoleteTypeWarnings.Suppress(
+            writer.ToString(), model.ObsoleteWarnings), Encoding.UTF8);
     }
 
     private static void WriteType(
