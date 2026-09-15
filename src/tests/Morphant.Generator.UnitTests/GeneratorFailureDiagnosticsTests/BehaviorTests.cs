@@ -17,27 +17,27 @@ internal sealed class BehaviorTests
 
     private const string TransformFailureHintName =
         "Morphant.Generated.GeneratorFailure." +
-        "TestTransform__e9212180604c97fd.g.cs";
+        "TestTransform__4be23378f7c4901bf59bffb347349f68.g.cs";
 
     private const string OutputFailureHintName =
         "Morphant.Generated.GeneratorFailure." +
-        "TestOutput__a614156a89149f2f.g.cs";
+        "TestOutput__18ecd58292ca04b0b3df37e502757df9.g.cs";
 
     private const string InitializationFailureHintName =
         "Morphant.Generated.GeneratorFailure." +
-        "TestInitialize__9cd49714a095fd82.g.cs";
+        "TestInitialize__604496aee12744a828d20a1ea67129c3.g.cs";
 
     private const string LocationlessFailureHintName =
         "Morphant.Generated.GeneratorFailure." +
-        "TestLocationlessTransform__f2ead8d79af163de.g.cs";
+        "TestLocationlessTransform__738869f220aa9f82974cdd6efd3f65d1.g.cs";
 
     private const string ValueFailureHintName =
         "Morphant.Generated.GeneratorFailure." +
-        "TestValueTransform__a8c4eb9fc5bd9ac9.g.cs";
+        "TestValueTransform__ad48c8d92221c6633bb4024a737fb13b.g.cs";
 
     private const string CommentTerminatorFailureHintName =
         "Morphant.Generated.GeneratorFailure." +
-        "TestCommentTerminator__1808d56308b9d249.g.cs";
+        "TestCommentTerminator__89d425998a6f5a79c17527a8021bef48.g.cs";
 
     // lang=c#
     private const string BrokenSource =
