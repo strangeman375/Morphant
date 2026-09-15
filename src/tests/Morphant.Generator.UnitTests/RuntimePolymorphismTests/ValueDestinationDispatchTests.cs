@@ -69,7 +69,7 @@ namespace TestCase
                 return polymorphicDestination;
             }
 
-            return __Create(source, context);
+            return __Create();
         }
 
         /// <inheritdoc/>
@@ -88,7 +88,7 @@ namespace TestCase
                 return polymorphicDestination;
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private bool __TryCreatePolymorphic(
@@ -209,7 +209,7 @@ namespace TestCase
                 return polymorphicDestination;
             }
 
-            return __Create(source, context);
+            return __Create();
         }
 
         /// <inheritdoc/>
@@ -230,10 +230,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create();
             }
 
-            return __Update(source, destination.Value, context);
+            return __Update(destination.Value);
         }
 
         private bool __TryCreatePolymorphic(

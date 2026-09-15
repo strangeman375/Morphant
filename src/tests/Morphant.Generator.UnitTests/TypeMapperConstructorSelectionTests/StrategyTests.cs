@@ -215,7 +215,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
+            return __Create(global::Morphant.Context.MappingOperation.Create);
         }
 
         /// <inheritdoc/>
@@ -231,10 +231,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
+                return __Create(global::Morphant.Context.MappingOperation.Update);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.ExplicitDestination __Create(
@@ -266,7 +266,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create1(source, context);
+            return __Create1();
         }
 
         /// <inheritdoc/>
@@ -282,10 +282,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create1(source, context);
+                return __Create1();
             }
 
-            return __Update1(source, destination, context);
+            return __Update1(destination);
         }
 
         private global::TestCase.ParameterlessDestination __Create1()
@@ -309,7 +309,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create2(source, context);
+            return __Create2(source);
         }
 
         /// <inheritdoc/>
@@ -325,10 +325,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create2(source, context);
+                return __Create2(source);
             }
 
-            return __Update2(source, destination, context);
+            return __Update2(destination);
         }
 
         private global::TestCase.SingleDestination __Create2(
@@ -354,7 +354,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create3(source, context);
+            return __Create3(source);
         }
 
         /// <inheritdoc/>
@@ -370,10 +370,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create3(source, context);
+                return __Create3(source);
             }
 
-            return __Update3(source, destination, context);
+            return __Update3(destination);
         }
 
         private global::TestCase.UnambiguousDestination __Create3(
@@ -399,7 +399,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create4(source, context);
+            return __Create4(source);
         }
 
         /// <inheritdoc/>
@@ -415,10 +415,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create4(source, context);
+                return __Create4(source);
             }
 
-            return __Update4(source, destination, context);
+            return __Update4(destination);
         }
 
         private global::TestCase.GreediestDestination __Create4(
@@ -445,7 +445,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create5(source, context);
+            return __Create5(source);
         }
 
         /// <inheritdoc/>
@@ -461,10 +461,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create5(source, context);
+                return __Create5(source);
             }
 
-            return __Update5(source, destination, context);
+            return __Update5(destination);
         }
 
         private global::TestCase.LargestDestination __Create5(
@@ -492,7 +492,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create6(source, global::Morphant.Context.MappingOperation.Create, context);
+            return __Create6(global::Morphant.Context.MappingOperation.Create);
         }
 
         /// <inheritdoc/>
@@ -508,10 +508,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create6(source, global::Morphant.Context.MappingOperation.Update, context);
+                return __Create6(global::Morphant.Context.MappingOperation.Update);
             }
 
-            return __Update6(source, destination, context);
+            return __Update6(destination);
         }
 
         private global::TestCase.LargestWithoutFallbackDestination __Create6(

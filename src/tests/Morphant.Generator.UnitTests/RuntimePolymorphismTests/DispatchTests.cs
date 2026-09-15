@@ -81,7 +81,7 @@ namespace TestCase
                 return polymorphicDestination;
             }
 
-            return __Create(source, context);
+            return __Create();
         }
 
         /// <inheritdoc/>
@@ -102,10 +102,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create();
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private bool __TryCreatePolymorphic(
@@ -186,7 +186,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create1(source, context);
+            return __Create1();
         }
 
         /// <inheritdoc/>
@@ -202,10 +202,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create1(source, context);
+                return __Create1();
             }
 
-            return __Update1(source, destination, context);
+            return __Update1(destination);
         }
 
         private global::TestCase.DogDto __Create1()
@@ -229,7 +229,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create2(source, context);
+            return __Create2();
         }
 
         /// <inheritdoc/>
@@ -245,10 +245,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create2(source, context);
+                return __Create2();
             }
 
-            return __Update2(source, destination, context);
+            return __Update2(destination);
         }
 
         private global::TestCase.CatDto __Create2()
@@ -337,7 +337,7 @@ namespace TestCase
                 return polymorphicDestination;
             }
 
-            return __Create(source, context);
+            return __Create();
         }
 
         /// <inheritdoc/>
@@ -358,10 +358,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create();
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private bool __TryCreatePolymorphic(
@@ -509,7 +509,7 @@ namespace TestCase
                 return polymorphicDestination;
             }
 
-            return __Create(source, context);
+            return __Create();
         }
 
         /// <inheritdoc/>
@@ -530,10 +530,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create();
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private bool __TryCreatePolymorphic(
@@ -712,7 +712,7 @@ namespace TestCase
                 return polymorphicDestination;
             }
 
-            return __Create(source, context);
+            return __Create();
         }
 
         /// <inheritdoc/>
@@ -733,10 +733,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create();
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private bool __TryCreatePolymorphic(
@@ -883,7 +883,7 @@ namespace TestCase
                 return __Create(sourceValue);
             }
 
-            return __Update(sourceValue, destination, context);
+            return __Update(sourceValue, destination);
         }
 
         private global::TestCase.NumberDto __Create(
@@ -978,7 +978,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -994,10 +994,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.NumberDto __Create(
