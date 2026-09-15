@@ -95,7 +95,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DeclarativeValue
 
         public object Boxed { get; set; } = new();
 
-        public object NestedObject { get; set; } = new();
+        public object NestedObject { get; set; } = null!;
 
         public Action Callback { get; set; } = Empty;
 

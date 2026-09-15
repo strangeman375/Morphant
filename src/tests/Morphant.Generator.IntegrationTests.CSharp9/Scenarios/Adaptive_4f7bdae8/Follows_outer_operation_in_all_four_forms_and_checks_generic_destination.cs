@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperNestedMapTests/AdaptiveTests::Follows_outer_operation_in_all_four_forms_and_checks_generic_destination
+// Compiled integration scenario: TypeMapperNestedMapTests/AdaptiveTests::Uses_available_destinations_in_all_four_forms_and_checks_generic_destination
 #nullable enable
 #pragma warning disable CS1591
 
@@ -158,20 +158,22 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_4f7bdae
             var createdConstructor = mapper.Map<
                 OuterSource,
                 ConstructorDestination>(source);
+            AssertValues(createdConstructor, 10, 20, 30, 40);
+            AssertCalls(child, MappingOperation.Create, null, 4);
+
             var createdMembers = mapper.Map<
                 OuterSource,
                 MemberDestination>(source);
 
-            AssertValues(createdConstructor, 10, 20, 30, 40);
-            AssertValues(createdMembers, 10, 20, 30, 40);
-            AssertCalls(child, MappingOperation.Create, null, 8);
+            AssertValues(createdMembers, 9, 1020, 29, 39);
+            AssertCalls(child, MappingOperation.Update, null, 4);
 
             var normalizedNullUpdate = mapper.Map(
                 source,
                 default(MemberDestination));
 
-            AssertValues(normalizedNullUpdate, 10, 20, 30, 40);
-            AssertCalls(child, MappingOperation.Create, null, 4);
+            AssertValues(normalizedNullUpdate, 9, 1020, 29, 39);
+            AssertCalls(child, MappingOperation.Update, null, 4);
 
             var previousConstructor = new ConstructorDestination(
                 new ChildDestination(11),

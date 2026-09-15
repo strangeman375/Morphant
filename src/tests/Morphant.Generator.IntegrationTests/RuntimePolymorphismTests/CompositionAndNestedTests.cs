@@ -6,10 +6,11 @@ namespace Morphant.Generator.IntegrationTests.RuntimePolymorphismTests;
 internal sealed class CompositionAndNestedTests
 {
     [Test]
-    public void Nested_Create_selects_the_derived_branch() => NestedUpdate.CreateSelectsDerivedBranch();
+    public void Explicit_nested_Create_selects_the_derived_branch() => NestedUpdate.CreateSelectsDerivedBranch();
 
     [Test]
-    public void Update_with_null_outer_destination_uses_nested_Create() => NestedUpdate.NullOuterDestinationUsesNestedCreate();
+    public void Prepared_null_member_applies_the_derived_Update_policy([Values] bool updateNull) =>
+        NestedUpdate.MissingOuterDestinationAppliesDerivedPolicy(updateNull);
 
     [Test]
     public void Nested_derived_Update_preserves_both_destinations() => NestedUpdate.UpdatePreservesBothDestinations();

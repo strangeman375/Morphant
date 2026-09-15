@@ -202,7 +202,7 @@ internal static class ConventionConstructorMappingPlanner
 
         return new ConventionConstructorPlanningResult(
             selectedPlan is { } plan
-                ? plan with
+                ? memberMappings.Prepare(plan) with
                 {
                     Observation = observation
                 }
@@ -1676,7 +1676,7 @@ internal static class ConventionConstructorMappingPlanner
             }
         }
 
-        return new ConventionConstructorMappingPlan(
+        return memberMappings.Prepare(new ConventionConstructorMappingPlan(
             new TypeMapperConstructorMappingModel(
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     destination),
@@ -1723,7 +1723,7 @@ internal static class ConventionConstructorMappingPlanner
                         ConstructorCandidateRejectionReason.None)
                 ),
                 constructor,
-                Terminals: ImmutableArray<StructuredTerminalObservation>.Empty));
+                Terminals: ImmutableArray<StructuredTerminalObservation>.Empty)));
     }
 
     internal static string BuildExplicitValueLocalTypeName(

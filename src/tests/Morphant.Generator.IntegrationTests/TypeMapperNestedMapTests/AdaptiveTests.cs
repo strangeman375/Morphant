@@ -4,7 +4,7 @@ namespace Morphant.Generator.IntegrationTests.TypeMapperNestedMapTests;
 internal sealed class AdaptiveTests
 {
     [Test]
-    public void Follows_outer_operation_in_all_four_forms_and_checks_generic_destination()
+    public void Uses_available_destinations_in_all_four_forms_and_checks_generic_destination()
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_4f7bdae8.Scenario.Verify();
     }

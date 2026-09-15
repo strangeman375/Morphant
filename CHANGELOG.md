@@ -25,6 +25,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Let adaptive `Map` in `Members` update a child prepared by construction or a
+  factory, including during outer Create, and retain the nested mapping result.
 - Share common destination construction across Create, Update and repeated
   selection branches while preserving evaluation order and local values.
 - Omit redundant `else` blocks and combine compatible nested guards while

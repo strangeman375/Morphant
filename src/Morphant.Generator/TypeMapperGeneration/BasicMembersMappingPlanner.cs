@@ -334,6 +334,7 @@ internal static class BasicMembersMappingPlanner
                     conventionCreatePostByName,
                     conventionUpdateByName,
                     configured.Expression.SemanticModel,
+                    compilation,
                     mapperType,
                     sourceParameter,
                     previousParameter,
@@ -477,6 +478,7 @@ internal static class BasicMembersMappingPlanner
         IReadOnlyDictionary<string, TypeMapperMemberMappingModel>
             conventionUpdateByName,
         SemanticModel semanticModel,
+        CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
@@ -505,6 +507,9 @@ internal static class BasicMembersMappingPlanner
         var observedRules =
             ImmutableArray.CreateBuilder<MemberRuleObservation>();
         var createNestedMapUsages =
+            new DeclarativeNestedMapUsageRegistry(
+                MappingExecutionPathSet.NoPrevious);
+        var preparedNestedMapUsages =
             new DeclarativeNestedMapUsageRegistry(
                 MappingExecutionPathSet.NoPrevious);
         var mapReplacementNestedMapUsages =
@@ -725,6 +730,7 @@ internal static class BasicMembersMappingPlanner
                     destinationMember,
                     mapping,
                     semanticModel,
+                    compilation,
                     mapperType,
                     sourceParameter,
                     previousParameter,
@@ -734,6 +740,7 @@ internal static class BasicMembersMappingPlanner
                     localSubstitutions,
                     localInitializers,
                     createNestedMapUsages,
+                    preparedNestedMapUsages,
                     mapReplacementNestedMapUsages,
                     updateNestedMapUsages,
                     targetType,
@@ -883,6 +890,7 @@ internal static class BasicMembersMappingPlanner
                             immutableCreate,
                             cancellationToken),
                 NestedMappings = createNestedMapUsages.Observations
+                    .AddRange(preparedNestedMapUsages.Observations)
                     .AddRange(mapReplacementNestedMapUsages.Observations)
                     .AddRange(updateNestedMapUsages.Observations),
                 FlatteningIssues = selectedFlatteningIssues
@@ -1109,6 +1117,7 @@ internal static class BasicMembersMappingPlanner
         ConventionWritableMember destinationMember,
         TypeMapperMappingModel mapping,
         SemanticModel semanticModel,
+        CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
@@ -1118,6 +1127,7 @@ internal static class BasicMembersMappingPlanner
         IReadOnlyDictionary<ISymbol, string> localSubstitutions,
         IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
         DeclarativeNestedMapUsageRegistry createNestedMapUsages,
+        DeclarativeNestedMapUsageRegistry preparedNestedMapUsages,
         DeclarativeNestedMapUsageRegistry mapReplacementNestedMapUsages,
         DeclarativeNestedMapUsageRegistry updateNestedMapUsages,
         ITypeSymbol targetType,
@@ -1154,6 +1164,32 @@ internal static class BasicMembersMappingPlanner
                 cancellationToken,
                 out var createExpression,
                 out var createDependency, mapping.KnownExecutionPath);
+        var preparedExpression = createExpression;
+        var preparedDependency = createDependency;
+        var canReadCurrent = destinationMember.Symbol switch
+        {
+            IPropertySymbol { GetMethod: { } getter } =>
+                compilation.IsSymbolAccessibleWithin(getter, mapperType),
+            IFieldSymbol => true,
+            _ => false
+        };
+        var preparedSucceeded = createSucceeded;
+        if ((destinationMember.CanAssign || destinationMember.CanReconstruct) && canReadCurrent)
+        {
+            preparedSucceeded = DeclarativeDependencyExpressionBuilder.TryRewriteWithContext(
+                expression, semanticModel, mapperType, sourceParameter,
+                mapping.NonNullSourceName, previousParameter,
+                BuildPreviousSubstitution(mapping, hasPrevious: false),
+                resultParameter, mapping.ResultLocalName, contextParameter,
+                contextName: "context", transferScope, localSubstitutions, targetType,
+                new DeclarativeNestedMapTargetContext(
+                    targetType, destinationMember.Name, DeclarativeNestedMapOperation.Update,
+                    mapping.ResultLocalName + "." + DestinationAccess(destinationMember),
+                    destinationMember.Type, destinationMember.Symbol, targetDesignator,
+                    destinationMember.Symbol, MappingExecutionPathSet.NoPrevious),
+                preparedNestedMapUsages, cancellationToken,
+                out preparedExpression, out preparedDependency, mapping.KnownExecutionPath);
+        }
         var mapReplacementSucceeded = DeclarativeDependencyExpressionBuilder
             .TryRewriteWithContext(
                 expression,
@@ -1219,6 +1255,7 @@ internal static class BasicMembersMappingPlanner
 
         if (!createSucceeded &&
             !HasNestedFailure(createNestedMapUsages) ||
+            !preparedSucceeded && !HasNestedFailure(preparedNestedMapUsages) ||
             !mapReplacementSucceeded &&
             !HasNestedFailure(mapReplacementNestedMapUsages) ||
             !updateSucceeded &&
@@ -1262,6 +1299,14 @@ internal static class BasicMembersMappingPlanner
                 createDependency,
                 isResultDependent)
             : (TypeMapperMemberMappingModel?)null;
+        var prepared = preparedSucceeded
+            ? BuildMapping(preparedExpression, preparedDependency, isResultDependent) with
+            {
+                UsesPreparedDestination = preparedExpression != createExpression
+            }
+            : create is { } invalidPrepared
+                ? invalidPrepared with { UsesPreparedDestination = true }
+                : (TypeMapperMemberMappingModel?)null;
         var replacementIsResultDependent =
             isResultDependent ||
             mapReplacementSucceeded && ReferencesIdentifier(
@@ -1283,9 +1328,8 @@ internal static class BasicMembersMappingPlanner
         plan = new ExplicitMemberMappingPlan(
             Create: isResultDependent ? null : create,
             CreatePost: (destinationMember.CanAssign ||
-                         destinationMember.CanReconstruct) &&
-                        createSucceeded
-                ? create
+                         destinationMember.CanReconstruct)
+                ? prepared
                 : null,
             MapReplacement: replacementIsResultDependent
                 ? null

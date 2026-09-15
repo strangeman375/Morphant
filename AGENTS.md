@@ -203,6 +203,15 @@
   materializing an initial tuple is allowed, including for element reads.
 - Reuse skips construction. Factories remain authoritative; standalone nested
   updates mutate their target. Apply existing inheritance and lifecycle rules.
+- Adaptive `Map` in `Members` uses an available current destination element,
+  including one prepared by construction or a factory during outer Create.
+  Pass that value to nested Update and retain the returned value. A null
+  current value follows nested Update's null-destination policy. When the
+  element is not yet available (for example, a constructor input), use Create.
+  Preserve explicit `Create` and `Update`, independent evaluations, and one
+  final tuple construction where no user-written `result` read requires an
+  earlier tuple. Apply this consistently to ordinary objects and BCL tuples.
+  Approved on 2026-09-15.
 - Share common destination construction across generated Create and Update
   paths and repeated selection branches. Keep selection effects, user locals,
   previous-dependent values, nullable flow and constructor/member evaluation

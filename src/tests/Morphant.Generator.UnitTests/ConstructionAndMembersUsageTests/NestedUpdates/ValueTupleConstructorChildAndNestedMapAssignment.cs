@@ -164,7 +164,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             global::TestCase.ChildDestination child = new global::TestCase.ChildDestination();
-            child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child);
+            child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: child);
 
             return (
                 Child: child,

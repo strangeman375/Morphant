@@ -104,6 +104,11 @@ read the same initial result, before Morphant applies any element assignments.
 
 Automatic arguments follow the [constructor and member rules](api/members.md#constructor-parameters).
 
+When construction supplies an element and `Members` maps it with `Map`, the
+supplied value is passed to nested Update. The returned value becomes the final
+element. Explicit `Create` always requests a separate nested result. See
+[nested mapping](nested-mapping.md#how-map-chooses-an-operation).
+
 ## Update
 
 `ValueTuple` fields are mutable. Update changes the selected tuple value and

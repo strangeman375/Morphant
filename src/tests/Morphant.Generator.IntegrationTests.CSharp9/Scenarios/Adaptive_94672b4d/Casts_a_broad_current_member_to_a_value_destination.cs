@@ -13,7 +13,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_94672b4
 
     public sealed class OuterDestination
     {
-        public object? Number { get; set; }
+        public object? Number { get; set; } = 5;
     }
 
     [MorphantMapper]
@@ -58,7 +58,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_94672b4
                 new OuterSource(3),
                 new OuterDestination { Number = 7 });
 
-            if (!Equals(created.Number, 20) ||
+            try
+            {
+                mapper.Map(new OuterSource(2), new OuterDestination { Number = null });
+                throw new InvalidOperationException("A null current value was accepted as int.");
+            }
+            catch (global::Morphant.Exceptions.NestedDestinationTypeMismatchException) { }
+
+            if (!Equals(created.Number, 7) ||
                 !Equals(updated.Number, 10))
             {
                 throw new InvalidOperationException(

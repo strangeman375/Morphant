@@ -196,7 +196,8 @@ internal readonly record struct TypeMapperMemberMappingModel
     ImmutableArray<TypeMapperLocalValueModel> InvocationArgumentLocals =
         default,
     string? DestinationAccessPath = null,
-    bool HasGeneratedDestination = false
+    bool HasGeneratedDestination = false,
+    bool UsesPreparedDestination = false
 );
 
 internal sealed record TypeMapperControlFlowMappingModel

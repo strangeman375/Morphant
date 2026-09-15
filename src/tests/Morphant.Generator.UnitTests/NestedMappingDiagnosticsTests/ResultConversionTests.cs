@@ -4,7 +4,41 @@ namespace Morphant.Generator.UnitTests.NestedMappingDiagnosticsTests;
 internal sealed class ResultConversionTests
 {
     [Test]
-    public void Accepts_warning_free_standard_and_user_defined_conversions()
+    public void Creates_a_constructor_input_without_using_the_unavailable_current_member()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+using Morphant;
+namespace TestCase
+{
+    public sealed class Source { public int Number { get; set; } }
+    public sealed class Destination
+    {
+        public Destination(long number) => Number = number;
+        public long Number { get; set; }
+    }
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>(MappingMode.Create)
+                .Members(source => new() { Number = Map<int>(source.Number) });
+    }
+}
+""";
+        var result = NestedMappingDiagnosticsGeneratorTest.Run(source);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.NestedMappingDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Accepts_warning_free_created_result_conversions()
     {
         // lang=c#
         const string source =
@@ -53,14 +87,14 @@ namespace TestCase
                 .MemberSelection(MemberSelection.Explicit)
                 .Members(source => new()
                 {
-                    Reference = Map<DerivedValue>(source.Value),
-                    Interface = Map<DerivedValue>(source.Value),
-                    Numeric = Map<int>(source.Value),
-                    Lifted = Map<int>(source.Value),
-                    Boxed = Map<int>(source.Value),
-                    Variant = Map<IEnumerable<string>>(source.Value),
-                    Tuple = Map<(int, int)>(source.Value),
-                    UserDefined = Map<UserSource>(source.Value)
+                    Reference = Create<DerivedValue>(source.Value),
+                    Interface = Create<DerivedValue>(source.Value),
+                    Numeric = Create<int>(source.Value),
+                    Lifted = Create<int>(source.Value),
+                    Boxed = Create<int>(source.Value),
+                    Variant = Create<IEnumerable<string>>(source.Value),
+                    Tuple = Create<(int, int)>(source.Value),
+                    UserDefined = Create<UserSource>(source.Value)
                 });
     }
 }

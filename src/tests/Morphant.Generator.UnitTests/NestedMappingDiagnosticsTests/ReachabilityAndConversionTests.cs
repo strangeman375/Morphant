@@ -442,13 +442,13 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Affected cases: Update with an existing destination."));
+                    "Affected cases: Create; Update without an existing destination; Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
 
     [Test]
-    public void Keeps_runtime_result_Create_when_only_existing_Update_is_invalid()
+    public void Rejects_incompatible_factory_members_on_Create_and_Update()
     {
         // lang=c#
         const string source =
@@ -508,13 +508,13 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Affected cases: Update with an existing destination."));
+                    "Affected cases: Create; Update without an existing destination; Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
 
     [Test]
-    public void Reports_one_ambiguous_adaptive_local_only_for_existing_Update()
+    public void Reports_one_ambiguous_adaptive_local_for_prepared_and_existing_destinations()
     {
         // lang=c#
         const string source =
@@ -586,7 +586,7 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Affected cases: Update with an existing destination."));
+                    "Affected cases: Create; Update without an existing destination; Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

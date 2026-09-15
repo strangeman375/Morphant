@@ -9,7 +9,7 @@ every `Map`, `Create`, and `Update` form.
 
 | Form | Operation |
 |---|---|
-| `Map(...)` | Select Create or Update from whether a non-null outer destination was supplied |
+| `Map(...)` | Use an available current destination value for Update; otherwise Create |
 | `Create(source)` | Always nested Create |
 | `Update(source, destination)` | Always nested Update |
 
@@ -35,15 +35,27 @@ convertible to the destination member or constructor parameter.
 
 ## How `Map` chooses an operation
 
-`Map` follows the supplied outer destination:
+`Map` uses the current value of its destination member or tuple element when
+that value is available:
 
-| Outer call | Nested operation |
+| Target state | Nested operation |
 |---|---|
-| Create, or Update with a null outer destination | Create |
-| Update with a non-null outer destination | Update |
+| Writable member of a constructed or factory-created result | Update its current value |
+| Tuple element explicitly supplied by construction, followed by a member rule | Update the supplied element |
+| Member of an existing destination | Update its current value |
+| Constructor or initializer input with no available current value | Create |
 
-A writable nested member's current value is passed to nested Update even when
-it is `null`. That mapping applies its own
+This also applies during outer Create and Update with a null outer destination:
+a child prepared by the constructor or factory is passed to nested Update.
+For constructor arguments during Update with an existing outer destination,
+the corresponding readable member supplies the current value.
+
+If `Map` must run inside an object initializer to preserve evaluation order
+around an `init` or `required` member, it uses Create: the current member
+cannot yet be read from the constructed result.
+
+An available current value is passed to nested Update even when it is `null`.
+That mapping applies its own
 [`NullDestinationHandling`](settings/null-handling.md#null-update-destination),
 and its operation remains Update.
 
@@ -53,6 +65,16 @@ to the writable member.
 
 Use explicit `Create` or `Update` when the operation must not be selected this
 way.
+
+```csharp
+builder.Map<Source, Tuple<ChildDestination, int>>()
+    .Construct(_ => new(new ChildDestination(), 7))
+    .Members(source => new() { Item1 = Map<ChildDestination>(source.Child) });
+```
+
+Here the nested mapping receives the constructed `ChildDestination` through
+Update, and its returned value becomes `Item1`. Use `Create<ChildDestination>`
+to request a separate child instead.
 
 ## Read-only members
 

@@ -178,10 +178,7 @@ namespace TestCase
         {
             _ = source.Reuse;
 
-            return new global::TestCase.Destination()
-            {
-                Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child)
-            };
+            return __Construct(source, context);
         }
 
         private global::TestCase.Destination __Update1(
@@ -195,14 +192,19 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                var result = new global::TestCase.Destination();
 
-                result.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: result.Child);
+            return __Construct(source, context);
+        }
 
-                return result;
-            }
+        private global::TestCase.Destination __Construct(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            var result = new global::TestCase.Destination();
+
+            result.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: result.Child);
+
+            return result;
         }
     }
 }

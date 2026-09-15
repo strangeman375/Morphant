@@ -424,14 +424,17 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination(
+            var result = new global::TestCase.Destination(
                 constructed: context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child))
             {
                 Created = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child),
-                Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, source.Previous),
-                Inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred),
-                Typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed)
+                Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, source.Previous)
             };
+
+            result.Inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred, destination: result.Inferred);
+            result.Typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed, destination: result.Typed);
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(

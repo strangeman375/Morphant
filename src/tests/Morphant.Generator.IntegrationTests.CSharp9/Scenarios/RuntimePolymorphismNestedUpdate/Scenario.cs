@@ -21,6 +21,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
     public sealed class Holder
     {
         public Animal? Animal { get; init; }
+        public bool CreateChild { get; init; }
     }
     public sealed class ReplacementHolder
     {
@@ -44,7 +45,12 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
                 .NullDestinationHandling(NullDestinationHandling.Throw)
                 .Members(source => new() { Name = source.Name });
             builder.Map<Holder, HolderDto>()
-                .Members(source => new() { Animal = Map<AnimalDto?>(source.Animal) });
+                .Members(source => new()
+                {
+                    Animal = source.CreateChild
+                        ? Create<AnimalDto?>(source.Animal)
+                        : Map<AnimalDto?>(source.Animal)
+                });
             builder.Map<ReplacementHolder, HolderDto>()
                 .ResolveUsing((source, _) => new HolderDto
                 {
@@ -59,17 +65,22 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
         public static void CreateSelectsDerivedBranch()
         {
             var mapper = (ITypeMapper<Holder, HolderDto>)new TestMapper();
-            var created = mapper.Create(new Holder { Animal = new Dog { Name = "created" } });
+            var created = mapper.Create(new Holder { Animal = new Dog { Name = "created" }, CreateChild = true });
             if (created.Animal is not DogDto { Name: "created" })
                 throw new InvalidOperationException("Nested Create did not select the derived branch.");
         }
 
-        public static void NullOuterDestinationUsesNestedCreate()
+        public static void MissingOuterDestinationAppliesDerivedPolicy(bool updateNull)
         {
             var mapper = (ITypeMapper<Holder, HolderDto>)new TestMapper();
-            var updated = mapper.Update(new Holder { Animal = new Dog { Name = "created" } }, null);
-            if (updated.Animal is not DogDto { Name: "created" })
-                throw new InvalidOperationException("Update without an outer destination did not use nested Create.");
+            var source = new Holder { Animal = new Dog { Name = "created" } };
+            ExpectNullDestination(() =>
+            {
+                if (updateNull)
+                    mapper.Update(source, null);
+                else
+                    mapper.Create(source);
+            });
         }
 
         public static void UpdatePreservesBothDestinations()

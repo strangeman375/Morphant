@@ -489,16 +489,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NestedMappingDia
         {
             TestMapper.Reset();
             child.Calls.Clear();
-            var created = mapper.Map<Source, RuntimeAdaptiveDestination>(
-                source);
+            ExpectConfiguration(() => mapper.Map<Source, RuntimeAdaptiveDestination>(source));
+            ExpectConfiguration(() => mapper.Map<Source, RuntimeAdaptiveDestination>(source, null));
 
-            if (created.Child.Value.Value != 30 ||
-                TestMapper.ChildArgumentReads != 1 ||
-                child.Calls.Count != 1 ||
-                child.Calls[0].Operation != MappingOperation.Create)
+            if (TestMapper.ChildArgumentReads != 0 || child.Calls.Count != 0)
             {
                 throw new InvalidOperationException(
-                    "Runtime result recovery changed valid adaptive Create.");
+                    "An incompatible factory-prepared member executed its nested mapping.");
             }
 
             TestMapper.Reset();
@@ -522,16 +519,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NestedMappingDia
         {
             TestMapper.Reset();
             child.Calls.Clear();
-            var created = mapper.Map<Source, AmbiguousDestination>(source);
+            ExpectConfiguration(() => mapper.Map<Source, AmbiguousDestination>(source));
+            ExpectConfiguration(() => mapper.Map<Source, AmbiguousDestination>(source, null));
 
-            if (created.First.Value != 30 ||
-                created.Second.Value != 30 ||
-                TestMapper.ChildArgumentReads != 1 ||
-                child.Calls.Count != 1 ||
-                child.Calls[0].Operation != MappingOperation.Create)
+            if (TestMapper.ChildArgumentReads != 0 || child.Calls.Count != 0)
             {
                 throw new InvalidOperationException(
-                    "Ambiguous adaptive-local recovery changed valid Create.");
+                    "An ambiguous prepared member executed its nested mapping.");
             }
 
             TestMapper.Reset();

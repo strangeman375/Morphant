@@ -182,16 +182,16 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Maps a value inferred by name, using nested Update when a non-null
-    /// outer destination was supplied; otherwise, nested Create.
+    /// Maps a value inferred by name, updating an available current destination
+    /// or creating a nested value when none is available.
     /// </summary>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker Map() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Maps a supplied value, using nested Update when a non-null outer
-    /// destination was supplied; otherwise, nested Create.
+    /// Maps a supplied value, updating an available current destination
+    /// or creating a nested value when none is available.
     /// </summary>
     /// <param name="source">The source passed to the nested mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
@@ -199,9 +199,8 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Maps a value inferred by name to <typeparamref name="T"/>, using nested
-    /// Update when a non-null outer destination was supplied; otherwise,
-    /// nested Create.
+    /// Maps a value inferred by name to <typeparamref name="T"/>, updating an
+    /// available current destination or creating a nested value.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
@@ -209,8 +208,8 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Maps a supplied value to <typeparamref name="T"/>, using nested Update
-    /// when a non-null outer destination was supplied; otherwise, nested Create.
+    /// Maps a supplied value to <typeparamref name="T"/>, updating an available
+    /// current destination or creating a nested value.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     /// <param name="source">The source passed to the nested mapping.</param>

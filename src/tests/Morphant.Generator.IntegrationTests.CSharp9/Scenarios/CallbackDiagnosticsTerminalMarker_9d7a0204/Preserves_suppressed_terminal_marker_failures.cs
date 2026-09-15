@@ -19,7 +19,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiagnost
     {
         public ChildDestination(int value) => Value = value;
 
-        public int Value { get; }
+        public int Value { get; set; }
     }
 
     public sealed class Source

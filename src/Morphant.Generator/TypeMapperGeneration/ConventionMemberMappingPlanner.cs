@@ -1532,7 +1532,8 @@ internal readonly record struct ConventionMemberMappingPlan(
                     !rule.Lifecycle.HasFlag(
                         MemberLifecycleDependency.ExistingDestination))
                 .ToImmutableArray(),
-            Observation);
+            Observation,
+            replacement ? MapReplacementPost : CreatePost);
     }
 }
 
@@ -1542,8 +1543,56 @@ internal readonly record struct ConstructorInitializationMappingPlan(
     ImmutableArray<ISymbol> RequiredObligations,
     ImmutableArray<MemberRuleObservation>
         ResultDependentCreationOnlyRules,
-    MemberPlanningObservation Observation)
+    MemberPlanningObservation Observation,
+    ImmutableArray<TypeMapperMemberMappingModel> PreparedMappings = default)
 {
+    public TypeMapperMemberMappingModel Prepare(TypeMapperMemberMappingModel member)
+    {
+        if (!PreparedMappings.IsDefaultOrEmpty)
+        {
+            foreach (var prepared in PreparedMappings)
+            {
+                if (prepared.UsesPreparedDestination &&
+                    StringComparer.Ordinal.Equals(prepared.DestinationMemberName, member.DestinationMemberName))
+                    return prepared;
+            }
+        }
+        return member;
+    }
+
+    public ConventionConstructorMappingPlan Prepare(ConventionConstructorMappingPlan plan)
+    {
+        var rules = Observation.Rules;
+        int Order(TypeMapperMemberMappingModel member) => rules.TakeWhile(rule =>
+            !StringComparer.Ordinal.Equals(rule.DestinationMember.Name, member.DestinationMemberName)).Count();
+        bool RequiresInitializer(TypeMapperMemberMappingModel member) => member.IsRequired ||
+            rules.Any(rule => rule.DestinationMember.Name == member.DestinationMemberName &&
+                !rule.Lifecycle.HasFlag(MemberLifecycleDependency.ExistingDestination));
+        var lastInitializer = plan.CreateMemberMappings.Where(RequiresInitializer)
+            .Select(Order).DefaultIfEmpty(-1).Max();
+        var firstPrepared = int.MaxValue;
+        foreach (var member in plan.CreateMemberMappings)
+        {
+            if (Order(member) > lastInitializer && member.SourceValueLocalName is null &&
+                Prepare(member).UsesPreparedDestination)
+                firstPrepared = Math.Min(firstPrepared, Order(member));
+        }
+        var initializers = ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
+        var post = plan.CreatePostMemberMappings.ToBuilder();
+        foreach (var member in plan.CreateMemberMappings)
+        {
+            if (Order(member) >= firstPrepared)
+                post.Add(Prepare(member));
+            else
+                initializers.Add(member);
+        }
+        return plan with
+        {
+            CreateMemberMappings = initializers.ToImmutable(),
+            CreatePostMemberMappings = post.OrderBy(Order).ToImmutableArray()
+        };
+    }
+
     public bool HasResultDependency(IMethodSymbol constructor) =>
         !ResultDependentCreationOnlyRules.IsEmpty;
 

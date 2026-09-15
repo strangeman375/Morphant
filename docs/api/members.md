@@ -66,6 +66,10 @@ it is written; omitted optional constructor arguments keep their defaults.
 
 Reuse skips construction and applies eligible writable member rules.
 
+Nested `Map` uses a current child prepared by construction or a factory, even
+during outer Create. Its returned value is retained. See
+[nested operation selection](../nested-mapping.md#how-map-chooses-an-operation).
+
 ## Reading `result`
 
 A writable member can read the constructed destination:

@@ -409,13 +409,51 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination(
-                child: new global::TestCase.ChildDestination(0))
+            var result = new global::TestCase.Destination(
+                child: new global::TestCase.ChildDestination(0));
+
+            result.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: result.Child);
+            var childSource = source.Child;
+            var referenceDestination = result.Reference switch
             {
-                Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child),
-                Reference = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child),
-                Value = context.Mapper.Map<int, int>(source.Number)
+                null => default(global::TestCase.ChildDestination?),
+                global::TestCase.ChildDestination compatibleReference => compatibleReference,
+                var incompatibleReference => throw
+                    global::Morphant.Exceptions
+                        .NestedDestinationTypeMismatchException
+                        .Create<
+                            global::TestCase.ChildSource,
+                            global::TestCase.ChildDestination>(
+                            global::Morphant.Context.MappingOperation.Update,
+                            incompatibleReference),
             };
+
+            result.Reference = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+                childSource,
+                destination: referenceDestination);
+            var numberSource = source.Number;
+            var valueDestination = result.Value switch
+            {
+                null => throw
+                    global::Morphant.Exceptions
+                        .NestedDestinationTypeMismatchException
+                        .Create<int, int>(
+                            global::Morphant.Context.MappingOperation.Update,
+                            null),
+                int compatibleValue => compatibleValue,
+                var incompatibleValue => throw
+                    global::Morphant.Exceptions
+                        .NestedDestinationTypeMismatchException
+                        .Create<int, int>(
+                            global::Morphant.Context.MappingOperation.Update,
+                            incompatibleValue),
+            };
+
+            result.Value = context.Mapper.Map<int, int>(
+                numberSource,
+                destination: valueDestination);
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(

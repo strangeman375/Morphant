@@ -670,6 +670,7 @@ internal static class TypeMapperRuntimeEquality
                    right.RequiresPreviousDestinationValueLocal &&
                left.IsResultDependent == right.IsResultDependent &&
                left.HasGeneratedDestination == right.HasGeneratedDestination &&
+               left.UsesPreparedDestination == right.UsesPreparedDestination &&
                AreEquivalent(
                    left.DependencyExpression,
                    right.DependencyExpression) &&

@@ -502,7 +502,7 @@ internal static class BclTupleMappingPlanner
                 {
                     arguments.Add(initialArgument);
                     survivingInitialElements.Add(element.Name);
-                    pendingPostMappings.Add(memberMapping);
+                    pendingPostMappings.Add(memberMappings.Prepare(memberMapping));
                     continue;
                 }
 

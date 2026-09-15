@@ -269,7 +269,8 @@ internal static class NestedMappingRecoveryPlanner
                 if (observation.FailureKind ==
                         NestedMappingFailureKind.None ||
                     (observation.Paths & paths) ==
-                        MappingExecutionPathSet.None)
+                        MappingExecutionPathSet.None ||
+                    IsUnavailablePreparedMember(mapping, observation, paths))
                 {
                     continue;
                 }
@@ -282,6 +283,24 @@ internal static class NestedMappingRecoveryPlanner
                 }
             }
         }
+    }
+
+    private static bool IsUnavailablePreparedMember(
+        TypeMapperMappingModel mapping,
+        NestedMappingObservation observation,
+        MappingExecutionPathSet paths)
+    {
+        if ((paths & MappingExecutionPathSet.NoPrevious) == MappingExecutionPathSet.None ||
+            observation.Operation != DeclarativeNestedMapOperation.Update ||
+            observation.ProducerSymbol.Name != "Map")
+            return false;
+
+        // Members has both an initializer form and a form using the prepared
+        // result. A rule consumed by a constructor (or required initializer)
+        // cannot use the latter, so its speculative Update is not a failure.
+        return mapping.CreateFactory is null && mapping.PostMemberControlFlow is null &&
+            !mapping.CreatePostMemberMappings.Any(member =>
+                member.DestinationMemberName == observation.TargetName);
     }
 
     private static ImmutableArray<NestedMappingObservation>

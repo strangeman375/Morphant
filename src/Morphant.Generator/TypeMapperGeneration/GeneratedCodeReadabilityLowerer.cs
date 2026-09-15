@@ -227,7 +227,8 @@ internal static class GeneratedCodeReadabilityLowerer
                     initialArguments.OrderBy(argument => argument.TupleElementOrdinal).Select(argument =>
                         new TypeMapperTupleElementModel(argument.ParameterName, argument.ParameterName,
                             argument.ValueLocalName ?? argument.ExplicitValueExpression))
-                        .ToImmutableArray())
+                        .ToImmutableArray()),
+                PostMemberControlFlow = BindPreparedTupleDestinations(controlFlow, mapping.ResultLocalName, initialArguments)
             };
         }
 
@@ -251,10 +252,13 @@ internal static class GeneratedCodeReadabilityLowerer
             return initial with
             {
                 SourceMemberName = member.SourceMemberName,
-                ExplicitValueExpression = member.SourceValueLocalName ?? member.ExplicitValueExpression,
+                ExplicitValueExpression = member.UsesPreparedDestination
+                    ? BindPreparedDestination(member, mapping.ResultLocalName, initial.ValueLocalName!).ExplicitValueExpression
+                    : member.SourceValueLocalName ?? member.ExplicitValueExpression,
                 ConventionValueExpression = member.ConventionValueExpression,
-                DependencyExpression = member.DependencyExpression,
-                HasGeneratedDestination = member.HasGeneratedDestination,
+                DependencyExpression = member.UsesPreparedDestination ? null : member.DependencyExpression,
+                HasGeneratedDestination = member.HasGeneratedDestination ||
+                    member.DependencyExpression?.Root.HasGeneratedDestination == true,
                 EvaluationLocals = Normalize(member.EvaluationLocals).AddRange(Normalize(member.InvocationArgumentLocals)),
                 RuleOriginNode = null,
                 SourceMemberSymbol = null,
@@ -277,12 +281,57 @@ internal static class GeneratedCodeReadabilityLowerer
                     !(identifier.Parent is MemberAccessExpressionSyntax access && access.Name == identifier));
         return References(node.Condition) || References(node.SwitchExpression) || References(node.EvaluationExpression) ||
             References(node.ThrowExpression) || node.Locals.Any(local => References(local.ValueExpression)) ||
-            node.MemberMappings.Any(member => member.IsResultDependent || References(member.ExplicitValueExpression)) ||
+            node.MemberMappings.Any(member => member.IsResultDependent ||
+                !member.UsesPreparedDestination && References(member.ExplicitValueExpression)) ||
             node.EvaluationContinuation is { } evaluation && ReferencesResult(evaluation, resultName) ||
             node.WhenTrue is { } whenTrue && ReferencesResult(whenTrue, resultName) ||
             node.WhenFalse is { } whenFalse && ReferencesResult(whenFalse, resultName) ||
             Normalize(node.SwitchSections).Any(section => ReferencesResult(section.Branch, resultName)) ||
             node.SwitchContinuation is { } continuation && ReferencesResult(continuation, resultName);
+    }
+
+    private static TypeMapperMemberMappingModel BindPreparedDestination(
+        TypeMapperMemberMappingModel member, string resultName, string value)
+    {
+        if (!member.UsesPreparedDestination || member.ExplicitValueExpression is not { } expression)
+            return member;
+        var syntax = SyntaxFactory.ParseExpression(expression);
+        var current = SyntaxFactory.ParseExpression(resultName + "." +
+            (member.DestinationAccessPath ?? member.DestinationMemberName));
+        var rewritten = syntax.ReplaceNodes(syntax.DescendantNodesAndSelf()
+                .OfType<MemberAccessExpressionSyntax>().Where(node => SyntaxFactory.AreEquivalent(node, current)),
+            (original, _) => SyntaxFactory.ParseExpression(value).WithTriviaFrom(original));
+        return member with
+        {
+            ExplicitValueExpression = rewritten.ToFullString(),
+            DependencyExpression = null,
+            HasGeneratedDestination = member.HasGeneratedDestination ||
+                member.DependencyExpression?.Root.HasGeneratedDestination == true,
+            UsesPreparedDestination = false
+        };
+    }
+
+    private static TypeMapperMemberControlFlowNode BindPreparedTupleDestinations(
+        TypeMapperMemberControlFlowNode node, string resultName,
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments)
+    {
+        TypeMapperMemberControlFlowNode? Rewrite(TypeMapperMemberControlFlowNode? branch) =>
+            branch is null ? null : BindPreparedTupleDestinations(branch, resultName, arguments);
+        return node with
+        {
+            MemberMappings = node.MemberMappings.Select(member =>
+            {
+                var initial = arguments.Single(argument => argument.ParameterName == member.DestinationMemberName);
+                return BindPreparedDestination(member, resultName,
+                    initial.ValueLocalName ?? initial.ExplicitValueExpression!);
+            }).ToImmutableArray(),
+            WhenTrue = Rewrite(node.WhenTrue),
+            WhenFalse = Rewrite(node.WhenFalse),
+            EvaluationContinuation = Rewrite(node.EvaluationContinuation),
+            SwitchContinuation = Rewrite(node.SwitchContinuation),
+            SwitchSections = Normalize(node.SwitchSections).Select(section => section with
+                { Branch = Rewrite(section.Branch)! }).ToImmutableArray()
+        };
     }
 
     private static TypeMapperMappingModel LowerUpdateLeaf(
