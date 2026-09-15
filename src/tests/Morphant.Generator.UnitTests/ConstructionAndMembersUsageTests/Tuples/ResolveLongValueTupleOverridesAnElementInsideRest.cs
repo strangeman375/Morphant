@@ -78,7 +78,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -92,14 +92,12 @@ namespace TestCase
                 return default!;
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) __Create(
             global::TestCase.Source source)
         {
-            _ = global::Morphant.Option<(int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth)>.None.TryGetValue(out (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) current) && source.Reuse;
-
             int eighth = 8;
             eighth = source.Id + 100;
 
@@ -119,7 +117,7 @@ namespace TestCase
             global::TestCase.Source source,
             (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) destination)
         {
-            if (global::Morphant.Option<(int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth)>.Some(destination).TryGetValue(out (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) current) && source.Reuse)
+            if (source.Reuse)
             {
                 destination.Eighth = source.Id + 100;
 

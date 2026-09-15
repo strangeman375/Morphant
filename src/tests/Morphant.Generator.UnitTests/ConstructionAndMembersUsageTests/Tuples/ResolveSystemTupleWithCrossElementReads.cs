@@ -82,7 +82,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -98,33 +98,13 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::System.Tuple<int, string> __Create(
-            global::TestCase.Source source)
-        {
-            _ = global::Morphant.Option<global::System.Tuple<int, string>>.None.TryGetValue(out global::System.Tuple<int, string>? current) && source.Reuse;
-
-            return __Construct(source);
-        }
-
-        private global::System.Tuple<int, string> __Update(
-            global::TestCase.Source source,
-            global::System.Tuple<int, string> destination)
-        {
-            if (global::Morphant.Option<global::System.Tuple<int, string>>.Some(destination).TryGetValue(out global::System.Tuple<int, string>? current) && source.Reuse)
-            {
-                return destination;
-            }
-
-            return __Construct(source);
-        }
-
-        private global::System.Tuple<int, string> __Construct(
             global::TestCase.Source source)
         {
             global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(
@@ -137,6 +117,18 @@ namespace TestCase
             return new global::System.Tuple<int, string>(
                 item1: item1,
                 item2: item2);
+        }
+
+        private global::System.Tuple<int, string> __Update(
+            global::TestCase.Source source,
+            global::System.Tuple<int, string> destination)
+        {
+            if (source.Reuse)
+            {
+                return destination;
+            }
+
+            return __Create(source);
         }
     }
 }

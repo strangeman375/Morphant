@@ -82,7 +82,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -96,14 +96,12 @@ namespace TestCase
                 return default!;
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private (int Id, string Name) __Create(
             global::TestCase.Source source)
         {
-            _ = global::Morphant.Option<(int Id, string Name)>.None.TryGetValue(out (int Id, string Name) current) && source.Reuse;
-
             (int Id, string Name) result = (
                 Id: source.Id,
                 Name: source.FromConstruct());
@@ -121,7 +119,7 @@ namespace TestCase
             global::TestCase.Source source,
             (int Id, string Name) destination)
         {
-            if (global::Morphant.Option<(int Id, string Name)>.Some(destination).TryGetValue(out (int Id, string Name) current) && source.Reuse)
+            if (source.Reuse)
             {
                 int id = destination.Name.Length;
                 string name = destination.Id.ToString();
