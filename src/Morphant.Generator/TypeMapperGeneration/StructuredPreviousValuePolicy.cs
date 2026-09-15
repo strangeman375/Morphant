@@ -52,7 +52,8 @@ internal static class StructuredPreviousValuePolicy
 
         if (expression is BinaryExpressionSyntax binary &&
             (binary.IsKind(SyntaxKind.LogicalAndExpression) ||
-             binary.IsKind(SyntaxKind.LogicalOrExpression)))
+             binary.IsKind(SyntaxKind.LogicalOrExpression)) &&
+            KnownPreviousGuard.IsBuiltInLogic(binary, semanticModel, cancellationToken))
         {
             return Find(binary.Left) ??
                 (evaluateCondition(binary.Left) ==

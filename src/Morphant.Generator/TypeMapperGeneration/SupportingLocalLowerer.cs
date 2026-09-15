@@ -52,6 +52,7 @@ internal static class SupportingLocalLowerer
                 semantic.GetDeclaredSymbol(declaration, cancellationToken) is not ILocalSymbol copy ||
                 semantic.GetSymbolInfo(original, cancellationToken).Symbol is not ILocalSymbol source ||
                 copy.RefKind != RefKind.None || source.RefKind != RefKind.None ||
+                source.Type.TypeKind == TypeKind.Dynamic || copy.Type.TypeKind == TypeKind.Dynamic ||
                 !SymbolEqualityComparer.IncludeNullability.Equals(copy.Type,
                     source.Type.WithNullableAnnotation(copy.Type.NullableAnnotation)) ||
                 copy.NullableAnnotation == NullableAnnotation.NotAnnotated &&

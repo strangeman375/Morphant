@@ -26,9 +26,9 @@ internal static class TypeMapperEmitter
     private const string InvalidUnknownDerivedTypeHandlingExceptionMessage =
         "UnknownDerivedTypeHandling has an invalid value.";
 
-    public static SourceText Emit(TypeMapperModel model)
+    public static SourceText Emit(TypeMapperModel model, Func<string, string>? rewrite = null)
     {
-        return Emit(model, includeTransferProbeLocations: false);
+        return Emit(model, includeTransferProbeLocations: false, rewrite);
     }
 
     internal static SourceText EmitTransferProbe(TypeMapperModel model)
@@ -62,7 +62,8 @@ internal static class TypeMapperEmitter
 
     private static SourceText Emit(
         TypeMapperModel model,
-        bool includeTransferProbeLocations)
+        bool includeTransferProbeLocations,
+        Func<string, string>? rewrite = null)
     {
         var writer = new CodeWriter();
 
@@ -106,8 +107,9 @@ internal static class TypeMapperEmitter
             writer.CloseBlock();
         }
 
-        return SourceText.From(ObsoleteTypeWarnings.Suppress(
-            writer.ToString(), model.ObsoleteWarnings), Encoding.UTF8);
+        var source = writer.ToString();
+        if (rewrite is not null) source = rewrite(source);
+        return SourceText.From(ObsoleteTypeWarnings.Suppress(source, model.ObsoleteWarnings), Encoding.UTF8);
     }
 
     private static void WriteType(
