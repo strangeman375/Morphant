@@ -58,6 +58,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Preserve sequential member assignments when `Resolve` replaces the destination,
+  including setter effects on later adaptive mappings and source reads.
 - Reduce generated read-only nested and polymorphic Update code with shared
   runtime helpers, preserving lazy source evaluation and destination checks.
 - Remove redundant operation checks from member branches when the mapping

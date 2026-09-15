@@ -464,7 +464,7 @@ namespace TestCase
             var result = new global::TestCase.Destination(
                 child: new global::TestCase.ChildDestination(40));
 
-            global::TestCase.ChildDestination child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: result.Child);
+            result.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: result.Child);
             var childSource = source.Child;
             var referenceDestination = result.Reference switch
             {
@@ -479,7 +479,8 @@ namespace TestCase
                             global::Morphant.Context.MappingOperation.Update,
                             incompatibleReference),
             };
-            object? reference = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+
+            result.Reference = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
                 childSource,
                 destination: referenceDestination);
             var numberSource = source.Number;
@@ -499,13 +500,10 @@ namespace TestCase
                             global::Morphant.Context.MappingOperation.Update,
                             incompatibleValue),
             };
-            object value = context.Mapper.Map<int, int>(
+
+            result.Value = context.Mapper.Map<int, int>(
                 numberSource,
                 destination: valueDestination);
-
-            result.Child = child;
-            result.Reference = reference;
-            result.Value = value;
 
             return result;
         }

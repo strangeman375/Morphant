@@ -1209,6 +1209,36 @@ internal static class BasicMembersMappingPlanner
                 new DeclarativeNestedMapTargetContext(
                     targetType,
                     destinationMember.Name,
+                    DeclarativeNestedMapOperation.Create,
+                    CurrentDestinationExpression: null,
+                    CurrentDestinationType: null,
+                    destinationMember.Symbol,
+                    targetDesignator,
+                    CurrentDestinationSymbol: null,
+                    MappingExecutionPathSet.UpdateWithPrevious),
+                mapReplacementNestedMapUsages,
+                cancellationToken,
+                out var mapReplacementExpression,
+                out var mapReplacementDependency, mapping.KnownExecutionPath);
+        var replacementPreparedSucceeded = DeclarativeDependencyExpressionBuilder
+            .TryRewriteWithContext(
+                expression,
+                semanticModel,
+                mapperType,
+                sourceParameter,
+                mapping.NonNullSourceName,
+                previousParameter,
+                BuildPreviousSubstitution(mapping, hasPrevious: true),
+                resultParameter,
+                mapping.ResultLocalName,
+                contextParameter,
+                contextName: "context",
+                transferScope,
+                localSubstitutions,
+                targetType,
+                new DeclarativeNestedMapTargetContext(
+                    targetType,
+                    destinationMember.Name,
                     DeclarativeNestedMapOperation.Update,
                     mapping.ResultLocalName + "." +
                     DestinationAccess(destinationMember),
@@ -1219,8 +1249,8 @@ internal static class BasicMembersMappingPlanner
                     MappingExecutionPathSet.UpdateWithPrevious),
                 mapReplacementNestedMapUsages,
                 cancellationToken,
-                out var mapReplacementExpression,
-                out var mapReplacementDependency, mapping.KnownExecutionPath);
+                out var replacementPreparedExpression,
+                out var replacementPreparedDependency, mapping.KnownExecutionPath);
         var updateSucceeded = DeclarativeDependencyExpressionBuilder
             .TryRewriteWithContext(
                 expression,
@@ -1256,7 +1286,7 @@ internal static class BasicMembersMappingPlanner
         if (!createSucceeded &&
             !HasNestedFailure(createNestedMapUsages) ||
             !preparedSucceeded && !HasNestedFailure(preparedNestedMapUsages) ||
-            !mapReplacementSucceeded &&
+            (!mapReplacementSucceeded || !replacementPreparedSucceeded) &&
             !HasNestedFailure(mapReplacementNestedMapUsages) ||
             !updateSucceeded &&
             !HasNestedFailure(updateNestedMapUsages))
@@ -1307,17 +1337,20 @@ internal static class BasicMembersMappingPlanner
             : create is { } invalidPrepared
                 ? invalidPrepared with { UsesPreparedDestination = true }
                 : (TypeMapperMemberMappingModel?)null;
-        var replacementIsResultDependent =
-            isResultDependent ||
-            mapReplacementSucceeded && ReferencesIdentifier(
-                mapReplacementExpression,
-                mapping.ResultLocalName);
         var mapReplacement = mapReplacementSucceeded
             ? BuildMapping(
                 mapReplacementExpression,
                 mapReplacementDependency,
-                replacementIsResultDependent)
+                isResultDependent)
             : (TypeMapperMemberMappingModel?)null;
+        var replacementPrepared = replacementPreparedSucceeded
+            ? BuildMapping(replacementPreparedExpression, replacementPreparedDependency, isResultDependent) with
+            {
+                UsesPreparedDestination = replacementPreparedExpression != mapReplacementExpression
+            }
+            : mapReplacement is { } invalidReplacement
+                ? invalidReplacement with { UsesPreparedDestination = true }
+                : (TypeMapperMemberMappingModel?)null;
         var update = updateSucceeded
             ? BuildMapping(
                 updateExpression,
@@ -1331,14 +1364,14 @@ internal static class BasicMembersMappingPlanner
                          destinationMember.CanReconstruct)
                 ? prepared
                 : null,
-            MapReplacement: replacementIsResultDependent
+            MapReplacement: isResultDependent
                 ? null
                 : mapReplacement,
             MapReplacementPost:
                 (destinationMember.CanAssign ||
                  destinationMember.CanReconstruct) &&
-                mapReplacementSucceeded
-                ? mapReplacement
+                replacementPreparedSucceeded
+                ? replacementPrepared
                 : null,
             Update: destinationMember.CanAssign && updateSucceeded
                 ? update
