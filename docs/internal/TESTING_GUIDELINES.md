@@ -21,6 +21,11 @@ expectations or verification policy. They are intentionally kept outside
 - Each category must completely specify its own concern and remain useful if
   other categories are removed. Do not omit a scenario merely because another
   category also exercises it.
+- Check shared DSL rules through their applicable entry points, including
+  `Construct` / `Resolve` and `ConstructUsing` / `ResolveUsing`. For callbacks
+  with `previous`, include both reuse and replacement. Compiler-only and runtime
+  checks do not replace full-source snapshots of evaluation order, binding or
+  lifecycle behavior.
 - Create a category subdirectory only when it contains more than one test file.
 
 ## Generated-source unit tests
