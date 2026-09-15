@@ -173,7 +173,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::System.Tuple<global::TestCase.ChildDestination, int> result = __ConstructUsing(source);
+            global::System.Tuple<global::TestCase.ChildDestination, int> result = __ConstructUsing();
 
             if (result is null)
             {
@@ -203,7 +203,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::System.Tuple<global::TestCase.ChildDestination, int> __ConstructUsing(global::TestCase.Source source) => new global::System.Tuple<global::TestCase.ChildDestination, int>(new global::TestCase.ChildDestination(), 7);
+        private global::System.Tuple<global::TestCase.ChildDestination, int> __ConstructUsing() => new global::System.Tuple<global::TestCase.ChildDestination, int>(new global::TestCase.ChildDestination(), 7);
     }
 }
 """)

@@ -177,9 +177,7 @@ namespace TestCase
         }
 
         private global::System.Tuple<global::TestCase.ChildDestination, int> __Update1(
-            global::TestCase.Source source,
-            global::System.Tuple<global::TestCase.ChildDestination, int> destination,
-            global::Morphant.Context.MappingContext context)
+            global::System.Tuple<global::TestCase.ChildDestination, int> destination)
         {
             return destination;
         }
