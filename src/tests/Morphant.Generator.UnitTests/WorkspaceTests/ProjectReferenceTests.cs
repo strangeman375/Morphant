@@ -110,11 +110,11 @@ internal sealed class ProjectReferenceTests
 
     private static readonly string[] ModelHints =
     [
-        "Morphant.Generated.Construction.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
-        "Morphant.Generated.MappingExtension.ExternalModels_Source__ExternalModels_Destination__ExternalModels_ExternalMapper.g.cs",
-        "Morphant.Generated.Member.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
-        "Morphant.Generated.MemberExtension.ExternalModels_Source__ExternalModels_Destination__ExternalModels_ExternalMapper.g.cs",
-        "Morphant.Generated.TypeMapper.ExternalModels_ExternalMapper.g.cs"
+        "Morphant.Generated.Construction.Destination__c759c59f9bc873a2e85ff505d7f16127.g.cs",
+        "Morphant.Generated.MappingExtension.ExternalMapper.SourceToDestination__2a1effbdc2853825f2684b80889a3b3b.g.cs",
+        "Morphant.Generated.Member.Destination__c759c59f9bc873a2e85ff505d7f16127.g.cs",
+        "Morphant.Generated.MemberExtension.ExternalMapper.SourceToDestination__2a1effbdc2853825f2684b80889a3b3b.g.cs",
+        "Morphant.Generated.TypeMapper.ExternalMapper__35e60aa8d9590156b630789e2a72d31e.g.cs"
     ];
 
     private static readonly string[] ConsumerHints =

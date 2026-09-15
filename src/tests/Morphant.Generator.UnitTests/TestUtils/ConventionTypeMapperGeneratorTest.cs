@@ -35,7 +35,7 @@ internal sealed class ConventionTypeMapperGeneratorTest
         return RunAndAssert(
             languageVersion,
             source,
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs",
             expected,
             allowUnsafe: false);
     }
@@ -62,7 +62,7 @@ internal sealed class ConventionTypeMapperGeneratorTest
         return RunAndAssert(
             languageVersion,
             source,
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs",
             expected,
             allowUnsafe: true);
     }

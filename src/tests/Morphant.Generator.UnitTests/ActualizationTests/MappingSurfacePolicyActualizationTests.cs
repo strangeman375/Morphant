@@ -150,9 +150,7 @@ namespace TestCase
         "Morphant.Generated.MappingExtension.CommonMapper.SystemTuple2ToInt32__b4b55de85e07f0f19e3ea2366eed6c6b.g.cs";
 
     private const string ScopedHintName =
-        "Morphant.Generated.MappingExtension." +
-        "System_Tuple_System_ValueTuple_System_Int32__System_Int32____" +
-        "System_Int32__TestCase_CommonMapper_TMapper_.g.cs";
+        "Morphant.Generated.MappingExtension.CommonMapper.SystemTuple1ToInt32__2d17d4a79fc8c31d58c03ae20e3c0796.g.cs";
 
     private const string FirstScopedHintName =
         "Morphant.Generated.MappingExtension.FirstMapper.ValueTuple2ToInt32__ff107b8ea8db0fb19a80ad3f14a83dc3.g.cs";

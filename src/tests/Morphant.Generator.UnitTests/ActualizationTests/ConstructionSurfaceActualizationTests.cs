@@ -593,8 +593,7 @@ namespace Morphant
         const string extensionHint =
             "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__5e8e99ec36f7e443fd96feb93e541421.g.cs";
         const string alternativeExtensionHint =
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_AlternativeSource__TestCase_Destination__TestCase_SecondMapper.g.cs";
+            "Morphant.Generated.MappingExtension.SecondMapper.AlternativeSourceToDestination__9b0f467031117cbf871485648abbf558.g.cs";
 
         RunAndAssert(
             LanguageVersion.CSharp9,

@@ -140,9 +140,10 @@ namespace Morphant.Generated.N_fa9574037810e841db2c8ce3326f2fea
             source,
             LanguageVersion.CSharp9);
         var tupleSources = result.GeneratedSources
-            .Where(static generated => generated.HintName.Contains(
-                ".Tuple_",
-                StringComparison.Ordinal))
+            .Where(static generated => generated.HintName.StartsWith(
+                    "Morphant.Generated.Construction.", StringComparison.Ordinal) ||
+                generated.HintName.StartsWith(
+                    "Morphant.Generated.Member.", StringComparison.Ordinal))
             .OrderBy(static generated => generated.HintName,
                 StringComparer.Ordinal)
             .ToArray();
@@ -409,9 +410,10 @@ namespace Morphant.Generated.N_cc10a937bc217f0eb0d09673d9e6d4ed
             source,
             LanguageVersion.CSharp9);
         var tupleSources = result.GeneratedSources
-            .Where(static generated => generated.HintName.Contains(
-                ".Tuple_",
-                StringComparison.Ordinal))
+            .Where(static generated => generated.HintName.StartsWith(
+                    "Morphant.Generated.Construction.", StringComparison.Ordinal) ||
+                generated.HintName.StartsWith(
+                    "Morphant.Generated.Member.", StringComparison.Ordinal))
             .ToDictionary(
                 static generated => generated.HintName,
                 static generated => generated.SourceText.ToString(),
@@ -525,9 +527,10 @@ namespace Morphant.Generated.N_8bd6fa44277f16307e66d8c49979db24
             source,
             LanguageVersion.CSharp9);
         var tupleSources = result.GeneratedSources
-            .Where(static generated => generated.HintName.Contains(
-                ".Tuple_",
-                StringComparison.Ordinal))
+            .Where(static generated => generated.HintName.StartsWith(
+                    "Morphant.Generated.Construction.", StringComparison.Ordinal) ||
+                generated.HintName.StartsWith(
+                    "Morphant.Generated.Member.", StringComparison.Ordinal))
             .ToDictionary(
                 static generated => generated.HintName,
                 static generated => generated.SourceText.ToString(),
@@ -688,7 +691,7 @@ namespace Morphant.Generated.N_67f940bd8bf49f6e9a2de49f6f48a3c4
             LanguageVersion.CSharp9);
         var tupleSources = result.GeneratedSources
             .Where(static generated => generated.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal))
             .ToDictionary(
                 static generated => generated.HintName,
@@ -822,7 +825,7 @@ namespace Morphant.Generated.N_201fe3c51dc324181a127bf9ffb63b6f
             LanguageVersion.CSharp9);
         var tupleSources = result.GeneratedSources
             .Where(static generated => generated.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal))
             .ToDictionary(
                 static generated => generated.HintName,
@@ -982,7 +985,7 @@ namespace Morphant.Generated.N_b859bbcd211038e31a699fc006be47f5
             LanguageVersion.CSharp9);
         var tupleSources = result.GeneratedSources
             .Where(static generated => generated.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal))
             .ToDictionary(
                 static generated => generated.HintName,
@@ -1051,11 +1054,11 @@ namespace TestCase
             additionalReferences: [referenceV2]);
         var initialMember = initial.GeneratedSources.Single(
             static generated => generated.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal));
         var updatedMember = updated.GeneratedSources.Single(
             static generated => generated.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal));
 
         Assert.Multiple(() =>
@@ -1298,15 +1301,16 @@ namespace Morphant.Generated.N_b31f058c7f55a464dc526f749e062ca9
             source,
             LanguageVersion.CSharp9);
         var tupleSources = result.GeneratedSources
-            .Where(static generated => generated.HintName.Contains(
-                ".Tuple_",
-                StringComparison.Ordinal))
+            .Where(static generated => generated.HintName.StartsWith(
+                    "Morphant.Generated.Construction.", StringComparison.Ordinal) ||
+                generated.HintName.StartsWith(
+                    "Morphant.Generated.Member.", StringComparison.Ordinal))
             .OrderBy(static generated => generated.HintName,
                 StringComparer.Ordinal)
             .ToArray();
         var memberSources = tupleSources
             .Where(static generated => generated.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal))
             .ToDictionary(
                 static generated => generated.HintName,
@@ -1319,14 +1323,14 @@ namespace Morphant.Generated.N_b31f058c7f55a464dc526f749e062ca9
                 tupleSources.Select(static generated => generated.HintName),
                 Is.EqualTo(new[]
                 {
-                    "Morphant.Generated.Construction.ValueTuple2__b31f058c7f55a464dc526f749e062ca9.g.cs",
                     "Morphant.Generated.Construction.ValueTuple2__57c0e06cf6d64780e8e3e75e7da9dcab.g.cs",
                     "Morphant.Generated.Construction.ValueTuple2__6223d7c8ad053bf97fbdef5d2982bd72.g.cs",
                     "Morphant.Generated.Construction.ValueTuple2__a8f37530759fcb7fecbbbf62477fc0ea.g.cs",
-                    "Morphant.Generated.Member.ValueTuple2__b31f058c7f55a464dc526f749e062ca9.g.cs",
+                    "Morphant.Generated.Construction.ValueTuple2__b31f058c7f55a464dc526f749e062ca9.g.cs",
                     "Morphant.Generated.Member.ValueTuple2__57c0e06cf6d64780e8e3e75e7da9dcab.g.cs",
                     "Morphant.Generated.Member.ValueTuple2__6223d7c8ad053bf97fbdef5d2982bd72.g.cs",
-                    "Morphant.Generated.Member.ValueTuple2__a8f37530759fcb7fecbbbf62477fc0ea.g.cs"
+                    "Morphant.Generated.Member.ValueTuple2__a8f37530759fcb7fecbbbf62477fc0ea.g.cs",
+                    "Morphant.Generated.Member.ValueTuple2__b31f058c7f55a464dc526f749e062ca9.g.cs"
                 }));
             Assert.That(
                 memberSources[
@@ -1441,7 +1445,7 @@ namespace Morphant.Generated.N_9c16d7af93da2c98e5c0b6d75c50bd90
             LanguageVersion.CSharp9);
         var tupleSources = result.GeneratedSources
             .Where(static generated => generated.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal))
             .ToDictionary(
                 static generated => generated.HintName,
@@ -1767,11 +1771,11 @@ namespace Morphant.Generated.N_9a91751c7f70e7c40be34a132e4bb85f
             LanguageVersion.CSharp9);
         var generated = result.GeneratedSources.Single(candidate =>
             candidate.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal));
         var construction = result.GeneratedSources.Single(candidate =>
             candidate.HintName.StartsWith(
-                "Morphant.Generated.Construction.Tuple_",
+                "Morphant.Generated.Construction.",
                 StringComparison.Ordinal));
 
         Assert.Multiple(() =>
@@ -1871,7 +1875,7 @@ namespace Morphant.Generated.N_cdb406fbcb6b69a897c8868753ec6799
             LanguageVersion.CSharp9);
         var generated = result.GeneratedSources.Single(candidate =>
             candidate.HintName.StartsWith(
-                "Morphant.Generated.Member.Tuple_",
+                "Morphant.Generated.Member.",
                 StringComparison.Ordinal));
 
         Assert.Multiple(() =>

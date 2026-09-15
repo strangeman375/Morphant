@@ -33,10 +33,10 @@ internal sealed class DocumentLifecycleTests
         await workspace.AssertProjectAsync(project,
         [
             "Morphant.Generated.Construction.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
-            "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_RenamedMapper.g.cs",
+            "Morphant.Generated.MappingExtension.RenamedMapper.SourceToDestination__f77e41c2b3335cb2698888e4944b555c.g.cs",
             "Morphant.Generated.Member.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
-            "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_RenamedMapper.g.cs",
-            "Morphant.Generated.TypeMapper.TestCase_RenamedMapper.g.cs"
+            "Morphant.Generated.MemberExtension.RenamedMapper.SourceToDestination__f77e41c2b3335cb2698888e4944b555c.g.cs",
+            "Morphant.Generated.TypeMapper.RenamedMapper__146e6c78c86fb8a97251b2d9ca9b04c2.g.cs"
         ]);
 
         workspace.Apply(workspace.Solution.RemoveDocument(mapper));

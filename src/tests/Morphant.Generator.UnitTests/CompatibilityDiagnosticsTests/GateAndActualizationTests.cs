@@ -115,13 +115,11 @@ internal sealed class GateAndActualizationTests
 
         var expectedGeneratedFiles = new[]
         {
-            "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-            "Morphant.Generated.Member.TestCase_Destination.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+            "Morphant.Generated.Construction.Destination__5aa710d498ff963c8781b08c76b88291.g.cs",
+            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__012b0ee845a668fcf430bc80d0dfa8a9.g.cs",
+            "Morphant.Generated.Member.Destination__5aa710d498ff963c8781b08c76b88291.g.cs",
+            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__012b0ee845a668fcf430bc80d0dfa8a9.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__a16ac0300f1b2ee0a1f37566ae06f24b.g.cs"
         };
         var compatibleSources = GeneratedSources(compatible);
         var restoredSources = GeneratedSources(restored);
