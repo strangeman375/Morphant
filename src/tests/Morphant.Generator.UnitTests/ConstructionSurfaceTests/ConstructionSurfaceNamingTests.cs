@@ -749,41 +749,41 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.GlobalDestination.g.cs",
+                "Morphant.Generated.Construction.GlobalDestination__737d11aee03de0533c59493e00cc2e56.g.cs",
                 construction1
             ),
             (
-                "Morphant.Generated.Construction.Global_GlobalDestination.g.cs",
+                "Morphant.Generated.Construction.GlobalDestination__40a839319f31b3159de97f8fe6e835a4.g.cs",
                 construction2
             ),
             (
-                "Morphant.Generated.Construction.Second_Destination.g.cs",
+                "Morphant.Generated.Construction.Destination__0fd79fce117863d5bf5720597d70281e.g.cs",
                 construction3
             ),
             (
-                "Morphant.Generated.Construction.TestCase_Outer_1_Destination_1.g.cs",
+                "Morphant.Generated.Construction.Destination__60682802995f3765fb783994a88689c6.g.cs",
                 construction4
             ),
             (
-                "Morphant.Generated.MappingExtension.GlobalSource__Global_GlobalDestination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.GlobalSourceToGlobalDestination__56fa4e8574f482676d7e23374cb3c019.g.cs",
                 extension1
             ),
             (
-                "Morphant.Generated.MappingExtension.GlobalSource__GlobalDestination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.GlobalSourceToGlobalDestination__0c1e406bfb16cbbe3b957a30c13df567.g.cs",
                 extension2
             ),
             (
-                "Morphant.Generated.MappingExtension.GlobalSource__Second_Destination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.GlobalSourceToDestination__3173f60fae1503bf7f4f07b63b24d2e8.g.cs",
                 extension3
             ),
             (
-                "Morphant.Generated.MappingExtension.GlobalSource__TestCase_Outer_System_String__Destination_System_Int32___TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.GlobalSourceToDestination__a9397e1e4f267dc76bb697179708af66.g.cs",
                 extension4
             ));
     }
 
     [Test]
-    public async Task Adds_a_hash_only_for_real_case_insensitive_hint_collisions()
+    public async Task Uses_permanent_ids_for_case_insensitive_labels()
     {
         // lang=c#
         const string source =
@@ -1145,19 +1145,19 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_URL.g.cs",
+                "Morphant.Generated.Construction.URL__22991bac47a8192a7ecf117ee2eaaefb.g.cs",
                 construction1
             ),
             (
-                "Morphant.Generated.Construction.TestCase_Url__e9fae35bfd70d886.g.cs",
+                "Morphant.Generated.Construction.Url__264e3af5698663c4ced047a79636ab8a.g.cs",
                 construction2
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_URL__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToURL__78499937665771577e82545e2e3b822f.g.cs",
                 extension1
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Url__TestCase_TestMapper__ee8804ccc8fe9172.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToUrl__4172caf9724ced4d07c5caa30a5ae53a.g.cs",
                 extension2
             ));
     }
@@ -1413,11 +1413,11 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_Destination_1.g.cs",
+                "Morphant.Generated.Construction.Destination__44357adb1d8d62d938f9f3f63376f435.g.cs",
                 construction
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source_class___TestCase_Destination_class___TestCase_TestMapper__class_.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__d59f8762772772e673592206206b9c3e.g.cs",
                 extension
             ));
     }
@@ -2066,23 +2066,23 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_Destination_1.g.cs",
+                "Morphant.Generated.Construction.Destination__44357adb1d8d62d938f9f3f63376f435.g.cs",
                 construction
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source_System_String___TestCase_Destination_System_String___TestCase_NullableMapper.g.cs",
+                "Morphant.Generated.MappingExtension.NullableMapper.SourceToDestination__ed56952c995610426e4cb7456bb6d138.g.cs",
                 nullableExtension
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source_System_String___TestCase_Destination_System_String___TestCase_NonNullableMapper.g.cs",
+                "Morphant.Generated.MappingExtension.NonNullableMapper.SourceToDestination__448289605c991ec97ea445c561c5cb81.g.cs",
                 extension2
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source_System_Object___TestCase_Destination_System_Object___TestCase_DynamicMapper.g.cs",
+                "Morphant.Generated.MappingExtension.DynamicMapper.SourceToDestination__324ba82c693ec30e613d19c1b34fc11d.g.cs",
                 dynamicExtension
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source_System_Object___TestCase_Destination_System_Object___TestCase_ObjectMapper.g.cs",
+                "Morphant.Generated.MappingExtension.ObjectMapper.SourceToDestination__e3f6242839b9263b50a1bce317bb07a2.g.cs",
                 extension1
             ));
     }
