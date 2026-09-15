@@ -1757,12 +1757,38 @@ internal static class DeclarativeControlFlowPlanner
                 switchExpression.GoverningExpression,
                 sections.ToImmutable(),
                 Continuation: null,
-                RequiresFallback: !hasCatchAll,
+                RequiresFallback: !hasCatchAll && !HasCompleteBooleanArms(switchExpression, semanticModel, cancellationToken),
                 CanPassUnmatchedValue:
                     CanPassUnmatchedSwitchValue(
                         switchExpression,
                         semanticModel,
                         cancellationToken));
+    }
+
+    private static bool HasCompleteBooleanArms(
+        SwitchExpressionSyntax expression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (semanticModel.GetTypeInfo(expression.GoverningExpression, cancellationToken).Type?.SpecialType !=
+            SpecialType.System_Boolean)
+            return false;
+
+        var hasTrue = false;
+        var hasFalse = false;
+        foreach (var arm in expression.Arms)
+        {
+            var pattern = arm.Pattern;
+            while (pattern is ParenthesizedPatternSyntax parenthesized)
+                pattern = parenthesized.Pattern;
+            if (arm.WhenClause is null && pattern is ConstantPatternSyntax constant &&
+                semanticModel.GetConstantValue(constant.Expression, cancellationToken) is { HasValue: true, Value: bool value })
+            {
+                hasTrue |= value;
+                hasFalse |= !value;
+            }
+        }
+        return hasTrue && hasFalse;
     }
 
     private static bool IsUnconditionalCatchAllPattern(
@@ -2580,7 +2606,7 @@ internal static class DeclarativeControlFlowPlanner
                 governingExpression ??
                 switchExpression.GoverningExpression,
                 sections.ToImmutable(),
-                RequiresFallback: !hasCatchAll,
+                RequiresFallback: !hasCatchAll && !HasCompleteBooleanArms(switchExpression, semanticModel, cancellationToken),
                 CanPassUnmatchedValue:
                     CanPassUnmatchedSwitchValue(
                         switchExpression,

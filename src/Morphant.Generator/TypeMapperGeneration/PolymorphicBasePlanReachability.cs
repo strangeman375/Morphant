@@ -22,7 +22,17 @@ internal static class PolymorphicBasePlanReachability
     {
         return !mapping.DerivedMappings.IsDefaultOrEmpty ||
                mapping.EffectiveSettings.UnknownDerivedTypeHandling ==
-                   UnknownDerivedTypeHandlingValue.Throw;
+                   UnknownDerivedTypeHandlingValue.Throw &&
+               CanHaveDerivedRuntimeType(mapping.AnalysisContext.Registration.SourceType);
+    }
+
+    private static bool CanHaveDerivedRuntimeType(ITypeSymbol sourceType)
+    {
+        // Nullable values have their underlying value's runtime type. Neither
+        // a concrete value type nor a sealed class can have an unknown subtype.
+        // Arrays retain dispatch because covariance can change their runtime type.
+        return !sourceType.IsValueType &&
+               sourceType is not INamedTypeSymbol { TypeKind: TypeKind.Class, IsSealed: true };
     }
 
     public static bool CanHaveExactRuntimeType(ITypeSymbol sourceType)
