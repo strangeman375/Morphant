@@ -93,6 +93,8 @@ internal static class TypeMapperModelBuilder
                 }).Prepend(mapperType).ToArray())
         };
         model = GeneratedCodeReadabilityLowerer.Lower(model);
+        model = SupportingLocalLowerer.Lower(model, compilation,
+            configureSyntax.SyntaxTree.Options as CSharpParseOptions, cancellationToken);
         model = RuntimeMappingHelperLowerer.Lower(
             model,
             compilation,
@@ -144,7 +146,8 @@ internal static class TypeMapperModelBuilder
                 "TypeMapper",
                 HintNameHelper.ToHintNamePart(mapperType.Name),
                 GeneratedEntityIdentity.ForTypeDefinition(mapperType, compilation)),
-            TypeMapperEmitter.Emit(model).ToString(),
+            PrivateHelperParameters.RemoveUnused(TypeMapperEmitter.Emit(model).ToString(), compilation,
+                configureSyntax.SyntaxTree.Options as CSharpParseOptions, cancellationToken),
             callbackDiagnostics,
             constructionDiagnostics,
             memberDiagnostics,
