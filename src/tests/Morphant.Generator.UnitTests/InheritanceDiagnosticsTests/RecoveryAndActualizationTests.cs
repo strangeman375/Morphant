@@ -280,16 +280,13 @@ namespace TestCase
         var expectedSources = new[]
         {
             (
-                "Morphant.Generated.Construction." +
-                "TestCase_Destination.g.cs",
+                "Morphant.Generated.Construction.Destination__6ba108568956e872541ad28e155115a6.g.cs",
                 NormalizeExpected(ExpectedConstruction)),
             (
-                "Morphant.Generated.MappingExtension." +
-                "TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__3df76da0814979c1c50f29e6f448a12c.g.cs",
                 NormalizeExpected(ExpectedMappingExtension)),
             (
-                "Morphant.Generated.TypeMapper." +
-                "TestCase_TestMapper.g.cs",
+                "Morphant.Generated.TypeMapper.TestMapper__d212930341cdfbdeb0f52e48ae08a7ef.g.cs",
                 NormalizeExpected(ExpectedTypeMapper))
         };
 

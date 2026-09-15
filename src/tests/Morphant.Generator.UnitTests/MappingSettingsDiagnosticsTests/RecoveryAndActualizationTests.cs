@@ -158,11 +158,10 @@ namespace TestCase
                 Is.EqualTo(new[]
                 {
                     (
-                        "Morphant.Generated.MappingExtension.TestCase_Source__System_Int32__TestCase_TestMapper.g.cs",
+                        "Morphant.Generated.MappingExtension.TestMapper.SourceToInt32__47be30c1b5cd4ba4802432455125cc32.g.cs",
                         NormalizeExpected(expectedMappingExtension)),
                     (
-                        "Morphant.Generated.TypeMapper." +
-                        "TestCase_TestMapper.g.cs",
+                        "Morphant.Generated.TypeMapper.TestMapper__8309bc52b60c1847b32bfc8add9abc73.g.cs",
                         NormalizeExpected(expectedTypeMapper))
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);

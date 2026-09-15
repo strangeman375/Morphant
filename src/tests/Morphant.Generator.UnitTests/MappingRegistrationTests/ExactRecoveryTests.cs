@@ -132,8 +132,7 @@ namespace TestCase
                 Is.EqualTo(new[]
                 {
                     (
-                        "Morphant.Generated.TypeMapper." +
-                        "TestCase_TestMapper_1.g.cs",
+                        "Morphant.Generated.TypeMapper.TestMapper__45e3176ec1c0f9032bc6df16f4b47a82.g.cs",
                         NormalizeExpected(expectedMapper))
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);

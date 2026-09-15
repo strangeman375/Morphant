@@ -6,7 +6,7 @@ namespace Morphant.Generator.UnitTests.MapperDeclarationTests;
 internal sealed class SelfTypeTests
 {
     private const string MapperFile =
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TestMapper__a8089d74669c28ae6d9a689e4e56ed9f.g.cs";
 
     [Test]
     public void Unrelated_concrete_self_type_reports_MORPH0058()
@@ -288,10 +288,7 @@ public partial class TestMapper : TestMapperFeature
             Assert.That(result.CompilerErrors, Is.Empty);
             Assert.That(
                 result.HasGeneratedFile(
-                    "Morphant.Generated.MemberExtension." +
-                    "TestCase_Source__" +
-                    "System_ValueTuple_System_Int32__System_String___" +
-                    "TestCase_TestMapper.g.cs"),
+                    "Morphant.Generated.MemberExtension.TestMapperFeature.SourceToValueTuple2__fa854660b2fc48bec3ac84428142e1e5.g.cs"),
                 Is.True);
         });
     }

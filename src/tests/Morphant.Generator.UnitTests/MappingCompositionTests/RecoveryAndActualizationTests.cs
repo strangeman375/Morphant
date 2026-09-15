@@ -257,16 +257,13 @@ namespace TestCase
                 Is.EqualTo(new[]
                 {
                     (
-                        "Morphant.Generated.Construction." +
-                        "TestCase_Destination.g.cs",
+                        "Morphant.Generated.Construction.Destination__8b1aa3d4519a36fd8b5e6e95629ccd05.g.cs",
                         NormalizeExpected(expectedConstruction)),
                     (
-                        "Morphant.Generated.MappingExtension." +
-                        "TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+                        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__b2b770982c596ccda8786350fd5f7588.g.cs",
                         NormalizeExpected(expectedMappingExtension)),
                     (
-                        "Morphant.Generated.TypeMapper." +
-                        "TestCase_TestMapper.g.cs",
+                        "Morphant.Generated.TypeMapper.TestMapper__69b87b276b1d4f66f93239b87bb6721d.g.cs",
                         NormalizeExpected(expectedTypeMapper))
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);

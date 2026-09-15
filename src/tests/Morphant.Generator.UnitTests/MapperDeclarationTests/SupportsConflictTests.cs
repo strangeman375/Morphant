@@ -4,7 +4,7 @@ namespace Morphant.Generator.UnitTests.MapperDeclarationTests;
 internal sealed class SupportsConflictTests
 {
     private const string MapperFile =
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TestMapper__a8089d74669c28ae6d9a689e4e56ed9f.g.cs";
 
     [Test]
     public void Own_exact_signature_reports_MORPH0034_and_blocks_the_mapper()

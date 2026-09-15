@@ -8,67 +8,58 @@ namespace Morphant.Generator.UnitTests.IncrementalityTests;
 internal sealed class TupleTests
 {
     private const string OldConstruction =
-        "Morphant.Generated.Construction.Tuple_" +
-        "V2_a51caaf0c27a1203d7dd02a67a0a5455.g.cs";
+        "Morphant.Generated.Construction.ValueTuple2__3b1e68a198da76249c517e6be4de50ac.g.cs";
 
     private const string NewConstruction =
-        "Morphant.Generated.Construction.Tuple_" +
-        "V2_0b27a687eedd668df8361ccda86185ba.g.cs";
+        "Morphant.Generated.Construction.ValueTuple2__5aa24c2801582c743af2ed2fb0d3ac56.g.cs";
 
     private const string OldMember =
-        "Morphant.Generated.Member.Tuple_" +
-        "V2_a51caaf0c27a1203d7dd02a67a0a5455.g.cs";
+        "Morphant.Generated.Member.ValueTuple2__3b1e68a198da76249c517e6be4de50ac.g.cs";
 
     private const string NewMember =
-        "Morphant.Generated.Member.Tuple_" +
-        "V2_0b27a687eedd668df8361ccda86185ba.g.cs";
+        "Morphant.Generated.Member.ValueTuple2__5aa24c2801582c743af2ed2fb0d3ac56.g.cs";
 
-    private const string TupleMappingExtension =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_TupleSource__" +
-        "System_ValueTuple_System_Int32__System_String___" +
-        "TestCase_TupleMapper.g.cs";
+    private const string OldTupleMappingExtension =
+        "Morphant.Generated.MappingExtension.TupleMapper.TupleSourceToValueTuple2__a18b216bf0de1e8dfc4c42bb7afc07a3.g.cs";
 
-    private const string TupleMemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_TupleSource__" +
-        "System_ValueTuple_System_Int32__System_String___" +
-        "TestCase_TupleMapper.g.cs";
+    private const string NewTupleMappingExtension =
+        "Morphant.Generated.MappingExtension.TupleMapper.TupleSourceToValueTuple2__0709fac8e537bea4f858c2174a5b0226.g.cs";
+
+    private const string OldTupleMemberExtension =
+        "Morphant.Generated.MemberExtension.TupleMapper.TupleSourceToValueTuple2__a18b216bf0de1e8dfc4c42bb7afc07a3.g.cs";
+
+    private const string NewTupleMemberExtension =
+        "Morphant.Generated.MemberExtension.TupleMapper.TupleSourceToValueTuple2__0709fac8e537bea4f858c2174a5b0226.g.cs";
 
     private const string TupleMapper =
-        "Morphant.Generated.TypeMapper.TestCase_TupleMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TupleMapper__d3f34444739964258f945f6b73ecca58.g.cs";
 
     private const string StableConstruction =
-        "Morphant.Generated.Construction." +
-        "TestCase_StableDestination.g.cs";
+        "Morphant.Generated.Construction.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string StableMappingExtension =
-        "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
+        "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
 
     private const string StableMember =
-        "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
+        "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
+        "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
 
     private const string StableMapper =
-        "Morphant.Generated.TypeMapper.TestCase_StableMapper.g.cs";
+        "Morphant.Generated.TypeMapper.StableMapper__3251a87cd2d93d3948a4f1646b88e0d3.g.cs";
 
     private const string FirstScopedMappingExtension =
-        "Morphant.Generated.MappingExtension." +
-        "System_ValueTuple_System_Int32__System_Int32___System_Int32__" +
-        "TestCase_FirstMapper.g.cs";
+        "Morphant.Generated.MappingExtension.FirstMapper.ValueTuple2ToInt32__81d4a11e0526aadb9f10096399e1c1e3.g.cs";
 
     private const string SecondScopedMappingExtension =
-        "Morphant.Generated.MappingExtension." +
-        "System_ValueTuple_System_Int32__System_Int32___System_Int32__" +
-        "TestCase_SecondMapper.g.cs";
+        "Morphant.Generated.MappingExtension.SecondMapper.ValueTuple2ToInt32__c894737b18825758ea16d72c3ab6e065.g.cs";
 
     private const string FirstScopedMapper =
-        "Morphant.Generated.TypeMapper.TestCase_FirstMapper.g.cs";
+        "Morphant.Generated.TypeMapper.FirstMapper__4d569664dcc0275de3ba45ccfd799fe1.g.cs";
 
     private const string SecondScopedMapper =
-        "Morphant.Generated.TypeMapper.TestCase_SecondMapper.g.cs";
+        "Morphant.Generated.TypeMapper.SecondMapper__1bdb3890185e1d22ec23681d67d25e87.g.cs";
 
     [Test]
     public void Renaming_a_tuple_element_invalidates_only_affected_outputs()
@@ -92,9 +83,9 @@ internal sealed class TupleTests
         var newHints = stableHints.Concat(new[]
         {
             NewConstruction,
-            TupleMappingExtension,
+            NewTupleMappingExtension,
             NewMember,
-            TupleMemberExtension,
+            NewTupleMemberExtension,
             TupleMapper
         }).ToArray();
 
@@ -107,9 +98,9 @@ internal sealed class TupleTests
                 stableHints.Concat(new[]
                 {
                     OldConstruction,
-                    TupleMappingExtension,
+                    OldTupleMappingExtension,
                     OldMember,
-                    TupleMemberExtension,
+                    OldTupleMemberExtension,
                     TupleMapper
                 }).ToArray()),
             Step(
@@ -135,7 +126,7 @@ internal sealed class TupleTests
                 Stage(
                     "BuildMappingExtensionRequests",
                     Expected(
-                        TupleMappingExtension,
+                        NewTupleMappingExtension,
                         IncrementalStepRunReason.Modified),
                     Expected(
                         StableMappingExtension,
@@ -143,7 +134,7 @@ internal sealed class TupleTests
                 Stage(
                     "BuildMemberExtensionRequests",
                     Expected(
-                        TupleMemberExtension,
+                        NewTupleMemberExtension,
                         IncrementalStepRunReason.Modified),
                     Expected(
                         StableMemberExtension,
@@ -182,7 +173,7 @@ internal sealed class TupleTests
                     Stage(
                         "BuildMappingExtensionRequests",
                         Expected(
-                            TupleMappingExtension,
+                            NewTupleMappingExtension,
                             IncrementalStepRunReason.Cached),
                         Expected(
                             StableMappingExtension,
@@ -190,7 +181,7 @@ internal sealed class TupleTests
                     Stage(
                         "BuildMemberExtensionRequests",
                         Expected(
-                            TupleMemberExtension,
+                            NewTupleMemberExtension,
                             IncrementalStepRunReason.Cached),
                         Expected(
                             StableMemberExtension,

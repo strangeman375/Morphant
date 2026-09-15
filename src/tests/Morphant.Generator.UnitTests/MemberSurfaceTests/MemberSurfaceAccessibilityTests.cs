@@ -171,11 +171,11 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Member.TestCase_Destination.g.cs",
+                "Morphant.Generated.Member.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__179f7c4ce68cca25117a5a70b04440a2.g.cs",
                 extension
             ));
     }
@@ -300,11 +300,11 @@ namespace Morphant
             source,
             new[] { typeof(ReferencedDestination).Assembly },
             (
-                "Morphant.Generated.Member.Morphant_Generator_UnitTests_TestAssets_ReferencedDestination.g.cs",
+                "Morphant.Generated.Member.ReferencedDestination__c78de2f781d47dfc87f818b998b9a41b.g.cs",
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__Morphant_Generator_UnitTests_TestAssets_ReferencedDestination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToReferencedDestination__f5722d3458782836a7e0ad3e45599f81.g.cs",
                 extension
             ));
     }

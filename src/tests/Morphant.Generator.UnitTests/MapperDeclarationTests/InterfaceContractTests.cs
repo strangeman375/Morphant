@@ -4,7 +4,7 @@ namespace Morphant.Generator.UnitTests.MapperDeclarationTests;
 internal sealed class InterfaceContractTests
 {
     private const string MapperFile =
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TestMapper__a8089d74669c28ae6d9a689e4e56ed9f.g.cs";
 
     [Test]
     public void Direct_exact_interface_reports_MORPH0009_at_Map()

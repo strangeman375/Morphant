@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.MapperDeclarationTests;
 internal sealed class GateAndActualizationTests
 {
     private const string MapperFile =
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TestMapper__a8089d74669c28ae6d9a689e4e56ed9f.g.cs";
 
     [Test]
     public void Suppressing_MORPH0006_does_not_make_generation_possible()
