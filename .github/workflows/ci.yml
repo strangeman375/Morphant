@@ -188,7 +188,7 @@ jobs:
     name: Validate (${{ matrix.os }})
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 25
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
