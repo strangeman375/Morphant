@@ -19,6 +19,8 @@ For supported features and examples, see the [mapping guides](README.md#mapping-
 - cross-assembly configuration inheritance;
 - mapping types available only through `extern alias`, or with ambiguous
   fully qualified names ([`MORPH0011`](diagnostics/MORPH0011.md));
+- type or mapping contract names that make generated metadata names too long
+  (`CS7013`); shorten type names, namespace qualifiers or generic nesting;
 - generated DI registration;
 - configurable enum mapping, reverse mapping, before/after hooks or async
   mapping.

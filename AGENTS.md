@@ -87,6 +87,11 @@
   `<Destination>ConstructorParameters`, `<Destination>Construction` and
   `<Destination>Members`. Both `new(...)` and explicit generated type names
   remain supported.
+- Type and mapping contract names that make generated metadata names exceed
+  compiler limits are unsupported. Keep the agreed generated type names;
+  the compiler's explicit `CS7013` error at assembly emission is sufficient.
+  Do not add automatic type-name shortening for this case. Approved on
+  2026-09-15.
 - DSL extensions stay in `Morphant`; partial mapper declarations stay in the
   user's namespace.
 - Preserve record member-plan types and `with` expressions. A destination
