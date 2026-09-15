@@ -18,6 +18,29 @@ internal sealed class PublicApiBaselineTests
             Is.EqualTo(System.ComponentModel.EditorBrowsableState.Never));
     }
 
+    [TestCase("UpdateInPlace", 3, 4, 0, "TDestination")]
+    [TestCase("UpdateInPlace", 2, 3, 0, "TDestination")]
+    [TestCase("UpdateInPlace", 4, 4, 0, "TCurrentDestination")]
+    [TestCase("UpdateInPlace", 3, 3, 0, "TCurrentDestination")]
+    [TestCase("UpdateDerived", 4, 3, 1, "TDestination")]
+    public void Runtime_mapping_helpers_require_typed_reference_destinations(
+        string name, int arity, int parameterCount, int destinationIndex, string destinationName)
+    {
+        var method = typeof(RuntimeSupport.MappingHelpers)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            .Single(method => method.Name == name && method.GetGenericArguments().Length == arity &&
+                method.GetParameters().Length == parameterCount);
+        var destinationType = method.GetParameters()[destinationIndex].ParameterType;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(destinationType.IsGenericParameter, Is.True);
+            Assert.That(destinationType.Name, Is.EqualTo(destinationName));
+            Assert.That(destinationType.GenericParameterAttributes & GenericParameterAttributes.SpecialConstraintMask,
+                Is.EqualTo(GenericParameterAttributes.ReferenceTypeConstraint));
+        });
+    }
+
     [Test]
     public void Generator_assembly_does_not_expose_public_API()
     {

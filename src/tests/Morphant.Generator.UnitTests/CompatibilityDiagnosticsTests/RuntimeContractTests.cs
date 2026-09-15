@@ -192,6 +192,12 @@ namespace Morphant
     [TestCase(RuntimeContractDefect.MissingCheckedCapturedSelector, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
     [TestCase(RuntimeContractDefect.MissingDerivedUpdate, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
     [TestCase(RuntimeContractDefect.WrongDerivedResult, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.CheckedStateObjectDestination, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.CheckedCapturedObjectDestination, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.DerivedObjectDestination, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.NoCheckedStateDestinationConstraint, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.NoCheckedCapturedDestinationConstraint, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.NoDerivedDestinationConstraint, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
     [TestCase(
         RuntimeContractDefect.InternalMapperAttribute,
         "Morphant.MorphantMapperAttribute",

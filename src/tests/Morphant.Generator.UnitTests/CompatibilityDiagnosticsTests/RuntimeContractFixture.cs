@@ -111,6 +111,24 @@ internal sealed class RuntimeContractFixture
                 "TBranchDestination UpdateDerived<", "TBranchDestination MissingUpdateDerived<"),
             RuntimeContractDefect.WrongDerivedResult => new Replacement(
                 "TBranchDestination UpdateDerived<", "object UpdateDerived<"),
+            RuntimeContractDefect.CheckedStateObjectDestination => new Replacement(
+                "TCurrentDestination? destination,\n            TState state",
+                "object? destination,\n            TState state"),
+            RuntimeContractDefect.CheckedCapturedObjectDestination => new Replacement(
+                "TCurrentDestination? destination,\n            Func<TSource?> sourceSelector",
+                "object? destination,\n            Func<TSource?> sourceSelector"),
+            RuntimeContractDefect.DerivedObjectDestination => new Replacement(
+                "TBranchSource source,\n            TDestination? destination",
+                "TBranchSource source,\n            object? destination"),
+            RuntimeContractDefect.NoCheckedStateDestinationConstraint => new Replacement(
+                "Func<TState, TSource?> sourceSelector,\n            Morphant.Context.MappingContext context)\n            where TCurrentDestination : class { }",
+                "Func<TState, TSource?> sourceSelector,\n            Morphant.Context.MappingContext context) { }"),
+            RuntimeContractDefect.NoCheckedCapturedDestinationConstraint => new Replacement(
+                "Func<TSource?> sourceSelector,\n            Morphant.Context.MappingContext context)\n            where TCurrentDestination : class { }",
+                "Func<TSource?> sourceSelector,\n            Morphant.Context.MappingContext context) { }"),
+            RuntimeContractDefect.NoDerivedDestinationConstraint => new Replacement(
+                "context)\n            where TDestination : class => default!;",
+                "context) => default!;"),
             RuntimeContractDefect.InternalMapperAttribute => new Replacement(
                 "public sealed class MorphantMapperAttribute : Attribute",
                 "internal sealed class MorphantMapperAttribute : Attribute"),
@@ -205,6 +223,12 @@ internal enum RuntimeContractDefect
     MissingCheckedCapturedSelector,
     MissingDerivedUpdate,
     WrongDerivedResult,
+    CheckedStateObjectDestination,
+    CheckedCapturedObjectDestination,
+    DerivedObjectDestination,
+    NoCheckedStateDestinationConstraint,
+    NoCheckedCapturedDestinationConstraint,
+    NoDerivedDestinationConstraint,
     MissingMapperAttribute,
     InternalMapperAttribute,
     ConfigureReturnsInt,
