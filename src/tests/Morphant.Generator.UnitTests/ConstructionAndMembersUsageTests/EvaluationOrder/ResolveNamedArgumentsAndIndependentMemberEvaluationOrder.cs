@@ -118,8 +118,6 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.Destination destination)
         {
-            var current = destination;
-
             if (source.Reuse)
             {
                 destination.Label = source.Read("member");

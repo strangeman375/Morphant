@@ -73,7 +73,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -89,16 +89,16 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source);
         }
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ResolveUsing(global::Morphant.Option<global::TestCase.Destination>.None);
+            global::TestCase.Destination result = __ResolveUsing();
 
             if (result is null)
             {
@@ -111,10 +111,9 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination)
+            global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ResolveUsing(global::Morphant.Option<global::TestCase.Destination>.Some(destination));
+            global::TestCase.Destination result = __ResolveUsing();
 
             if (result is null)
             {
@@ -126,7 +125,7 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.Destination __ResolveUsing(global::Morphant.Option<global::TestCase.Destination> previous) => null!;
+        private global::TestCase.Destination __ResolveUsing() => null!;
     }
 }
 """)
