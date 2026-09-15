@@ -127,22 +127,20 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                int eighth = 8;
-                eighth = source.Id + 100;
 
-                return (
-                    First: 1,
-                    Second: 2,
-                    Third: 3,
-                    Fourth: 4,
-                    Fifth: 5,
-                    Sixth: 6,
-                    Seventh: 7,
-                    Eighth: eighth,
-                    Ninth: 9);
-            }
+            int eighth = 8;
+            eighth = source.Id + 100;
+
+            return (
+                First: 1,
+                Second: 2,
+                Third: 3,
+                Fourth: 4,
+                Fifth: 5,
+                Sixth: 6,
+                Seventh: 7,
+                Eighth: eighth,
+                Ninth: 9);
         }
     }
 }

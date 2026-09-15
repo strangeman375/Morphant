@@ -144,20 +144,18 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                var result = new global::TestCase.Destination(
-                    id: source.Id,
-                    label: context.Operation == global::Morphant.Context.MappingOperation.Create
-                        ? source.Label
-                        : "update:" + source.Label);
 
-                result.Trace = (destination.Label)
-                    + "|" + result.Label
-                    + "|" + context.Operation;
+            var result = new global::TestCase.Destination(
+                id: source.Id,
+                label: context.Operation == global::Morphant.Context.MappingOperation.Create
+                    ? source.Label
+                    : "update:" + source.Label);
 
-                return result;
-            }
+            result.Trace = (destination.Label)
+                + "|" + result.Label
+                + "|" + context.Operation;
+
+            return result;
         }
     }
 }

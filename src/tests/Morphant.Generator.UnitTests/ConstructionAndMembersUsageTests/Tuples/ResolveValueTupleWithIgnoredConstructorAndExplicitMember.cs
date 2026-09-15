@@ -113,15 +113,13 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                int id = source.Id;
-                string? name = source.FromMembers();
 
-                return (
-                    Id: id,
-                    Name: name);
-            }
+            int id = source.Id;
+            string? name = source.FromMembers();
+
+            return (
+                Id: id,
+                Name: name);
         }
     }
 }

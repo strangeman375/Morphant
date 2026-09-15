@@ -108,15 +108,13 @@ namespace TestCase
                 return new global::TestCase.Destination(
                     name: source.Name);
             }
-            else
-            {
-                var result = new global::TestCase.Destination(
-                    name: source.Name);
 
-                result.Name = (result.Name + " updated");
+            var result = new global::TestCase.Destination(
+                name: source.Name);
 
-                return result;
-            }
+            result.Name = (result.Name + " updated");
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(

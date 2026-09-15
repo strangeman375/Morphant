@@ -135,24 +135,22 @@ namespace TestCase
 
                 return destination;
             }
-            else
+
+            var selected = source.Choice;
+
+            switch (selected)
             {
-                var selected = source.Choice;
-
-                switch (selected)
+                case true when source.Probe():
                 {
-                    case true when source.Probe():
-                    {
-                        return __Construct(source, context);
-                    }
-                    case false:
-                    {
-                        return __Construct1(source, context);
-                    }
+                    return __Construct(source, context);
                 }
-
-                throw new global::Morphant.Exceptions.UnmatchedMappingSwitchException(global::Morphant.Context.MappingOperation.Update, typeof(global::TestCase.Source), typeof(global::TestCase.Destination));
+                case false:
+                {
+                    return __Construct1(source, context);
+                }
             }
+
+            throw new global::Morphant.Exceptions.UnmatchedMappingSwitchException(global::Morphant.Context.MappingOperation.Update, typeof(global::TestCase.Source), typeof(global::TestCase.Destination));
         }
 
         private global::TestCase.Destination __Construct(

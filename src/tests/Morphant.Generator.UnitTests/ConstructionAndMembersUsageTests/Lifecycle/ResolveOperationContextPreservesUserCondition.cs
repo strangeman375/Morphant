@@ -174,29 +174,27 @@ namespace TestCase
 
                 return destination;
             }
-            else
+
+            var result = new global::TestCase.Destination(
+                id: source.Id,
+                label: context.Operation == global::Morphant.Context.MappingOperation.Create
+                    ? source.Label
+                    : "update:" + source.Label);
+
+            if (source.Probe())
             {
-                var result = new global::TestCase.Destination(
-                    id: source.Id,
-                    label: context.Operation == global::Morphant.Context.MappingOperation.Create
-                        ? source.Label
-                        : "update:" + source.Label);
-
-                if (source.Probe())
-                {
-                    result.Trace = (destination.Label)
-                        + "|" + result.Label
-                        + "|" + context.Operation;
-
-                    return result;
-                }
-
                 result.Trace = (destination.Label)
                     + "|" + result.Label
                     + "|" + context.Operation;
 
                 return result;
             }
+
+            result.Trace = (destination.Label)
+                + "|" + result.Label
+                + "|" + context.Operation;
+
+            return result;
         }
     }
 }

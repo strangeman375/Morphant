@@ -130,15 +130,13 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                var result = new global::TestCase.Destination(
-                    name: source.FromConstruct());
 
-                result.Name = (result.Name + " updated");
+            var result = new global::TestCase.Destination(
+                name: source.FromConstruct());
 
-                return result;
-            }
+            result.Name = (result.Name + " updated");
+
+            return result;
         }
     }
 }

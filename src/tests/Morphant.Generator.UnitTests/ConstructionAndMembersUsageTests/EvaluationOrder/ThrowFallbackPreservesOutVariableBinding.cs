@@ -4,7 +4,7 @@ internal sealed partial class EvaluationOrderTests
 {
     [Test]
     [Description("A declaration inside the throwing expression retains its branch scope.")]
-    public void ThrowFallbackKeepsOutVariableScope()
+    public void ThrowFallbackPreservesOutVariableBinding()
     {
         // lang=c#
         const string source =
@@ -119,13 +119,11 @@ namespace TestCase
 
                 return result;
             }
-            else
-            {
-                throw new global::System.InvalidOperationException(
-                    int.TryParse(source.Name, out int parsed)
-                        ? parsed.ToString()
-                        : source.FromConstruct());
-            }
+
+            throw new global::System.InvalidOperationException(
+                int.TryParse(source.Name, out int parsed)
+                    ? parsed.ToString()
+                    : source.FromConstruct());
         }
 
         private global::TestCase.Destination __Update(
@@ -139,13 +137,11 @@ namespace TestCase
 
                 return destination;
             }
-            else
-            {
-                throw new global::System.InvalidOperationException(
-                    int.TryParse(source.Name, out int parsed)
-                        ? parsed.ToString()
-                        : source.FromConstruct());
-            }
+
+            throw new global::System.InvalidOperationException(
+                int.TryParse(source.Name, out int parsed)
+                    ? parsed.ToString()
+                    : source.FromConstruct());
         }
     }
 }
