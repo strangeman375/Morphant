@@ -720,35 +720,35 @@ namespace TestCase
             LanguageVersion.Preview,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                "Morphant.Generated.Construction.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 expectedConstruction
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_ConstructMapper.g.cs",
+                "Morphant.Generated.MappingExtension.ConstructMapper.SourceToDestination__5769a5fb73edda999600668972951ab1.g.cs",
                 expectedMappingExtension
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_ResolveMapper.g.cs",
+                "Morphant.Generated.MappingExtension.ResolveMapper.SourceToDestination__03f0ef9d99e00ababf32e9bd261e04f1.g.cs",
                 expectedResolveMappingExtension
             ),
             (
-                "Morphant.Generated.Member.TestCase_Destination.g.cs",
+                "Morphant.Generated.Member.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 expectedMembers
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_ConstructMapper.g.cs",
+                "Morphant.Generated.MemberExtension.ConstructMapper.SourceToDestination__5769a5fb73edda999600668972951ab1.g.cs",
                 expectedMemberExtension
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_ResolveMapper.g.cs",
+                "Morphant.Generated.MemberExtension.ResolveMapper.SourceToDestination__03f0ef9d99e00ababf32e9bd261e04f1.g.cs",
                 expectedResolveMemberExtension
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_ConstructMapper.g.cs",
+                "Morphant.Generated.TypeMapper.ConstructMapper__0bc1ecdfa7d4a58fb249c847c92967ad.g.cs",
                 expectedConstructMapper
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_ResolveMapper.g.cs",
+                "Morphant.Generated.TypeMapper.ResolveMapper__ec82e95f58e4f52e5c613a1196183e4f.g.cs",
                 expectedResolveMapper
             ));
     }
