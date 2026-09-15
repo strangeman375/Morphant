@@ -79,7 +79,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -95,10 +95,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private global::TestCase.Destination __Create(
@@ -109,11 +109,8 @@ namespace TestCase
 
             var normalized = result.Name.ToUpperInvariant();
 
-            string name = normalized;
-            string label = normalized;
-
-            result.Name = name;
-            result.Label = label;
+            result.Name = normalized;
+            result.Label = normalized;
 
             return result;
         }
@@ -123,11 +120,8 @@ namespace TestCase
         {
             var normalized = destination.Name.ToUpperInvariant();
 
-            string name = normalized;
-            string label = normalized;
-
-            destination.Name = name;
-            destination.Label = label;
+            destination.Name = normalized;
+            destination.Label = normalized;
 
             return destination;
         }
