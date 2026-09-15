@@ -91,9 +91,7 @@ namespace TestCase
             return __Update(source, destination, context);
         }
 
-        private global::System.Tuple<int, string> __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+        private global::System.Tuple<int, string> __Create()
         {
             global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(
                 item1: 7,
@@ -112,9 +110,7 @@ namespace TestCase
         }
 
         private global::System.Tuple<int, string> __Update(
-            global::TestCase.Source source,
-            global::System.Tuple<int, string> destination,
-            global::Morphant.Context.MappingContext context)
+            global::System.Tuple<int, string> destination)
         {
             _ = destination.Item1 > 0;
 

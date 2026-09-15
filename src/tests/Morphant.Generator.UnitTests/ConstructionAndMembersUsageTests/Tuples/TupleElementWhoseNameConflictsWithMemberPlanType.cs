@@ -91,8 +91,7 @@ namespace TestCase
         }
 
         private (int Id, string TupleMembers) __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             int id = source.Id;
             string tupleMembers = source.FromConstruct();
@@ -105,8 +104,7 @@ namespace TestCase
 
         private (int Id, string TupleMembers) __Update(
             global::TestCase.Source source,
-            (int Id, string TupleMembers) destination,
-            global::Morphant.Context.MappingContext context)
+            (int Id, string TupleMembers) destination)
         {
             destination.TupleMembers = source.FromMembers();
 

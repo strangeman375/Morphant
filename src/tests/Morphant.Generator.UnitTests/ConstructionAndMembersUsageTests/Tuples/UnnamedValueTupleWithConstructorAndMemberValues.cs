@@ -91,8 +91,7 @@ namespace TestCase
         }
 
         private (int, string) __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return (
                 source.Id,
@@ -101,8 +100,7 @@ namespace TestCase
 
         private (int, string) __Update(
             global::TestCase.Source source,
-            (int, string) destination,
-            global::Morphant.Context.MappingContext context)
+            (int, string) destination)
         {
             destination.Item2 = source.FromMembers();
 
