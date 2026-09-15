@@ -153,10 +153,8 @@ namespace Morphant.Generated.N_fa9574037810e841db2c8ce3326f2fea
                 tupleSources.Select(static generated => generated.HintName),
                 Is.EqualTo(new[]
                 {
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "V2_d0b637c3d38cd3d48b61ad17256aa211.g.cs",
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_d0b637c3d38cd3d48b61ad17256aa211.g.cs"
+                    "Morphant.Generated.Construction.ValueTuple2__fa9574037810e841db2c8ce3326f2fea.g.cs",
+                    "Morphant.Generated.Member.ValueTuple2__fa9574037810e841db2c8ce3326f2fea.g.cs"
                 }));
             Assert.That(
                 tupleSources[0].SourceText.ToString(),
@@ -425,34 +423,26 @@ namespace Morphant.Generated.N_cc10a937bc217f0eb0d09673d9e6d4ed
                 tupleSources.Keys.OrderBy(static value => value),
                 Is.EqualTo(new[]
                 {
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "S2_ccb1d38f95b5177b3d475773e5a40e78.g.cs",
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "V2_ba449efd81e78f01ebb4ee5940cccca1.g.cs",
-                    "Morphant.Generated.Member.Tuple_" +
-                    "S2_ccb1d38f95b5177b3d475773e5a40e78.g.cs",
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_ba449efd81e78f01ebb4ee5940cccca1.g.cs"
+                    "Morphant.Generated.Construction.SystemTuple2__cc10a937bc217f0eb0d09673d9e6d4ed.g.cs",
+                    "Morphant.Generated.Construction.ValueTuple2__38cb4a8e8bcb3b16557a42fe65c6d192.g.cs",
+                    "Morphant.Generated.Member.SystemTuple2__cc10a937bc217f0eb0d09673d9e6d4ed.g.cs",
+                    "Morphant.Generated.Member.ValueTuple2__38cb4a8e8bcb3b16557a42fe65c6d192.g.cs"
                 }));
             Assert.That(
                 tupleSources[
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "V2_ba449efd81e78f01ebb4ee5940cccca1.g.cs"],
+                    "Morphant.Generated.Construction.ValueTuple2__38cb4a8e8bcb3b16557a42fe65c6d192.g.cs"],
                 Is.EqualTo(GeneratedSourceText.Normalize(valueConstruction)));
             Assert.That(
                 tupleSources[
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_ba449efd81e78f01ebb4ee5940cccca1.g.cs"],
+                    "Morphant.Generated.Member.ValueTuple2__38cb4a8e8bcb3b16557a42fe65c6d192.g.cs"],
                 Is.EqualTo(GeneratedSourceText.Normalize(valueMembers)));
             Assert.That(
                 tupleSources[
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "S2_ccb1d38f95b5177b3d475773e5a40e78.g.cs"],
+                    "Morphant.Generated.Construction.SystemTuple2__cc10a937bc217f0eb0d09673d9e6d4ed.g.cs"],
                 Is.EqualTo(GeneratedSourceText.Normalize(systemConstruction)));
             Assert.That(
                 tupleSources[
-                    "Morphant.Generated.Member.Tuple_" +
-                    "S2_ccb1d38f95b5177b3d475773e5a40e78.g.cs"],
+                    "Morphant.Generated.Member.SystemTuple2__cc10a937bc217f0eb0d09673d9e6d4ed.g.cs"],
                 Is.EqualTo(GeneratedSourceText.Normalize(systemMembers)));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -543,8 +533,7 @@ namespace Morphant.Generated.N_8bd6fa44277f16307e66d8c49979db24
                 static generated => generated.SourceText.ToString(),
                 StringComparer.Ordinal);
         const string memberHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "V2_fc51068ba6def967189a80d2cb852da3.g.cs";
+            "Morphant.Generated.Member.ValueTuple2__8bd6fa44277f16307e66d8c49979db24.g.cs";
 
         Assert.Multiple(() =>
         {
@@ -554,8 +543,7 @@ namespace Morphant.Generated.N_8bd6fa44277f16307e66d8c49979db24
                     StringComparer.Ordinal),
                 Is.EqualTo(new[]
                 {
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "V2_fc51068ba6def967189a80d2cb852da3.g.cs",
+                    "Morphant.Generated.Construction.ValueTuple2__8bd6fa44277f16307e66d8c49979db24.g.cs",
                     memberHint
                 }));
             Assert.That(
@@ -691,11 +679,9 @@ namespace Morphant.Generated.N_67f940bd8bf49f6e9a2de49f6f48a3c4
 """;
 
         const string firstHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "V2_d2677b3e149f1978eb6ee447e24502ca.g.cs";
+            "Morphant.Generated.Member.ValueTuple2__d1abc16a68e057300b1853add23c3209.g.cs";
         const string secondHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "V2_6d02a05403a0d9e448cf97c3a94b2896.g.cs";
+            "Morphant.Generated.Member.ValueTuple2__67f940bd8bf49f6e9a2de49f6f48a3c4.g.cs";
         var result = GeneratorTestDriver.Run(
             "TupleRecursiveNamesConsumer",
             source,
@@ -827,11 +813,9 @@ namespace Morphant.Generated.N_201fe3c51dc324181a127bf9ffb63b6f
 """;
 
         const string firstHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "S1_343fc0772ec8328f3fcaad3399a6d233.g.cs";
+            "Morphant.Generated.Member.SystemTuple1__e7868ba5362df2866f54e8de1a75e366.g.cs";
         const string secondHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "S1_6744887d270b2a6a5efbfed8e8bf19fb.g.cs";
+            "Morphant.Generated.Member.SystemTuple1__201fe3c51dc324181a127bf9ffb63b6f.g.cs";
         var result = GeneratorTestDriver.Run(
             "SystemTupleNestedNamesConsumer",
             source,
@@ -989,11 +973,9 @@ namespace Morphant.Generated.N_b859bbcd211038e31a699fc006be47f5
 """;
 
         const string firstHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "V2_8d540bce957baea24efeb071977deb18.g.cs";
+            "Morphant.Generated.Member.ValueTuple2__daeadd3fc190bca580c35a89464b4268.g.cs";
         const string secondHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "V2_3b29704a4e7d652ba0573eb39c655f01.g.cs";
+            "Morphant.Generated.Member.ValueTuple2__b859bbcd211038e31a699fc006be47f5.g.cs";
         var result = GeneratorTestDriver.Run(
             "TupleQualifiedTypeNamesConsumer",
             source,
@@ -1081,8 +1063,7 @@ namespace TestCase
             Assert.That(
                 initialMember.HintName,
                 Is.EqualTo(
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_705f7080d34e75644e7090bc1924e1ae.g.cs"));
+                    "Morphant.Generated.Member.ValueTuple2__30cb500bfb483e1cb471646796074c37.g.cs"));
             Assert.That(
                 updatedMember.HintName,
                 Is.EqualTo(initialMember.HintName));
@@ -1338,45 +1319,33 @@ namespace Morphant.Generated.N_b31f058c7f55a464dc526f749e062ca9
                 tupleSources.Select(static generated => generated.HintName),
                 Is.EqualTo(new[]
                 {
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "V2_933291bd68efb0f3e9668ac3a4c07715.g.cs",
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "V2_dbc12f489bdc8f9d2b280ba5331c4f2e.g.cs",
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "V2_e6df7dc9f6f2b6480c6ffc7dc58bf12c.g.cs",
-                    "Morphant.Generated.Construction.Tuple_" +
-                    "V2_e8c5c48dcbc9c8f3fa73eb1b84ac3702.g.cs",
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_933291bd68efb0f3e9668ac3a4c07715.g.cs",
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_dbc12f489bdc8f9d2b280ba5331c4f2e.g.cs",
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_e6df7dc9f6f2b6480c6ffc7dc58bf12c.g.cs",
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_e8c5c48dcbc9c8f3fa73eb1b84ac3702.g.cs"
+                    "Morphant.Generated.Construction.ValueTuple2__b31f058c7f55a464dc526f749e062ca9.g.cs",
+                    "Morphant.Generated.Construction.ValueTuple2__57c0e06cf6d64780e8e3e75e7da9dcab.g.cs",
+                    "Morphant.Generated.Construction.ValueTuple2__6223d7c8ad053bf97fbdef5d2982bd72.g.cs",
+                    "Morphant.Generated.Construction.ValueTuple2__a8f37530759fcb7fecbbbf62477fc0ea.g.cs",
+                    "Morphant.Generated.Member.ValueTuple2__b31f058c7f55a464dc526f749e062ca9.g.cs",
+                    "Morphant.Generated.Member.ValueTuple2__57c0e06cf6d64780e8e3e75e7da9dcab.g.cs",
+                    "Morphant.Generated.Member.ValueTuple2__6223d7c8ad053bf97fbdef5d2982bd72.g.cs",
+                    "Morphant.Generated.Member.ValueTuple2__a8f37530759fcb7fecbbbf62477fc0ea.g.cs"
                 }));
             Assert.That(
                 memberSources[
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_e6df7dc9f6f2b6480c6ffc7dc58bf12c.g.cs"],
+                    "Morphant.Generated.Member.ValueTuple2__6223d7c8ad053bf97fbdef5d2982bd72.g.cs"],
                 Is.EqualTo(GeneratedSourceText.Normalize(
                     aliasWithLeadingUnderscoreMembers)));
             Assert.That(
                 memberSources[
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_dbc12f489bdc8f9d2b280ba5331c4f2e.g.cs"],
+                    "Morphant.Generated.Member.ValueTuple2__57c0e06cf6d64780e8e3e75e7da9dcab.g.cs"],
                 Is.EqualTo(GeneratedSourceText.Normalize(
                     underscoredNamespaceMembers)));
             Assert.That(
                 memberSources[
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_e8c5c48dcbc9c8f3fa73eb1b84ac3702.g.cs"],
+                    "Morphant.Generated.Member.ValueTuple2__a8f37530759fcb7fecbbbf62477fc0ea.g.cs"],
                 Is.EqualTo(GeneratedSourceText.Normalize(
                     aliasWithTrailingUnderscoreMembers)));
             Assert.That(
                 memberSources[
-                    "Morphant.Generated.Member.Tuple_" +
-                    "V2_933291bd68efb0f3e9668ac3a4c07715.g.cs"],
+                    "Morphant.Generated.Member.ValueTuple2__b31f058c7f55a464dc526f749e062ca9.g.cs"],
                 Is.EqualTo(GeneratedSourceText.Normalize(
                     underscoredTypeMembers)));
             Assert.That(result.Diagnostics, Is.Empty);
@@ -1465,8 +1434,7 @@ namespace Morphant.Generated.N_9c16d7af93da2c98e5c0b6d75c50bd90
 """;
 
         const string membersHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "V3_ae3e7b9129d30aa791bcea61be3d20ed.g.cs";
+            "Morphant.Generated.Member.ValueTuple3__9c16d7af93da2c98e5c0b6d75c50bd90.g.cs";
         var result = GeneratorTestDriver.Run(
             "TuplePredefinedTypeNamesConsumer",
             source,
@@ -1631,8 +1599,7 @@ namespace Morphant.Generated.N_b99f8200b5266e78bd994ba423275eae
 """;
 
         const string hintName =
-            "Morphant.Generated.Member.Tuple_" +
-            "V9_bad94779b091c76b680812dc343641c7.g.cs";
+            "Morphant.Generated.Member.ValueTuple9__b99f8200b5266e78bd994ba423275eae.g.cs";
         var result = GeneratorTestDriver.Run(
             "LongTupleNamesConsumer",
             source,
@@ -1790,11 +1757,9 @@ namespace Morphant.Generated.N_9a91751c7f70e7c40be34a132e4bb85f
 }
 """;
         const string expectedConstructionHint =
-            "Morphant.Generated.Construction.Tuple_" +
-            "V2_5b493356fcc25c11e1bae99ff0c804f4.g.cs";
+            "Morphant.Generated.Construction.ValueTuple2__9a91751c7f70e7c40be34a132e4bb85f.g.cs";
         const string expectedHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "V2_5b493356fcc25c11e1bae99ff0c804f4.g.cs";
+            "Morphant.Generated.Member.ValueTuple2__9a91751c7f70e7c40be34a132e4bb85f.g.cs";
 
         var result = GeneratorTestDriver.Run(
             "TupleBoundedNamesConsumer",
@@ -1898,8 +1863,7 @@ namespace Morphant.Generated.N_cdb406fbcb6b69a897c8868753ec6799
 }
 """;
         const string expectedHint =
-            "Morphant.Generated.Member.Tuple_" +
-            "V2_1f2cefd891beaf2467238ae81374a8b4.g.cs";
+            "Morphant.Generated.Member.ValueTuple2__cdb406fbcb6b69a897c8868753ec6799.g.cs";
 
         var result = GeneratorTestDriver.Run(
             "TupleUnicodeHintConsumer",
