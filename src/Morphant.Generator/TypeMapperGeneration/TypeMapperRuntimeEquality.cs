@@ -18,6 +18,7 @@ internal static class TypeMapperRuntimeEquality
                    left.Condition,
                    right.Condition) &&
                left.ConditionIsBoolean == right.ConditionIsBoolean &&
+               left.IsOperationDispatch == right.IsOperationDispatch &&
                AreEquivalentNode(left.WhenTrue, right.WhenTrue) &&
                AreEquivalentNode(left.WhenFalse, right.WhenFalse) &&
                AreEquivalent(left.Leaf, right.Leaf) &&

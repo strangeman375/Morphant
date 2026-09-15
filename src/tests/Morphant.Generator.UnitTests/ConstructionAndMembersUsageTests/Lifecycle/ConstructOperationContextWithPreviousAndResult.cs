@@ -111,12 +111,17 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            if (context.Operation == global::Morphant.Context.MappingOperation.Create)
-            {
-                return __Construct(source, context);
-            }
+            var result = new global::TestCase.Destination(
+                id: source.Id,
+                label: context.Operation == global::Morphant.Context.MappingOperation.Create
+                    ? source.Label
+                    : "update:" + source.Label);
 
-            return __Construct(source, context);
+            result.Trace = ("none")
+                + "|" + result.Label
+                + "|" + context.Operation;
+
+            return result;
         }
 
         private global::TestCase.Destination __Update(
@@ -129,23 +134,6 @@ namespace TestCase
                 + "|" + context.Operation;
 
             return destination;
-        }
-
-        private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
-        {
-            var result = new global::TestCase.Destination(
-                id: source.Id,
-                label: context.Operation == global::Morphant.Context.MappingOperation.Create
-                    ? source.Label
-                    : "update:" + source.Label);
-
-            result.Trace = ("none")
-                + "|" + result.Label
-                + "|" + context.Operation;
-
-            return result;
         }
     }
 }
