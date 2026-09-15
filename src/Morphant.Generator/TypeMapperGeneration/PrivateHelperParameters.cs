@@ -66,11 +66,11 @@ internal static class PrivateHelperParameters
             {
                 if (semantic.GetSymbolInfo(identifier, cancellationToken).Symbol is not IParameterSymbol parameter ||
                     !parameters.Contains(parameter)) continue;
-                if (identifier.Parent is ArgumentSyntax argumentSyntax && argumentSyntax.Expression == identifier &&
-                    semantic.GetOperation(argumentSyntax, cancellationToken) is IArgumentOperation argument &&
-                    argument.Parent is IInvocationOperation call &&
-                    methods.ContainsKey(call.TargetMethod.OriginalDefinition) &&
-                    argument.Parameter is { } target && CanDiscard(argument))
+                var forwarding = identifier.Ancestors().OfType<ArgumentSyntax>()
+                    .Select(argument => semantic.GetOperation(argument, cancellationToken) as IArgumentOperation)
+                    .FirstOrDefault(argument => argument?.Parent is IInvocationOperation call &&
+                        methods.ContainsKey(call.TargetMethod.OriginalDefinition));
+                if (forwarding is { Parameter: { } target, Parent: IInvocationOperation call } && CanDiscard(forwarding))
                     dependencies.Add((call.TargetMethod.OriginalDefinition.Parameters[target.Ordinal], parameter));
                 else live.Add(parameter);
             }
@@ -111,8 +111,20 @@ internal static class PrivateHelperParameters
             argument.Syntax is not ArgumentSyntax syntax || syntax.RefKindKeyword.RawKind != 0 ||
             syntax.DescendantTrivia().Any(trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia) &&
                 !trivia.IsKind(SyntaxKind.EndOfLineTrivia))) return false;
-        return argument.Value is ILocalReferenceOperation or IParameterReferenceOperation or ILiteralOperation or IDefaultValueOperation;
+        var value = argument.Value;
+        if (value.ConstantValue.HasValue || value is ILocalReferenceOperation or IParameterReferenceOperation or IDefaultValueOperation)
+            return true;
+        // These are generated wrappers around an existing value. The runtime
+        // Option implementation only stores that value and its availability.
+        if (value is IPropertyReferenceOperation { Property: { IsStatic: true, Name: "None" } property } &&
+            IsRuntimeOption(property.ContainingType)) return true;
+        return value is IInvocationOperation { TargetMethod: { IsStatic: true, Name: "Some" } method,
+                Arguments.Length: 1 } invocation && IsRuntimeOption(method.ContainingType) &&
+            CanDiscard(invocation.Arguments[0]);
     }
+
+    private static bool IsRuntimeOption(INamedTypeSymbol type) => type.MetadataName == "Option`1" &&
+        type.ContainingNamespace.ToDisplayString() == "Morphant" && type.ContainingAssembly.Name == "Morphant";
 
     private static void RemoveItems<T>(SeparatedSyntaxList<T> items, Func<int, bool> remove,
         SyntaxToken open, SyntaxToken close, List<TextChange> changes) where T : SyntaxNode
