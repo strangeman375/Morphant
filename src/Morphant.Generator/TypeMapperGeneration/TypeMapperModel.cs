@@ -240,7 +240,8 @@ internal sealed record TypeMapperControlFlowNode
     bool ThrowUsesCurrentMappingOperation = false,
     string? EvaluationCondition = null,
     ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default,
-    bool ConditionIsBoolean = false
+    bool ConditionIsBoolean = false,
+    bool IsOperationDispatch = false
 );
 
 internal readonly record struct TypeMapperMemberControlFlowLeafModel(

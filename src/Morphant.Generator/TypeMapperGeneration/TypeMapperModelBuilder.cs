@@ -592,7 +592,8 @@ internal static class TypeMapperModelBuilder
                     "context.Operation == global::Morphant.Context.MappingOperation.Create",
                     createRoot,
                     MembersControlFlowMappingPlanner.SelectRoot(missing, create: true),
-                    Leaf: null, ThrowExpression: null);
+                    Leaf: null, ThrowExpression: null,
+                    IsOperationDispatch: true);
             }
             return create with
             {

@@ -630,6 +630,25 @@ internal static class TypeMapperEmitter
 
         if (node.Condition is not null)
         {
+            if (node.IsOperationDispatch)
+            {
+                var createWriter = new CodeWriter();
+                var updateWriter = new CodeWriter();
+                WriteControlFlowCreateNode(createWriter, node.WhenTrue!,
+                    operationExpression, localNames.Clone());
+                WriteControlFlowCreateNode(updateWriter, node.WhenFalse!,
+                    operationExpression, localNames.Clone());
+
+                // Only this generated operation check is disposable. Identical
+                // user branches must still evaluate their condition.
+                if (StringComparer.Ordinal.Equals(createWriter.ToString(), updateWriter.ToString()))
+                {
+                    WriteControlFlowCreateNode(writer, node.WhenTrue!,
+                        operationExpression, localNames);
+                    return;
+                }
+            }
+
             WriteControlFlowConditional(
                 writer,
                 node,
