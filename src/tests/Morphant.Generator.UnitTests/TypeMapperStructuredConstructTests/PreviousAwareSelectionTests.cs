@@ -109,8 +109,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 id: source.Id)
@@ -121,8 +120,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (destination.Id == source.Id)
             {
@@ -131,7 +129,7 @@ namespace TestCase
                 return destination;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
     }
 }
@@ -458,18 +456,16 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             _ = global::TestCase.TestMapper.TrackBefore();
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (global::TestCase.TestMapper.TrackBefore() &&
                 global::TestCase.TestMapper.TrackAfter())
@@ -477,12 +473,11 @@ namespace TestCase
                 return destination;
             }
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 id: source.Id);
@@ -798,8 +793,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             if (source.Reuse)
             {
@@ -810,25 +804,23 @@ namespace TestCase
                     "'previous' is not available in this case.");
             }
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (source.Reuse)
             {
                 return destination;
             }
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 id: source.Id);

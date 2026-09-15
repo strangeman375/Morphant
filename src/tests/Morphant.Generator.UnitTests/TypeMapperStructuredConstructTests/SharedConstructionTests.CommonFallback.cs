@@ -98,18 +98,16 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             _ = source.Before(out int id);
 
-            return __Construct(source, id, context);
+            return __Construct(id);
         }
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (source.Before(out int id) &&
                 source.After(id) &&
@@ -118,13 +116,11 @@ namespace TestCase
                 return destination;
             }
 
-            return __Construct(source, id, context);
+            return __Construct(id);
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            int id,
-            global::Morphant.Context.MappingContext context)
+            int id)
         {
             return new global::TestCase.Destination(
                 id: id);
@@ -426,18 +422,16 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             _ = source.Before();
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (source.Before() &&
                 source.After())
@@ -452,12 +446,11 @@ namespace TestCase
                 return destination;
             }
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             var id1 = source.Read();
 
