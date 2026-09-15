@@ -95,7 +95,7 @@ namespace TestCase
                     typeof(global::TestCase.Destination));
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination, context);
         }
 
         private global::TestCase.Destination __Update(

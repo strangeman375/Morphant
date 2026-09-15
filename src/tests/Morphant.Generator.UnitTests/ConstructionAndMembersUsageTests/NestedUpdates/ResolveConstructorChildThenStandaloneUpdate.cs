@@ -181,34 +181,6 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            _ = global::Morphant.Option<global::TestCase.Destination>.None.TryGetValue(out global::TestCase.Destination? current) && source.Reuse;
-
-            return __Construct(source, context);
-        }
-
-        private global::TestCase.Destination __Update1(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
-        {
-            if (global::Morphant.Option<global::TestCase.Destination>.Some(destination).TryGetValue(out global::TestCase.Destination? current) && source.Reuse)
-            {
-                global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace(
-                    destination.Child,
-                    source,
-                    static s => s.Child,
-                    context);
-
-                return destination;
-            }
-
-            return __Construct(source, context);
-        }
-
-        private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
-        {
             var result = new global::TestCase.Destination(
                 child: new global::TestCase.ChildDestination());
 
@@ -219,6 +191,25 @@ namespace TestCase
                 context);
 
             return result;
+        }
+
+        private global::TestCase.Destination __Update1(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            if (source.Reuse)
+            {
+                global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace(
+                    destination.Child,
+                    source,
+                    static s => s.Child,
+                    context);
+
+                return destination;
+            }
+
+            return __Create1(source, context);
         }
     }
 }
