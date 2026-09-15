@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/15/2026 - 05:02:25 |
-| Coverage date: | 09/15/2026 - 04:47:42 - 09/15/2026 - 05:02:19 |
+| Generated on: | 09/15/2026 - 05:40:20 |
+| Coverage date: | 09/15/2026 - 05:25:51 - 09/15/2026 - 05:40:15 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 376 |
 | Files: | 200 |
-| **Line coverage:** | 90.1% (39901 of 44283) |
-| Covered lines: | 39901 |
+| **Line coverage:** | 90.1% (39907 of 44289) |
+| Covered lines: | 39907 |
 | Uncovered lines: | 4382 |
-| Coverable lines: | 44283 |
-| Total lines: | 73743 |
-| **Branch coverage:** | 80.9% (14972 of 18485) |
-| Covered branches: | 14972 |
-| Total branches: | 18485 |
+| Coverable lines: | 44289 |
+| Total lines: | 73753 |
+| **Branch coverage:** | 81% (14984 of 18497) |
+| Covered branches: | 14984 |
+| Total branches: | 18497 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -47,9 +47,9 @@
 |Morphant.Exceptions.RuntimeInvocationNotSupportedException|100%||
 |Morphant.Exceptions.UnmatchedMappingSwitchException|100%||
 |Morphant.Exceptions.UnmatchedPolymorphicMappingException|100%|75%|
-|Morphant.GeneratedCode.MappingHelpers|100%|100%|
 |Morphant.Mapper|100%|100%|
 |Morphant.Option`1|100%|100%|
+|Morphant.RuntimeSupport.MappingHelpers|100%|100%|
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
@@ -78,7 +78,7 @@
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
 |Morphant.Generator.Compatibility.CompilationCompatibilityDetector|97.5%|94%|
 |Morphant.Generator.Compatibility.RuntimeContractCompatibility|100%||
-|Morphant.Generator.Compatibility.RuntimeContractManifest|100%|67.3%|
+|Morphant.Generator.Compatibility.RuntimeContractManifest|100%|68.2%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanModelBuilder|100%|90%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|100%|100%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorModel|100%||
@@ -362,7 +362,7 @@
 |Morphant.Generator.TypeMapperGeneration.RuntimeCallbackMethodPlan|100%||
 |Morphant.Generator.TypeMapperGeneration.RuntimeCallbackMethodPlanner|97%|86.6%|
 |Morphant.Generator.TypeMapperGeneration.RuntimeCallbackParameterNames|100%||
-|Morphant.Generator.TypeMapperGeneration.RuntimeMappingHelperLowerer|93.4%|73.8%|
+|Morphant.Generator.TypeMapperGeneration.RuntimeMappingHelperLowerer|93.5%|73.9%|
 |Morphant.Generator.TypeMapperGeneration.RuntimeResultMappingPlanner|100%|100%|
 |Morphant.Generator.TypeMapperGeneration.RuntimeResultMappingResult|100%||
 |Morphant.Generator.TypeMapperGeneration.SharedConstructionLowerer|95.4%|83.6%|
@@ -422,4 +422,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #381](https://github.com/strangeman375/Morphant/actions/runs/34929906006).
+Full HTML report: download the **coverage** artifact from [CI run #384](https://github.com/strangeman375/Morphant/actions/runs/34932372160).
