@@ -47,7 +47,7 @@ internal sealed class PackageDependencyTests
             var snapshot = Path.Combine(Path.GetDirectoryName(consumer)!, "Generated", "Morphant", "net10.0");
             Assert.That(Directory.GetFiles(snapshot, "*.g.cs").Select(Path.GetFileName), Is.EqualTo(new[]
             {
-                "Morphant.Generated.TypeMapper.Consumer_TestMapper.g.cs"
+                "Morphant.Generated.TypeMapper.TestMapper__e9b66789e0c72a543aadf11f76b58d5d.g.cs"
             }));
 
             string CreateProject(string name, string source, string project)

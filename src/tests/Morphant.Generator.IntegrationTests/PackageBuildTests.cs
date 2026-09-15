@@ -77,7 +77,7 @@ internal sealed class PackageBuildTests
                 "*.g.cs");
             Assert.That(snapshots.Select(Path.GetFileName), Is.EqualTo(new[]
             {
-                "Morphant.Generated.TypeMapper.PackageConsumer_TestMapper.g.cs"
+                "Morphant.Generated.TypeMapper.TestMapper__29fd56fb91105e823f6cfd06477d0259.g.cs"
             }));
         }
         finally

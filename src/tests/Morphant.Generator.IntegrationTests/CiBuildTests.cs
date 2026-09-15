@@ -6,7 +6,7 @@ namespace Morphant.Generator.IntegrationTests;
 [TestFixture]
 internal sealed class CiBuildTests
 {
-    private const string MapperFile = "Morphant.Generated.TypeMapper.CiConsumer_TestMapper.g.cs";
+    private const string MapperFile = "Morphant.Generated.TypeMapper.TestMapper__a11be7c12829369b50be3c937b3bd099.g.cs";
     private readonly ConsumerBuildWorkspace packages = new();
     private readonly string packageVersion = $"0.0.0-ci-builds.{Guid.NewGuid():N}";
 
@@ -62,13 +62,13 @@ internal sealed class CiBuildTests
             MappingSource.Replace("TestMapper", "TESTMapper"));
 
         AssertSucceeded(await consumer.Run("build", "--no-restore"));
-        const string renamedMapper = "Morphant.Generated.TypeMapper.CiConsumer_TESTMapper.g.cs";
+        const string renamedMapper = "Morphant.Generated.TypeMapper.TESTMapper__24df44b22e4cf66da4e9e1e33a9477bd.g.cs";
         string[] expected = detail == "Mappers" ? [renamedMapper] :
         [
-            "Morphant.Generated.Construction.CiConsumer_Destination.g.cs",
-            "Morphant.Generated.MappingExtension.CiConsumer_Source__CiConsumer_Destination__CiConsumer_TESTMapper.g.cs",
-            "Morphant.Generated.Member.CiConsumer_Destination.g.cs",
-            "Morphant.Generated.MemberExtension.CiConsumer_Source__CiConsumer_Destination__CiConsumer_TESTMapper.g.cs",
+            "Morphant.Generated.Construction.Destination__724eef46cc4551a451b1b5e7c43d2974.g.cs",
+            "Morphant.Generated.MappingExtension.TESTMapper.SourceToDestination__4f136cc854d3f15530b228414b3a3f6a.g.cs",
+            "Morphant.Generated.Member.Destination__724eef46cc4551a451b1b5e7c43d2974.g.cs",
+            "Morphant.Generated.MemberExtension.TESTMapper.SourceToDestination__4f136cc854d3f15530b228414b3a3f6a.g.cs",
             renamedMapper
         ];
         Assert.That(consumer.Snapshot().Keys,
@@ -216,10 +216,10 @@ internal sealed class CiBuildTests
         AssertSucceeded(await consumer.Run("build", "-p:MorphantGitSnapshot=TRUE", "-p:MorphantGitSnapshotDetail=full"));
         string[] expected =
         [
-            "Morphant.Generated.Construction.CiConsumer_Destination.g.cs",
-            "Morphant.Generated.MappingExtension.CiConsumer_Source__CiConsumer_Destination__CiConsumer_TestMapper.g.cs",
-            "Morphant.Generated.Member.CiConsumer_Destination.g.cs",
-            "Morphant.Generated.MemberExtension.CiConsumer_Source__CiConsumer_Destination__CiConsumer_TestMapper.g.cs",
+            "Morphant.Generated.Construction.Destination__724eef46cc4551a451b1b5e7c43d2974.g.cs",
+            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__ae6c2d5d300f6b42b5d6c5406457e479.g.cs",
+            "Morphant.Generated.Member.Destination__724eef46cc4551a451b1b5e7c43d2974.g.cs",
+            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__ae6c2d5d300f6b42b5d6c5406457e479.g.cs",
             MapperFile
         ];
         Assert.That(consumer.Snapshot().Keys.Order(StringComparer.Ordinal),

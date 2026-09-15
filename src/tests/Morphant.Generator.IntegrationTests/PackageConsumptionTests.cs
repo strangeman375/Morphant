@@ -10,39 +10,27 @@ namespace Morphant.Generator.IntegrationTests;
 [TestFixture]
 internal sealed class PackageConsumptionTests
 {
-    private const string HintPrefix =
-        "Morphant_Generator_PackageTests_Consumer_";
-
     private static readonly string[] MapperGeneratedFiles =
     [
-        "Morphant.Generated.TypeMapper." + HintPrefix + "TestMapper.g.cs"
+        "Morphant.Generated.TypeMapper.TestMapper__7e86e73f6eb648062a5781f4afc22623.g.cs"
     ];
 
     private static readonly string[] PrimaryFullGeneratedFiles =
     [
-        "Morphant.Generated.Construction." +
-        HintPrefix + "Destination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        HintPrefix + "Source__" + HintPrefix + "Destination__" + HintPrefix + "TestMapper.g.cs",
-        "Morphant.Generated.Member." + HintPrefix + "Destination.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        HintPrefix + "Source__" + HintPrefix + "Destination__" + HintPrefix + "TestMapper.g.cs",
-        "Morphant.Generated.TypeMapper." + HintPrefix + "TestMapper.g.cs"
+        "Morphant.Generated.Construction.Destination__8178863269c5aa3285fa9684f4ebcf69.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__7d2e9d5139c36ceb1a54369c508fedbb.g.cs",
+        "Morphant.Generated.Member.Destination__8178863269c5aa3285fa9684f4ebcf69.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__7d2e9d5139c36ceb1a54369c508fedbb.g.cs",
+        "Morphant.Generated.TypeMapper.TestMapper__7e86e73f6eb648062a5781f4afc22623.g.cs"
     ];
 
     private static readonly string[] BothFullGeneratedFiles =
     [
         .. PrimaryFullGeneratedFiles,
-        "Morphant.Generated.Construction." +
-        HintPrefix + "SecondDestination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        HintPrefix + "SecondSource__" +
-        HintPrefix + "SecondDestination__" + HintPrefix + "TestMapper.g.cs",
-        "Morphant.Generated.Member." +
-        HintPrefix + "SecondDestination.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        HintPrefix + "SecondSource__" +
-        HintPrefix + "SecondDestination__" + HintPrefix + "TestMapper.g.cs"
+        "Morphant.Generated.Construction.SecondDestination__c628102412d6f474062e97b9d407b734.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SecondSourceToSecondDestination__559079e44ffdc362d732d75a6db5c428.g.cs",
+        "Morphant.Generated.Member.SecondDestination__c628102412d6f474062e97b9d407b734.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SecondSourceToSecondDestination__559079e44ffdc362d732d75a6db5c428.g.cs"
     ];
 
     [Test]
@@ -930,7 +918,7 @@ internal sealed class PackageConsumptionTests
 
         string[] expected =
         [
-            "Morphant.Generated.TypeMapper.MultiTarget_TestMapper.g.cs"
+            "Morphant.Generated.TypeMapper.TestMapper__a79d3f887d0c250a61f195c37d2f4dcd.g.cs"
         ];
 
         foreach (var targetFramework in new[] { "netstandard2.0", "net10.0" })
