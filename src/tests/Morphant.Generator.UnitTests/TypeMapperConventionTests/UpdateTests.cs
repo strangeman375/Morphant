@@ -126,8 +126,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
             {
@@ -138,8 +137,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Mutable = source.Mutable;
 
@@ -214,7 +212,7 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create1(source, context);
+            => __Create1(source);
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -224,15 +222,14 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return __Create1(source, context);
+                return __Create1(source);
             }
 
             return __Update1(source, destination, context);
         }
 
         private global::TestCase.Destination __Create1(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
             {
@@ -242,8 +239,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update1(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Value = source.Value;
 

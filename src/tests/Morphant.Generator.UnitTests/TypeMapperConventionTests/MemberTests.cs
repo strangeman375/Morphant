@@ -130,9 +130,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
                 operation,
@@ -142,9 +140,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             return destination;
         }
@@ -276,8 +272,7 @@ namespace TestCase
         }
 
         private global::TestCase.TestMapper.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.TestMapper.Destination()
             {
@@ -287,8 +282,7 @@ namespace TestCase
 
         private global::TestCase.TestMapper.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.TestMapper.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.TestMapper.Destination destination)
         {
             destination.Visible = source.Visible;
 
@@ -531,8 +525,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
             {
@@ -549,8 +542,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Inherited = source.Inherited;
             destination.Settable = source.Settable;
@@ -667,8 +659,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
             {
@@ -678,8 +669,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.value = source.value;
 

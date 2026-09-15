@@ -542,21 +542,18 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return __ConstructUsing(source, context);
+            return __ConstructUsing(context);
         }
 
         private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source, global::Morphant.Context.MappingContext context) => context.Operation == global::Morphant.Context.MappingOperation.Create
+        private global::TestCase.Destination __ConstructUsing(global::Morphant.Context.MappingContext context) => context.Operation == global::Morphant.Context.MappingOperation.Create
             ? this._factory()
             : new global::TestCase.Destination(2);
     }
