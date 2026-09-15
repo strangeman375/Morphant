@@ -2784,6 +2784,13 @@ internal static class DeclarativeControlFlowPlanner
         ITypeSymbol type,
         ITypeSymbol? declarativeResultType)
     {
+        // Plans for another destination are DSL values as well. Their origin
+        // comes from the augmented compilation, never from a user type's name.
+        if (GeneratedDslSyntax.IsDeclaredType(type))
+        {
+            return true;
+        }
+
         if (declarativeResultType is
                 {
                     TypeKind: not TypeKind.Error

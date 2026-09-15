@@ -77,8 +77,9 @@ namespace TestCase
         });
     }
 
-    [Test]
-    public void Rejects_writable_and_foreign_standalone_member_proxies()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Keeps_DSL_locals_and_validates_standalone_member_proxies(bool includeInvalidUpdates)
     {
         // lang=c#
         const string source =
@@ -114,6 +115,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Target>()
+                .MemberSelection(MemberSelection.Explicit)
                 .Members((source, previous) =>
                 {
                     var own = new global::Morphant.Generated.N_987a7097bd42f241acd49ff0aee1ca8a
@@ -131,23 +133,27 @@ namespace TestCase
 }
 """;
 
-        var result = NestedMappingDiagnosticsGeneratorTest.Run(source);
+        var configuredSource = includeInvalidUpdates
+            ? source
+            : source.Replace("Update(source.Child, own.Writable);", string.Empty)
+                .Replace("Update(source.Child, foreign.ReadOnly);", string.Empty);
+        var result = NestedMappingDiagnosticsGeneratorTest.Run(configuredSource);
 
         Assert.Multiple(() =>
         {
             Assert.That(
-                result.NestedMappingDiagnostics.Select(static diagnostic =>
+                result.EffectiveDiagnostics.Select(static diagnostic =>
                     diagnostic.Id),
-                Is.EqualTo(new[] { "MORPH0046", "MORPH0046" }));
+                Is.EqualTo(includeInvalidUpdates
+                    ? new[] { "MORPH0046", "MORPH0046" }
+                    : Array.Empty<string>()));
             Assert.That(
                 result.NestedMappingDiagnostics.Select(diagnostic =>
                     NestedMappingDiagnosticsGeneratorTest.SourceText(
                         diagnostic.Location)),
-                Is.EqualTo(new[]
-                {
-                    "own.Writable",
-                    "foreign.ReadOnly"
-                }));
+                Is.EqualTo(includeInvalidUpdates
+                    ? new[] { "own.Writable", "foreign.ReadOnly" }
+                    : Array.Empty<string>()));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
