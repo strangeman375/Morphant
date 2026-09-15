@@ -677,39 +677,39 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_DogDto.g.cs",
+                "Morphant.Generated.Construction.DogDto__c66bb723a57bf5b7179914b80e4549e0.g.cs",
                 dogConstruction
             ),
             (
-                "Morphant.Generated.Construction.TestCase_AnimalDto.g.cs",
+                "Morphant.Generated.Construction.AnimalDto__a1d50685fa566dae762a3237dfbd65f9.g.cs",
                 animalConstruction
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Dog__TestCase_DogDto__TestCase_DerivedMapper.g.cs",
+                "Morphant.Generated.MappingExtension.DerivedMapper.DogToDogDto__633ba66ceccffc7bc5abdd11306135c1.g.cs",
                 dogConstructionExtension
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Animal__TestCase_AnimalDto__TestCase_BaseMapper_TMapper_.g.cs",
+                "Morphant.Generated.MappingExtension.BaseMapper.AnimalToAnimalDto__f083295ceb0be32178782fc46bb1b2dd.g.cs",
                 animalConstructionExtension
             ),
             (
-                "Morphant.Generated.Member.TestCase_DogDto.g.cs",
+                "Morphant.Generated.Member.DogDto__c66bb723a57bf5b7179914b80e4549e0.g.cs",
                 dogMembers
             ),
             (
-                "Morphant.Generated.Member.TestCase_AnimalDto.g.cs",
+                "Morphant.Generated.Member.AnimalDto__a1d50685fa566dae762a3237dfbd65f9.g.cs",
                 animalMembers
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Dog__TestCase_DogDto__TestCase_DerivedMapper.g.cs",
+                "Morphant.Generated.MemberExtension.DerivedMapper.DogToDogDto__633ba66ceccffc7bc5abdd11306135c1.g.cs",
                 dogMemberExtension
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Animal__TestCase_AnimalDto__TestCase_BaseMapper_TMapper_.g.cs",
+                "Morphant.Generated.MemberExtension.BaseMapper.AnimalToAnimalDto__f083295ceb0be32178782fc46bb1b2dd.g.cs",
                 animalMemberExtension
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_DerivedMapper.g.cs",
+                "Morphant.Generated.TypeMapper.DerivedMapper__8727a36adff262ece98bca29bbc61630.g.cs",
                 mapper
             ));
     }

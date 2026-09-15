@@ -440,23 +440,23 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                "Morphant.Generated.Construction.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 expectedConstruction
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__179f7c4ce68cca25117a5a70b04440a2.g.cs",
                 expectedMappingExtension
             ),
             (
-                "Morphant.Generated.Member.TestCase_Destination.g.cs",
+                "Morphant.Generated.Member.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 expectedMember
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__179f7c4ce68cca25117a5a70b04440a2.g.cs",
                 expectedMemberExtension
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                "Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs",
                 expectedTypeMapper
             ));
     }

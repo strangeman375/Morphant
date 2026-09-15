@@ -520,19 +520,19 @@ is_global = true
 build_property.MorphantMappingMode = Update
 """,
             (
-                "Morphant.Generated.TypeMapper.TestCase_AssemblyMapper.g.cs",
+                "Morphant.Generated.TypeMapper.AssemblyMapper__7646588dfa4789170abc9177061a56e7.g.cs",
                 assemblyExpected
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_RootMapper.g.cs",
+                "Morphant.Generated.TypeMapper.RootMapper__2ef75907e33b6d7a6d0aed5e0da6cb5d.g.cs",
                 rootExpected
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_PairMapper.g.cs",
+                "Morphant.Generated.TypeMapper.PairMapper__55f5714c7737a1b80676575ae2d293e8.g.cs",
                 pairExpected
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_ResetMapper.g.cs",
+                "Morphant.Generated.TypeMapper.ResetMapper__03ebc100a7ca87540cb77a6ab200463a.g.cs",
                 resetExpected
             ));
     }
@@ -645,7 +645,7 @@ is_global = true
 build_property.MorphantMappingMode = Unexpected
 """,
             (
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                "Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs",
                 expected
             ));
     }

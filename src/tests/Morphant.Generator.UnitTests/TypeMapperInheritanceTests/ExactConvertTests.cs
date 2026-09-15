@@ -198,11 +198,11 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__System_Nullable_System_Int32___TestCase_BaseMapper_TMapper_.g.cs",
+                "Morphant.Generated.MappingExtension.BaseMapper.SourceToNullable__a0825d13841f60cbd95e867d31ce1142.g.cs",
                 expectedMappingExtension
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_DerivedMapper.g.cs",
+                "Morphant.Generated.TypeMapper.DerivedMapper__8727a36adff262ece98bca29bbc61630.g.cs",
                 expectedMapper
             ));
     }
