@@ -80,7 +80,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -96,41 +96,33 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source)
-        {
-            _ = global::Morphant.Option<global::TestCase.Destination>.None.TryGetValue(out global::TestCase.Destination? current) && source.Reuse;
-
-            return __Construct(source);
-        }
-
-        private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination)
-        {
-            if (global::Morphant.Option<global::TestCase.Destination>.Some(destination).TryGetValue(out global::TestCase.Destination? current) && source.Reuse)
-            {
-                destination.Name = source.FromMembers();
-
-                return destination;
-            }
-
-            return __Construct(source);
-        }
-
-        private global::TestCase.Destination __Construct(
             global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
             {
                 Name = source.FromMembers()
             };
+        }
+
+        private global::TestCase.Destination __Update(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination)
+        {
+            if (source.Reuse)
+            {
+                destination.Name = source.FromMembers();
+
+                return destination;
+            }
+
+            return __Create(source);
         }
     }
 }
