@@ -660,8 +660,7 @@ namespace TestCase
                 global::Morphant.MappingMode.Create);
 
         private global::TestCase.DogDto __Create(
-            global::TestCase.Dog source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Dog source)
         {
             return new global::TestCase.DogDto()
             {

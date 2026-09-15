@@ -92,17 +92,13 @@ namespace TestCase
             return __Update(source, destination, context);
         }
 
-        private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.Destination __Create()
         {
             return new global::TestCase.Destination();
         }
 
         private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             return destination;
         }
@@ -311,8 +307,7 @@ namespace TestCase
         }
 
         private global::TestCase.AutoDestination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.AutoDestination()
             {
@@ -322,8 +317,7 @@ namespace TestCase
 
         private global::TestCase.AutoDestination __Update(
             global::TestCase.Source source,
-            global::TestCase.AutoDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.AutoDestination destination)
         {
             destination.Value = source.Value;
 
@@ -384,17 +378,13 @@ namespace TestCase
             return __Update(source, destination, context);
         }
 
-        private global::TestCase.ExplicitDestination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.ExplicitDestination __Create()
         {
             return new global::TestCase.ExplicitDestination();
         }
 
         private global::TestCase.ExplicitDestination __Update(
-            global::TestCase.Source source,
-            global::TestCase.ExplicitDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.ExplicitDestination destination)
         {
             return destination;
         }
