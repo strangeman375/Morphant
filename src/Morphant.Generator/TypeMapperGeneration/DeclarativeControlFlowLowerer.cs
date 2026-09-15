@@ -210,7 +210,7 @@ internal static class DeclarativeControlFlowLowerer
         IEnumerable<string>? reservedLocalNames = null,
         Func<ExpressionSyntax, TypeMapperControlFlowNode?>?
             buildExpressionFailure = null,
-        bool preserveRuntimeLocals = false,
+        bool preserveRuntimeLocals = true,
         Func<ExpressionSyntax, bool?>? evaluateStoredCondition = null)
     {
         var nestedMapUsages =

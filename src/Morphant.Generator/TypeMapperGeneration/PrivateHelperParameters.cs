@@ -34,7 +34,7 @@ internal static class PrivateHelperParameters
         foreach (var method in methods.Keys)
         {
             foreach (var parameter in method.Parameters)
-                if (parameter.RefKind != RefKind.None || parameter.IsParams || parameter.GetAttributes().Length != 0)
+                if (method.IsGenericMethod || parameter.RefKind != RefKind.None || parameter.IsParams || parameter.GetAttributes().Length != 0)
                     live.Add(parameter);
         }
 

@@ -798,6 +798,7 @@ internal static class StructuredConstructMappingPlanner
         }
 
         expression = UnwrapParentheses(expression);
+        if (!KnownPreviousGuard.IsBuiltInLogic(expression, semanticModel, cancellationToken)) return null;
         if (expression is PrefixUnaryExpressionSyntax prefix &&
             prefix.IsKind(SyntaxKind.LogicalNotExpression))
         {
@@ -828,6 +829,12 @@ internal static class StructuredConstructMappingPlanner
         condition = UnwrapParentheses(condition);
 
         // Stored availability guards need specialization for Create and Update.
+        if (!KnownPreviousGuard.IsBuiltInLogic(condition, semanticModel, cancellationToken))
+        {
+            value = false;
+            return false;
+        }
+
         // Ordinary boolean locals retain their user-written branches.
         if (previousParameter is not null && previousAvailable is not null &&
             StructuredPreviousValuePolicy.TryGetBooleanInitializer(

@@ -86,7 +86,7 @@ internal static class KnownPreviousGuard
             if (declaration.Designation is DiscardDesignationSyntax) return continuation;
             if (declaration.Designation is not SingleVariableDesignationSyntax local) return null;
             var name = local.Identifier.ValueText;
-            if (!available && !DeclarativeControlFlowLowerer.UsesIdentifier(continuation, name))
+            if (!DeclarativeControlFlowLowerer.UsesIdentifier(continuation, name))
                 return continuation;
 
             return continuation with
@@ -111,6 +111,23 @@ internal static class KnownPreviousGuard
             WhenTrue: null, WhenFalse: null, Leaf: null, ThrowExpression: null,
             EvaluationExpression: argument + " = " + value,
             EvaluationContinuation: continuation);
+    }
+
+    internal static bool IsBuiltInLogic(ExpressionSyntax expression, SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (expression is PrefixUnaryExpressionSyntax prefix && prefix.IsKind(SyntaxKind.LogicalNotExpression))
+            return semanticModel.GetOperation(prefix, cancellationToken) is IUnaryOperation
+                { OperatorMethod: null, Operand.Type.SpecialType: SpecialType.System_Boolean };
+        if (expression is BinaryExpressionSyntax binary &&
+            binary.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression)
+            return semanticModel.GetOperation(binary, cancellationToken) is IBinaryOperation
+                { OperatorMethod: null, IsLifted: false, Type.SpecialType: SpecialType.System_Boolean,
+                    LeftOperand.Type.SpecialType: SpecialType.System_Boolean,
+                    RightOperand.Type.SpecialType: SpecialType.System_Boolean } &&
+                semanticModel.GetTypeInfo(binary.Left, cancellationToken).Type?.SpecialType == SpecialType.System_Boolean &&
+                semanticModel.GetTypeInfo(binary.Right, cancellationToken).Type?.SpecialType == SpecialType.System_Boolean;
+        return true;
     }
 
     private static ExpressionSyntax Unwrap(ExpressionSyntax expression)
