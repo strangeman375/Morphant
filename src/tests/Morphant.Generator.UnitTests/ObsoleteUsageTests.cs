@@ -359,7 +359,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         #pragma warning disable CS0612, MIGRATE001
@@ -377,27 +377,25 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         #pragma warning disable CS0612, MIGRATE001
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         #pragma warning restore CS0612, MIGRATE001
         {
             return {|CS0618:new {|MIGRATE001:global::TestCase.Destination|}(
-                value: {|CS0618:source.Value|})|};
+                value|}: {|CS0618:source.Value|});
         }
 
         #pragma warning disable CS0612, MIGRATE001
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         #pragma warning restore CS0612, MIGRATE001
         {
             {|CS0618:destination.Value|} = {|CS0618:source.Value|};
@@ -1118,7 +1116,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         #pragma warning disable CS0618
@@ -1136,16 +1134,15 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         #pragma warning disable CS0618
         private global::TestCase.Destination<global::TestCase.Old> __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         #pragma warning restore CS0618
         {
             return new global::TestCase.Destination<{|CS0618:global::TestCase.Old|}>(
@@ -1155,8 +1152,7 @@ namespace TestCase
         #pragma warning disable CS0618
         private global::TestCase.Destination<global::TestCase.Old> __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination<global::TestCase.Old> destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination<global::TestCase.Old> destination)
         #pragma warning restore CS0618
         {
             destination.Values = source.Values;
