@@ -154,7 +154,11 @@ internal sealed class CiBuildTests
 
         AssertSucceeded(await consumer.Run("msbuild", "-restore", "-graphBuild", "-m:2"));
         AssertMapperSnapshot(consumer);
-        AssertMapperSnapshot(dependency, "netstandard2.0");
+        Assert.That(dependency.Snapshot().Keys, Is.EqualTo(new[]
+        {
+            Path.Combine("netstandard2.0",
+                "Morphant.Generated.TypeMapper.TestMapper__ec488eddd39f2dbbd8485cd8f672723c.g.cs")
+        }));
     }
 
     [Test]
