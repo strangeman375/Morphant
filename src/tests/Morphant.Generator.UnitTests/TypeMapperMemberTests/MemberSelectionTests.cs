@@ -120,7 +120,7 @@ is_global = true
 build_property.MorphantMemberSelection = Explicit
 """,
                 (
-                    "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                    "Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs",
                     expected
                 ));
     }
@@ -408,11 +408,11 @@ namespace TestCase
                 source,
                 "is_global = true",
                 (
-                    "Morphant.Generated.TypeMapper.TestCase_AutoMapper.g.cs",
+                    "Morphant.Generated.TypeMapper.AutoMapper__5f36b219954230c416e6ccdddcd7df10.g.cs",
                     autoExpected
                 ),
                 (
-                    "Morphant.Generated.TypeMapper.TestCase_ExplicitMapper.g.cs",
+                    "Morphant.Generated.TypeMapper.ExplicitMapper__51a78b2c4b8675113a4836dad0013f7d.g.cs",
                     explicitExpected
                 ));
     }
