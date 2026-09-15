@@ -1360,8 +1360,12 @@ internal static class ConventionConstructorMappingPlanner
         HashSet<string> usedNames)
     {
         var firstIndex = argumentIndexes[0];
-        var localName = MakeUniqueSourceValueLocalName(
-            member.DestinationMemberName, usedNames);
+        // A single unshared argument needs no supporting value local. Keep
+        // locals for required initializers, conversions and argument ordering.
+        var localName = arguments.Length == 1 && argumentIndexes.Count == 1 &&
+            !member.IsRequired && arguments[0].ArgumentCastTypeName is null
+                ? null
+                : MakeUniqueSourceValueLocalName(member.DestinationMemberName, usedNames);
 
         foreach (var index in argumentIndexes)
         {

@@ -1303,6 +1303,17 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 .WithTriviaFrom(node);
         }
 
+        if (node.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression &&
+            _semanticModel.GetOperation(node) is IBinaryOperation { OperatorMethod: null, IsLifted: false } &&
+            _semanticModel.GetTypeInfo(node.Right).Type?.SpecialType == SpecialType.System_Boolean &&
+            _executionFacts.TryBoolean(node.Left, out var left) &&
+            (node.IsKind(SyntaxKind.LogicalAndExpression) ? left : !left) &&
+            (_previousParameter is not null && _executionFacts.References(node.Left, _previousParameter) ||
+             _contextParameter is not null && _executionFacts.References(node.Left, _contextParameter)))
+        {
+            return Visit(node.Right)!.WithTriviaFrom(node);
+        }
+
         // The parser may represent a qualified constant after `is` as a type
         // name. Binding distinguishes the constant pattern from a type test.
         if (node.IsKind(SyntaxKind.IsExpression) &&
