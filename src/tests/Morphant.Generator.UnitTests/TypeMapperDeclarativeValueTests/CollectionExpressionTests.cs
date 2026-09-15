@@ -609,12 +609,12 @@ namespace TestCase
                         context.Operation == global::Morphant.Context.MappingOperation.Create
                             ? 1
                             : 10,
-                        ..source.Values
+                        .. source.Values
                     ]))
             {
                 Members = (global::System.Collections.Immutable.ImmutableArray<int>)(
                     [
-                        ..source.Values,
+                        .. source.Values,
                         context.Operation == global::Morphant.Context.MappingOperation.Create
                             ? 2
                             : 20
@@ -629,7 +629,7 @@ namespace TestCase
         {
             destination.Members = (global::System.Collections.Immutable.ImmutableArray<int>)(
                 [
-                    ..source.Values,
+                    .. source.Values,
                     context.Operation == global::Morphant.Context.MappingOperation.Create
                         ? 2
                         : 20
@@ -701,7 +701,7 @@ namespace TestCase
                         context.Operation == global::Morphant.Context.MappingOperation.Create
                             ? 3
                             : 30,
-                        ..source.Values
+                        .. source.Values
                     ]));
         }
 

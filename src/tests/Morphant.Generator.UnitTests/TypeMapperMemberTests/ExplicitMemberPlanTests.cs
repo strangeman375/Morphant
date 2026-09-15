@@ -929,18 +929,16 @@ namespace TestCase
 
                 return destination;
             }
-            else
+
+            var result = new global::TestCase.Destination(
+                seed: source.Id)
             {
-                var result = new global::TestCase.Destination(
-                    seed: source.Id)
-                {
-                    Initial = destination.Seed
-                };
+                Initial = destination.Seed
+            };
 
-                result.Value = result.Value + source.Delta;
+            result.Value = result.Value + source.Delta;
 
-                return result;
-            }
+            return result;
         }
     }
 }
