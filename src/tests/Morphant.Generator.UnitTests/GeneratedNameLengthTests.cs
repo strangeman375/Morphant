@@ -14,49 +14,6 @@ internal sealed class GeneratedNameLengthTests
     }
 
     [Test]
-    public void Bounds_identifiers_and_preserves_complete_unicode_scalars()
-    {
-        var exactLimit = new string('A', 480);
-        var overflow = new string('A', 481);
-        var splitSurrogate =
-            new string('A', 461) + "😀" + new string('B', 20);
-
-        var boundedOverflow = HintNameHelper.LimitWithStableHash(
-            overflow,
-            overflow,
-            maxLength: 480);
-        var boundedSurrogate = HintNameHelper.LimitWithStableHash(
-            splitSurrogate,
-            splitSurrogate,
-            maxLength: 480);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(
-                HintNameHelper.LimitWithStableHash(
-                    exactLimit,
-                    exactLimit,
-                    maxLength: 480),
-                Is.EqualTo(exactLimit));
-            Assert.That(
-                boundedOverflow,
-                Is.EqualTo(
-                    new string('A', 462) +
-                    "__6deb43529b448a0c"));
-            Assert.That(boundedOverflow, Has.Length.EqualTo(480));
-            Assert.That(
-                boundedSurrogate,
-                Is.EqualTo(
-                    new string('A', 461) +
-                    "__ef7a1431162de585"));
-            Assert.That(boundedSurrogate, Has.Length.EqualTo(479));
-            Assert.That(
-                boundedSurrogate.Any(char.IsSurrogate),
-                Is.False);
-        });
-    }
-
-    [Test]
     public void Bounds_hint_names_by_utf8_bytes_and_preserves_permanent_ids()
     {
         const string prefix = "Morphant.Generated.Member.";

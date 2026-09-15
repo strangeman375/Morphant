@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
@@ -7,8 +8,14 @@ namespace Morphant.Generator.UnitTests.GeneratedHintNameTests;
 [TestFixture]
 internal sealed partial class LongNamesTests
 {
-    [Test]
-    public void Long_labels_remain_distinct_after_truncation_and_write_to_disk()
+    [TestCase(false, "1.0.0.0", "src/Mapper.cs")]
+    [TestCase(false, "2.0.0.0", "renamed/Mapper.cs")]
+    [TestCase(true, "1.0.0.0", "src/Mapper.cs")]
+    [TestCase(true, "2.0.0.0", "renamed/Mapper.cs")]
+    public void Long_labels_remain_distinct_and_stable_across_paths_and_versions(
+        bool referencedModels,
+        string version,
+        string sourcePath)
     {
         // The two ASCII names used to collide after filename truncation.
         // The mapper and third destination exercise two- and three-byte letters
@@ -35,10 +42,37 @@ public partial class ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ�
     }
 }
 """;
+        var assemblyVersion =
+            "[assembly: System.Reflection.AssemblyVersion(\"" + version + "\")]\n";
+        var mapperStart = source.IndexOf("[MorphantMapper]", StringComparison.Ordinal);
+        var input = source.Replace("using Morphant;", "using Morphant;\n" + assemblyVersion);
+        MetadataReference[] references = [];
+
+        if (referencedModels)
+        {
+            references =
+            [
+                GeneratorTestDriver.CompileReference(
+                    "ExternalModels", source[..mapperStart].Replace(
+                        "using Morphant;", "using Morphant;\n" + assemblyVersion))
+            ];
+            input = "#nullable enable\n#pragma warning disable CS1591\nusing Morphant;\n" +
+                    assemblyVersion + source[mapperStart..];
+        }
+
         var result = GeneratorTestDriver.Run(
-            "PortableHintNames", source, LanguageVersion.CSharp9);
+            "PortableHintNames",
+            [new GeneratorTestSourceFile(sourcePath, input)],
+            LanguageVersion.CSharp9,
+            additionalReferences: references);
         Assert.That(result.EffectiveDiagnostics, Is.Empty);
         Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        using var binary = new MemoryStream();
+        var emission = result.OutputCompilation.Emit(binary);
+        Assert.That(emission.Success, Is.True,
+            string.Join(Environment.NewLine, emission.Diagnostics));
+        Assert.That(emission.Diagnostics.Where(diagnostic =>
+            diagnostic.Severity >= DiagnosticSeverity.Warning), Is.Empty);
         var actual = result.GeneratedSources
             .Select(item => (item.HintName, Source: item.SourceText.ToString()))
             .OrderBy(item => item.HintName, StringComparer.Ordinal).ToArray();

@@ -368,7 +368,7 @@ namespace Morphant
     }
 
     [Test]
-    public async Task Adds_hashes_only_for_case_insensitive_hint_name_collisions()
+    public async Task Uses_permanent_ids_for_case_insensitive_labels()
     {
         // lang=c#
         const string source =

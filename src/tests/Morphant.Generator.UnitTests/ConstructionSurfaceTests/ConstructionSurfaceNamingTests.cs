@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.ConstructionSurfaceTests;
 internal sealed class ConstructionSurfaceNamingTests
 {
     [Test]
-    public async Task Uses_destination_relative_namespaces_and_nested_type_scopes()
+    public async Task Uses_compact_namespace_ids_for_global_nested_and_generic_destinations()
     {
         // lang=c#
         const string source =
