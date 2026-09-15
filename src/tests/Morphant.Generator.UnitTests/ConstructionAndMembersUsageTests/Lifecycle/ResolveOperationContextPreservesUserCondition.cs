@@ -128,8 +128,6 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            _ = global::Morphant.Option<global::TestCase.Destination>.None.TryGetValue(out global::TestCase.Destination? current) && source.Reuse;
-
             var result = new global::TestCase.Destination(
                 id: source.Id,
                 label: context.Operation == global::Morphant.Context.MappingOperation.Create
@@ -157,7 +155,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (global::Morphant.Option<global::TestCase.Destination>.Some(destination).TryGetValue(out global::TestCase.Destination? current) && source.Reuse)
+            if (source.Reuse)
             {
                 if (source.Probe())
                 {
