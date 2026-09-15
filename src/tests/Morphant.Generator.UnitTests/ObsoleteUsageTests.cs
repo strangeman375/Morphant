@@ -389,7 +389,7 @@ namespace TestCase
         #pragma warning restore CS0612, MIGRATE001
         {
             return {|CS0618:new {|MIGRATE001:global::TestCase.Destination|}(
-                value|}: {|CS0618:source.Value|});
+                value: {|CS0618:source.Value|})|};
         }
 
         #pragma warning disable CS0612, MIGRATE001
