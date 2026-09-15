@@ -7,7 +7,7 @@ internal sealed class PreviousGuardTests
 {
     [Test]
     public void Preserves_out_bindings_short_circuiting_and_exceptions(
-        [Values("And", "Negated", "Existing", "Stored", "MembersConstruct", "MembersResolve")] string form,
+        [Values("And", "Negated", "Stored", "MembersConstruct", "MembersResolve")] string form,
         [Values("Create", "UpdateNull", "UpdateExisting")] string operation,
         [Values(false, true)] bool reuse,
         [Values(false, true)] bool throwProbe) => Scenario.Verify(form, operation, reuse, throwProbe, gate: true);

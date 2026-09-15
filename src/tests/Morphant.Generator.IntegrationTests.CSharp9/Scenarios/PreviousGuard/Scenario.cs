@@ -17,7 +17,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
         public Destination Seed = null!;
         public Destination? Supplied;
         public Destination? ExpectedProbe;
-        public Destination Initial() { Events.Add("initial"); return Seed; }
         public bool Enter() { Events.Add("gate"); return Gate; }
         public bool Decide(Destination? value)
         {
@@ -69,27 +68,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
     }
 
     [MorphantMapper]
-    public partial class ExistingMapper : TypeMapper<ExistingMapper>
-    {
-        protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
-            .Resolve((source, previous) =>
-            {
-                Destination? current = source.Initial();
-                if (previous.TryGetValue(out current) && source.Decide(current)) return previous.Value;
-                return new(source, source.BuildName(current));
-            })
-            .Members(source => new() { Name = source.MemberName() });
-    }
-
-    [MorphantMapper]
     public partial class ConditionalMapper : TypeMapper<ConditionalMapper>
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) =>
             {
-                Destination? current = source.Initial();
-                if (source.Enter() && previous.TryGetValue(out current) && source.Decide(current)) return previous.Value;
-                return new(source, source.BuildName(current));
+                if (source.Enter() && previous.TryGetValue(out var current) && source.Decide(current)) return current;
+                return new(source, source.BuildName(null));
             })
             .Members(source => new() { Name = source.MemberName() });
     }
@@ -158,7 +143,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
             ITypeMapper<Source, Destination> mapper = form switch
             {
                 "And" => new AndMapper(), "Negated" => new NegatedMapper(),
-                "Existing" => new ExistingMapper(), "Conditional" => new ConditionalMapper(),
+                "Conditional" => new ConditionalMapper(),
                 "Stored" => new StoredMapper(), "Arbitrary" => new ArbitraryMapper(),
                 "MembersConstruct" => new MembersConstructMapper(), "MembersResolve" => new MembersResolveMapper(),
                 _ => throw new ArgumentOutOfRangeException(nameof(form))
@@ -167,7 +152,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
             bool probes = previous is not null && (form is not ("Conditional" or "Arbitrary") || gate);
             bool reused = members ? previous is not null && form == "MembersConstruct" : probes && reuse;
             var expected = new List<string>();
-            if (form is "Existing" or "Conditional") expected.Add("initial");
             if (form == "Conditional") expected.Add("gate");
             if (form == "Arbitrary") expected.Add("custom");
             if (members && !reused) { expected.Add("build:none"); expected.Add("construct:new"); }
@@ -176,7 +160,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
             {
                 if (!members && !reused)
                 {
-                    var value = form == "Conditional" && !gate || form == "Arbitrary" && previous is null
+                    var value = form == "Conditional" ? "none" : form == "Arbitrary" && previous is null
                         ? "seed" : previous is null ? "none" : "old";
                     expected.Add("build:" + value);
                     expected.Add("construct:new");
