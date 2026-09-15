@@ -107,7 +107,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
+            return __Create(global::Morphant.Context.MappingOperation.Create);
         }
 
         /// <inheritdoc/>
@@ -123,10 +123,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
+                return __Create(global::Morphant.Context.MappingOperation.Update);
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private global::TestCase.Destination __Create(
@@ -249,7 +249,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -265,10 +265,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.TestMapper.Destination __Create(
@@ -502,7 +502,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -518,10 +518,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.Destination __Create(
@@ -636,7 +636,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -652,10 +652,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.Destination __Create(
