@@ -832,39 +832,39 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_CustomStruct.g.cs",
+                "Morphant.Generated.Construction.CustomStruct__dc55c1e071024b3d4b850cf5bd70bd94.g.cs",
                 construction1
             ),
             (
-                "Morphant.Generated.Construction.TestCase_EmptyClass.g.cs",
+                "Morphant.Generated.Construction.EmptyClass__5f8d1638cf7f291e24070130607e3fa8.g.cs",
                 construction2
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__System_Int32__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToInt32__d228e45de2fed10e43deeba8baebbcbf.g.cs",
                 extension1
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_AbstractDestination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToAbstractDestination__488e652e236db3bc8c660d741f65696b.g.cs",
                 extension2
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_CustomStruct__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToCustomStruct__3768152b3a6967731ef40a4303db3bcb.g.cs",
                 extension3
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_EmptyClass__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToEmptyClass__ae4471064e33713ddbb496314495cb29.g.cs",
                 extension4
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_FactoryOnly__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToFactoryOnly__86d64f050bd6b5947f5f549a6bfb6b11.g.cs",
                 extension5
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_IDestination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToIDestination__b74df0adf01f694e64b36f2fdf375be5.g.cs",
                 extension6
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__System_Collections_Generic_List_System_Int32___TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToList__fa00e08e9685bf5c6bd7a41987078cd7.g.cs",
                 extension7
             ));
     }
@@ -1121,11 +1121,11 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                "Morphant.Generated.Construction.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 construction
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_Destination_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__bd91ee84db4af2c4eb6cf962d8cb5f05.g.cs",
                 extension
             ));
     }
@@ -1494,15 +1494,15 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                "Morphant.Generated.Construction.Destination__5e01468111660761710199b9666fe80e.g.cs",
                 construction
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__System_Nullable_TestCase_Destination___TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToNullable__9212fa25df79e66bb6cb4ae57177f964.g.cs",
                 extension1
             ),
             (
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+                "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__179f7c4ce68cca25117a5a70b04440a2.g.cs",
                 extension2
             ));
     }
