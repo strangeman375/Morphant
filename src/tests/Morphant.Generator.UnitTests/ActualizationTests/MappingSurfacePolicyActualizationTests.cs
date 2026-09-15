@@ -147,8 +147,7 @@ namespace TestCase
     }
 
     private const string SystemTupleHintName =
-        "Morphant.Generated.MappingExtension." +
-        "System_Tuple_System_Int32__System_Int32___System_Int32__TestCase_CommonMapper_TMapper_.g.cs";
+        "Morphant.Generated.MappingExtension.CommonMapper.SystemTuple2ToInt32__b4b55de85e07f0f19e3ea2366eed6c6b.g.cs";
 
     private const string ScopedHintName =
         "Morphant.Generated.MappingExtension." +
@@ -156,14 +155,10 @@ namespace TestCase
         "System_Int32__TestCase_CommonMapper_TMapper_.g.cs";
 
     private const string FirstScopedHintName =
-        "Morphant.Generated.MappingExtension." +
-        "System_ValueTuple_System_Int32__System_Int32___System_Int32__" +
-        "TestCase_FirstMapper.g.cs";
+        "Morphant.Generated.MappingExtension.FirstMapper.ValueTuple2ToInt32__ff107b8ea8db0fb19a80ad3f14a83dc3.g.cs";
 
     private const string SecondScopedHintName =
-        "Morphant.Generated.MappingExtension." +
-        "System_ValueTuple_System_Int32__System_Int32___System_Int32__" +
-        "TestCase_SecondMapper.g.cs";
+        "Morphant.Generated.MappingExtension.SecondMapper.ValueTuple2ToInt32__2dfbdee939648a64ae0d40f4fbda42b1.g.cs";
 
     // lang=c#
     private const string SystemTupleSource =

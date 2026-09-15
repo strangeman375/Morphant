@@ -414,10 +414,9 @@ namespace Morphant
 """;
 
         const string memberHint =
-            "Morphant.Generated.Member.TestCase_Destination.g.cs";
+            "Morphant.Generated.Member.Destination__c465d85b12adb249299335c032aeafc3.g.cs";
         const string extensionHint =
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs";
+            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__5e8e99ec36f7e443fd96feb93e541421.g.cs";
         const string alternativeExtensionHint =
             "Morphant.Generated.MemberExtension." +
             "TestCase_AlternativeSource__TestCase_Destination__TestCase_SecondMapper.g.cs";

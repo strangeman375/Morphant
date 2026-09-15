@@ -271,10 +271,9 @@ namespace Morphant
 """;
 
         const string membersHint =
-            "Morphant.Generated.Member.TestCase_Destination_1.g.cs";
+            "Morphant.Generated.Member.Destination__d4ed98c91d72688835548ac8f46ba748.g.cs";
         const string extensionHint =
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_Source_T___TestCase_Destination_T___TestCase_TestMapper_T_.g.cs";
+            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2a3df31a98345f6eaa2ba0ea127c4b3f.g.cs";
 
         RunAndAssert(
             LanguageVersion.CSharp9,

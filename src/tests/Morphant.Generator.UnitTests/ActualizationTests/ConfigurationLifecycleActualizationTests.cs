@@ -9,24 +9,24 @@ namespace Morphant.Generator.UnitTests.ActualizationTests;
 internal sealed class ConfigurationLifecycleActualizationTests
 {
     private const string Mapper =
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs";
 
     private static readonly string[] PrimaryGeneratedFiles =
     [
-        "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.Member.TestCase_Destination.g.cs",
-        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+        "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+        "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
         Mapper
     ];
 
     private static readonly string[] BothGeneratedFiles =
     [
         .. PrimaryGeneratedFiles,
-        "Morphant.Generated.Construction.TestCase_SecondDestination.g.cs",
-        "Morphant.Generated.MappingExtension.TestCase_SecondSource__TestCase_SecondDestination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.Member.TestCase_SecondDestination.g.cs",
-        "Morphant.Generated.MemberExtension.TestCase_SecondSource__TestCase_SecondDestination__TestCase_TestMapper.g.cs"
+        "Morphant.Generated.Construction.SecondDestination__0a6bfb7a68eff48a657f8d1b5be8ccad.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SecondSourceToSecondDestination__1fc24daf1ff8c0e20bca352f213a53eb.g.cs",
+        "Morphant.Generated.Member.SecondDestination__0a6bfb7a68eff48a657f8d1b5be8ccad.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SecondSourceToSecondDestination__1fc24daf1ff8c0e20bca352f213a53eb.g.cs"
     ];
 
     [Test]

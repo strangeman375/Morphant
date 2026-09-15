@@ -9,23 +9,21 @@ namespace Morphant.Generator.UnitTests.ActualizationTests;
 internal sealed class ExplicitMappingActualizationTests
 {
     private const string Mapper =
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs";
 
     [Test]
     public void Actualizes_explicit_mapping_strategies_without_stale_code()
     {
         var generated = new[]
         {
-            "Morphant.Generated.Construction." +
-            "TestCase_ChildDestination.g.cs",
-            "Morphant.Generated.MappingExtension.TestCase_ChildSource__TestCase_ChildDestination__TestCase_TestMapper.g.cs",
-            "Morphant.Generated.Member." +
-            "TestCase_ChildDestination.g.cs",
-            "Morphant.Generated.MemberExtension.TestCase_ChildSource__TestCase_ChildDestination__TestCase_TestMapper.g.cs",
-            "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-            "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-            "Morphant.Generated.Member.TestCase_Destination.g.cs",
-            "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+            "Morphant.Generated.Construction.ChildDestination__b186009bc4411bdc54c2ac6a976ff28e.g.cs",
+            "Morphant.Generated.MappingExtension.TestMapper.ChildSourceToChildDestination__33d35a845ae14174c96bd90de735fb5a.g.cs",
+            "Morphant.Generated.Member.ChildDestination__b186009bc4411bdc54c2ac6a976ff28e.g.cs",
+            "Morphant.Generated.MemberExtension.TestMapper.ChildSourceToChildDestination__33d35a845ae14174c96bd90de735fb5a.g.cs",
+            "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+            "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
             Mapper
         };
 

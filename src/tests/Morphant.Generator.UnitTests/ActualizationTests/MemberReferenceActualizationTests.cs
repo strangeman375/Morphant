@@ -166,9 +166,9 @@ namespace Morphant
             "ExternalModels",
             referenceV2Source);
         const string membersHint =
-            "Morphant.Generated.Member.ExternalModels_Destination.g.cs";
+            "Morphant.Generated.Member.Destination__2d3cf7ab0ac7e86f199eceec78b98b8f.g.cs";
         const string extensionHint =
-            "Morphant.Generated.MemberExtension.TestCase_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs";
+            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__9d80080bd29211fde21a07b0bc63d1ef.g.cs";
 
         RunAndAssert(
             LanguageVersion.CSharp9,
