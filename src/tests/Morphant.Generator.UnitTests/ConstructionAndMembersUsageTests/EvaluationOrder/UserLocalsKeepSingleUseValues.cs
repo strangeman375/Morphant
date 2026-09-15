@@ -55,7 +55,7 @@ namespace TestCase
             source.Replace("__BREAK__", multiline ? "\n" : " "),
             expectedMappers:
             [
-            ("Morphant.Generated.TypeMapper.TestCase_Mapper.g.cs",
+            ("Morphant.Generated.TypeMapper.Mapper__b93622f58bb33946b8901b3146112f51.g.cs",
             // lang=c#
 multiline ?
 """
