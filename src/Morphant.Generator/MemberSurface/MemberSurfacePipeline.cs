@@ -44,36 +44,15 @@ internal static class MemberSurfacePipeline
             .WithComparer(MemberExtensionModelResultComparer.Instance)
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildMemberExtensionModels);
-        var extensionHintNameIdentities = extensionModels
-            .Select(static (model, _) =>
-                new HintNameIdentity(
-                    model.StableIdentity,
-                    HintNameHelper.ToHintNamePart(
-                        model.StableIdentity)));
-        var extensionHintNameAllocations = GeneratorStageGuard.Select(
-                context,
-                extensionHintNameIdentities.Collect(),
-                "AllocateMemberExtensionHintNames",
-                static (identities, cancellationToken) =>
-                    HintNameCollisions.Build(
-                        identities,
-                        cancellationToken),
-                new HintNameAllocations(
-                    ImmutableArray<HintNameAllocation>.Empty))
-            .WithComparer(HintNameAllocationsComparer.Instance);
         var extensionRequests =
             GeneratorStageGuard.SelectTrackedSourceRequest(
                 context,
-                extensionModels.Combine(extensionHintNameAllocations),
+                extensionModels,
                 MorphantGeneratorStageNames.BuildMemberExtensionRequests,
-                static (source, _) =>
+                static (model, _) =>
                     new MemberSurfaceRequest(
-                        GeneratedSourceHintName.Create(
-                            "MemberExtension",
-                            HintNameCollisions.Resolve(
-                                source.Right,
-                                source.Left.StableIdentity)),
-                        MemberConfigurationEmitter.Emit(source.Left.Model)),
+                        model.HintName,
+                        MemberConfigurationEmitter.Emit(model.Model)),
                 static _ => Location.None);
 
         GeneratorStageGuard.RegisterSourceOutput(
@@ -104,11 +83,9 @@ internal static class MemberSurfacePipeline
         Compilation compilation)
     {
         var pair = candidate.Pair;
-        var stableIdentity = BuildExtensionStableIdentity(candidate);
 
         return new MemberExtensionModelResult(
-            candidate.CandidateIdentity,
-            stableIdentity,
+            MappingExtensionNaming.BuildHintName("MemberExtension", candidate),
             PairConfigurationModelBuilder.Build(
                 pair,
                 candidate.Surface,
@@ -126,8 +103,8 @@ internal static class MemberSurfacePipeline
             MemberExtensionModelResult right)
         {
             return StringComparer.Ordinal.Equals(
-                       left.StableIdentity,
-                       right.StableIdentity) &&
+                       left.HintName,
+                       right.HintName) &&
                    PairConfigurationModelEquality.Equal(
                        left.Model,
                        right.Model);
@@ -140,14 +117,8 @@ internal static class MemberSurfacePipeline
     }
 
     private readonly record struct MemberExtensionModelResult(
-        string CandidateIdentity,
-        string StableIdentity,
-        PairConfigurationModel Model)
-    {
-        public string HintName => GeneratedSourceHintName.Create(
-            "MemberExtension",
-            HintNameHelper.ToHintNamePart(StableIdentity));
-    }
+        string HintName,
+        PairConfigurationModel Model);
 
     internal static ImmutableArray<MemberSurfaceRequest> BuildRequests(
         ImmutableArray<CanonicalMappingPairCandidate> candidates,
@@ -217,19 +188,12 @@ internal static class MemberSurfacePipeline
             }
         }
 
-        var hintNameAllocator = new HintNamePartAllocator();
-
         foreach (var definition in definitions.OrderBy(
                      static pair => pair.Key,
                      StringComparer.Ordinal))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var metadataName = definition.Value.Tuple is { } tuple
-                ? "Tuple." +
-                  BclTuplePlanNaming.BuildHintIdentity(tuple)
-                : SymbolNameHelper.GetFullMetadataName(
-                    definition.Value.DestinationType);
             var model = definition.Value.Tuple is { } tupleShape
                 ? BclTuplePlanModelBuilder.BuildMembers(
                     tupleShape,
@@ -239,9 +203,10 @@ internal static class MemberSurfacePipeline
                     definition.Value.IncludeInitOnlyProperties,
                     compilation,
                     cancellationToken);
-            var hintName = GeneratedSourceHintName.Create(
+            var hintName = GeneratedSourceHintName.ForDestination(
                 "Member",
-                hintNameAllocator.Allocate(metadataName));
+                definition.Value.DestinationType,
+                compilation);
 
             requests.Add(
                 new MemberSurfaceRequest(
@@ -256,8 +221,6 @@ internal static class MemberSurfacePipeline
         ImmutableArray<MemberSurfaceRequest>.Builder requests,
         CancellationToken cancellationToken)
     {
-        var hintNameAllocator = new HintNamePartAllocator();
-
         foreach (var candidate in candidates)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -267,10 +230,8 @@ internal static class MemberSurfacePipeline
                 continue;
             }
 
-            var stableIdentity = BuildExtensionStableIdentity(candidate);
-            var hintName = GeneratedSourceHintName.Create(
-                "MemberExtension",
-                hintNameAllocator.Allocate(stableIdentity));
+            var hintName = MappingExtensionNaming.BuildHintName(
+                "MemberExtension", candidate);
             var model = PairConfigurationModelBuilder.Build(
                 candidate.Pair,
                 candidate.Surface,
@@ -281,24 +242,6 @@ internal static class MemberSurfacePipeline
                     hintName,
                     MemberConfigurationEmitter.Emit(model)));
         }
-    }
-
-    private static string RemoveGlobalAlias(string value)
-    {
-        return value.Replace("global::", string.Empty);
-    }
-
-    private static string BuildExtensionStableIdentity(
-        CanonicalMappingPairCandidate candidate)
-    {
-        var pair = candidate.Pair;
-        var pairIdentity =
-            RemoveGlobalAlias(pair.Identity.Source.DisplayName) +
-            "__" +
-            RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
-
-        return pairIdentity + "__" +
-               RemoveGlobalAlias(candidate.Surface.ReadableScopeIdentity);
     }
 
     private readonly record struct MemberPlanDefinition(

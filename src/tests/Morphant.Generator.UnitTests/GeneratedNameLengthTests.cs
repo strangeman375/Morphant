@@ -57,33 +57,37 @@ internal sealed class GeneratedNameLengthTests
     }
 
     [Test]
-    public void Bounds_hint_names_by_utf8_bytes_and_keeps_short_names_stable()
+    public void Bounds_hint_names_by_utf8_bytes_and_preserves_permanent_ids()
     {
         const string prefix = "Morphant.Generated.Member.";
         const string extension = ".g.cs";
-        var exactIdentity = new string('A', 189);
-        var overflowIdentity = new string('A', 190);
+        var exactIdentity = new string('A', 155);
+        var overflowIdentity = new string('A', 156);
         var unicodeIdentity =
             "Tuple_" +
-            new string('Ж', 82) +
+            new string('Ж', 74) +
             "😀" +
             new string('Z', 20);
 
         var exactHint = GeneratedSourceHintName.Create(
             "Member",
-            exactIdentity);
+            exactIdentity,
+            "5f7d6028f7cede391ce9731ad53c155e");
         var overflowHint = GeneratedSourceHintName.Create(
             "Member",
-            overflowIdentity);
+            overflowIdentity,
+            "5f7d6028f7cede391ce9731ad53c155e");
         var unicodeHint = GeneratedSourceHintName.Create(
             "Member",
-            unicodeIdentity);
+            unicodeIdentity,
+            "5f7d6028f7cede391ce9731ad53c155e");
 
         Assert.Multiple(() =>
         {
             Assert.That(
                 exactHint,
-                Is.EqualTo(prefix + exactIdentity + extension));
+                Is.EqualTo(prefix + exactIdentity +
+                    "__5f7d6028f7cede391ce9731ad53c155e" + extension));
             Assert.That(
                 Encoding.UTF8.GetByteCount(exactHint),
                 Is.EqualTo(220));
@@ -91,8 +95,8 @@ internal sealed class GeneratedNameLengthTests
                 overflowHint,
                 Is.EqualTo(
                     prefix +
-                    new string('A', 171) +
-                    "__8aa1c15210409ca2" +
+                    new string('A', 155) +
+                    "__5f7d6028f7cede391ce9731ad53c155e" +
                     extension));
             Assert.That(
                 Encoding.UTF8.GetByteCount(overflowHint),
@@ -102,8 +106,8 @@ internal sealed class GeneratedNameLengthTests
                 Is.EqualTo(
                     prefix +
                     "Tuple_" +
-                    new string('Ж', 82) +
-                    "__b5d01df70aab29a6" +
+                    new string('Ж', 74) +
+                    "__5f7d6028f7cede391ce9731ad53c155e" +
                     extension));
             Assert.That(
                 Encoding.UTF8.GetByteCount(unicodeHint),
@@ -118,9 +122,10 @@ internal sealed class GeneratedNameLengthTests
         var hintName = GeneratedSourceHintName.Create(
             "Member",
             "Tuple_" +
-            new string('Ж', 82) +
+            new string('Ж', 74) +
             "😀" +
-            new string('Z', 20));
+            new string('Z', 20),
+            "5f7d6028f7cede391ce9731ad53c155e");
         var root = Path.Combine(
             Path.GetTempPath(),
             nameof(GeneratedNameLengthTests),

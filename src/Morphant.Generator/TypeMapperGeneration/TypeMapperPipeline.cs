@@ -102,29 +102,12 @@ internal static class TypeMapperPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<TypeMapperGenerationInput> models)
     {
-        var hintNameIdentities = models
-            .Select(static (model, _) =>
-                new HintNameIdentity(
-                    model.StableIdentity,
-                    HintNameHelper.ToHintNamePart(
-                        model.StableIdentity)));
-        var hintNameAllocations = GeneratorStageGuard.Select(
-                context,
-                hintNameIdentities.Collect(),
-                "AllocateTypeMapperHintNames",
-                static (identities, cancellationToken) =>
-                    HintNameCollisions.Build(
-                        identities,
-                        cancellationToken),
-                new HintNameAllocations(
-                    ImmutableArray<HintNameAllocation>.Empty))
-            .WithComparer(HintNameAllocationsComparer.Instance);
         var requests = GeneratorStageGuard.SelectTrackedSourceRequest(
                 context,
-                models.Combine(hintNameAllocations),
+                models,
                 MorphantGeneratorStageNames.BuildTypeMapperRequests,
                 static (source, _) =>
-                    BuildRequest(source.Left, source.Right),
+                    new TypeMapperRequest(source.HintName, source.Source),
                 static _ => Location.None);
 
         GeneratorStageGuard.RegisterSourceOutput(
@@ -138,16 +121,4 @@ internal static class TypeMapperPipeline
                     request.Source));
     }
 
-    private static TypeMapperRequest BuildRequest(
-        TypeMapperGenerationInput input,
-        HintNameAllocations allocations)
-    {
-        return new TypeMapperRequest(
-            GeneratedSourceHintName.Create(
-                "TypeMapper",
-                HintNameCollisions.Resolve(
-                    allocations,
-                    input.StableIdentity)),
-            input.Source);
-    }
 }

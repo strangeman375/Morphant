@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 
 namespace Morphant.Generator;
@@ -11,26 +10,10 @@ internal static class GeneratedPlanNaming
         INamedTypeSymbol destinationDefinition,
         Compilation compilation)
     {
-        // Eligible destinations have an unambiguous global metadata name.
-        // Definition identity preserves one generic plan across substitutions.
-        return BuildNamespace(
-            "type:" + SymbolNameHelper.GetFullMetadataName(
-                destinationDefinition.OriginalDefinition),
-            compilation);
-    }
-
-    public static string BuildNamespace(
-        string destinationIdentity,
-        Compilation compilation)
-    {
-        var assembly = compilation.Assembly.Identity;
-        var token = string.Concat(assembly.PublicKeyToken.Select(
-            static value => value.ToString("x2", CultureInfo.InvariantCulture)));
-        var identity = assembly.Name.Length.ToString(CultureInfo.InvariantCulture) +
-                       ":" + assembly.Name + ":" + token + ":" +
-                       destinationIdentity;
-
-        return RootNamespace + ".N_" + HintNameHelper.GetStableHash128(identity);
+        return RootNamespace + ".N_" +
+               GeneratedEntityIdentity.ForTypeDefinition(
+                   destinationDefinition,
+                   compilation);
     }
 
     public static string BuildConstructionTypeName(

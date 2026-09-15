@@ -1,4 +1,8 @@
+using System.Globalization;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Morphant.Generator.ConstructionSurface;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator;
 
@@ -10,28 +14,59 @@ internal static class GeneratedSourceHintName
 
     public static string Create(
         string artifactKind,
-        string stableIdentity)
+        string readableLabel,
+        string identity)
     {
         var prefix = "Morphant.Generated." + artifactKind + ".";
-        var candidate = prefix + stableIdentity + ".g.cs";
+        var suffix = "__" + identity + ".g.cs";
 
-        if (Encoding.UTF8.GetByteCount(candidate) <= MaxHintNameUtf8Bytes)
+        if (Encoding.UTF8.GetByteCount(prefix + readableLabel + suffix) <=
+            MaxHintNameUtf8Bytes)
         {
-            return candidate;
+            return prefix + readableLabel + suffix;
         }
 
-        var suffix = "__" +
-                     HintNameHelper.GetStableHash(candidate) +
-                     ".g.cs";
         var identityByteBudget = MaxHintNameUtf8Bytes -
                                  Encoding.UTF8.GetByteCount(prefix) -
                                  Encoding.UTF8.GetByteCount(suffix);
         var readablePrefix = TakeUtf8Prefix(
-                stableIdentity,
+                readableLabel,
                 identityByteBudget)
-            .TrimEnd('_');
+            .TrimEnd('_', '.');
 
         return prefix + readablePrefix + suffix;
+    }
+
+    public static string ForDestination(
+        string artifactKind,
+        INamedTypeSymbol destination,
+        Compilation compilation)
+    {
+        var tuple = BclTupleShapePolicy.TryCreate(destination);
+        var identity = tuple is null
+            ? GeneratedEntityIdentity.ForTypeDefinition(destination, compilation)
+            : BclTuplePlanNaming.BuildIdentity(tuple, compilation);
+
+        return Create(artifactKind, BuildTypeLabel(destination), identity);
+    }
+
+    public static string BuildTypeLabel(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol array)
+        {
+            return BuildTypeLabel(array.ElementType) + "Array" +
+                   array.Rank.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (BclTupleShapePolicy.TryCreate(type) is { } tuple)
+        {
+            return (tuple.Kind == BclTupleKind.ValueTuple
+                       ? "ValueTuple"
+                       : "SystemTuple") +
+                   tuple.Elements.Length.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return HintNameHelper.ToHintNamePart(type.Name);
     }
 
     private static string TakeUtf8Prefix(string value, int maxByteCount)

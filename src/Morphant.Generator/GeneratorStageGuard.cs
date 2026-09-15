@@ -394,13 +394,10 @@ internal static class GeneratorStageGuard
             var identity = StageName + "|" +
                            FailureIdentity + "|" +
                            ExceptionType;
-            var readableIdentity =
-                HintNameHelper.ToHintNamePart(StageName) + "__" +
-                HintNameHelper.GetStableHash(identity);
-
             return GeneratedSourceHintName.Create(
                 "GeneratorFailure",
-                readableIdentity);
+                HintNameHelper.ToHintNamePart(StageName),
+                HintNameHelper.GetStableHash128(identity));
         }
 
         private string BuildReportSource()

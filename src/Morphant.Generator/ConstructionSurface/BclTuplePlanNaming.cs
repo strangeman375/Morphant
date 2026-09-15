@@ -9,10 +9,18 @@ internal static class BclTuplePlanNaming
         BclTupleShape shape,
         Compilation compilation)
     {
-        // Reuse the complete tuple contract/presentation fingerprint that
-        // also identifies its hint file, then scope it to this assembly.
-        return GeneratedPlanNaming.BuildNamespace(
-            "tuple:" + BuildHintIdentity(shape), compilation);
+        return GeneratedPlanNaming.RootNamespace + ".N_" +
+               BuildIdentity(shape, compilation);
+    }
+
+    public static string BuildIdentity(
+        BclTupleShape shape,
+        Compilation compilation)
+    {
+        // Preserve the established tuple namespace fingerprint independently
+        // of the readable filename or its length limit.
+        return GeneratedEntityIdentity.Create(
+            "tuple:" + BuildContractFingerprint(shape), compilation);
     }
 
     public static string BuildStableIdentity(BclTupleShape shape)
@@ -66,7 +74,7 @@ internal static class BclTuplePlanNaming
                      ">");
     }
 
-    public static string BuildHintIdentity(BclTupleShape shape)
+    private static string BuildContractFingerprint(BclTupleShape shape)
     {
         return (shape.Kind == BclTupleKind.ValueTuple ? "V" : "S") +
                shape.Elements.Length.ToString(

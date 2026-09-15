@@ -10,8 +10,6 @@ internal static class DestinationPlanCoordinationBuilder
     {
         var owners = new Dictionary<string, DestinationPlanOwner>(
             StringComparer.Ordinal);
-        var hintNameIdentities = new Dictionary<string, HintNameIdentity>(
-            StringComparer.Ordinal);
 
         foreach (var candidate in candidates)
         {
@@ -29,11 +27,6 @@ internal static class DestinationPlanCoordinationBuilder
                         candidate.DestinationIdentity,
                         candidate.CandidateIdentity);
             }
-
-            hintNameIdentities[candidate.DestinationIdentity] =
-                new HintNameIdentity(
-                    candidate.HintStableIdentity,
-                    candidate.ReadableHintNamePart);
         }
 
         var orderedOwners = owners.Values
@@ -41,18 +34,7 @@ internal static class DestinationPlanCoordinationBuilder
                 static owner => owner.DestinationIdentity,
                 StringComparer.Ordinal)
             .ToImmutableArray();
-        var orderedHintNameIdentities = hintNameIdentities
-            .OrderBy(
-                static item => item.Key,
-                StringComparer.Ordinal)
-            .Select(static item => item.Value)
-            .ToImmutableArray();
-
-        return new DestinationPlanCoordination(
-            orderedOwners,
-            HintNameCollisions.Build(
-                orderedHintNameIdentities,
-                cancellationToken));
+        return new DestinationPlanCoordination(orderedOwners);
     }
 }
 
@@ -61,8 +43,6 @@ internal readonly record struct DestinationPlanCandidate(
     string DestinationIdentity,
     string AssemblyIdentity,
     string MetadataName,
-    string HintStableIdentity,
-    string ReadableHintNamePart,
     bool IncludeInitOnlyProperties);
 
 internal readonly record struct DestinationPlanOwner(
@@ -70,8 +50,7 @@ internal readonly record struct DestinationPlanOwner(
     string CandidateIdentity);
 
 internal readonly record struct DestinationPlanCoordination(
-    ImmutableArray<DestinationPlanOwner> Owners,
-    HintNameAllocations HintNameAllocations)
+    ImmutableArray<DestinationPlanOwner> Owners)
 {
     public bool IsOwner(DestinationPlanCandidate candidate)
     {
@@ -98,10 +77,7 @@ internal sealed class DestinationPlanCoordinationComparer :
         DestinationPlanCoordination left,
         DestinationPlanCoordination right)
     {
-        return left.Owners.SequenceEqual(right.Owners) &&
-               HintNameAllocationsComparer.Instance.Equals(
-                   left.HintNameAllocations,
-                   right.HintNameAllocations);
+        return left.Owners.SequenceEqual(right.Owners);
     }
 
     public int GetHashCode(DestinationPlanCoordination value)
@@ -113,10 +89,7 @@ internal sealed class DestinationPlanCoordinationComparer :
             hash = unchecked(hash * 31 + owner.GetHashCode());
         }
 
-        return unchecked(
-            hash * 31 +
-            HintNameAllocationsComparer.Instance.GetHashCode(
-                value.HintNameAllocations));
+        return hash;
     }
 }
 

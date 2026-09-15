@@ -25,6 +25,9 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Use short readable labels and permanent stable IDs for generated filenames.
+  Similar names and long Unicode names remain distinct without renaming
+  existing files when registrations change. Generated namespaces are unchanged.
 - Let adaptive `Map` in `Members` update a child prepared by construction or a
   factory, including during outer Create, and retain the nested mapping result.
 - Share common destination construction across Create, Update and repeated

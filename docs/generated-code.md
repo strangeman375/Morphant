@@ -24,6 +24,11 @@ After a successful compilation, generated mapper implementations appear in
 These files are for review and are excluded from compilation. Commit the entire
 snapshot directory together with your mapping changes.
 
+Filenames contain a readable label and a stable ID. Adding another mapper or
+type does not rename existing files. After a generator upgrade changes the
+naming format, a successful compilation replaces the old snapshot filenames
+automatically; include those renames when committing the snapshot.
+
 For a multi-targeted project, make `MorphantGitSnapshot` conditional on
 `TargetFramework` to avoid saving extra copies. For example, save only `net10.0`:
 

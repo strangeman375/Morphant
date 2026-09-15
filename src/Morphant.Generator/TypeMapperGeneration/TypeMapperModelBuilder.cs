@@ -133,7 +133,10 @@ internal static class TypeMapperModelBuilder
                 model,
                 cancellationToken);
         return new TypeMapperGenerationInput(
-            SymbolNameHelper.GetFullMetadataName(mapperType),
+            GeneratedSourceHintName.Create(
+                "TypeMapper",
+                HintNameHelper.ToHintNamePart(mapperType.Name),
+                GeneratedEntityIdentity.ForTypeDefinition(mapperType, compilation)),
             TypeMapperEmitter.Emit(model).ToString(),
             callbackDiagnostics,
             constructionDiagnostics,

@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 namespace Morphant.Generator.TypeMapperGeneration;
 
 internal readonly record struct TypeMapperGenerationInput(
-    string StableIdentity,
+    string HintName,
     string Source,
     ImmutableArray<CallbackDiagnosticCandidate> CallbackDiagnostics,
     ImmutableArray<ConstructionDiagnosticCandidate> ConstructionDiagnostics,
@@ -14,9 +14,4 @@ internal readonly record struct TypeMapperGenerationInput(
         MappingCompletenessDiagnostics,
     ImmutableArray<IncludeMembersDiagnosticCandidate>
         IncludeMembersDiagnostics,
-    ImmutableArray<FlatteningDiagnosticCandidate> FlatteningDiagnostics)
-{
-    public string HintName => GeneratedSourceHintName.Create(
-        "TypeMapper",
-        HintNameHelper.ToHintNamePart(StableIdentity));
-}
+    ImmutableArray<FlatteningDiagnosticCandidate> FlatteningDiagnostics);

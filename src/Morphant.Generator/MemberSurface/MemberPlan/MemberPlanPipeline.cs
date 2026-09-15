@@ -74,9 +74,7 @@ internal static class MemberPlanPipeline
     private static DestinationPlanCoordination EmptyCoordination()
     {
         return new DestinationPlanCoordination(
-            ImmutableArray<DestinationPlanOwner>.Empty,
-            new HintNameAllocations(
-                ImmutableArray<HintNameAllocation>.Empty));
+            ImmutableArray<DestinationPlanOwner>.Empty);
     }
 
     private static MemberPlanCandidate BuildCandidate(
@@ -99,11 +97,6 @@ internal static class MemberPlanPipeline
         var metadataName = tuple is null
             ? SymbolNameHelper.GetFullMetadataName(definition)
             : "Tuple." + planIdentity;
-        var hintStableIdentity = metadataName;
-        var readableHintNamePart = tuple is null
-            ? HintNameHelper.ToHintNamePart(metadataName)
-            : HintNameHelper.ToHintNamePart(
-                "Tuple." + BclTuplePlanNaming.BuildHintIdentity(tuple));
 
         return new MemberPlanCandidate(
             new DestinationPlanCandidate(
@@ -113,8 +106,6 @@ internal static class MemberPlanPipeline
                     : "tuple|" + planIdentity,
                 assemblyIdentity,
                 metadataName,
-                hintStableIdentity,
-                readableHintNamePart,
                 candidate.Pair.Capabilities.StructuredConstruction),
             definition,
             tuple is not null,
@@ -133,12 +124,10 @@ internal static class MemberPlanPipeline
                 candidate.Coordination.AssemblyIdentity,
                 candidate.Coordination.MetadataName,
                 candidate.Coordination.IncludeInitOnlyProperties,
-                GeneratedSourceHintName.Create(
+                GeneratedSourceHintName.ForDestination(
                     "Member",
-                    HintNameCollisions.Resolve(
-                        coordination.HintNameAllocations,
-                        candidate.Coordination.HintStableIdentity,
-                        candidate.Coordination.ReadableHintNamePart)),
+                    candidate.Destination,
+                    candidate.Compilation),
                 candidate.Destination,
                 candidate.IsTuple,
                 candidate.PlanIdentity,
