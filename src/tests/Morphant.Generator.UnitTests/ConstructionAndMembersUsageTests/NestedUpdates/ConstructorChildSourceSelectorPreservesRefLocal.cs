@@ -184,7 +184,7 @@ namespace TestCase
 
             var reads = 0;
 
-            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
+            global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace(
                 result.Child,
                 () => source.ReadChild(ref reads),
                 context);
@@ -199,7 +199,7 @@ namespace TestCase
         {
             var reads = 0;
 
-            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
+            global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace(
                 destination.Child,
                 () => source.ReadChild(ref reads),
                 context);

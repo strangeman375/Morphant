@@ -387,16 +387,17 @@ namespace TestCase
         {
             var result = new global::TestCase.Destination();
 
-            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace<
+            global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace<
                 global::TestCase.Source,
                 global::TestCase.ChildSource,
-                global::TestCase.ChildDestination>(
+                global::TestCase.ChildDestination,
+                global::TestCase.IChildDestination>(
                 result.Existing,
                 source,
                 static s => s.Child,
                 context);
 
-            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
+            global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace(
                 result.Empty,
                 source,
                 static s => global::TestCase.TestMapper.ThrowIfEvaluated(s),
@@ -410,16 +411,17 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace<
+            global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace<
                 global::TestCase.Source,
                 global::TestCase.ChildSource,
-                global::TestCase.ChildDestination>(
+                global::TestCase.ChildDestination,
+                global::TestCase.IChildDestination>(
                 destination.Existing,
                 source,
                 static s => s.Child,
                 context);
 
-            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
+            global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace(
                 destination.Empty,
                 source,
                 static s => global::TestCase.TestMapper.ThrowIfEvaluated(s),

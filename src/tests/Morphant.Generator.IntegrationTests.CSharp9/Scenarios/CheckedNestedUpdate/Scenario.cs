@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Morphant;
 using Morphant.Context;
 using Morphant.Exceptions;
-using Morphant.GeneratedCode;
+using Morphant.RuntimeSupport;
 using DestinationMembers = Morphant.Generated.N_7b90cf053b7a6790fbfbf441dba532b7.DestinationMembers;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CheckedNestedUpdate
@@ -133,10 +133,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CheckedNestedUpd
             try
             {
                 if (capture)
-                    MappingHelpers.UpdateInPlace<ChildSource, ChildDestination>(
+                    MappingHelpers.UpdateInPlace<ChildSource, ChildDestination, IChildDestination>(
                         source.Target, () => source.ReadChild(ref reads), default);
                 else
-                    MappingHelpers.UpdateInPlace<Source, ChildSource, ChildDestination>(
+                    MappingHelpers.UpdateInPlace<Source, ChildSource, ChildDestination, IChildDestination>(
                         source.Target, source, static s => s.ReadChild(), default);
             }
             catch (Exception exception) { failure = exception; }

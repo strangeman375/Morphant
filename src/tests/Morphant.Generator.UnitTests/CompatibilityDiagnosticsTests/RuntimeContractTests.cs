@@ -185,13 +185,13 @@ namespace Morphant
         RuntimeContractDefect.MissingMapperAttribute,
         "Morphant.MorphantMapperAttribute",
         "is missing")]
-    [TestCase(RuntimeContractDefect.MissingMappingHelpers, "Morphant.GeneratedCode.MappingHelpers", "is missing")]
-    [TestCase(RuntimeContractDefect.WrongSourceSelector, "Morphant.GeneratedCode.MappingHelpers", "has an incompatible shape")]
-    [TestCase(RuntimeContractDefect.MissingCapturedSelector, "Morphant.GeneratedCode.MappingHelpers", "has an incompatible shape")]
-    [TestCase(RuntimeContractDefect.MissingCheckedStateSelector, "Morphant.GeneratedCode.MappingHelpers", "has an incompatible shape")]
-    [TestCase(RuntimeContractDefect.MissingCheckedCapturedSelector, "Morphant.GeneratedCode.MappingHelpers", "has an incompatible shape")]
-    [TestCase(RuntimeContractDefect.MissingDerivedUpdate, "Morphant.GeneratedCode.MappingHelpers", "has an incompatible shape")]
-    [TestCase(RuntimeContractDefect.WrongDerivedResult, "Morphant.GeneratedCode.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.MissingMappingHelpers, "Morphant.RuntimeSupport.MappingHelpers", "is missing")]
+    [TestCase(RuntimeContractDefect.WrongSourceSelector, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.MissingCapturedSelector, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.MissingCheckedStateSelector, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.MissingCheckedCapturedSelector, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.MissingDerivedUpdate, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
+    [TestCase(RuntimeContractDefect.WrongDerivedResult, "Morphant.RuntimeSupport.MappingHelpers", "has an incompatible shape")]
     [TestCase(
         RuntimeContractDefect.InternalMapperAttribute,
         "Morphant.MorphantMapperAttribute",

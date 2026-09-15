@@ -78,7 +78,7 @@ internal static class RuntimeContractManifest
             TypeKind.Interface,
             IsTypeMapperInterface),
         Requirement("Morphant.Mapper", TypeKind.Class, IsMapper),
-        Requirement("Morphant.GeneratedCode.MappingHelpers", TypeKind.Class, IsMappingHelpers),
+        Requirement("Morphant.RuntimeSupport.MappingHelpers", TypeKind.Class, IsMappingHelpers),
         EnumRequirement(
             "Morphant.MappingMode",
             ("Default", 0),
@@ -1114,19 +1114,23 @@ internal static class RuntimeContractManifest
                 Parameter(Named("Morphant.Context.MappingContext"))],
             method => method.TypeParameters[1].HasReferenceTypeConstraint &&
                 !HasConstraints(method.TypeParameters[0])) &&
-        HasMethod(symbol, "UpdateInPlace", Accessibility.Public, isStatic: true, arity: 3, Void,
-            [Parameter(Named("System.Object")), Parameter(MethodTypeParameter(0)),
+        HasMethod(symbol, "UpdateInPlace", Accessibility.Public, isStatic: true, arity: 4, Void,
+            [Parameter(MethodTypeParameter(3)), Parameter(MethodTypeParameter(0)),
                 Parameter(Named("System.Func`2", MethodTypeParameter(0), MethodTypeParameter(1))),
                 Parameter(Named("Morphant.Context.MappingContext"))],
-            method => method.TypeParameters.All(parameter => !HasConstraints(parameter))) &&
-        HasMethod(symbol, "UpdateInPlace", Accessibility.Public, isStatic: true, arity: 2, Void,
-            [Parameter(Named("System.Object")), Parameter(Named("System.Func`1", MethodTypeParameter(0))),
+            method => method.TypeParameters[3].HasReferenceTypeConstraint &&
+                method.TypeParameters.Take(3).All(parameter => !HasConstraints(parameter))) &&
+        HasMethod(symbol, "UpdateInPlace", Accessibility.Public, isStatic: true, arity: 3, Void,
+            [Parameter(MethodTypeParameter(2)), Parameter(Named("System.Func`1", MethodTypeParameter(0))),
                 Parameter(Named("Morphant.Context.MappingContext"))],
-            method => method.TypeParameters.All(parameter => !HasConstraints(parameter))) &&
+            method => method.TypeParameters[2].HasReferenceTypeConstraint &&
+                method.TypeParameters.Take(2).All(parameter => !HasConstraints(parameter))) &&
         HasMethod(symbol, "UpdateDerived", Accessibility.Public, isStatic: true, arity: 4, MethodTypeParameter(3),
-            [Parameter(MethodTypeParameter(2)), Parameter(Named("System.Object")),
+            [Parameter(MethodTypeParameter(2)), Parameter(MethodTypeParameter(1)),
                 Parameter(Named("Morphant.Context.MappingContext"))],
-            method => method.TypeParameters.All(parameter => !HasConstraints(parameter)));
+            method => method.TypeParameters[1].HasReferenceTypeConstraint &&
+                !HasConstraints(method.TypeParameters[0]) && !HasConstraints(method.TypeParameters[2]) &&
+                !HasConstraints(method.TypeParameters[3]));
 
     private static bool HasConstraints(ITypeParameterSymbol parameter) =>
         parameter.HasReferenceTypeConstraint || parameter.HasValueTypeConstraint ||

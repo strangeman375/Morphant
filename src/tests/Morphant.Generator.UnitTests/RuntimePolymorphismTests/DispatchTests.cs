@@ -138,7 +138,7 @@ namespace TestCase
             switch (source)
             {
                 case global::TestCase.Dog polymorphicSource:
-                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                    result = global::Morphant.RuntimeSupport.MappingHelpers.UpdateDerived<
                         global::TestCase.Animal,
                         global::TestCase.AnimalDto,
                         global::TestCase.Dog,
@@ -149,7 +149,7 @@ namespace TestCase
                     return true;
 
                 case global::TestCase.Cat polymorphicSource:
-                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                    result = global::Morphant.RuntimeSupport.MappingHelpers.UpdateDerived<
                         global::TestCase.Animal,
                         global::TestCase.AnimalDto,
                         global::TestCase.Cat,
@@ -410,7 +410,7 @@ namespace TestCase
             switch (source)
             {
                 case global::TestCase.Dog polymorphicSource:
-                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                    result = global::Morphant.RuntimeSupport.MappingHelpers.UpdateDerived<
                         global::TestCase.Animal,
                         global::TestCase.AnimalDto,
                         global::TestCase.Dog,
@@ -601,7 +601,7 @@ namespace TestCase
             {
                 case global::TestCase.IWorking polymorphicSource
                     when source is not global::TestCase.IPet:
-                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                    result = global::Morphant.RuntimeSupport.MappingHelpers.UpdateDerived<
                         global::TestCase.IRoot,
                         global::TestCase.RootDto,
                         global::TestCase.IWorking,
@@ -613,7 +613,7 @@ namespace TestCase
 
                 case global::TestCase.IPet polymorphicSource
                     when source is not global::TestCase.IWorking:
-                    result = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<
+                    result = global::Morphant.RuntimeSupport.MappingHelpers.UpdateDerived<
                         global::TestCase.IRoot,
                         global::TestCase.RootDto,
                         global::TestCase.IPet,

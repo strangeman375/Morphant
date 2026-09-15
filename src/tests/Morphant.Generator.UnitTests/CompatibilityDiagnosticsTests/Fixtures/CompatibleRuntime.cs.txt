@@ -672,7 +672,7 @@ namespace Morphant.Exceptions
     }
 }
 
-namespace Morphant.GeneratedCode
+namespace Morphant.RuntimeSupport
 {
     public static class MappingHelpers
     {
@@ -689,20 +689,23 @@ namespace Morphant.GeneratedCode
             Morphant.Context.MappingContext context)
             where TDestination : class { }
 
-        public static void UpdateInPlace<TState, TSource, TDestination>(
-            object? destination,
+        public static void UpdateInPlace<TState, TSource, TDestination, TCurrentDestination>(
+            TCurrentDestination? destination,
             TState state,
             Func<TState, TSource?> sourceSelector,
-            Morphant.Context.MappingContext context) { }
+            Morphant.Context.MappingContext context)
+            where TCurrentDestination : class { }
 
-        public static void UpdateInPlace<TSource, TDestination>(
-            object? destination,
+        public static void UpdateInPlace<TSource, TDestination, TCurrentDestination>(
+            TCurrentDestination? destination,
             Func<TSource?> sourceSelector,
-            Morphant.Context.MappingContext context) { }
+            Morphant.Context.MappingContext context)
+            where TCurrentDestination : class { }
 
         public static TBranchDestination UpdateDerived<TSource, TDestination, TBranchSource, TBranchDestination>(
             TBranchSource source,
-            object? destination,
-            Morphant.Context.MappingContext context) => default!;
+            TDestination? destination,
+            Morphant.Context.MappingContext context)
+            where TDestination : class => default!;
     }
 }

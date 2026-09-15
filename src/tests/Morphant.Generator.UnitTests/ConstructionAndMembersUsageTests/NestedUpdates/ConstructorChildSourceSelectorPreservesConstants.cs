@@ -185,7 +185,7 @@ namespace TestCase
 
             const int value = 7;
 
-            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
+            global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace(
                 result.Child,
                 source,
                 static s => s.ReadChild(value),
@@ -201,7 +201,7 @@ namespace TestCase
         {
             const int value = 7;
 
-            global::Morphant.GeneratedCode.MappingHelpers.UpdateInPlace(
+            global::Morphant.RuntimeSupport.MappingHelpers.UpdateInPlace(
                 destination.Child,
                 source,
                 static s => s.ReadChild(value),

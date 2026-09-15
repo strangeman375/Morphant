@@ -1857,7 +1857,7 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        writer.Line(resultExpression + " = global::Morphant.GeneratedCode.MappingHelpers.UpdateDerived<");
+        writer.Line(resultExpression + " = global::Morphant.RuntimeSupport.MappingHelpers.UpdateDerived<");
         writer.Indent();
         writer.Line(mapping.SourceRuntimeTypeName + ",");
         writer.Line(mapping.DestinationRuntimeTypeName + ",");

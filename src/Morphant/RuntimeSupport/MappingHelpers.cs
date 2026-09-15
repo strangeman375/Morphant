@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Morphant.Context;
 using Morphant.Exceptions;
 
-namespace Morphant.GeneratedCode;
+namespace Morphant.RuntimeSupport;
 
 /// <summary>
 /// Shared operations for generated mapping code.
@@ -50,11 +50,12 @@ public static class MappingHelpers
     /// <summary>
     /// Skips null; otherwise evaluates the source, checks the destination type and updates it.
     /// </summary>
-    public static void UpdateInPlace<TState, TSource, TDestination>(
-        object? destination,
+    public static void UpdateInPlace<TState, TSource, TDestination, TCurrentDestination>(
+        TCurrentDestination? destination,
         TState state,
         Func<TState, TSource?> sourceSelector,
         MappingContext context)
+        where TCurrentDestination : class
     {
         if (destination is null)
         {
@@ -62,16 +63,17 @@ public static class MappingHelpers
         }
 
         var source = sourceSelector(state);
-        UpdateChecked<TSource, TDestination>(destination, source, context);
+        UpdateChecked<TSource, TDestination, TCurrentDestination>(destination, source, context);
     }
 
     /// <summary>
     /// Skips null; otherwise evaluates captured source state, checks the destination type and updates it.
     /// </summary>
-    public static void UpdateInPlace<TSource, TDestination>(
-        object? destination,
+    public static void UpdateInPlace<TSource, TDestination, TCurrentDestination>(
+        TCurrentDestination? destination,
         Func<TSource?> sourceSelector,
         MappingContext context)
+        where TCurrentDestination : class
     {
         if (destination is null)
         {
@@ -79,7 +81,7 @@ public static class MappingHelpers
         }
 
         var source = sourceSelector();
-        UpdateChecked<TSource, TDestination>(destination, source, context);
+        UpdateChecked<TSource, TDestination, TCurrentDestination>(destination, source, context);
     }
 
     /// <summary>
@@ -87,8 +89,9 @@ public static class MappingHelpers
     /// </summary>
     public static TBranchDestination UpdateDerived<TSource, TDestination, TBranchSource, TBranchDestination>(
         TBranchSource source,
-        object? destination,
+        TDestination? destination,
         MappingContext context)
+        where TDestination : class
     {
         TBranchDestination? branchDestination = destination switch
         {
@@ -101,10 +104,11 @@ public static class MappingHelpers
         return context.Mapper.Map<TBranchSource, TBranchDestination>(source, branchDestination);
     }
 
-    private static void UpdateChecked<TSource, TDestination>(
-        object destination,
+    private static void UpdateChecked<TSource, TDestination, TCurrentDestination>(
+        TCurrentDestination destination,
         TSource? source,
         MappingContext context)
+        where TCurrentDestination : class
     {
         var compatible = destination is TDestination value
             ? value

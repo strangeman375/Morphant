@@ -12,7 +12,7 @@ internal sealed class PublicApiBaselineTests
     [Test]
     public void Runtime_mapping_helpers_are_hidden_from_IntelliSense()
     {
-        var type = typeof(GeneratedCode.MappingHelpers);
+        var type = typeof(RuntimeSupport.MappingHelpers);
         Assert.That(type.IsAbstract && type.IsSealed, Is.True);
         Assert.That(type.GetCustomAttribute<System.ComponentModel.EditorBrowsableAttribute>()?.State,
             Is.EqualTo(System.ComponentModel.EditorBrowsableState.Never));
@@ -401,12 +401,6 @@ T Morphant.Exceptions.UnmatchedPolymorphicMappingException
   M Morphant.Exceptions.UnmatchedPolymorphicMappingException Create<TSource, TDestination>(Morphant.Context.MappingOperation, System.Object)
 T Morphant.Flattening
   V Default, Auto, None
-T Morphant.GeneratedCode.MappingHelpers
-  M System.Void UpdateInPlace<TSource, TDestination>(System.Object, System.Func<TSource>, Morphant.Context.MappingContext)
-  M System.Void UpdateInPlace<TSource, TDestination>(TDestination, System.Func<TSource>, Morphant.Context.MappingContext)
-  M System.Void UpdateInPlace<TState, TSource, TDestination>(System.Object, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
-  M System.Void UpdateInPlace<TState, TSource, TDestination>(TDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
-  M TBranchDestination UpdateDerived<TSource, TDestination, TBranchSource, TBranchDestination>(TBranchSource, System.Object, Morphant.Context.MappingContext)
 T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource)
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
@@ -460,6 +454,12 @@ T Morphant.Option<T>
   P T Value { get; }
   M Morphant.Option<T> Some(T)
   M System.Boolean TryGetValue(T&)
+T Morphant.RuntimeSupport.MappingHelpers
+  M System.Void UpdateInPlace<TSource, TDestination, TCurrentDestination>(TCurrentDestination, System.Func<TSource>, Morphant.Context.MappingContext)
+  M System.Void UpdateInPlace<TSource, TDestination>(TDestination, System.Func<TSource>, Morphant.Context.MappingContext)
+  M System.Void UpdateInPlace<TState, TSource, TDestination, TCurrentDestination>(TCurrentDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
+  M System.Void UpdateInPlace<TState, TSource, TDestination>(TDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
+  M TBranchDestination UpdateDerived<TSource, TDestination, TBranchSource, TBranchDestination>(TBranchSource, TDestination, Morphant.Context.MappingContext)
 T Morphant.TypeMapperExtensions
   M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
   M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)

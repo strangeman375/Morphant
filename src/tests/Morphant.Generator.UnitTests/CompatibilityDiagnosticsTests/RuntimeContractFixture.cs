@@ -102,11 +102,11 @@ internal sealed class RuntimeContractFixture
                 "void UpdateInPlace<TSource, TDestination>(\n            TDestination? destination",
                 "void MissingUpdateInPlace<TSource, TDestination>(\n            TDestination? destination"),
             RuntimeContractDefect.MissingCheckedStateSelector => new Replacement(
-                "void UpdateInPlace<TState, TSource, TDestination>(\n            object? destination",
-                "void MissingUpdateInPlace<TState, TSource, TDestination>(\n            object? destination"),
+                "void UpdateInPlace<TState, TSource, TDestination, TCurrentDestination>(\n            TCurrentDestination? destination",
+                "void MissingUpdateInPlace<TState, TSource, TDestination, TCurrentDestination>(\n            TCurrentDestination? destination"),
             RuntimeContractDefect.MissingCheckedCapturedSelector => new Replacement(
-                "void UpdateInPlace<TSource, TDestination>(\n            object? destination",
-                "void MissingUpdateInPlace<TSource, TDestination>(\n            object? destination"),
+                "void UpdateInPlace<TSource, TDestination, TCurrentDestination>(\n            TCurrentDestination? destination",
+                "void MissingUpdateInPlace<TSource, TDestination, TCurrentDestination>(\n            TCurrentDestination? destination"),
             RuntimeContractDefect.MissingDerivedUpdate => new Replacement(
                 "TBranchDestination UpdateDerived<", "TBranchDestination MissingUpdateDerived<"),
             RuntimeContractDefect.WrongDerivedResult => new Replacement(
