@@ -83,9 +83,7 @@ namespace TestCase
         }
 
         private (int Id, string Name) __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
                 operation,
@@ -95,9 +93,7 @@ namespace TestCase
         }
 
         private (int Id, string Name) __Update(
-            global::TestCase.Source source,
-            (int Id, string Name) destination,
-            global::Morphant.Context.MappingContext context)
+            (int Id, string Name) destination)
         {
             int id = destination.Name.Length;
             string name = destination.Id.ToString();

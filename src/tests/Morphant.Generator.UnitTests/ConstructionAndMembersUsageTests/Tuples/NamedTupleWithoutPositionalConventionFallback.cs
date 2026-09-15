@@ -82,9 +82,7 @@ namespace TestCase
         }
 
         private (int Code, string Text) __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
                 operation,
@@ -94,9 +92,7 @@ namespace TestCase
         }
 
         private (int Code, string Text) __Update(
-            global::TestCase.Source source,
-            (int Code, string Text) destination,
-            global::Morphant.Context.MappingContext context)
+            (int Code, string Text) destination)
         {
             return destination;
         }

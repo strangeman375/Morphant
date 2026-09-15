@@ -96,8 +96,7 @@ namespace TestCase
         }
 
         private (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             _ = global::Morphant.Option<(int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth)>.None.TryGetValue(out (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) current) && source.Reuse;
 
@@ -118,8 +117,7 @@ namespace TestCase
 
         private (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) __Update(
             global::TestCase.Source source,
-            (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) destination,
-            global::Morphant.Context.MappingContext context)
+            (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) destination)
         {
             if (global::Morphant.Option<(int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth)>.Some(destination).TryGetValue(out (int First, int Second, int Third, int Fourth, int Fifth, int Sixth, int Seventh, int Eighth, int Ninth) current) && source.Reuse)
             {

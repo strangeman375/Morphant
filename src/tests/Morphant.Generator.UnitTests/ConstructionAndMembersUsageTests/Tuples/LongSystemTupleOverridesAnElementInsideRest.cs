@@ -96,8 +96,7 @@ namespace TestCase
         }
 
         private global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>> __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             int item8 = 8;
             item8 = source.Id + 100;
@@ -116,9 +115,7 @@ namespace TestCase
         }
 
         private global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>> __Update(
-            global::TestCase.Source source,
-            global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>> destination,
-            global::Morphant.Context.MappingContext context)
+            global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>> destination)
         {
             return destination;
         }

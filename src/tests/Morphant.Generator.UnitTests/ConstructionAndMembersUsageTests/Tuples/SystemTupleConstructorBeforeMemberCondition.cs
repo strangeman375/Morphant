@@ -101,8 +101,7 @@ namespace TestCase
         }
 
         private global::System.Tuple<int, string> __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             int item1 = source.Id;
             string item2 = source.FromConstruct();
@@ -121,8 +120,7 @@ namespace TestCase
 
         private global::System.Tuple<int, string> __Update(
             global::TestCase.Source source,
-            global::System.Tuple<int, string> destination,
-            global::Morphant.Context.MappingContext context)
+            global::System.Tuple<int, string> destination)
         {
             _ = source.Id > 0;
 

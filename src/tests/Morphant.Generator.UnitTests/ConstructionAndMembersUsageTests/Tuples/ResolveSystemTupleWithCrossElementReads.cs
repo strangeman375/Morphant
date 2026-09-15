@@ -105,30 +105,27 @@ namespace TestCase
         }
 
         private global::System.Tuple<int, string> __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             _ = global::Morphant.Option<global::System.Tuple<int, string>>.None.TryGetValue(out global::System.Tuple<int, string>? current) && source.Reuse;
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::System.Tuple<int, string> __Update(
             global::TestCase.Source source,
-            global::System.Tuple<int, string> destination,
-            global::Morphant.Context.MappingContext context)
+            global::System.Tuple<int, string> destination)
         {
             if (global::Morphant.Option<global::System.Tuple<int, string>>.Some(destination).TryGetValue(out global::System.Tuple<int, string>? current) && source.Reuse)
             {
                 return destination;
             }
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::System.Tuple<int, string> __Construct(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             global::System.Tuple<int, string> result = new global::System.Tuple<int, string>(
                 item1: source.Id,

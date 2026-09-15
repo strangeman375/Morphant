@@ -101,8 +101,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             _ = global::Morphant.Option<global::TestCase.Destination>.None.TryGetValue(out global::TestCase.Destination? existing) && source.Reuse;
 
@@ -112,11 +111,11 @@ namespace TestCase
             {
                 case true:
                 {
-                    return __Construct(source, context);
+                    return __Construct(source);
                 }
                 case false:
                 {
-                    return __Construct1(source, context);
+                    return __Construct1(source);
                 }
             }
 
@@ -125,8 +124,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (global::Morphant.Option<global::TestCase.Destination>.Some(destination).TryGetValue(out global::TestCase.Destination? existing) && source.Reuse)
             {
@@ -141,11 +139,11 @@ namespace TestCase
             {
                 case true:
                 {
-                    return __Construct(source, context);
+                    return __Construct(source);
                 }
                 case false:
                 {
-                    return __Construct1(source, context);
+                    return __Construct1(source);
                 }
             }
 
@@ -153,8 +151,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 name: source.FromConstruct())
@@ -164,8 +161,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Construct1(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 name: source.FromMembers())

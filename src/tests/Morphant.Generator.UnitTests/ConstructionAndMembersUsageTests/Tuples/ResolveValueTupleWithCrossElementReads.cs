@@ -100,8 +100,7 @@ namespace TestCase
         }
 
         private (int Id, string Name) __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             _ = global::Morphant.Option<(int Id, string Name)>.None.TryGetValue(out (int Id, string Name) current) && source.Reuse;
 
@@ -120,8 +119,7 @@ namespace TestCase
 
         private (int Id, string Name) __Update(
             global::TestCase.Source source,
-            (int Id, string Name) destination,
-            global::Morphant.Context.MappingContext context)
+            (int Id, string Name) destination)
         {
             if (global::Morphant.Option<(int Id, string Name)>.Some(destination).TryGetValue(out (int Id, string Name) current) && source.Reuse)
             {

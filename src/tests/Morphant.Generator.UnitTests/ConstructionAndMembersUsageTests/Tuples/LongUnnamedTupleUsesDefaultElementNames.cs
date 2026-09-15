@@ -91,8 +91,7 @@ namespace TestCase
         }
 
         private (int, int, int, int, int, int, int, int, int) __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             int item8 = 8;
             item8 = source.Id + 100;
@@ -111,8 +110,7 @@ namespace TestCase
 
         private (int, int, int, int, int, int, int, int, int) __Update(
             global::TestCase.Source source,
-            (int, int, int, int, int, int, int, int, int) destination,
-            global::Morphant.Context.MappingContext context)
+            (int, int, int, int, int, int, int, int, int) destination)
         {
             destination.Rest.Item1 = source.Id + 100;
 
