@@ -86,7 +86,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -102,15 +102,14 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             var result = new global::TestCase.Destination(
                 name: source.FromConstruct());
@@ -136,8 +135,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             var name = string.Concat(
                 source.FromMembers(),

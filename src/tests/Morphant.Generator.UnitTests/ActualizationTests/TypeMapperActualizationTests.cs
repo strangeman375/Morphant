@@ -338,7 +338,7 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, context);
+            => __Create(source);
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -348,15 +348,14 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
             return __Update(source, destination, context);
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
             {
@@ -366,8 +365,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Value = source.Value;
 
@@ -400,7 +398,7 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, context);
+            => __Create(source);
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -410,15 +408,14 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
             return __Update(source, destination, context);
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
             {
@@ -429,8 +426,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Value = source.Value;
             destination.Name = source.Name;
@@ -464,7 +460,7 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, context);
+            => __Create(source);
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -478,8 +474,7 @@ namespace TestCase
                 global::Morphant.MappingMode.Create);
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
             {
@@ -514,7 +509,7 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, context);
+            => __Create(source);
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -524,15 +519,14 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
             return __Update(source, destination, context);
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 value: source.Value)
@@ -543,8 +537,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Name = source.Name;
 

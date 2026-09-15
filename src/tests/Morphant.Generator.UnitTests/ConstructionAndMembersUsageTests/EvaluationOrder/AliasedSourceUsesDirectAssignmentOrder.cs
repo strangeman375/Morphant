@@ -96,8 +96,7 @@ namespace TestCase
         }
 
         private global::TestCase.Mutable __Create(
-            global::TestCase.Mutable source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Mutable source)
         {
             return new global::TestCase.Mutable(
                 value: global::TestCase.Mapper.Observe(source.Value))
@@ -109,8 +108,7 @@ namespace TestCase
 
         private global::TestCase.Mutable __Update(
             global::TestCase.Mutable source,
-            global::TestCase.Mutable destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Mutable destination)
         {
             destination.Value = global::TestCase.Mapper.Observe(source.Value);
             destination.Copy = global::TestCase.Mapper.Observe(source.Value);

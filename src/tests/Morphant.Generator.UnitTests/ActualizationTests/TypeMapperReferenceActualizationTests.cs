@@ -92,7 +92,7 @@ namespace TestCase
         global::ExternalModels.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::ExternalModels.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, context);
+            => __Create(source);
 
         /// <inheritdoc/>
         global::ExternalModels.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::ExternalModels.Destination>.Update(
@@ -102,15 +102,14 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
             return __Update(source, destination, context);
         }
 
         private global::ExternalModels.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::ExternalModels.Destination()
             {
@@ -120,8 +119,7 @@ namespace TestCase
 
         private global::ExternalModels.Destination __Update(
             global::TestCase.Source source,
-            global::ExternalModels.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::ExternalModels.Destination destination)
         {
             destination.Value = source.Value;
 
@@ -154,7 +152,7 @@ namespace TestCase
         global::ExternalModels.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::ExternalModels.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, context);
+            => __Create(source);
 
         /// <inheritdoc/>
         global::ExternalModels.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::ExternalModels.Destination>.Update(
@@ -164,24 +162,21 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
             return __Update(source, destination, context);
         }
 
         private global::ExternalModels.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::ExternalModels.Destination(
                 label: source.Label);
         }
 
         private global::ExternalModels.Destination __Update(
-            global::TestCase.Source source,
-            global::ExternalModels.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::ExternalModels.Destination destination)
         {
             return destination;
         }

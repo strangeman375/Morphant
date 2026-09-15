@@ -79,7 +79,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
 
         /// <inheritdoc/>
@@ -95,15 +95,14 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             var first = source.Enabled switch { true => source.Read(source.Read(1) + source.Read(2)), false => source.Read(source.Read(3) + source.Read(4)) };
 
@@ -117,8 +116,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Value = source.Enabled switch { true => source.Read(source.Read(7) + source.Read(8)), false => source.Read(source.Read(9) + source.Read(10)) };
 
