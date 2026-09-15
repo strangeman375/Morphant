@@ -678,6 +678,21 @@ internal static class DeclarativeControlFlowLowerer
                         whenFalse);
                 }
 
+                if (previousParameter is not null && previousSubstitution is { } previous &&
+                    bool.TryParse(previous.HasValueExpression, out var available) &&
+                    conditional.Condition.SyntaxTree == semanticModel.SyntaxTree &&
+                    KnownPreviousGuard.TryLower(conditional.Condition, whenTrue, whenFalse,
+                        previousParameter, available, previous.ValueExpression, semanticModel,
+                        expression => RewriteDependency(expression),
+                        (expression, yes, no) => RewriteDependency(expression) is { } rewritten
+                            ? new TypeMapperControlFlowNode(
+                                ImmutableArray<TypeMapperLocalValueModel>.Empty,
+                                rewritten.Expression, yes, no, Leaf: null, ThrowExpression: null,
+                                ConditionDependency: rewritten.DependencyExpression)
+                            : null,
+                        cancellationToken) is { } simplified)
+                    return simplified;
+
                 var condition =
                     RewriteDependency(conditional.Condition);
 
@@ -828,6 +843,7 @@ internal static class DeclarativeControlFlowLowerer
             lowered,
             program.RuntimeLocals,
             preserveRuntimeLocals);
+        requiredLocals.UnionWith(program.BoundLocals.Select(local => local.PlaceholderName));
 
         var pruned = PruneLocals(lowered, requiredLocals);
         var names = AllocateLocalNames(
@@ -1628,6 +1644,10 @@ internal static class DeclarativeControlFlowLowerer
 
         if (leaf.CreateConstructor is { } constructor)
         {
+            if (!constructor.ValueLocals.IsDefault)
+                foreach (var local in constructor.ValueLocals)
+                    yield return local.ValueExpression;
+
             foreach (var argument in constructor.Arguments)
             {
                 if (argument.ExplicitValueExpression is { } expression)
@@ -1647,6 +1667,10 @@ internal static class DeclarativeControlFlowLowerer
             }
         }
     }
+
+    internal static bool UsesIdentifier(TypeMapperControlFlowNode node, string identifier) =>
+        EnumerateExpressions(node, includeLocalInitializers: true)
+            .Any(expression => ReferencesIdentifier(expression, identifier));
 
     private static bool ReferencesIdentifier(
         string expression,

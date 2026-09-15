@@ -605,6 +605,14 @@ internal static class StructuredConstructMappingPlanner
     {
         condition = UnwrapParentheses(condition);
 
+        if (previousParameter is not null && previousAvailable is { } available &&
+            KnownPreviousGuard.TryLower(condition, whenTrue, whenFalse,
+                previousParameter, available, "destination", semanticModel, rewriteExpression,
+                (expression, yes, no) => BuildRuntimeConditionNode(expression, yes, no,
+                    rewriteExpression, previousParameter, previousAvailable, semanticModel, cancellationToken),
+                cancellationToken) is { } simplified)
+            return simplified;
+
         var assignsPrevious = previousParameter is not null &&
             condition.DescendantNodesAndSelf()
                 .OfType<InvocationExpressionSyntax>()
