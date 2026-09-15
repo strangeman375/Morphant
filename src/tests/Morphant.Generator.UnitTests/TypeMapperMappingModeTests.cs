@@ -191,7 +191,7 @@ namespace TestCase
                 return __Create1(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.UpdateDestination __Create1(
@@ -229,7 +229,7 @@ namespace TestCase
                 return __Create2(source);
             }
 
-            return __Update1(source, destination, context);
+            return __Update1(source, destination);
         }
 
         private global::TestCase.BothDestination __Create2(
