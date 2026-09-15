@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/15/2026 - 07:50:57 |
-| Coverage date: | 09/15/2026 - 07:39:10 - 09/15/2026 - 07:50:52 |
+| Generated on: | 09/15/2026 - 11:21:24 |
+| Coverage date: | 09/15/2026 - 11:07:16 - 09/15/2026 - 11:21:19 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
-| Classes: | 376 |
-| Files: | 200 |
-| **Line coverage:** | 90.1% (40041 of 44406) |
-| Covered lines: | 40041 |
-| Uncovered lines: | 4365 |
-| Coverable lines: | 44406 |
-| Total lines: | 73916 |
-| **Branch coverage:** | 81% (15059 of 18577) |
-| Covered branches: | 15059 |
-| Total branches: | 18577 |
+| Classes: | 372 |
+| Files: | 201 |
+| **Line coverage:** | 90.1% (39873 of 44222) |
+| Covered lines: | 39873 |
+| Uncovered lines: | 4349 |
+| Coverable lines: | 44222 |
+| Total lines: | 73665 |
+| **Branch coverage:** | 81% (15047 of 18561) |
+| Covered branches: | 15047 |
+| Total branches: | 18561 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -89,9 +89,9 @@
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elBuilder|82.9%|69%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResult|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResultComparer|96.4%|94.4%|
-|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanPip<br/>eline|87.7%|97.3%|
+|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanPip<br/>eline|87.1%|97.2%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionTypePar<br/>ameterModel|100%||
-|Morphant.Generator.ConstructionSurface.ConstructionSurfacePipeline|97.4%|95.4%|
+|Morphant.Generator.ConstructionSurface.ConstructionSurfacePipeline|97.4%|95%|
 |Morphant.Generator.ConstructionSurface.GeneratedTypeNameBuilder|96.8%|97.2%|
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationE<br/>mitter|100%|96.1%|
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odel|100%||
@@ -103,24 +103,19 @@
 |Morphant.Generator.Diagnostics.DiagnosticHelpLink|100%||
 |Morphant.Generator.Diagnostics.GeneratorFailureDiagnosticDescriptors|100%||
 |Morphant.Generator.Extensions|100%|100%|
+|Morphant.Generator.GeneratedEntityIdentity|100%||
 |Morphant.Generator.GeneratedMemberNaming|97.3%|95.8%|
 |Morphant.Generator.GeneratedPlanNaming|100%||
-|Morphant.Generator.GeneratedSourceHintName|100%|94.4%|
+|Morphant.Generator.GeneratedSourceHintName|100%|100%|
 |Morphant.Generator.GeneratorStageGuard|100%|86%|
-|Morphant.Generator.HintNameHelper|97.4%|95%|
-|Morphant.Generator.HintNamePartAllocator|61.9%|75%|
+|Morphant.Generator.HintNameHelper|94.8%|95%|
 |Morphant.Generator.Incrementality.DestinationPlanCandidate|100%||
 |Morphant.Generator.Incrementality.DestinationPlanCoordination|100%|50%|
 |Morphant.Generator.Incrementality.DestinationPlanCoordinationBuilder|100%|100%|
-|Morphant.Generator.Incrementality.DestinationPlanCoordinationComparer|46.1%|50%|
+|Morphant.Generator.Incrementality.DestinationPlanCoordinationComparer|42.8%|0%|
 |Morphant.Generator.Incrementality.DestinationPlanOwner|100%||
 |Morphant.Generator.Incrementality.DestinationPlanOwnerComparer|100%||
 |Morphant.Generator.Incrementality.FlatteningSemanticDependencyBuilder|98.8%|97.8%|
-|Morphant.Generator.Incrementality.HintNameAllocation|100%||
-|Morphant.Generator.Incrementality.HintNameAllocations|100%||
-|Morphant.Generator.Incrementality.HintNameAllocationsComparer|33.3%|0%|
-|Morphant.Generator.Incrementality.HintNameCollisions|100%|100%|
-|Morphant.Generator.Incrementality.HintNameIdentity|100%||
 |Morphant.Generator.Incrementality.MapperSemanticFingerprint|100%||
 |Morphant.Generator.Incrementality.MapperSemanticFingerprintBuilder|97.5%|92.8%|
 |Morphant.Generator.Incrementality.MapperSemanticInput|100%||
@@ -157,6 +152,7 @@
 |Morphant.Generator.MappingPair.MapperFamilyTypeParameterPolicy|86%|87.5%|
 |Morphant.Generator.MappingPair.MapperMappingPairModel|100%||
 |Morphant.Generator.MappingPair.MapperMappingRegistrationModel|100%||
+|Morphant.Generator.MappingPair.MappingExtensionNaming|100%||
 |Morphant.Generator.MappingPair.MappingPairCapabilities|71.4%||
 |Morphant.Generator.MappingPair.MappingPairIdentity|100%||
 |Morphant.Generator.MappingPair.MappingPairModel|100%||
@@ -180,10 +176,10 @@
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelBuilder|94%|80.4%|
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelResult|100%||
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelResultComparer|94.2%|90.9%|
-|Morphant.Generator.MemberSurface.MemberPlan.MemberPlanPipeline|87.8%|97.5%|
+|Morphant.Generator.MemberSurface.MemberPlan.MemberPlanPipeline|87.2%|97.3%|
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanPropertyModel|100%||
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanTypeParameterModel|100%||
-|Morphant.Generator.MemberSurface.MemberSurfacePipeline|97.4%|95.8%|
+|Morphant.Generator.MemberSurface.MemberSurfacePipeline|97.3%|95.4%|
 |Morphant.Generator.MemberSurface.PairConfiguration.MemberConfigurationEmitt<br/>er|100%|83.3%|
 |Morphant.Generator.MorphantGenerator|90.5%||
 |Morphant.Generator.PairConfiguration.BoundConfigurationExpression|100%||
@@ -403,7 +399,7 @@
 |Morphant.Generator.TypeMapperGeneration.TypeMapperModel|100%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperModelBuilder|96.1%|91.2%|
 |Morphant.Generator.TypeMapperGeneration.TypeMapperNestedMapExpressionModel|100%||
-|Morphant.Generator.TypeMapperGeneration.TypeMapperPipeline|97%||
+|Morphant.Generator.TypeMapperGeneration.TypeMapperPipeline|96.1%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperRequest|100%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperRewrittenDependencyExpres<br/>sion|100%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperRuntimeEquality|71.4%|66.2%|
@@ -422,4 +418,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #385](https://github.com/strangeman375/Morphant/actions/runs/34942472892).
+Full HTML report: download the **coverage** artifact from [CI run #419](https://github.com/strangeman375/Morphant/actions/runs/34961106156).
