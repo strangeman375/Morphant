@@ -1087,6 +1087,13 @@ internal static class TypeMapperEmitter
         string operationExpression,
         GeneratedLocalNameAllocator localNames)
     {
+        if (mapping.CreatePostMemberMappings.IsEmpty && mapping.PostMemberControlFlow is null &&
+            !factory.RequiresNullGuard)
+        {
+            writer.Line($"return {factory.ValueExpression};");
+            return;
+        }
+
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);
 

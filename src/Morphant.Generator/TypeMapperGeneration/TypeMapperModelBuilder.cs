@@ -582,7 +582,7 @@ internal static class TypeMapperModelBuilder
                 usedGeneratedMethodNames, cancellationToken, MappingExecutionPathSet.UpdateWithPrevious);
             var variants = new List<TypeMapperMappingModel> { create, existing };
             var createRoot = MembersControlFlowMappingPlanner.SelectRoot(create, create: true);
-            if (usesOperation)
+            if (usesOperation && effectiveSettings.NullDestinationHandling == NullDestinationHandlingValue.Create)
             {
                 var missing = BuildMapping(configuration, effectiveSettings, compilation, mapperType,
                     usedGeneratedMethodNames, cancellationToken, MappingExecutionPathSet.UpdateWithoutPrevious);
