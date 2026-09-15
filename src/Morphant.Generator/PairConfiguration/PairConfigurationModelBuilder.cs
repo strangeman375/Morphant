@@ -273,10 +273,12 @@ internal static class PairConfigurationModelBuilder
         CSharpParseOptions? parseOptions,
         CancellationToken cancellationToken)
     {
-        return CSharpSyntaxTree.ParseText(
-            SourceText.From(source, Encoding.UTF8),
-            parseOptions,
-            path,
+        return GeneratedDslSyntax.Mark(
+            CSharpSyntaxTree.ParseText(
+                SourceText.From(source, Encoding.UTF8),
+                parseOptions,
+                path,
+                cancellationToken),
             cancellationToken);
     }
 
