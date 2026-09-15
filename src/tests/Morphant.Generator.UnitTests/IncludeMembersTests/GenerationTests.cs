@@ -125,7 +125,7 @@ namespace TestCase
         await ConventionTypeMapperGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper_1.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__8e66a42e760ac07d883dcf09571348a5.g.cs",
             expected);
     }
 
@@ -249,7 +249,7 @@ namespace TestCase
         await ConventionTypeMapperGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper_1.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__8e66a42e760ac07d883dcf09571348a5.g.cs",
             expected);
     }
 
@@ -458,7 +458,7 @@ namespace TestCase
         await ConventionTypeMapperGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper_1.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__8e66a42e760ac07d883dcf09571348a5.g.cs",
             expected);
     }
 

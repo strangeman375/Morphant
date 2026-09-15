@@ -9,19 +9,19 @@ namespace Morphant.Generator.UnitTests.IncrementalityTests;
 internal sealed class CachingTests
 {
     private const string MapperHint =
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs";
 
     private const string ConstructionHint =
-        "Morphant.Generated.Construction.TestCase_Destination.g.cs";
+        "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs";
 
     private const string MappingExtensionHint =
-        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs";
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs";
 
     private const string MemberHint =
-        "Morphant.Generated.Member.TestCase_Destination.g.cs";
+        "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs";
 
     private const string MemberExtensionHint =
-        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs";
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs";
 
     [Test]
     public void Reports_unrelated_edit_reason()

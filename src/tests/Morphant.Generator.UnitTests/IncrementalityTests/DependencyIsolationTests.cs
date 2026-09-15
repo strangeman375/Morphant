@@ -9,34 +9,34 @@ namespace Morphant.Generator.UnitTests.IncrementalityTests;
 internal sealed class DependencyIsolationTests
 {
     private const string ConstructionA =
-        "Morphant.Generated.Construction.TestCase_DestinationA.g.cs";
+        "Morphant.Generated.Construction.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs";
 
     private const string ConstructionB =
-        "Morphant.Generated.Construction.TestCase_DestinationB.g.cs";
+        "Morphant.Generated.Construction.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs";
 
     private const string MappingExtensionA =
-        "Morphant.Generated.MappingExtension.TestCase_SourceA__TestCase_DestinationA__TestCase_MapperA.g.cs";
+        "Morphant.Generated.MappingExtension.MapperA.SourceAToDestinationA__db82dfe1a33c9cc6d08771569ec8eb46.g.cs";
 
     private const string MappingExtensionB =
-        "Morphant.Generated.MappingExtension.TestCase_SourceB__TestCase_DestinationB__TestCase_MapperB.g.cs";
+        "Morphant.Generated.MappingExtension.MapperB.SourceBToDestinationB__ed707c749ae9ab2370bbe3005f6c1ef7.g.cs";
 
     private const string MemberA =
-        "Morphant.Generated.Member.TestCase_DestinationA.g.cs";
+        "Morphant.Generated.Member.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs";
 
     private const string MemberB =
-        "Morphant.Generated.Member.TestCase_DestinationB.g.cs";
+        "Morphant.Generated.Member.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs";
 
     private const string MemberExtensionA =
-        "Morphant.Generated.MemberExtension.TestCase_SourceA__TestCase_DestinationA__TestCase_MapperA.g.cs";
+        "Morphant.Generated.MemberExtension.MapperA.SourceAToDestinationA__db82dfe1a33c9cc6d08771569ec8eb46.g.cs";
 
     private const string MemberExtensionB =
-        "Morphant.Generated.MemberExtension.TestCase_SourceB__TestCase_DestinationB__TestCase_MapperB.g.cs";
+        "Morphant.Generated.MemberExtension.MapperB.SourceBToDestinationB__ed707c749ae9ab2370bbe3005f6c1ef7.g.cs";
 
     private const string MapperA =
-        "Morphant.Generated.TypeMapper.TestCase_MapperA.g.cs";
+        "Morphant.Generated.TypeMapper.MapperA__5e218501b1a45e633f93649296e15c01.g.cs";
 
     private const string MapperB =
-        "Morphant.Generated.TypeMapper.TestCase_MapperB.g.cs";
+        "Morphant.Generated.TypeMapper.MapperB__dca3e300d0a63d8240eb166c3130d2df.g.cs";
 
     [Test]
     public void Isolates_unrelated_declarations_bodies_and_type_contracts()

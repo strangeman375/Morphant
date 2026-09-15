@@ -9,43 +9,43 @@ namespace Morphant.Generator.UnitTests.IncrementalityTests;
 internal sealed class IncrementalLifecycleTests
 {
     private const string SharedConstruction =
-        "Morphant.Generated.Construction.TestCase_SharedDestination.g.cs";
+        "Morphant.Generated.Construction.SharedDestination__e9ed0e69d5eda29f3d88335d09cc30a0.g.cs";
 
     private const string StableConstruction =
-        "Morphant.Generated.Construction.TestCase_StableDestination.g.cs";
+        "Morphant.Generated.Construction.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string SharedMember =
-        "Morphant.Generated.Member.TestCase_SharedDestination.g.cs";
+        "Morphant.Generated.Member.SharedDestination__e9ed0e69d5eda29f3d88335d09cc30a0.g.cs";
 
     private const string StableMember =
-        "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
+        "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string MappingOne =
-        "Morphant.Generated.MappingExtension.TestCase_SourceOne__TestCase_SharedDestination__TestCase_MapperOne.g.cs";
+        "Morphant.Generated.MappingExtension.MapperOne.SourceOneToSharedDestination__1ccb2c9bede74b4f3b51ec3ba5898c76.g.cs";
 
     private const string MappingTwo =
-        "Morphant.Generated.MappingExtension.TestCase_SourceTwo__TestCase_SharedDestination__TestCase_MapperTwo.g.cs";
+        "Morphant.Generated.MappingExtension.MapperTwo.SourceTwoToSharedDestination__b8e49fee3a4d12d7ace074f802206f74.g.cs";
 
     private const string StableMapping =
-        "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
+        "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
 
     private const string MemberOne =
-        "Morphant.Generated.MemberExtension.TestCase_SourceOne__TestCase_SharedDestination__TestCase_MapperOne.g.cs";
+        "Morphant.Generated.MemberExtension.MapperOne.SourceOneToSharedDestination__1ccb2c9bede74b4f3b51ec3ba5898c76.g.cs";
 
     private const string MemberTwo =
-        "Morphant.Generated.MemberExtension.TestCase_SourceTwo__TestCase_SharedDestination__TestCase_MapperTwo.g.cs";
+        "Morphant.Generated.MemberExtension.MapperTwo.SourceTwoToSharedDestination__b8e49fee3a4d12d7ace074f802206f74.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
+        "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
 
     private const string MapperOne =
-        "Morphant.Generated.TypeMapper.TestCase_MapperOne.g.cs";
+        "Morphant.Generated.TypeMapper.MapperOne__60d70ed955273c1b91485515f14a3ca1.g.cs";
 
     private const string MapperTwo =
-        "Morphant.Generated.TypeMapper.TestCase_MapperTwo.g.cs";
+        "Morphant.Generated.TypeMapper.MapperTwo__e9b3eb56747d4f195aba3cac0d9cf6bf.g.cs";
 
     private const string StableMapper =
-        "Morphant.Generated.TypeMapper.TestCase_StableMapper.g.cs";
+        "Morphant.Generated.TypeMapper.StableMapper__3251a87cd2d93d3948a4f1646b88e0d3.g.cs";
 
     [Test]
     public void Adds_and_removes_only_artifacts_whose_last_reason_changes()
@@ -270,30 +270,21 @@ internal sealed class IncrementalLifecycleTests
     public void Keeps_existing_extensions_cached_when_nullable_mapper_is_added_and_removed()
     {
         const string construction =
-            "Morphant.Generated.Construction." +
-            "TestCase_SurfaceDestination.g.cs";
+            "Morphant.Generated.Construction.SurfaceDestination__08333ce1cf99bfc02b89cde9e06a0b49.g.cs";
         const string member =
-            "Morphant.Generated.Member." +
-            "TestCase_SurfaceDestination.g.cs";
+            "Morphant.Generated.Member.SurfaceDestination__08333ce1cf99bfc02b89cde9e06a0b49.g.cs";
         const string nonNullableMapping =
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_SurfaceSource__TestCase_SurfaceDestination__TestCase_NonNullableMapper.g.cs";
+            "Morphant.Generated.MappingExtension.NonNullableMapper.SurfaceSourceToSurfaceDestination__bc92abf3096a7bacd2adb4a04954e462.g.cs";
         const string nullableMapping =
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_SurfaceSource__TestCase_SurfaceDestination__" +
-            "TestCase_NullablePresentationMapper.g.cs";
+            "Morphant.Generated.MappingExtension.NullablePresentationMapper.SurfaceSourceToSurfaceDestination__6967be8c085cdd530e9cf2d4333e8151.g.cs";
         const string nonNullableMember =
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_SurfaceSource__TestCase_SurfaceDestination__TestCase_NonNullableMapper.g.cs";
+            "Morphant.Generated.MemberExtension.NonNullableMapper.SurfaceSourceToSurfaceDestination__bc92abf3096a7bacd2adb4a04954e462.g.cs";
         const string nullableMember =
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_SurfaceSource__TestCase_SurfaceDestination__" +
-            "TestCase_NullablePresentationMapper.g.cs";
+            "Morphant.Generated.MemberExtension.NullablePresentationMapper.SurfaceSourceToSurfaceDestination__6967be8c085cdd530e9cf2d4333e8151.g.cs";
         const string nonNullableMapper =
-            "Morphant.Generated.TypeMapper.TestCase_NonNullableMapper.g.cs";
+            "Morphant.Generated.TypeMapper.NonNullableMapper__4d62945fd92434a26b8c7253a0724aff.g.cs";
         const string nullableMapper =
-            "Morphant.Generated.TypeMapper." +
-            "TestCase_NullablePresentationMapper.g.cs";
+            "Morphant.Generated.TypeMapper.NullablePresentationMapper__e05424e51eebc47045ed3f7ab42fc5e5.g.cs";
         var models = SourceFile("SurfaceModels.cs", SurfaceModelsSource);
         var nonNullable = SourceFile(
             "NonNullableMapper.cs",

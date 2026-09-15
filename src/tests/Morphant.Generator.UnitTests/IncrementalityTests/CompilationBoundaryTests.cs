@@ -10,21 +10,21 @@ internal sealed class CompilationBoundaryTests
 {
     private static readonly string[] ValidGeneratedHints =
     [
-        "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.Member.TestCase_Destination.g.cs",
-        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+        "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+        "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+        "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs"
     ];
 
     private static readonly string[] SettingGeneratedHints =
     [
-        "Morphant.Generated.Construction.First_Destination.g.cs",
-        "Morphant.Generated.Construction.Second_Destination.g.cs",
-        "Morphant.Generated.MappingExtension.First_Source__First_Destination__First_FirstMapper.g.cs",
-        "Morphant.Generated.MappingExtension.Second_Source__Second_Destination__Second_SecondMapper.g.cs",
-        "Morphant.Generated.TypeMapper.First_FirstMapper.g.cs",
-        "Morphant.Generated.TypeMapper.Second_SecondMapper.g.cs"
+        "Morphant.Generated.Construction.Destination__5922229893d00b089d666c239ec2b1b0.g.cs",
+        "Morphant.Generated.Construction.Destination__8ee05995dd9094f3e70bf0f7c0a6baa1.g.cs",
+        "Morphant.Generated.MappingExtension.FirstMapper.SourceToDestination__ac0501f16e94748795bd8e9af42a414f.g.cs",
+        "Morphant.Generated.MappingExtension.SecondMapper.SourceToDestination__02742474f7a51f524265dc5ede7f7758.g.cs",
+        "Morphant.Generated.TypeMapper.FirstMapper__29796a8377d78c922212687ea45e9969.g.cs",
+        "Morphant.Generated.TypeMapper.SecondMapper__955140c4d572867922f378f0e01f2a82.g.cs"
     ];
 
     [Test]

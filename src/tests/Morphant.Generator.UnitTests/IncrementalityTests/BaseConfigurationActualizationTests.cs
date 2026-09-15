@@ -9,10 +9,10 @@ namespace Morphant.Generator.UnitTests.IncrementalityTests;
 internal sealed class BaseConfigurationActualizationTests
 {
     private const string DerivedMapper =
-        "Morphant.Generated.TypeMapper.TestCase_DerivedMapper.g.cs";
+        "Morphant.Generated.TypeMapper.DerivedMapper__cde7d9107d1d122ce955fee6505aac4f.g.cs";
 
     private const string StableMapper =
-        "Morphant.Generated.TypeMapper.TestCase_StableMapper.g.cs";
+        "Morphant.Generated.TypeMapper.StableMapper__3251a87cd2d93d3948a4f1646b88e0d3.g.cs";
 
     [Test]
     public void Actualizes_a_derived_mapper_when_its_base_callback_changes()
@@ -22,15 +22,14 @@ internal sealed class BaseConfigurationActualizationTests
         var stable = SourceFile("StableMapper.cs", StableMapperSource);
         var generated = new[]
         {
-            "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-            "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_BaseMapper_TMapper_.g.cs",
-            "Morphant.Generated.Member.TestCase_Destination.g.cs",
-            "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_BaseMapper_TMapper_.g.cs",
-            "Morphant.Generated.Construction." +
-            "TestCase_StableDestination.g.cs",
-            "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs",
-            "Morphant.Generated.Member.TestCase_StableDestination.g.cs",
-            "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs",
+            "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+            "Morphant.Generated.MappingExtension.BaseMapper.SourceToDestination__4d7ddef68010c99712c7cf8d79da0bf5.g.cs",
+            "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+            "Morphant.Generated.MemberExtension.BaseMapper.SourceToDestination__4d7ddef68010c99712c7cf8d79da0bf5.g.cs",
+            "Morphant.Generated.Construction.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs",
+            "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs",
+            "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs",
+            "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs",
             DerivedMapper,
             StableMapper
         };

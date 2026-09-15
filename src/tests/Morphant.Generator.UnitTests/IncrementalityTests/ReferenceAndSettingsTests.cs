@@ -9,34 +9,34 @@ namespace Morphant.Generator.UnitTests.IncrementalityTests;
 internal sealed class ReferenceAndSettingsTests
 {
     private const string ExternalConstruction =
-        "Morphant.Generated.Construction.ExternalModels_Destination.g.cs";
+        "Morphant.Generated.Construction.Destination__31cd2b83a124f88dc007fa312625999a.g.cs";
 
     private const string StableConstruction =
-        "Morphant.Generated.Construction.TestCase_StableDestination.g.cs";
+        "Morphant.Generated.Construction.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string ExternalMapping =
-        "Morphant.Generated.MappingExtension.TestCase_ExternalSource__ExternalModels_Destination__TestCase_ExternalMapper.g.cs";
+        "Morphant.Generated.MappingExtension.ExternalMapper.ExternalSourceToDestination__cf5e23c78e13fc99b34ffbe25d9f3fa6.g.cs";
 
     private const string StableMapping =
-        "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
+        "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
 
     private const string ExternalMember =
-        "Morphant.Generated.Member.ExternalModels_Destination.g.cs";
+        "Morphant.Generated.Member.Destination__31cd2b83a124f88dc007fa312625999a.g.cs";
 
     private const string StableMember =
-        "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
+        "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string ExternalMemberExtension =
-        "Morphant.Generated.MemberExtension.TestCase_ExternalSource__ExternalModels_Destination__TestCase_ExternalMapper.g.cs";
+        "Morphant.Generated.MemberExtension.ExternalMapper.ExternalSourceToDestination__cf5e23c78e13fc99b34ffbe25d9f3fa6.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
+        "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
 
     private const string ExternalMapper =
-        "Morphant.Generated.TypeMapper.TestCase_ExternalMapper.g.cs";
+        "Morphant.Generated.TypeMapper.ExternalMapper__07a52aad7ee2b4bee3f3535408fa3189.g.cs";
 
     private const string StableMapper =
-        "Morphant.Generated.TypeMapper.TestCase_StableMapper.g.cs";
+        "Morphant.Generated.TypeMapper.StableMapper__3251a87cd2d93d3948a4f1646b88e0d3.g.cs";
 
     private static readonly string[] GeneratedHints =
     [
@@ -226,21 +226,21 @@ internal sealed class ReferenceAndSettingsTests
         };
         var generated = new[]
         {
-            "Morphant.Generated.Construction.TestCase_DestinationA.g.cs",
-            "Morphant.Generated.Construction.TestCase_DestinationB.g.cs",
-            "Morphant.Generated.MappingExtension.TestCase_SourceA__TestCase_DestinationA__TestCase_MapperA.g.cs",
-            "Morphant.Generated.MappingExtension.TestCase_SourceB__TestCase_DestinationB__TestCase_MapperB.g.cs",
-            "Morphant.Generated.Member.TestCase_DestinationA.g.cs",
-            "Morphant.Generated.Member.TestCase_DestinationB.g.cs",
-            "Morphant.Generated.MemberExtension.TestCase_SourceA__TestCase_DestinationA__TestCase_MapperA.g.cs",
-            "Morphant.Generated.MemberExtension.TestCase_SourceB__TestCase_DestinationB__TestCase_MapperB.g.cs",
-            "Morphant.Generated.TypeMapper.TestCase_MapperA.g.cs",
-            "Morphant.Generated.TypeMapper.TestCase_MapperB.g.cs"
+            "Morphant.Generated.Construction.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs",
+            "Morphant.Generated.Construction.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs",
+            "Morphant.Generated.MappingExtension.MapperA.SourceAToDestinationA__db82dfe1a33c9cc6d08771569ec8eb46.g.cs",
+            "Morphant.Generated.MappingExtension.MapperB.SourceBToDestinationB__ed707c749ae9ab2370bbe3005f6c1ef7.g.cs",
+            "Morphant.Generated.Member.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs",
+            "Morphant.Generated.Member.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs",
+            "Morphant.Generated.MemberExtension.MapperA.SourceAToDestinationA__db82dfe1a33c9cc6d08771569ec8eb46.g.cs",
+            "Morphant.Generated.MemberExtension.MapperB.SourceBToDestinationB__ed707c749ae9ab2370bbe3005f6c1ef7.g.cs",
+            "Morphant.Generated.TypeMapper.MapperA__5e218501b1a45e633f93649296e15c01.g.cs",
+            "Morphant.Generated.TypeMapper.MapperB__dca3e300d0a63d8240eb166c3130d2df.g.cs"
         };
         var mapperA =
-            "Morphant.Generated.TypeMapper.TestCase_MapperA.g.cs";
+            "Morphant.Generated.TypeMapper.MapperA__5e218501b1a45e633f93649296e15c01.g.cs";
         var mapperB =
-            "Morphant.Generated.TypeMapper.TestCase_MapperB.g.cs";
+            "Morphant.Generated.TypeMapper.MapperB__dca3e300d0a63d8240eb166c3130d2df.g.cs";
         var create = new Dictionary<string, string>
         {
             ["build_property.MorphantMappingMode"] = "Create"
@@ -394,22 +394,18 @@ internal sealed class ReferenceAndSettingsTests
             Stage(
                 "BuildConstructionPlanRequests",
                 Expected(
-                    "Morphant.Generated.Construction." +
-                    "TestCase_DestinationA.g.cs",
+                    "Morphant.Generated.Construction.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs",
                     IncrementalStepRunReason.Cached),
                 Expected(
-                    "Morphant.Generated.Construction." +
-                    "TestCase_DestinationB.g.cs",
+                    "Morphant.Generated.Construction.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs",
                     IncrementalStepRunReason.Cached)),
             Stage(
                 "BuildMemberPlanRequests",
                 Expected(
-                    "Morphant.Generated.Member." +
-                    "TestCase_DestinationA.g.cs",
+                    "Morphant.Generated.Member.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs",
                     IncrementalStepRunReason.Cached),
                 Expected(
-                    "Morphant.Generated.Member." +
-                    "TestCase_DestinationB.g.cs",
+                    "Morphant.Generated.Member.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs",
                     IncrementalStepRunReason.Cached)),
             Stage(
                 "BuildTypeMapperModels",

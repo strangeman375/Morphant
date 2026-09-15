@@ -9,6 +9,60 @@ namespace Morphant.Generator.UnitTests.GitSnapshotTests;
 internal sealed class GitSnapshotLifecycleTests
 {
     [TestCase("Mappers")]
+    [TestCase("Full")]
+    public void Replaces_legacy_filenames_with_permanent_ids(string detail)
+    {
+        using var workspace = new SnapshotWorkspace();
+        var context = workspace.CreateContext("Release", "net10.0", snapshotDetail: detail);
+        (string Previous, string Current)[] files =
+        [
+            ("Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                "Morphant.Generated.Construction.Destination__ffeaf6349e724fced652dd8c63a7abe7.g.cs"),
+            ("Morphant.Generated.Member.TestCase_Destination.g.cs",
+                "Morphant.Generated.Member.Destination__ffeaf6349e724fced652dd8c63a7abe7.g.cs"),
+            ("Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_Mapper.g.cs",
+                "Morphant.Generated.MappingExtension.Mapper.SourceToDestination__d2b305d0c819192212387b1b26c7ef96.g.cs"),
+            ("Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_Mapper.g.cs",
+                "Morphant.Generated.MemberExtension.Mapper.SourceToDestination__d2b305d0c819192212387b1b26c7ef96.g.cs"),
+            ("Morphant.Generated.TypeMapper.TestCase_Mapper.g.cs",
+                "Morphant.Generated.TypeMapper.Mapper__fbe3faef7626f30db43fa353c56003f7.g.cs")
+        ];
+
+        foreach (var (previous, _) in files)
+        {
+            workspace.WriteSnapshot(context, previous, "// generated\r\n");
+            workspace.WriteCompilerOutput(context, previous, "// generated\r\n");
+        }
+
+        GitSnapshotLifecycle.Prepare(context);
+
+        Assert.That(SnapshotFileNames(context),
+            Is.EqualTo(files.Select(file => file.Previous).Order(StringComparer.Ordinal)));
+
+        foreach (var (_, current) in files)
+            workspace.WriteCompilerOutput(context, current, "// generated\r\n");
+
+        GitSnapshotLifecycle.Publish(context);
+
+        var expected = files.Select(file => file.Current)
+            .Where(name => detail == "Full" || name.Contains(".TypeMapper.", StringComparison.Ordinal))
+            .Order(StringComparer.Ordinal).ToArray();
+        Assert.That(SnapshotFileNames(context), Is.EqualTo(expected));
+
+        foreach (var name in expected)
+            Assert.That(File.ReadAllText(Path.Combine(context.SliceDirectory, name)),
+                Is.EqualTo("// generated\r\n"));
+
+        var timestamps = expected.Select(name =>
+            File.GetLastWriteTimeUtc(Path.Combine(context.SliceDirectory, name))).ToArray();
+        GitSnapshotLifecycle.Publish(context);
+        Assert.That(SnapshotFileNames(context), Is.EqualTo(expected));
+        Assert.That(expected.Select(name =>
+                File.GetLastWriteTimeUtc(Path.Combine(context.SliceDirectory, name))),
+            Is.EqualTo(timestamps));
+    }
+
+    [TestCase("Mappers")]
     [TestCase("mappers")]
     [TestCase("MAPPERS")]
     public void Publishes_the_current_set_without_rewriting_identical_files(string detail)

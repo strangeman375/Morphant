@@ -30,8 +30,7 @@ internal sealed class CompilerInputTests
                 NullableContextOptions.Enable,
                 ["WIDE"],
                 ChangedMemberStages(
-                    "Morphant.Generated.Member." +
-                    "TestCase_Destination.g.cs")),
+                    "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs")),
             StepWithCompilerInputs(
                 "narrow contract restored",
                 [source],
@@ -39,8 +38,7 @@ internal sealed class CompilerInputTests
                 NullableContextOptions.Enable,
                 [],
                 ChangedMemberStages(
-                    "Morphant.Generated.Member." +
-                    "TestCase_Destination.g.cs")));
+                    "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs")));
     }
 
     [Test]
@@ -49,10 +47,9 @@ internal sealed class CompilerInputTests
         var source = SourceFile("TestCase.cs", NullableContextSource);
         var generated = GenericHints();
         const string construction =
-            "Morphant.Generated.Construction." +
-            "TestCase_Destination_1.g.cs";
+            "Morphant.Generated.Construction.Destination__280bfff94b0b70574f593935eb7a975e.g.cs";
         const string member =
-            "Morphant.Generated.Member.TestCase_Destination_1.g.cs";
+            "Morphant.Generated.Member.Destination__280bfff94b0b70574f593935eb7a975e.g.cs";
 
         RunAndAssert(
             LanguageVersion.CSharp9,
@@ -83,11 +80,11 @@ internal sealed class CompilerInputTests
     {
         return
         [
-            "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-            "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-            "Morphant.Generated.Member.TestCase_Destination.g.cs",
-            "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+            "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+            "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs"
         ];
     }
 
@@ -95,16 +92,11 @@ internal sealed class CompilerInputTests
     {
         return
         [
-            "Morphant.Generated.Construction." +
-            "TestCase_Destination_1.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_Source_T___TestCase_Destination_T___" +
-            "TestCase_TestMapper_T_.g.cs",
-            "Morphant.Generated.Member.TestCase_Destination_1.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_Source_T___TestCase_Destination_T___" +
-            "TestCase_TestMapper_T_.g.cs",
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper_1.g.cs"
+            "Morphant.Generated.Construction.Destination__280bfff94b0b70574f593935eb7a975e.g.cs",
+            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__f64c017eaa697f8c2139b9ddf79e3527.g.cs",
+            "Morphant.Generated.Member.Destination__280bfff94b0b70574f593935eb7a975e.g.cs",
+            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__f64c017eaa697f8c2139b9ddf79e3527.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__cbc48ffed718c38938475e292a3cab2b.g.cs"
         ];
     }
 

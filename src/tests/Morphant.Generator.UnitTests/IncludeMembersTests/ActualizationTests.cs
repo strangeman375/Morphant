@@ -9,14 +9,14 @@ namespace Morphant.Generator.UnitTests.IncludeMembersTests;
 internal sealed class ActualizationTests
 {
     private const string Mapper =
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";
+        "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs";
 
     private static readonly string[] GeneratedFiles =
     [
-        "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.Member.TestCase_Destination.g.cs",
-        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
+        "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+        "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
         Mapper
     ];
 

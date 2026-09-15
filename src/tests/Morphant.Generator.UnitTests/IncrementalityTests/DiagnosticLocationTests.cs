@@ -36,9 +36,9 @@ internal sealed class DiagnosticLocationTests
             Assert.That(result.GeneratedSources.Select(static generated => generated.HintName),
                 Is.EquivalentTo(new[]
                 {
-                    "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-                    "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-                    "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+                    "Morphant.Generated.Construction.Destination__277c681baf0bf70cc46a86e230dc487f.g.cs",
+                    "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__706426359947a16471cd2bff588f9a7b.g.cs",
+                    "Morphant.Generated.TypeMapper.TestMapper__770403f01a69b9955c41e6183e7f0391.g.cs"
                 }));
 
             var diagnostic = result.Diagnostics.Single();
