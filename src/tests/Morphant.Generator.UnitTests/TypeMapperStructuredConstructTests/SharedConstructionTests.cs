@@ -106,18 +106,16 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             _ = source.Before();
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (source.Before() &&
                 source.After())
@@ -125,12 +123,11 @@ namespace TestCase
                 return destination;
             }
 
-            return __Construct(source, context);
+            return __Construct(source);
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 a: source.Read(1),
@@ -621,9 +618,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            string name,
-            global::Morphant.Context.MappingContext context)
+            string name)
         {
             return new global::TestCase.Destination(
                 name: name);
@@ -917,12 +912,11 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             var seed = 0;
 
-            return __Construct1(source, seed, context);
+            return __Construct1(source, seed);
         }
 
         private global::TestCase.Destination __Update(
@@ -942,8 +936,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Construct1(
             global::TestCase.Source source,
-            int seed,
-            global::Morphant.Context.MappingContext context)
+            int seed)
         {
             return new global::TestCase.Destination(
                 id: seed + source.Id);
@@ -1239,8 +1232,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             if (source.UseName)
             {
@@ -1254,15 +1246,14 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (source.Reuse)
             {
                 return destination;
             }
 
-            return __Create(source, context);
+            return __Create(source);
         }
     }
 }
@@ -1595,10 +1586,8 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
             global::System.Func<int> next,
-            ref int id,
-            global::Morphant.Context.MappingContext context)
+            ref int id)
         {
             return new global::TestCase.Destination(
                 id: next(),
@@ -1900,8 +1889,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             if (source.Name is null)
             {
@@ -1914,8 +1902,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (source.Name is null)
             {

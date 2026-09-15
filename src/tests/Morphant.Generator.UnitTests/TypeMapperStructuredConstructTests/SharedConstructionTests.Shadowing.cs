@@ -104,8 +104,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 id: source.Id);
@@ -113,8 +112,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             global::System.Func<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.Destination> __Create = (value, context) => new global::TestCase.Destination(-1);
 
@@ -123,7 +121,7 @@ namespace TestCase
                 return destination;
             }
 
-            return this.__Create(source, context);
+            return this.__Create(source);
         }
     }
 }
@@ -445,9 +443,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Construct(
-            global::TestCase.Source source,
-            int id,
-            global::Morphant.Context.MappingContext context)
+            int id)
         {
             return new global::TestCase.Destination(
                 id: id);
