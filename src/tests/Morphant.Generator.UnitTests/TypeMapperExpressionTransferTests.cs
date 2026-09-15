@@ -338,16 +338,13 @@ namespace TestCase
         }
 
         private unsafe int __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return __ConstructUsing(source);
         }
 
         private unsafe int __Update(
-            global::TestCase.Source source,
-            int destination,
-            global::Morphant.Context.MappingContext context)
+            int destination)
         {
             return destination;
         }

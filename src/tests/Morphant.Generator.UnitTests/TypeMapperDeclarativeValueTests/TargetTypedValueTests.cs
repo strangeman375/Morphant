@@ -409,8 +409,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 boxed: (object)(source.Number),
@@ -424,8 +423,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Text = (string?)(source.Text);
             destination.Copy = (object)(source.Number);
