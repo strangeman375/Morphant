@@ -92,7 +92,9 @@ internal static class KnownPreviousGuard
             return continuation with
             {
                 Locals = ImmutableArray.Create(new TypeMapperLocalValueModel(
-                    declaration.Type.ToString(), name, value, IsConst: false))
+                    available && check.ArgumentList.Arguments[0].Expression is
+                        DeclarationExpressionSyntax { Type.IsVar: true }
+                        ? "var" : declaration.Type.ToString(), name, value, IsConst: false))
                     .AddRange(continuation.Locals)
             };
         }

@@ -2748,6 +2748,8 @@ internal static class TypeMapperEmitter
         string? condition,
         ImmutableArray<TypeMapperLocalValueModel> locals)
     {
+        var statement = SyntaxFactory.ParseExpression(expression) is AssignmentExpressionSyntax
+            ? expression + ";" : "_ = " + expression + ";";
         if (condition is null)
         {
             WriteLocalValues(
@@ -2755,7 +2757,7 @@ internal static class TypeMapperEmitter
                 locals.IsDefault
                     ? ImmutableArray<TypeMapperLocalValueModel>.Empty
                     : locals);
-            writer.Line($"_ = {expression};");
+            writer.Line(statement);
             writer.Line();
             return;
         }
@@ -2768,7 +2770,7 @@ internal static class TypeMapperEmitter
             locals.IsDefault
                 ? ImmutableArray<TypeMapperLocalValueModel>.Empty
                 : locals);
-        writer.Line($"_ = {expression};");
+        writer.Line(statement);
         writer.Unindent();
         writer.Line("}");
         writer.Line();
