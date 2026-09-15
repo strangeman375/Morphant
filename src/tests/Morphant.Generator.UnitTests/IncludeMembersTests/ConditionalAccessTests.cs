@@ -123,8 +123,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Box<global::TestCase.DerivedSource> source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Box<global::TestCase.DerivedSource> source)
         {
             return new global::TestCase.Destination()
             {
@@ -135,8 +134,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Box<global::TestCase.DerivedSource> source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.BeforeName = ((global::TestCase.BaseSource)(source.Head)).Before?.BeforeName;
             destination.AfterName = (source.Tail is { } tail && ((global::TestCase.BaseSource)(tail)).After is { } after ? after.AfterName : default(string?));
