@@ -619,14 +619,24 @@ internal static class StructuredConstructMappingPlanner
                 .Any(invocation => IsPreviousAvailabilityAccess(
                     invocation, previousParameter, semanticModel, cancellationToken));
 
-        if (!(previousAvailable == true && assignsPrevious) &&
-            TryEvaluateKnownCondition(
+        var conditionKnown = TryEvaluateKnownCondition(
                 condition,
                 previousParameter,
                 previousAvailable,
                 semanticModel,
                 cancellationToken,
-                out var knownValue))
+                out var knownValue);
+        // A false availability check also makes a conjunction false when
+        // another operand precedes it. Keep evaluating that operand below.
+        if (!conditionKnown && assignsPrevious &&
+            EvaluateStoredCondition(condition, previousParameter, previousAvailable,
+                semanticModel, cancellationToken) is { } storedValue)
+        {
+            knownValue = storedValue;
+            conditionKnown = true;
+        }
+
+        if (!(previousAvailable == true && assignsPrevious) && conditionKnown)
         {
             var continuation = knownValue ? whenTrue : whenFalse;
             // TryGetValue also assigns its out argument. Retain that evaluation
