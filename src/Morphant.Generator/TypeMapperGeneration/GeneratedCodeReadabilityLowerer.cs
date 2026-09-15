@@ -267,7 +267,17 @@ internal static class GeneratedCodeReadabilityLowerer
         });
         return mapping with
         {
-            CreateConstructor = constructor with { Arguments = arguments.AddRange(finalArguments) },
+            CreateConstructor = constructor with
+            {
+                Arguments = arguments.Where(argument =>
+                        // Ignore supplies a synthetic default. A later ordinary
+                        // value can declare the local without first storing it.
+                        !(argument.IsEvaluationOnly && argument.RuleOrigin == ConstructorParameterRuleOrigin.Ignore &&
+                          Normalize(argument.EvaluationLocals).IsEmpty &&
+                          mapping.CreatePostMemberMappings.Any(member =>
+                              member.DestinationMemberName == argument.ParameterName && !member.UsesPreparedDestination)))
+                    .ToImmutableArray().AddRange(finalArguments)
+            },
             CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             CreateTupleReconstruction = null
         };
