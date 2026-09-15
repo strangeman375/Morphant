@@ -64,7 +64,10 @@ internal static class ConstructionPlanModelBuilder
             BuildCref(destinationType),
             BuildObsoleteAttributeSource(destinationType),
             constructors,
-            BuildConstructorParameterFields(constructors));
+            BuildConstructorParameterFields(constructors))
+        {
+            ObsoleteWarnings = ObsoleteTypeWarnings.CollectDeclarations(destinationType)
+        };
     }
 
     private static ImmutableArray<ITypeParameterSymbol> CollectTypeParameters(

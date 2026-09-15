@@ -314,7 +314,8 @@ internal sealed class MemberPlanModelResultComparer :
 
     private static bool Equal(MemberPlanModel left, MemberPlanModel right)
     {
-        return StringComparer.Ordinal.Equals(
+        return left.ObsoleteWarnings.SequenceEqual(right.ObsoleteWarnings) &&
+               StringComparer.Ordinal.Equals(
                    left.Namespace,
                    right.Namespace) &&
                StringComparer.Ordinal.Equals(

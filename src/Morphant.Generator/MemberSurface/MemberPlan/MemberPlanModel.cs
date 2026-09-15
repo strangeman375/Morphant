@@ -8,7 +8,11 @@ internal sealed record MemberPlanModel(
     ImmutableArray<MemberPlanTypeParameterModel> TypeParameters,
     string DestinationCref,
     string? ObsoleteAttributeSource,
-    ImmutableArray<MemberPlanPropertyModel> Members);
+    ImmutableArray<MemberPlanPropertyModel> Members)
+{
+    public ImmutableArray<ObsoleteTypeWarning> ObsoleteWarnings { get; init; } =
+        ImmutableArray<ObsoleteTypeWarning>.Empty;
+}
 
 internal sealed record MemberPlanTypeParameterModel(
     string Name,

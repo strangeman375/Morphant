@@ -117,7 +117,11 @@ internal static class PairConfigurationModelBuilder
                         GeneratedPlanNaming.BuildMembersTypeName,
                         compilation)
                 : null,
-            typeParameterModels);
+            typeParameterModels)
+        {
+            ObsoleteWarnings = ObsoleteTypeWarnings.Collect(
+                sourceType, destinationType, surface.MapperSelfType, surface.DeclaringMapperType)
+        };
     }
 
     private static ImmutableArray<ITypeParameterSymbol> CollectTypeParameters(

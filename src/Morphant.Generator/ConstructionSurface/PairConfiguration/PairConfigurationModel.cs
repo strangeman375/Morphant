@@ -14,4 +14,8 @@ internal sealed record PairConfigurationModel(
     bool HasStructuredConstruction,
     string ConstructionResultTypeName,
     string? MembersPlanTypeName,
-    ImmutableArray<ConstructionTypeParameterModel> TypeParameters);
+    ImmutableArray<ConstructionTypeParameterModel> TypeParameters)
+{
+    public ImmutableArray<ObsoleteTypeWarning> ObsoleteWarnings { get; init; } =
+        ImmutableArray<ObsoleteTypeWarning>.Empty;
+}

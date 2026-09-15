@@ -22,7 +22,8 @@ internal static class ConstructionPlanEmitter
         WriteConstructionType(writer, model);
         writer.CloseBlock();
 
-        return writer.ToString();
+        return ObsoleteTypeWarnings.Suppress(
+            writer.ToString(), model.ObsoleteWarnings, declarationSurface: true);
     }
 
     private static void WriteConstructorParametersType(

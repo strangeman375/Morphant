@@ -57,7 +57,10 @@ internal static class MemberPlanModelBuilder
                 typeParameterNames,
                 includeInitOnlyProperties,
                 compilation,
-                cancellationToken));
+                cancellationToken))
+        {
+            ObsoleteWarnings = ObsoleteTypeWarnings.CollectDeclarations(destinationType)
+        };
     }
 
     private static ImmutableArray<ITypeParameterSymbol> CollectTypeParameters(

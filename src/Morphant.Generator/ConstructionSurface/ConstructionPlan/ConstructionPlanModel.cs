@@ -12,7 +12,11 @@ internal sealed record ConstructionPlanModel(
     string? ObsoleteAttributeSource,
     ImmutableArray<ConstructionConstructorModel> Constructors,
     ImmutableArray<ConstructionConstructorParameterFieldModel>
-        ConstructorParameterFields);
+        ConstructorParameterFields)
+{
+    public ImmutableArray<ObsoleteTypeWarning> ObsoleteWarnings { get; init; } =
+        ImmutableArray<ObsoleteTypeWarning>.Empty;
+}
 
 internal sealed record ConstructionTypeParameterModel(
     string Name,

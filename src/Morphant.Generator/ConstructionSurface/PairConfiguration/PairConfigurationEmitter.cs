@@ -169,7 +169,8 @@ internal static class PairConfigurationEmitter
         writer.CloseBlock();
         writer.CloseBlock();
 
-        return writer.ToString();
+        return ObsoleteTypeWarnings.Suppress(
+            writer.ToString(), model.ObsoleteWarnings, declarationSurface: true);
     }
 
     private static void WriteMethod(

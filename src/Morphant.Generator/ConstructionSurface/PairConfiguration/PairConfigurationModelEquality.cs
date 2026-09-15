@@ -6,7 +6,8 @@ internal static class PairConfigurationModelEquality
         PairConfigurationModel left,
         PairConfigurationModel right)
     {
-        return StringComparer.Ordinal.Equals(
+        return left.ObsoleteWarnings.SequenceEqual(right.ObsoleteWarnings) &&
+               StringComparer.Ordinal.Equals(
                    left.ExtensionContainerTypeName,
                    right.ExtensionContainerTypeName) &&
                StringComparer.Ordinal.Equals(

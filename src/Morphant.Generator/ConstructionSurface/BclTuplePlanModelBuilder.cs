@@ -51,7 +51,10 @@ internal static class BclTuplePlanModelBuilder
                 new ConstructionConstructorModel(
                     ObsoleteAttributeSource: null,
                     constructorParameters)),
-            fields);
+            fields)
+        {
+            ObsoleteWarnings = ObsoleteTypeWarnings.Collect(shape.Type)
+        };
     }
 
     public static MemberPlanModel BuildMembers(
@@ -89,7 +92,10 @@ internal static class BclTuplePlanModelBuilder
             memberTypeParameters,
             BuildDestinationCref(shape),
             ObsoleteAttributeSource: null,
-            members);
+            members)
+        {
+            ObsoleteWarnings = ObsoleteTypeWarnings.Collect(shape.Type)
+        };
     }
 
     private static ConstructionConstructorParameterModel
