@@ -226,7 +226,7 @@ namespace TestCase
         private async global::System.Threading.Tasks.Task<int> __ConvertDestination(global::TestCase.Source? source)
         {
             await global::System.Threading.Tasks.Task.Yield();
-            return ((source!.ReadText()is { } conditionalReceiver ? global::TransferExtensions.TextExtensions.Measure(conditionalReceiver) : default(int? )) ?? 0) +
+            return ((source!.ReadText() is { } conditionalReceiver ? global::TransferExtensions.TextExtensions.Measure(conditionalReceiver) : default(int? )) ?? 0) +
                 source.Text.Length;
         }
 
@@ -341,9 +341,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int result = __ConstructUsing(source);
-
-            return result;
+            return __ConstructUsing(source);
         }
 
         private unsafe int __Update(

@@ -886,11 +886,6 @@ namespace TestCase
 
             var sourceValue = source.Value;
 
-            if (__TryCreatePolymorphic(sourceValue, context, out var polymorphicDestination))
-            {
-                return polymorphicDestination;
-            }
-
             return __Create(sourceValue, context);
         }
 
@@ -907,60 +902,12 @@ namespace TestCase
 
             var sourceValue = source.Value;
 
-            if (__TryUpdatePolymorphic(sourceValue, destination, context, out var polymorphicDestination))
-            {
-                return polymorphicDestination;
-            }
-
             if (destination is null)
             {
                 return __Create(sourceValue, context);
             }
 
             return __Update(sourceValue, destination, context);
-        }
-
-        private bool __TryCreatePolymorphic(
-            global::TestCase.Number sourceValue,
-            global::Morphant.Context.MappingContext context,
-            out global::TestCase.NumberDto result)
-        {
-            switch (sourceValue)
-            {
-                case { } when sourceValue.GetType() !=
-                    typeof(global::TestCase.Number):
-                    throw global::Morphant.Exceptions.UnmatchedPolymorphicMappingException.Create<
-                        global::TestCase.Number?,
-                        global::TestCase.NumberDto>(
-                        global::Morphant.Context.MappingOperation.Create,
-                        sourceValue);
-
-                default:
-                    result = default!;
-                    return false;
-            }
-        }
-
-        private bool __TryUpdatePolymorphic(
-            global::TestCase.Number sourceValue,
-            global::TestCase.NumberDto? destination,
-            global::Morphant.Context.MappingContext context,
-            out global::TestCase.NumberDto result)
-        {
-            switch (sourceValue)
-            {
-                case { } when sourceValue.GetType() !=
-                    typeof(global::TestCase.Number):
-                    throw global::Morphant.Exceptions.UnmatchedPolymorphicMappingException.Create<
-                        global::TestCase.Number?,
-                        global::TestCase.NumberDto>(
-                        global::Morphant.Context.MappingOperation.Update,
-                        sourceValue);
-
-                default:
-                    result = default!;
-                    return false;
-            }
         }
 
         private global::TestCase.NumberDto __Create(

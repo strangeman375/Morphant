@@ -1,10 +1,9 @@
-namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.EvaluationOrder;
+namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.StructuredResults;
 
-internal sealed partial class EvaluationOrderTests
+internal sealed partial class StructuredResultsTests
 {
     [Test]
-    [Description("A factory block keeps single-line switches in a local and a multiline return expression.")]
-    public void SingleLineSwitchInResolveUsingBlock()
+    public void ResolveCompleteBooleanSwitch()
     {
         // lang=c#
         const string source =
@@ -12,49 +11,43 @@ internal sealed partial class EvaluationOrderTests
 #nullable enable
 #pragma warning disable CS1591
 using Morphant;
-using Morphant.Context;
-using System.Diagnostics.CodeAnalysis;
-
+using Construction = Morphant.Generated.N_78409e4ae9aaeef534a067d95eb70f27.DestinationConstruction;
 namespace TestCase
 {
     public sealed class Source
     {
+        public bool Reuse => true;
         public string Name => "from convention";
         public string FromConstruct() => "from constructor";
         public string FromMembers() => "from members";
+        public bool Choice => true;
     }
-
     public sealed class Destination
     {
         public Destination(string name) => Name = name;
         public string Name { get; set; }
     }
-
     [MorphantMapper]
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .ResolveUsing((source, previous) =>
+                .Resolve((source, previous) =>
                 {
-                    if (previous.HasValue)
-                        return previous.Value;
-                    var name = source.Name switch { "first" => source.FromConstruct(), _ => source.FromMembers() };
-                    return new Destination(
-                        string.Concat(
-                            name,
-                            source.Name switch { "first" => source.FromMembers(), _ => source.FromConstruct() }));
+                    if (previous.TryGetValue(out var existing) && source.Reuse) return existing;
+                    Construction selected = source.Choice switch
+                    {
+                        true => new Construction(source.FromConstruct()),
+                        false => new Construction(source.FromMembers())
+                    };
+                    return selected;
                 })
-                .Members(_ => new() { Name = Ignore() });
+                .Members(source => new() { Name = source.Name });
     }
 }
 """;
-
-        // Complete mapper output; the companion surface snapshots cover the generated DSL.
-        ConstructionAndMembersSnapshot.Verify(
-            source,
-            expectedMappers:
-            [
+        ConstructionAndMembersSnapshot.Verify(source, expectedMappers:
+        [
             ("Morphant.Generated.TypeMapper.Mapper__b93622f58bb33946b8901b3146112f51.g.cs",
             // lang=c#
 """
@@ -110,7 +103,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.None);
+            _ = global::Morphant.Option<global::TestCase.Destination>.None.TryGetValue(out global::TestCase.Destination? existing) && source.Reuse;
+
+            return __Construct(source, context);
         }
 
         private global::TestCase.Destination __Update(
@@ -118,23 +113,45 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            return __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.Some(destination));
+            if (global::Morphant.Option<global::TestCase.Destination>.Some(destination).TryGetValue(out global::TestCase.Destination? existing) && source.Reuse)
+            {
+                destination.Name = source.Name;
+
+                return destination;
+            }
+
+            return __Construct(source, context);
         }
 
-        private global::TestCase.Destination __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::TestCase.Destination> previous)
+        private global::TestCase.Destination __Construct(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
-            if (previous.HasValue)
-                return previous.Value;
-            var name = source.Name switch { "first" => source.FromConstruct(), _ => source.FromMembers() };
-            return new global::TestCase.Destination(
-                string.Concat(
-                    name,
-                    source.Name switch { "first" => source.FromMembers(), _ => source.FromConstruct() }));
+            var selected = source.Choice;
+
+            switch (selected)
+            {
+                case true:
+                {
+                    return new global::TestCase.Destination(
+                        name: source.FromConstruct())
+                    {
+                        Name = source.Name
+                    };
+                }
+                case false:
+                {
+                    return new global::TestCase.Destination(
+                        name: source.FromMembers())
+                    {
+                        Name = source.Name
+                    };
+                }
+            }
         }
     }
 }
 """)
-            ],
-            expectedSurfaces: ThrowingConstructorExpressionWithMemberOverrideSurfaces);
+        ], expectedSurfaces: Surfaces);
     }
 }

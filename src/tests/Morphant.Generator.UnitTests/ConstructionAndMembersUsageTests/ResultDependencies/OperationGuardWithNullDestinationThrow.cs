@@ -107,22 +107,10 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            if (context.Operation == global::Morphant.Context.MappingOperation.Create)
-            {
-                string sourceName = source.Name;
+            string sourceName = source.Name;
 
-                return new global::TestCase.Destination(
-                    name: sourceName);
-            }
-            else
-            {
-                var result = new global::TestCase.Destination(
-                    name: source.Name);
-
-                result.Name = (result.Name + " updated");
-
-                return result;
-            }
+            return new global::TestCase.Destination(
+                name: sourceName);
         }
 
         private global::TestCase.Destination __Update(

@@ -77,7 +77,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
             => __ConvertDestination(source);
 
-        private global::TestCase.Destination __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(source switch { null => "missing", _ => string.Concat(source.Name, source.FromMembers())});
+        private global::TestCase.Destination __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(source switch { null => "missing", _ => string.Concat(source.Name, source.FromMembers()) });
     }
 }
 """)

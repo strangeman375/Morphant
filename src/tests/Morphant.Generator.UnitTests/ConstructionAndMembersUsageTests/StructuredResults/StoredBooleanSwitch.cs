@@ -131,8 +131,6 @@ namespace TestCase
                     return __Create(source, context);
                 }
             }
-
-            throw new global::Morphant.Exceptions.UnmatchedMappingSwitchException(global::Morphant.Context.MappingOperation.Update, typeof(global::TestCase.Source), typeof(global::TestCase.Destination));
         }
     }
 }

@@ -1,10 +1,9 @@
-namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.EvaluationOrder;
+namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.StructuredResults;
 
-internal sealed partial class EvaluationOrderTests
+internal sealed partial class StructuredResultsTests
 {
     [Test]
-    [Description("A factory block keeps single-line switches in a local and a multiline return expression.")]
-    public void SingleLineSwitchInResolveUsingBlock()
+    public void ConstructEnumSwitch()
     {
         // lang=c#
         const string source =
@@ -12,49 +11,43 @@ internal sealed partial class EvaluationOrderTests
 #nullable enable
 #pragma warning disable CS1591
 using Morphant;
-using Morphant.Context;
-using System.Diagnostics.CodeAnalysis;
-
+using Construction = Morphant.Generated.N_78409e4ae9aaeef534a067d95eb70f27.DestinationConstruction;
 namespace TestCase
 {
+    public enum Choice { First, Second }
     public sealed class Source
     {
+        public bool Reuse => true;
         public string Name => "from convention";
         public string FromConstruct() => "from constructor";
         public string FromMembers() => "from members";
+        public Choice Choice => (Choice)2;
     }
-
     public sealed class Destination
     {
         public Destination(string name) => Name = name;
         public string Name { get; set; }
     }
-
     [MorphantMapper]
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .ResolveUsing((source, previous) =>
+                .Construct(source =>
                 {
-                    if (previous.HasValue)
-                        return previous.Value;
-                    var name = source.Name switch { "first" => source.FromConstruct(), _ => source.FromMembers() };
-                    return new Destination(
-                        string.Concat(
-                            name,
-                            source.Name switch { "first" => source.FromMembers(), _ => source.FromConstruct() }));
+                    Construction selected = source.Choice switch
+                    {
+                        Choice.First => new Construction(source.FromConstruct()),
+                        Choice.Second => new Construction(source.FromMembers())
+                    };
+                    return selected;
                 })
-                .Members(_ => new() { Name = Ignore() });
+                .Members(source => new() { Name = source.Name });
     }
 }
 """;
-
-        // Complete mapper output; the companion surface snapshots cover the generated DSL.
-        ConstructionAndMembersSnapshot.Verify(
-            source,
-            expectedMappers:
-            [
+        ConstructionAndMembersSnapshot.Verify(source, expectedMappers:
+        [
             ("Morphant.Generated.TypeMapper.Mapper__b93622f58bb33946b8901b3146112f51.g.cs",
             // lang=c#
 """
@@ -84,7 +77,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
         }
 
         /// <inheritdoc/>
@@ -100,7 +93,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
             }
 
             return __Update(source, destination, context);
@@ -108,9 +101,32 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
+            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
-            return __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.None);
+            var selected = source.Choice;
+
+            switch (selected)
+            {
+                case global::TestCase.Choice.First:
+                {
+                    return new global::TestCase.Destination(
+                        name: source.FromConstruct())
+                    {
+                        Name = source.Name
+                    };
+                }
+                case global::TestCase.Choice.Second:
+                {
+                    return new global::TestCase.Destination(
+                        name: source.FromMembers())
+                    {
+                        Name = source.Name
+                    };
+                }
+            }
+
+            throw new global::Morphant.Exceptions.UnmatchedMappingSwitchException(operation, typeof(global::TestCase.Source), typeof(global::TestCase.Destination));
         }
 
         private global::TestCase.Destination __Update(
@@ -118,23 +134,17 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            return __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.Some(destination));
-        }
+            destination.Name = source.Name;
 
-        private global::TestCase.Destination __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::TestCase.Destination> previous)
-        {
-            if (previous.HasValue)
-                return previous.Value;
-            var name = source.Name switch { "first" => source.FromConstruct(), _ => source.FromMembers() };
-            return new global::TestCase.Destination(
-                string.Concat(
-                    name,
-                    source.Name switch { "first" => source.FromMembers(), _ => source.FromConstruct() }));
+            return destination;
         }
     }
 }
 """)
-            ],
-            expectedSurfaces: ThrowingConstructorExpressionWithMemberOverrideSurfaces);
+        ], expectedSurfaces: Surfaces, expectedDiagnostics:
+"""
+CS8524 Warning: The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value. For example, the pattern '(TestCase.Choice)2' is not covered.
+  at TestCase.cs(28,59-28,65)
+""");
     }
 }
