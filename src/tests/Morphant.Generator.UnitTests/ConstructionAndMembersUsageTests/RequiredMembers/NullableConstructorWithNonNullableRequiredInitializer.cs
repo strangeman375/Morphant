@@ -96,7 +96,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination(
-                name: (string? )null)
+                name: (string?)null)
             {
                 Name = source.Name
             };

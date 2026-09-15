@@ -417,7 +417,7 @@ namespace TestCase
                 transform: (global::System.Func<int, int>)(
                     value => value + source.Number))
             {
-                Text = (string? )(source.Text),
+                Text = (string?)(source.Text),
                 Copy = (object)(source.Number)
             };
         }
@@ -427,7 +427,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Text = (string? )(source.Text);
+            destination.Text = (string?)(source.Text);
             destination.Copy = (object)(source.Number);
 
             return destination;

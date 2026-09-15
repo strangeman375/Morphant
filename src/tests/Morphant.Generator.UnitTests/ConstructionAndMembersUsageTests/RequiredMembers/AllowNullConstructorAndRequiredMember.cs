@@ -95,7 +95,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            string? constructName = (string? )null;
+            string? constructName = (string?)null;
 
             return new global::TestCase.Destination(
                 name: constructName)
