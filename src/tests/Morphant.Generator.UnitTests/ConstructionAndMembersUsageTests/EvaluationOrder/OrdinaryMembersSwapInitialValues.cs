@@ -74,7 +74,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create();
         }
 
         /// <inheritdoc/>
@@ -90,15 +90,13 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create();
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
-        private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.Destination __Create()
         {
             var result = new global::TestCase.Destination(
                 left: 1,
@@ -114,9 +112,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             int left = destination.Right;
             int right = destination.Left;

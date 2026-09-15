@@ -96,10 +96,9 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ConstructUsing(source);
+            global::TestCase.Destination result = __ConstructUsing();
 
             if (result is null)
             {
@@ -113,15 +112,14 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Name = source.FromMembers();
 
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source) => null!;
+        private global::TestCase.Destination __ConstructUsing() => null!;
     }
 }
 """)

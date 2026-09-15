@@ -78,7 +78,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
+            return __Create(global::Morphant.Context.MappingOperation.Create);
         }
 
         /// <inheritdoc/>
@@ -94,16 +94,14 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
+                return __Create(global::Morphant.Context.MappingOperation.Update);
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
                 operation,
@@ -113,9 +111,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             if (destination.Left > 0)
             {
