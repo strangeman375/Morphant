@@ -864,7 +864,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         condition = SyntaxFactory.IsPatternExpression(
-            patternReceiver,
+            patternReceiver.WithTrailingTrivia(SyntaxFactory.Space),
             SyntaxFactory.RecursivePattern()
                 .WithPropertyPatternClause(SyntaxFactory.PropertyPatternClause())
                 .WithDesignation(
