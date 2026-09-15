@@ -105,10 +105,8 @@ namespace TestCase
         {
             if (context.Operation == global::Morphant.Context.MappingOperation.Create)
             {
-                string sourceName = source.Name;
-
                 return new global::TestCase.Destination(
-                    name: sourceName);
+                    name: source.Name);
             }
             else
             {

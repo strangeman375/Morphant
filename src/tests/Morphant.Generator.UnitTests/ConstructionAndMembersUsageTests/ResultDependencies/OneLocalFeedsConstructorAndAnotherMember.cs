@@ -108,12 +108,10 @@ namespace TestCase
         {
             var normalized = source.FromMembers();
 
-            string sourceName = normalized;
-
             return new global::TestCase.Destination(
-                name: sourceName)
+                name: normalized)
             {
-                Label = sourceName
+                Label = normalized
             };
         }
 

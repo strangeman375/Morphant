@@ -1,50 +1,49 @@
-namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.OrdinaryTypes;
+namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Tuples;
 
-internal sealed partial class OrdinaryTypesTests
+internal sealed partial class TuplesTests
 {
     [Test]
-    [Description("The constructor transforms its input, while Update can assign the property directly.")]
-    public void ConstructorTransformsTheMemberValue()
+    public void ResolveValueTupleWithIgnoredConstructorAndExplicitMember()
     {
         // lang=c#
         const string source =
 """
 #nullable enable
 #pragma warning disable CS1591
+using System;
 using Morphant;
 using Morphant.Context;
-using System.Diagnostics.CodeAnalysis;
 
 namespace TestCase
 {
     public sealed class Source
     {
+        public bool Reuse => true;
+        public int Id => 7;
         public string Name => "from convention";
+        public int Item1 => 7;
+        public string Item2 => "from convention";
         public string FromConstruct() => "from constructor";
         public string FromMembers() => "from members";
-    }
-
-    public sealed class Destination
-    {
-        public Destination(string name) => Name = "constructed: " + name;
-        public string Name { get; set; }
     }
 
     [MorphantMapper]
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>()
+            builder.Map<Source, (int Id, string Name)>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Resolve((source, previous) =>
+                {
+                    if (previous.HasValue && source.Reuse) return previous.Value;
+                    return new(source.Id, Ignore());
+                })
                 .Members(source => new() { Name = source.FromMembers() });
     }
 }
 """;
-
-        // Complete mapper output; the companion surface snapshots cover the generated DSL.
-        ConstructionAndMembersSnapshot.Verify(
-            source,
-            expectedMappers:
-            [
+        ConstructionAndMembersSnapshot.Verify(source, expectedMappers:
+        [
             ("Morphant.Generated.TypeMapper.Mapper__b93622f58bb33946b8901b3146112f51.g.cs",
             // lang=c#
 """
@@ -54,18 +53,18 @@ namespace TestCase
 namespace TestCase
 {
     public partial class Mapper :
-        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
+        global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)>
     {
         /// <inheritdoc/>
         protected override bool Supports(
             global::System.Type sourceType,
             global::System.Type destinationType) =>
                 (sourceType == typeof(global::TestCase.Source) &&
-                    destinationType == typeof(global::TestCase.Destination)) ||
+                    destinationType == typeof((int Id, string Name))) ||
                 base.Supports(sourceType, destinationType);
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
+        (int Id, string Name) global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -78,9 +77,9 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
+        (int Id, string Name) global::Morphant.ITypeMapper<global::TestCase.Source, (int Id, string Name)>.Update(
             global::TestCase.Source? source,
-            global::TestCase.Destination? destination,
+            (int Id, string Name) destination,
             global::Morphant.Context.MappingContext context)
         {
             if (source is null)
@@ -88,35 +87,45 @@ namespace TestCase
                 return default!;
             }
 
-            if (destination is null)
-            {
-                return __Create(source, context);
-            }
-
             return __Update(source, destination, context);
         }
 
-        private global::TestCase.Destination __Create(
+        private (int Id, string Name) __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination(
-                name: source.FromMembers());
+            int id = source.Id;
+            string? name = source.FromMembers();
+
+            return (
+                Id: id,
+                Name: name);
         }
 
-        private global::TestCase.Destination __Update(
+        private (int Id, string Name) __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
+            (int Id, string Name) destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = source.FromMembers();
+            if (source.Reuse)
+            {
+                destination.Name = source.FromMembers();
 
-            return destination;
+                return destination;
+            }
+            else
+            {
+                int id = source.Id;
+                string? name = source.FromMembers();
+
+                return (
+                    Id: id,
+                    Name: name);
+            }
         }
     }
 }
 """)
-            ],
-            expectedSurfaces: DifferentConstructorAndMemberExpressionsSurfaces);
+        ], expectedSurfaces: ValueTupleWithDifferentExpressionsForOneElementSurfaces);
     }
 }

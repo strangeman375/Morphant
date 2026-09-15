@@ -113,7 +113,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            var selected = true && source.Reuse;
+            var selected = source.Reuse;
 
             if (selected)
             {

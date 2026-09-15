@@ -1,53 +1,49 @@
-namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.ResultDependencies;
+namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.Tuples;
 
-internal sealed partial class ResultDependenciesTests
+internal sealed partial class TuplesTests
 {
     [Test]
-    [Description("The previous guard covers Create and Update with a null destination.")]
-    public void PreviousGuardSuppliesValueWhenNoDestinationExists()
+    public void ResolveSystemTupleWithIgnoredConstructorAndExplicitMember()
     {
         // lang=c#
         const string source =
 """
 #nullable enable
 #pragma warning disable CS1591
+using System;
 using Morphant;
 using Morphant.Context;
-using System.Diagnostics.CodeAnalysis;
 
 namespace TestCase
 {
     public sealed class Source
     {
+        public bool Reuse => true;
+        public int Id => 7;
         public string Name => "from convention";
+        public int Item1 => 7;
+        public string Item2 => "from convention";
         public string FromConstruct() => "from constructor";
         public string FromMembers() => "from members";
-    }
-
-    public sealed class Destination
-    {
-        public Destination(string name) => Name = name;
-        public string Name { get; set; }
     }
 
     [MorphantMapper]
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>()
-                .Members((source, previous, result, context) => new()
+            builder.Map<Source, Tuple<int, string>>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Resolve((source, previous) =>
                 {
-                    Name = previous.HasValue ? result.Name + " updated" : source.Name
-                });
+                    if (previous.HasValue && source.Reuse) return previous.Value;
+                    return new(source.Id, Ignore());
+                })
+                .Members(source => new() { Item2 = source.FromMembers() });
     }
 }
 """;
-
-        // Complete mapper output; the companion surface snapshots cover the generated DSL.
-        ConstructionAndMembersSnapshot.Verify(
-            source,
-            expectedMappers:
-            [
+        ConstructionAndMembersSnapshot.Verify(source, expectedMappers:
+        [
             ("Morphant.Generated.TypeMapper.Mapper__b93622f58bb33946b8901b3146112f51.g.cs",
             // lang=c#
 """
@@ -57,18 +53,18 @@ namespace TestCase
 namespace TestCase
 {
     public partial class Mapper :
-        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Tuple<int, string>>
     {
         /// <inheritdoc/>
         protected override bool Supports(
             global::System.Type sourceType,
             global::System.Type destinationType) =>
                 (sourceType == typeof(global::TestCase.Source) &&
-                    destinationType == typeof(global::TestCase.Destination)) ||
+                    destinationType == typeof(global::System.Tuple<int, string>)) ||
                 base.Supports(sourceType, destinationType);
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
+        global::System.Tuple<int, string> global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Tuple<int, string>>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -81,9 +77,9 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
+        global::System.Tuple<int, string> global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Tuple<int, string>>.Update(
             global::TestCase.Source? source,
-            global::TestCase.Destination? destination,
+            global::System.Tuple<int, string>? destination,
             global::Morphant.Context.MappingContext context)
         {
             if (source is null)
@@ -99,27 +95,33 @@ namespace TestCase
             return __Update(source, destination, context);
         }
 
-        private global::TestCase.Destination __Create(
+        private global::System.Tuple<int, string> __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            return new global::TestCase.Destination(
-                name: source.Name);
+            int item1 = source.Id;
+            string? item2 = source.FromMembers();
+
+            return new global::System.Tuple<int, string>(
+                item1: item1,
+                item2: item2);
         }
 
-        private global::TestCase.Destination __Update(
+        private global::System.Tuple<int, string> __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
+            global::System.Tuple<int, string> destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = (destination.Name + " updated");
+            if (source.Reuse)
+            {
+                return destination;
+            }
 
-            return destination;
+            return __Create(source, context);
         }
     }
 }
 """)
-            ],
-            expectedSurfaces: ExplicitConstructorThenReadingResultSurfaces);
+        ], expectedSurfaces: SystemTupleWithDifferentExpressionsForOneElementSurfaces);
     }
 }

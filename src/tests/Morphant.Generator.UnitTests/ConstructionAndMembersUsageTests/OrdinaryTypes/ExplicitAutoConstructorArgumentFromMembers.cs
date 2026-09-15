@@ -101,10 +101,8 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            string sourceName = source.FromMembers();
-
             return new global::TestCase.Destination(
-                name: sourceName);
+                name: source.FromMembers());
         }
 
         private global::TestCase.Destination __Update(

@@ -95,8 +95,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             int id = source.Id;
-            string? name = default(string);
-            name = source.FromMembers();
+            string? name = source.FromMembers();
 
             return (
                 Id: id,

@@ -1,10 +1,9 @@
-namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.ResultDependencies;
+namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.OrdinaryTypes;
 
-internal sealed partial class ResultDependenciesTests
+internal sealed partial class OrdinaryTypesTests
 {
     [Test]
-    [Description("The previous guard covers Create and Update with a null destination.")]
-    public void PreviousGuardSuppliesValueWhenNoDestinationExists()
+    public void ResolveExplicitAutoConstructorArgumentFromMembers()
     {
         // lang=c#
         const string source =
@@ -19,6 +18,7 @@ namespace TestCase
 {
     public sealed class Source
     {
+        public bool Reuse => true;
         public string Name => "from convention";
         public string FromConstruct() => "from constructor";
         public string FromMembers() => "from members";
@@ -35,19 +35,17 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Members((source, previous, result, context) => new()
+                .Resolve((source, previous) =>
                 {
-                    Name = previous.HasValue ? result.Name + " updated" : source.Name
-                });
+                    if (previous.HasValue && source.Reuse) return previous.Value;
+                    return new(Auto());
+                })
+                .Members(source => new() { Name = source.FromMembers() });
     }
 }
 """;
-
-        // Complete mapper output; the companion surface snapshots cover the generated DSL.
-        ConstructionAndMembersSnapshot.Verify(
-            source,
-            expectedMappers:
-            [
+        ConstructionAndMembersSnapshot.Verify(source, expectedMappers:
+        [
             ("Morphant.Generated.TypeMapper.Mapper__b93622f58bb33946b8901b3146112f51.g.cs",
             // lang=c#
 """
@@ -104,7 +102,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination(
-                name: source.Name);
+                name: source.FromMembers());
         }
 
         private global::TestCase.Destination __Update(
@@ -112,14 +110,18 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Name = (destination.Name + " updated");
+            if (source.Reuse)
+            {
+                destination.Name = source.FromMembers();
 
-            return destination;
+                return destination;
+            }
+
+            return __Create(source, context);
         }
     }
 }
 """)
-            ],
-            expectedSurfaces: ExplicitConstructorThenReadingResultSurfaces);
+        ], expectedSurfaces: DifferentConstructorAndMemberExpressionsSurfaces);
     }
 }

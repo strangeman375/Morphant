@@ -100,8 +100,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             int item1 = source.Id;
-            string? item2 = default(string);
-            item2 = source.FromMembers();
+            string? item2 = source.FromMembers();
 
             return new global::System.Tuple<int, string>(
                 item1: item1,

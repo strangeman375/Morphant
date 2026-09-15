@@ -108,10 +108,8 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            string sourceName = source.Read("local member");
-
             return new global::TestCase.Destination(
-                name: sourceName);
+                name: source.Read("local member"));
         }
 
         private global::TestCase.Destination __Update(
