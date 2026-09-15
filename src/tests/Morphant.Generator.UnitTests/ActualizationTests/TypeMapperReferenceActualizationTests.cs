@@ -105,7 +105,7 @@ namespace TestCase
                 return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::ExternalModels.Destination __Create(
@@ -165,7 +165,7 @@ namespace TestCase
                 return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(destination);
         }
 
         private global::ExternalModels.Destination __Create(

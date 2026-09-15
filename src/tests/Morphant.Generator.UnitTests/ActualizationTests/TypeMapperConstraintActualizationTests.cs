@@ -152,7 +152,7 @@ namespace TestCase
                 return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.Destination<T> __Create(
@@ -212,7 +212,7 @@ namespace TestCase
                 return __Create(source);
             }
 
-            return __Update(source, destination, context);
+            return __Update(source, destination);
         }
 
         private global::TestCase.Destination<T> __Create(
