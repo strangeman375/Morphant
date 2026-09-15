@@ -32,9 +32,9 @@ internal sealed class DocumentLifecycleTests
             SourceText.From(MapperSource.Replace("TestMapper", "RenamedMapper", StringComparison.Ordinal))));
         await workspace.AssertProjectAsync(project,
         [
-            "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+            "Morphant.Generated.Construction.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
             "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_RenamedMapper.g.cs",
-            "Morphant.Generated.Member.TestCase_Destination.g.cs",
+            "Morphant.Generated.Member.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
             "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_RenamedMapper.g.cs",
             "Morphant.Generated.TypeMapper.TestCase_RenamedMapper.g.cs"
         ]);
@@ -76,11 +76,11 @@ internal sealed class DocumentLifecycleTests
 
     private static readonly string[] InitialHints =
     [
-        "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.Member.TestCase_Destination.g.cs",
-        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+        "Morphant.Generated.Construction.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__6ffaed10d427445da9aa38b698065b47.g.cs",
+        "Morphant.Generated.Member.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__6ffaed10d427445da9aa38b698065b47.g.cs",
+        "Morphant.Generated.TypeMapper.TestMapper__34eeba5c4c0622cda3036b677bc2b836.g.cs"
     ];
 
     // lang=c#

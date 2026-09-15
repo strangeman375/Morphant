@@ -28,9 +28,9 @@ internal sealed class ProjectReferenceTests
             .AddProjectReference(consumer, new ProjectReference(models)));
         string[] inaccessibleHints =
         [
-            "Morphant.Generated.Construction.ExternalModels_Destination.g.cs",
-            "Morphant.Generated.MappingExtension.ExternalModels_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs",
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+            "Morphant.Generated.Construction.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
+            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__696dc98d7025f5b2b6c1cb46f14d8870.g.cs",
+            "Morphant.Generated.TypeMapper.TestMapper__34eeba5c4c0622cda3036b677bc2b836.g.cs"
         ];
         var initial = await workspace.AssertProjectAsync(consumer, inaccessibleHints);
 
@@ -110,20 +110,20 @@ internal sealed class ProjectReferenceTests
 
     private static readonly string[] ModelHints =
     [
-        "Morphant.Generated.Construction.ExternalModels_Destination.g.cs",
+        "Morphant.Generated.Construction.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
         "Morphant.Generated.MappingExtension.ExternalModels_Source__ExternalModels_Destination__ExternalModels_ExternalMapper.g.cs",
-        "Morphant.Generated.Member.ExternalModels_Destination.g.cs",
+        "Morphant.Generated.Member.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
         "Morphant.Generated.MemberExtension.ExternalModels_Source__ExternalModels_Destination__ExternalModels_ExternalMapper.g.cs",
         "Morphant.Generated.TypeMapper.ExternalModels_ExternalMapper.g.cs"
     ];
 
     private static readonly string[] ConsumerHints =
     [
-        "Morphant.Generated.Construction.ExternalModels_Destination.g.cs",
-        "Morphant.Generated.MappingExtension.ExternalModels_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.Member.ExternalModels_Destination.g.cs",
-        "Morphant.Generated.MemberExtension.ExternalModels_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs",
-        "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+        "Morphant.Generated.Construction.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
+        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__696dc98d7025f5b2b6c1cb46f14d8870.g.cs",
+        "Morphant.Generated.Member.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
+        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__696dc98d7025f5b2b6c1cb46f14d8870.g.cs",
+        "Morphant.Generated.TypeMapper.TestMapper__34eeba5c4c0622cda3036b677bc2b836.g.cs"
     ];
 
     // lang=c#
