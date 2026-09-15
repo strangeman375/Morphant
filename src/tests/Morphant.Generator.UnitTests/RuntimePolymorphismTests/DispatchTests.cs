@@ -165,17 +165,13 @@ namespace TestCase
             }
         }
 
-        private global::TestCase.AnimalDto __Create(
-            global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.AnimalDto __Create()
         {
             return new global::TestCase.AnimalDto();
         }
 
         private global::TestCase.AnimalDto __Update(
-            global::TestCase.Animal source,
-            global::TestCase.AnimalDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.AnimalDto destination)
         {
             return destination;
         }
@@ -212,17 +208,13 @@ namespace TestCase
             return __Update1(source, destination, context);
         }
 
-        private global::TestCase.DogDto __Create1(
-            global::TestCase.Dog source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.DogDto __Create1()
         {
             return new global::TestCase.DogDto();
         }
 
         private global::TestCase.DogDto __Update1(
-            global::TestCase.Dog source,
-            global::TestCase.DogDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.DogDto destination)
         {
             return destination;
         }
@@ -259,17 +251,13 @@ namespace TestCase
             return __Update2(source, destination, context);
         }
 
-        private global::TestCase.CatDto __Create2(
-            global::TestCase.Cat source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.CatDto __Create2()
         {
             return new global::TestCase.CatDto();
         }
 
         private global::TestCase.CatDto __Update2(
-            global::TestCase.Cat source,
-            global::TestCase.CatDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.CatDto destination)
         {
             return destination;
         }
@@ -434,17 +422,13 @@ namespace TestCase
             }
         }
 
-        private global::TestCase.AnimalDto __Create(
-            global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.AnimalDto __Create()
         {
             return new global::TestCase.AnimalDto();
         }
 
         private global::TestCase.AnimalDto __Update(
-            global::TestCase.Animal source,
-            global::TestCase.AnimalDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.AnimalDto destination)
         {
             return destination;
         }
@@ -645,17 +629,13 @@ namespace TestCase
             }
         }
 
-        private global::TestCase.RootDto __Create(
-            global::TestCase.IRoot source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.RootDto __Create()
         {
             return new global::TestCase.RootDto();
         }
 
         private global::TestCase.RootDto __Update(
-            global::TestCase.IRoot source,
-            global::TestCase.RootDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.RootDto destination)
         {
             return destination;
         }
@@ -794,17 +774,13 @@ namespace TestCase
             }
         }
 
-        private global::TestCase.AnimalDto __Create(
-            global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.AnimalDto __Create()
         {
             return new global::TestCase.AnimalDto();
         }
 
         private global::TestCase.AnimalDto __Update(
-            global::TestCase.Animal source,
-            global::TestCase.AnimalDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.AnimalDto destination)
         {
             return destination;
         }
@@ -886,7 +862,7 @@ namespace TestCase
 
             var sourceValue = source.Value;
 
-            return __Create(sourceValue, context);
+            return __Create(sourceValue);
         }
 
         /// <inheritdoc/>
@@ -904,15 +880,14 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(sourceValue, context);
+                return __Create(sourceValue);
             }
 
             return __Update(sourceValue, destination, context);
         }
 
         private global::TestCase.NumberDto __Create(
-            global::TestCase.Number sourceValue,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Number sourceValue)
         {
             return new global::TestCase.NumberDto()
             {
@@ -922,8 +897,7 @@ namespace TestCase
 
         private global::TestCase.NumberDto __Update(
             global::TestCase.Number sourceValue,
-            global::TestCase.NumberDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.NumberDto destination)
         {
             destination.Value = sourceValue.Value;
 
@@ -1027,8 +1001,7 @@ namespace TestCase
         }
 
         private global::TestCase.NumberDto __Create(
-            global::TestCase.Number source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Number source)
         {
             return new global::TestCase.NumberDto()
             {
@@ -1038,8 +1011,7 @@ namespace TestCase
 
         private global::TestCase.NumberDto __Update(
             global::TestCase.Number source,
-            global::TestCase.NumberDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.NumberDto destination)
         {
             destination.Value = source.Value;
 
@@ -1096,7 +1068,7 @@ namespace TestCase
             object[]? source,
             global::Morphant.Context.MappingContext context)
         {
-            if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
+            if (__TryCreatePolymorphic(source, out var polymorphicDestination))
             {
                 return polymorphicDestination;
             }
@@ -1110,7 +1082,7 @@ namespace TestCase
             int destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
+            if (__TryUpdatePolymorphic(source, out var polymorphicDestination))
             {
                 return polymorphicDestination;
             }
@@ -1120,7 +1092,6 @@ namespace TestCase
 
         private bool __TryCreatePolymorphic(
             object[]? source,
-            global::Morphant.Context.MappingContext context,
             out int result)
         {
             switch (source)
@@ -1141,8 +1112,6 @@ namespace TestCase
 
         private bool __TryUpdatePolymorphic(
             object[]? source,
-            int destination,
-            global::Morphant.Context.MappingContext context,
             out int result)
         {
             switch (source)

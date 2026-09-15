@@ -126,17 +126,13 @@ namespace TestCase
             }
         }
 
-        private global::TestCase.AnimalDto __Create(
-            global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.AnimalDto __Create()
         {
             return new global::TestCase.AnimalDto();
         }
 
         private global::TestCase.AnimalDto __Update(
-            global::TestCase.Animal source,
-            global::TestCase.AnimalDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.AnimalDto destination)
         {
             return destination;
         }
@@ -275,17 +271,13 @@ namespace TestCase
             }
         }
 
-        private global::TestCase.AnimalDto? __Create(
-            global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.AnimalDto? __Create()
         {
             return new global::TestCase.AnimalDto();
         }
 
         private global::TestCase.AnimalDto? __Update(
-            global::TestCase.Animal source,
-            global::TestCase.AnimalDto destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.AnimalDto destination)
         {
             return destination;
         }

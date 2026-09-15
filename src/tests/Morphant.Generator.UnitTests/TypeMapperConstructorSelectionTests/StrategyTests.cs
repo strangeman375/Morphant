@@ -238,9 +238,7 @@ namespace TestCase
         }
 
         private global::TestCase.ExplicitDestination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
                 operation,
@@ -251,8 +249,7 @@ namespace TestCase
 
         private global::TestCase.ExplicitDestination __Update(
             global::TestCase.Source source,
-            global::TestCase.ExplicitDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.ExplicitDestination destination)
         {
             destination.Id = source.Id;
 
@@ -291,17 +288,13 @@ namespace TestCase
             return __Update1(source, destination, context);
         }
 
-        private global::TestCase.ParameterlessDestination __Create1(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.ParameterlessDestination __Create1()
         {
             return new global::TestCase.ParameterlessDestination();
         }
 
         private global::TestCase.ParameterlessDestination __Update1(
-            global::TestCase.Source source,
-            global::TestCase.ParameterlessDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.ParameterlessDestination destination)
         {
             return destination;
         }
@@ -339,17 +332,14 @@ namespace TestCase
         }
 
         private global::TestCase.SingleDestination __Create2(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.SingleDestination(
                 id: source.Id);
         }
 
         private global::TestCase.SingleDestination __Update2(
-            global::TestCase.Source source,
-            global::TestCase.SingleDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.SingleDestination destination)
         {
             return destination;
         }
@@ -387,17 +377,14 @@ namespace TestCase
         }
 
         private global::TestCase.UnambiguousDestination __Create3(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.UnambiguousDestination(
                 id: source.Id);
         }
 
         private global::TestCase.UnambiguousDestination __Update3(
-            global::TestCase.Source source,
-            global::TestCase.UnambiguousDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.UnambiguousDestination destination)
         {
             return destination;
         }
@@ -435,8 +422,7 @@ namespace TestCase
         }
 
         private global::TestCase.GreediestDestination __Create4(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.GreediestDestination(
                 code: source.Code,
@@ -444,9 +430,7 @@ namespace TestCase
         }
 
         private global::TestCase.GreediestDestination __Update4(
-            global::TestCase.Source source,
-            global::TestCase.GreediestDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.GreediestDestination destination)
         {
             return destination;
         }
@@ -484,8 +468,7 @@ namespace TestCase
         }
 
         private global::TestCase.LargestDestination __Create5(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.LargestDestination(
                 code: source.Code,
@@ -494,9 +477,7 @@ namespace TestCase
         }
 
         private global::TestCase.LargestDestination __Update5(
-            global::TestCase.Source source,
-            global::TestCase.LargestDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.LargestDestination destination)
         {
             return destination;
         }
@@ -534,9 +515,7 @@ namespace TestCase
         }
 
         private global::TestCase.LargestWithoutFallbackDestination __Create6(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
                 operation,
@@ -546,9 +525,7 @@ namespace TestCase
         }
 
         private global::TestCase.LargestWithoutFallbackDestination __Update6(
-            global::TestCase.Source source,
-            global::TestCase.LargestWithoutFallbackDestination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.LargestWithoutFallbackDestination destination)
         {
             return destination;
         }

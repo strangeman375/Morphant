@@ -100,8 +100,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination<T> __Create(
-            global::TestCase.Source<T> source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source<T> source)
         {
             return new global::TestCase.Destination<T>()
             {
@@ -111,8 +110,7 @@ namespace TestCase
 
         private global::TestCase.Destination<T> __Update(
             global::TestCase.Source<T> source,
-            global::TestCase.Destination<T> destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination<T> destination)
         {
             destination.Boxed = (source.Details is { } details ? details.Boxed : default(object?));
 
@@ -224,8 +222,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source<T> source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source<T> source)
         {
             return new global::TestCase.Destination()
             {
@@ -235,8 +232,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source<T> source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Boxed = (source.Context is { } context1 && context1.Class is { } @class ? @class.Boxed : default(object?));
 
@@ -422,8 +418,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source<T> source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source<T> source)
         {
             return new global::TestCase.Destination(
                 constructorValue: (source.SafeRoot is { } safeRoot && safeRoot.Next is { } next && next.Next is { } next1 ? next1.Next!.ConstructorValue : default(object?)))
@@ -439,8 +434,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source<T> source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.SafeValue = (source.SafeRoot is { } safeRoot && safeRoot.Next is { } next && next.Next is { } next1 ? next1.Next!.SafeValue : default(object?));
             destination.SafeText = source.SafeRoot?.Next?.Next?.Next!.SafeText;
@@ -585,8 +579,7 @@ namespace TestCase
         }
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination(
                 id: source.Id,
@@ -599,8 +592,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Name = source.Name;
             destination.Tag = source.Metadata?.Tag;

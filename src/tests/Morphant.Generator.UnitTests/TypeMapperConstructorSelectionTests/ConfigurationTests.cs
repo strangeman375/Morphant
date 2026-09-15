@@ -103,17 +103,13 @@ namespace TestCase
             return __Update(source, destination, context);
         }
 
-        private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.Destination __Create()
         {
             return new global::TestCase.Destination();
         }
 
         private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             return destination;
         }
@@ -192,19 +188,17 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, global::Morphant.Context.MappingOperation.Create, context);
+            => __Create(global::Morphant.Context.MappingOperation.Create);
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
-            => __Update(source, destination, context);
+            => __Update(source, destination);
 
         private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingOperation operation,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingOperation operation)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
                 operation,
@@ -215,8 +209,7 @@ namespace TestCase
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
+            global::TestCase.Destination destination)
         {
             destination.Value = source.Value;
 
