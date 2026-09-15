@@ -61,7 +61,8 @@ public static class MappingHelpers
             return;
         }
 
-        UpdateChecked<TSource, TDestination>(destination, sourceSelector(state), context);
+        var source = sourceSelector(state);
+        UpdateChecked<TSource, TDestination>(destination, source, context);
     }
 
     /// <summary>
@@ -77,7 +78,8 @@ public static class MappingHelpers
             return;
         }
 
-        UpdateChecked<TSource, TDestination>(destination, sourceSelector(), context);
+        var source = sourceSelector();
+        UpdateChecked<TSource, TDestination>(destination, source, context);
     }
 
     /// <summary>
