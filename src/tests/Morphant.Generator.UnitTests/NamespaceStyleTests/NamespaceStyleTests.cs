@@ -48,18 +48,29 @@ internal sealed partial class NamespaceStyleTests
         }
     }
 
-    [Test]
-    public void Keeps_file_scoped_output_cached_when_only_newer_language_options_change()
+    [TestCase(LanguageVersion.CSharp10, LanguageVersion.CSharp11)]
+    [TestCase(LanguageVersion.CSharp11, LanguageVersion.CSharp10)]
+    public void Caches_source_requests_when_only_newer_language_options_change(
+        LanguageVersion initialVersion,
+        LanguageVersion updatedVersion)
     {
-        var options = new CSharpParseOptions(LanguageVersion.CSharp10);
+        var options = new CSharpParseOptions(initialVersion);
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [new MorphantGenerator().AsSourceGenerator()],
             parseOptions: options,
             driverOptions: new GeneratorDriverOptions(
                 IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
-        driver = Verify(NamedSource, LanguageVersion.CSharp10, NamedFileSources, driver).Driver;
-        driver = Verify(NamedSource, LanguageVersion.CSharp11, NamedFileSources, driver).Driver;
+        driver = Verify(NamedSource, initialVersion, NamedFileSources, driver).Driver;
+        driver = Verify(NamedSource, updatedVersion, NamedFileSources, driver).Driver;
         var tracked = driver.GetRunResult().Results.Single().TrackedSteps;
+
+        // The mapper is reanalyzed for the new language rules, but this
+        // fixture produces the same source and diagnostics.
+        Assert.That(tracked["BuildTypeMapperModels"]
+                .SelectMany(step => step.Outputs)
+                .Select(output => output.Reason),
+            Is.EqualTo(new[] { IncrementalStepRunReason.Unchanged }));
+
         foreach (var stage in new[]
         {
             "BuildConstructionPlanRequests", "BuildMemberPlanRequests",
@@ -69,8 +80,7 @@ internal sealed partial class NamespaceStyleTests
         {
             Assert.That(tracked[stage].SelectMany(step => step.Outputs)
                     .Select(output => output.Reason),
-                Has.All.Matches<IncrementalStepRunReason>(reason =>
-                    reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged),
+                Is.EqualTo(new[] { IncrementalStepRunReason.Cached }),
                 stage);
         }
     }
