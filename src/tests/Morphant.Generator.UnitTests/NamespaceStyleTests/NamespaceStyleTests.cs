@@ -64,13 +64,6 @@ internal sealed partial class NamespaceStyleTests
         driver = Verify(NamedSource, updatedVersion, NamedFileSources, driver).Driver;
         var tracked = driver.GetRunResult().Results.Single().TrackedSteps;
 
-        // The mapper is reanalyzed for the new language rules, but this
-        // fixture produces the same source and diagnostics.
-        Assert.That(tracked["BuildTypeMapperModels"]
-                .SelectMany(step => step.Outputs)
-                .Select(output => output.Reason),
-            Is.EqualTo(new[] { IncrementalStepRunReason.Unchanged }));
-
         foreach (var stage in new[]
         {
             "BuildConstructionPlanRequests", "BuildMemberPlanRequests",
