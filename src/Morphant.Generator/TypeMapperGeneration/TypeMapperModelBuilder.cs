@@ -93,23 +93,17 @@ internal static class TypeMapperModelBuilder
                 }).Prepend(mapperType).ToArray())
         };
         model = GeneratedCodeReadabilityLowerer.Lower(model);
-        model = SupportingLocalLowerer.Lower(model, compilation,
-            configureSyntax.SyntaxTree.Options as CSharpParseOptions, cancellationToken);
-        model = RuntimeMappingHelperLowerer.Lower(
+        var probe = new TypeMapperProbe(
             model,
             compilation,
             configureSyntax.SyntaxTree.Options as CSharpParseOptions,
             cancellationToken);
-        model = SharedConstructionLowerer.Lower(
-            model,
-            compilation,
-            configureSyntax.SyntaxTree.Options as CSharpParseOptions,
-            cancellationToken);
+        probe = SupportingLocalLowerer.Lower(probe, cancellationToken);
+        probe = RuntimeMappingHelperLowerer.Lower(probe, cancellationToken);
+        probe = SharedConstructionLowerer.Lower(probe, cancellationToken);
         var validation = TypeMapperTransferValidator.Validate(
-            model,
+            probe,
             mappings.Policies,
-            compilation,
-            configureSyntax.SyntaxTree.Options as CSharpParseOptions,
             cancellationToken);
         model = validation.Model;
         var callbackDiagnostics = CallbackDiagnosticAnalyzer.Build(

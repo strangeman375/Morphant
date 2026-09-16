@@ -9,18 +9,14 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class RuntimeMappingHelperLowerer
 {
-    public static TypeMapperModel Lower(
-        TypeMapperModel model,
-        CSharpCompilation compilation,
-        CSharpParseOptions? parseOptions,
+    public static TypeMapperProbe Lower(
+        TypeMapperProbe probe,
         CancellationToken cancellationToken)
     {
-        var text = TypeMapperEmitter.EmitTransferProbe(model);
-        if (text.ToString().IndexOf("_ = context.Mapper.Map<", StringComparison.Ordinal) < 0) return model;
-        var tree = CSharpSyntaxTree.ParseText(text, parseOptions, cancellationToken: cancellationToken);
-        var methods = tree.GetRoot(cancellationToken).DescendantNodes().OfType<MethodDeclarationSyntax>()
-            .Where(method => method.ExplicitInterfaceSpecifier is null)
-            .ToDictionary(method => method.Identifier.ValueText, StringComparer.Ordinal);
+        var model = probe.Model;
+        var text = probe.Source;
+        if (text.ToString().IndexOf("_ = context.Mapper.Map<", StringComparison.Ordinal) < 0) return probe;
+        var methods = probe.Methods;
         var candidates = new Dictionary<int, List<(MethodDeclarationSyntax Method, IfStatementSyntax Guard)>>();
         for (var index = 0; index < model.Mappings.Length; index++)
         {
@@ -37,9 +33,9 @@ internal static class RuntimeMappingHelperLowerer
             }
         }
 
-        if (candidates.Count == 0) return model;
+        if (candidates.Count == 0) return probe;
 
-        var semanticModel = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
+        var semanticModel = probe.SemanticModel;
         var mappings = model.Mappings.ToArray();
         foreach (var entry in candidates)
         {
@@ -68,22 +64,7 @@ internal static class RuntimeMappingHelperLowerer
             };
         }
 
-        if (!mappings.Where((mapping, index) => mapping != model.Mappings[index]).Any()) return model;
-
-        var lowered = model with { Mappings = mappings.ToImmutableArray() };
-        var loweredTree = CSharpSyntaxTree.ParseText(TypeMapperEmitter.EmitTransferProbe(lowered), parseOptions,
-            cancellationToken: cancellationToken);
-        var loweredSemanticModel = compilation.AddSyntaxTrees(loweredTree).GetSemanticModel(loweredTree);
-        var originalDiagnostics = Diagnostics(semanticModel, cancellationToken).GroupBy(diagnostic => diagnostic)
-            .ToDictionary(group => group.Key, group => group.Count());
-        foreach (var group in Diagnostics(loweredSemanticModel, cancellationToken).GroupBy(diagnostic => diagnostic))
-        {
-            // A lambda can lose nullable flow or be unable to capture a ref
-            // local. Retain the original scope when moving it adds diagnostics.
-            if (!originalDiagnostics.TryGetValue(group.Key, out var count) || group.Count() > count)
-                mappings[group.Key.Index] = model.Mappings[group.Key.Index];
-        }
-        return model with { Mappings = mappings.ToImmutableArray() };
+        return probe.WithValidatedMappings(mappings.ToImmutableArray());
     }
 
     private static string? TryBuildCall(
@@ -282,10 +263,4 @@ internal static class RuntimeMappingHelperLowerer
         return string.Join("\r\n", lines);
     }
 
-    private static IEnumerable<(int Index, string Key)> Diagnostics(SemanticModel model, CancellationToken token) =>
-        model.GetDiagnostics(cancellationToken: token)
-            .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error)
-            .Select(diagnostic => TypeMapperEmitter.TryGetTransferProbeMappingIndex(diagnostic, out var index)
-                ? (Index: index, Key: diagnostic.Id + ":" + diagnostic.GetMessage()) : (Index: -1, Key: string.Empty))
-            .Where(diagnostic => diagnostic.Index >= 0);
 }

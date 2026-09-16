@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.PairConfiguration;
 
 namespace Morphant.Generator.TypeMapperGeneration;
@@ -13,12 +11,11 @@ internal static class TypeMapperTransferValidator
         "This mapping contains code that Morphant cannot generate.";
 
     public static TypeMapperTransferValidationResult Validate(
-        TypeMapperModel model,
+        TypeMapperProbe probe,
         ImmutableArray<TransferredCodePolicy> policies,
-        CSharpCompilation compilation,
-        CSharpParseOptions? parseOptions,
         CancellationToken cancellationToken)
     {
+        var model = probe.Model;
         if (!policies.Any(static policy => policy.HasTransferredCode))
         {
             return new TypeMapperTransferValidationResult(
@@ -31,9 +28,7 @@ internal static class TypeMapperTransferValidator
         var seenTransferFailures = new HashSet<string>(StringComparer.Ordinal);
 
         var diagnostics = GetDiagnostics(
-            model,
-            compilation,
-            parseOptions,
+            probe,
             cancellationToken);
 
         if (diagnostics.IsEmpty)
@@ -124,15 +119,11 @@ internal static class TypeMapperTransferValidator
             mappings,
             suppressions,
             failures);
-        model = model with
-        {
-            Mappings = mappings.ToImmutableArray()
-        };
+        probe = probe.WithMappings(mappings.ToImmutableArray());
+        model = probe.Model;
 
         diagnostics = GetDiagnostics(
-            model,
-            compilation,
-            parseOptions,
+            probe,
             cancellationToken);
 
         if (diagnostics.IsEmpty)
@@ -319,22 +310,13 @@ internal static class TypeMapperTransferValidator
     }
 
     private static ImmutableArray<TransferPreflightDiagnostic> GetDiagnostics(
-        TypeMapperModel model,
-        CSharpCompilation compilation,
-        CSharpParseOptions? parseOptions,
+        TypeMapperProbe probe,
         CancellationToken cancellationToken)
     {
-        var source = TypeMapperEmitter.EmitTransferProbe(model);
-        var syntaxTree = CSharpSyntaxTree.ParseText(
-            SourceText.From(source.ToString(), Encoding.UTF8),
-            parseOptions,
-            "Morphant.TransferProbe.g.cs",
-            cancellationToken);
-        var probeCompilation = compilation.AddSyntaxTrees(syntaxTree);
-        var semanticModel = probeCompilation.GetSemanticModel(syntaxTree);
+        var syntaxTree = probe.Tree;
+        var semanticModel = probe.SemanticModel;
 
-        return semanticModel.GetDiagnostics(
-                cancellationToken: cancellationToken)
+        return probe.Diagnostics
             .Where(diagnostic =>
                 ReferenceEquals(
                     diagnostic.Location.SourceTree,
@@ -344,7 +326,7 @@ internal static class TypeMapperTransferValidator
                     DiagnosticSeverity.Error)
             .Select(diagnostic =>
             {
-                var node = syntaxTree.GetRoot(cancellationToken)
+                var node = probe.Root
                     .FindNode(
                         diagnostic.Location.SourceSpan,
                         getInnermostNodeForTie: true);

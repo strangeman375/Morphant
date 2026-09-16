@@ -7,27 +7,23 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class SupportingLocalLowerer
 {
-    public static TypeMapperModel Lower(TypeMapperModel model, CSharpCompilation compilation,
-        CSharpParseOptions? options, CancellationToken cancellationToken)
+    public static TypeMapperProbe Lower(TypeMapperProbe probe, CancellationToken cancellationToken)
     {
-        var tree = CSharpSyntaxTree.ParseText(TypeMapperEmitter.EmitTransferProbe(model), options,
-            cancellationToken: cancellationToken);
-        var root = tree.GetRoot(cancellationToken);
+        var model = probe.Model;
+        var root = probe.Root;
         if (!root.DescendantNodes().OfType<VariableDeclaratorSyntax>()
-                .Any(variable => variable.Initializer?.Value is IdentifierNameSyntax)) return model;
-        var semantic = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
-        var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>()
-            .Where(method => method.ExplicitInterfaceSpecifier is null && method.Body is not null)
-            .ToDictionary(method => method.Identifier.ValueText, StringComparer.Ordinal);
-        HashSet<string> Find(string? name) => name is not null && methods.TryGetValue(name, out var method)
+                .Any(variable => variable.Initializer?.Value is IdentifierNameSyntax)) return probe;
+        var semantic = probe.SemanticModel;
+        var methods = probe.Methods;
+        HashSet<string> Find(string? name) => name is not null && methods.TryGetValue(name, out var method) &&
+            method.Body is not null
             ? FindSafeCopies(method, semantic, cancellationToken) : new HashSet<string>(StringComparer.Ordinal);
 
-        return model with
-        {
-            Mappings = model.Mappings.Select(mapping =>
+        return probe.WithMappings(model.Mappings.Select(mapping =>
             {
                 var create = Find(mapping.CreateImplMethodName);
                 var update = Find(mapping.UpdateImplMethodName);
+                if (create.Count == 0 && update.Count == 0) return mapping;
                 if (mapping.ControlFlow is { } flow)
                     return mapping with { ControlFlow = new(
                         RewriteNode(flow.CreateRoot, create), RewriteNode(flow.UpdateRoot, update)) };
@@ -39,8 +35,7 @@ internal static class SupportingLocalLowerer
                     UpdateMemberMappings = RewriteMembers(mapping.UpdateMemberMappings, update),
                     PostMemberControlFlow = RewriteMemberNode(mapping.PostMemberControlFlow, common)
                 };
-            }).ToImmutableArray()
-        };
+            }).ToImmutableArray());
     }
 
     private static HashSet<string> FindSafeCopies(MethodDeclarationSyntax method,

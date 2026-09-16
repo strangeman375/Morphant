@@ -9,27 +9,19 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class SharedConstructionLowerer
 {
-    public static TypeMapperModel Lower(
-        TypeMapperModel model,
-        CSharpCompilation compilation,
-        CSharpParseOptions? parseOptions,
+    public static TypeMapperProbe Lower(
+        TypeMapperProbe probe,
         CancellationToken cancellationToken)
     {
+        var model = probe.Model;
         if (!model.Mappings.Any(mapping => mapping.ControlFlow is not null))
         {
-            return model;
+            return probe;
         }
 
-        var tree = CSharpSyntaxTree.ParseText(
-            TypeMapperEmitter.EmitTransferProbe(model),
-            parseOptions,
-            cancellationToken: cancellationToken);
-        var root = tree.GetRoot(cancellationToken);
-        var text = tree.GetText(cancellationToken);
-        var semanticModel = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
-        var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>()
-            .Where(method => method.ExplicitInterfaceSpecifier is null)
-            .ToDictionary(method => method.Identifier.ValueText, StringComparer.Ordinal);
+        var text = probe.Source;
+        var semanticModel = probe.SemanticModel;
+        var methods = probe.Methods;
         var names = new HashSet<string>(methods.Keys, StringComparer.Ordinal);
         foreach (var mapping in model.Mappings)
         {
@@ -173,42 +165,8 @@ internal static class SharedConstructionLowerer
             mappings[index] = mapping with { SharedConstructionMethodDeclarations = declarations };
         }
 
-        var shared = model with { Mappings = mappings.ToImmutableArray() };
-        if (!mappings.Where((mapping, index) => mapping.SharedConstructionMethodDeclarations !=
-                model.Mappings[index].SharedConstructionMethodDeclarations).Any())
-        {
-            return model;
-        }
-
-        // Nullable member flow and ref escape rules can depend on the caller's
-        // scope. Keep that scope when extracting a branch changes diagnostics.
-        var sharedTree = CSharpSyntaxTree.ParseText(
-            TypeMapperEmitter.EmitTransferProbe(shared), parseOptions,
-            cancellationToken: cancellationToken);
-        var sharedSemanticModel = compilation.AddSyntaxTrees(sharedTree).GetSemanticModel(sharedTree);
-        var originalDiagnostics = Diagnostics(semanticModel, cancellationToken)
-            .GroupBy(diagnostic => diagnostic)
-            .ToDictionary(group => group.Key, group => group.Count());
-        foreach (var group in Diagnostics(sharedSemanticModel, cancellationToken).GroupBy(diagnostic => diagnostic))
-        {
-            if (!originalDiagnostics.TryGetValue(group.Key, out var count) || group.Count() > count)
-            {
-                mappings[group.Key.Index] = model.Mappings[group.Key.Index];
-            }
-        }
-
-        return model with { Mappings = mappings.ToImmutableArray() };
+        return probe.WithValidatedMappings(mappings.ToImmutableArray());
     }
-
-    private static IEnumerable<(int Index, string Key)> Diagnostics(
-        SemanticModel semanticModel,
-        CancellationToken cancellationToken) =>
-        semanticModel.GetDiagnostics(cancellationToken: cancellationToken)
-            .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error)
-            .Select(diagnostic => TypeMapperEmitter.TryGetTransferProbeMappingIndex(diagnostic, out var index)
-                ? (Index: index, Key: diagnostic.Id + ":" + diagnostic.GetMessage())
-                : (Index: -1, Key: string.Empty))
-            .Where(diagnostic => diagnostic.Index >= 0);
 
     private static IEnumerable<Candidate> FindCandidates(
         MethodDeclarationSyntax method,
