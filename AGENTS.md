@@ -160,6 +160,16 @@
 
 ## User-written code and supporting locals (approved)
 
+- `Construct`, `Resolve` and `Members` are declarative DSL fragments, not
+  independent runtime delegate calls. Do not introduce source copies merely
+  because configuration uses separate lambdas, or infer destination copies
+  from the DSL's `previous.Value` accessor. Review these expressions against
+  the mapping lifecycle and its previous/result contract. Approved on
+  2026-09-16.
+- Keep ordinary obsolete-use warnings from convention code when a mapping also
+  transfers user code. Suppress a source-owned warning's generated duplicate
+  only at its transferred occurrence; local warning suppression must not hide
+  unrelated warnings with the same diagnostic ID. Approved on 2026-09-16.
 - Preserve the structure of user-written expressions, locals and branches.
   Change it only as necessary to implement the agreed mapping semantics.
   The user controls how their computations are organized and inspected.
