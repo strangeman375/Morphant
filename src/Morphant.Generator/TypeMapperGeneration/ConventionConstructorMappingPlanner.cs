@@ -96,7 +96,6 @@ internal static class ConventionConstructorMappingPlanner
                 compilation,
                 cancellationToken);
 
-        var sourceMembers = sourceContext.DirectMembers;
         var destinationMembers = BuildConstructorDestinationMembers(
             namedDestination,
             memberMappings.Observation,
@@ -105,12 +104,15 @@ internal static class ConventionConstructorMappingPlanner
             cancellationToken);
         var plannedCandidates = constructors.Select(constructor =>
             {
+                var parameters = constructor.Parameters.Select(parameter =>
+                    ResolveParameter(parameter, memberMappings, sourceContext,
+                        compilation, mapperType, cancellationToken)).ToImmutableArray();
                 var planning = BuildPlanForConstructor(
                     sourceType,
                     namedDestination,
                     memberMappings,
                     constructor,
-                    sourceContext,
+                    parameters,
                     compilation,
                     mapperType,
                     nonNullSourceName,
@@ -118,6 +120,7 @@ internal static class ConventionConstructorMappingPlanner
 
                 return (
                     Constructor: constructor,
+                    Parameters: parameters,
                     planning.Plan,
                     planning.FlatteningIssues);
             })
@@ -189,11 +192,9 @@ internal static class ConventionConstructorMappingPlanner
                     BuildCandidateObservation(
                         candidate.Constructor,
                         candidate.Plan,
-                        sourceContext,
+                        candidate.Parameters,
                         destinationMembers,
                         memberMappings,
-                        compilation,
-                        mapperType,
                         cancellationToken))
                 .ToImmutableArray(),
             selectedConstructor,
@@ -210,13 +211,35 @@ internal static class ConventionConstructorMappingPlanner
             observation);
     }
 
+    private static ResolvedConstructorParameter ResolveParameter(
+        IParameterSymbol parameter,
+        ConstructorInitializationMappingPlan members,
+        ConventionSourceMemberContext sourceContext,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (BuildMemberArgument(members, parameter, compilation, mapperType,
+                out var compatible) is { } memberArgument)
+            return new ResolvedConstructorParameter(
+                parameter, memberArgument, SourceMember: null, compatible, FlatteningIssue: null);
+
+        var sourceMember = TryResolveSourceMember(sourceContext, parameter,
+            compilation, mapperType, cancellationToken, out var issue);
+        return new ResolvedConstructorParameter(
+            parameter, MemberArgument: null, sourceMember,
+            sourceMember is { } member && MappingExpressionCompatibility.HasPotentiallyCompatibleConversion(
+                member.Type, parameter.Type, compilation), issue);
+    }
+
     private static ConventionConstructorCandidatePlan
         BuildPlanForConstructor(
             ITypeSymbol sourceType,
             INamedTypeSymbol namedDestination,
             ConstructorInitializationMappingPlan memberMappings,
             IMethodSymbol constructor,
-            ConventionSourceMemberContext sourceContext,
+            ImmutableArray<ResolvedConstructorParameter> parameters,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
             string nonNullSourceName,
@@ -240,14 +263,14 @@ internal static class ConventionConstructorMappingPlanner
             ImmutableArray.CreateBuilder<
                 ConstructorArgumentCandidate>();
 
-        foreach (var parameter in constructor.Parameters)
+        foreach (var resolved in parameters)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var parameter = resolved.Parameter;
 
-            if (BuildMemberArgument(memberMappings, parameter, compilation,
-                    mapperType, out var memberCompatible) is { } memberArgument)
+            if (resolved.MemberArgument is { } memberArgument)
             {
-                if (!memberCompatible)
+                if (!resolved.Compatible)
                 {
                     return new ConventionConstructorCandidatePlan(
                         Plan: null, flatteningIssues.ToImmutable());
@@ -257,20 +280,9 @@ internal static class ConventionConstructorMappingPlanner
                 continue;
             }
 
-            if (TryResolveSourceMember(
-                    sourceContext,
-                    parameter,
-                    compilation,
-                    mapperType,
-                    cancellationToken,
-                    out var flatteningIssue) is not { } sourceMember ||
-                !MappingExpressionCompatibility
-                    .HasPotentiallyCompatibleConversion(
-                        sourceMember.Type,
-                        parameter.Type,
-                        compilation))
+            if (resolved.SourceMember is not { } sourceMember || !resolved.Compatible)
             {
-                if (flatteningIssue is not null)
+                if (resolved.FlatteningIssue is { } flatteningIssue)
                 {
                     flatteningIssues.Add(flatteningIssue);
                 }
@@ -376,11 +388,9 @@ internal static class ConventionConstructorMappingPlanner
         BuildCandidateObservation(
             IMethodSymbol constructor,
             ConventionConstructorMappingPlan? plan,
-            ConventionSourceMemberContext sourceContext,
+            ImmutableArray<ResolvedConstructorParameter> parameters,
             ImmutableArray<ISymbol> destinationMembers,
             ConstructorInitializationMappingPlan memberMappings,
-            CSharpCompilation compilation,
-            INamedTypeSymbol mapperType,
             CancellationToken cancellationToken)
     {
         var parameterRules =
@@ -402,12 +412,13 @@ internal static class ConventionConstructorMappingPlanner
         var hasPlanWideMemberRejection =
             rejection != ConstructorCandidateRejectionReason.None;
 
-        foreach (var parameter in constructor.Parameters)
+        foreach (var resolved in parameters)
         {
-            if (BuildMemberArgument(memberMappings, parameter, compilation,
-                    mapperType, out var memberCompatible) is { } memberArgument)
+            cancellationToken.ThrowIfCancellationRequested();
+            var parameter = resolved.Parameter;
+            if (resolved.MemberArgument is { } memberArgument)
             {
-                var memberRejection = !memberCompatible
+                var memberRejection = !resolved.Compatible
                     ? ConstructorCandidateRejectionReason.IncompatibleArgument
                     : plan is null
                         ? ConstructorCandidateRejectionReason.InvocationBinding
@@ -425,13 +436,7 @@ internal static class ConventionConstructorMappingPlanner
                 continue;
             }
 
-            var sourceMember = TryResolveSourceMember(
-                sourceContext,
-                parameter,
-                compilation,
-                mapperType,
-                cancellationToken,
-                out _);
+            var sourceMember = resolved.SourceMember;
             var ruleOrigin = ConstructorParameterRuleOrigin.Convention;
             var ruleRejection = ConstructorCandidateRejectionReason.None;
             var applicable = true;
@@ -447,11 +452,7 @@ internal static class ConventionConstructorMappingPlanner
                     : ConstructorCandidateRejectionReason
                         .MissingSourceMember;
             }
-            else if (!MappingExpressionCompatibility
-                         .HasPotentiallyCompatibleConversion(
-                             sourceMember.Value.Type,
-                             parameter.Type,
-                             compilation))
+            else if (!resolved.Compatible)
             {
                 applicable = CanOmit(parameter);
                 ruleOrigin = applicable
@@ -2040,6 +2041,13 @@ internal static class ConventionConstructorMappingPlanner
         member.BuildConventionValueExpression(
             sourceName)?.Render(localNames) ??
         sourceName + "." + Identifier(member.Name);
+
+    private readonly record struct ResolvedConstructorParameter(
+        IParameterSymbol Parameter,
+        TypeMapperConstructorArgumentMappingModel? MemberArgument,
+        ConventionReadableMember? SourceMember,
+        bool Compatible,
+        FlatteningIssueObservation? FlatteningIssue);
 
     private readonly record struct ConstructorArgumentCandidate(
         IParameterSymbol Parameter,
