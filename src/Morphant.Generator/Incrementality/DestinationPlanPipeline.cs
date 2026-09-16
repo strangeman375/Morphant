@@ -28,15 +28,24 @@ internal static class DestinationPlanPipeline
                 new DestinationPlanCoordination(ImmutableArray<DestinationPlanOwner>.Empty))
             .WithComparer(DestinationPlanCoordinationComparer.Instance);
 
+        // Discard coordination-only changes before walking type dependencies.
+        // The selected candidate itself is already a stable incremental value.
+        var owners = candidates.Combine(coordination)
+            .Select(static (source, _) => source.Right.IsOwner(source.Left.Coordination)
+                ? source.Left
+                : (DestinationPlanGenerationCandidate?)null)
+            .WhereHasValue();
+
         return GeneratorStageGuard.Select(
                 context,
-                candidates.Combine(coordination),
+                owners,
                 "Build" + stage + "PlanModelInputs",
-                (source, cancellationToken) =>
-                    TryBuildInput(source.Left, source.Right, kind, cancellationToken),
+                (candidate, cancellationToken) =>
+                    TryBuildInput(candidate, kind, cancellationToken),
                 static _ => Location.None)
             .WhereHasValue()
-            .WithComparer(DestinationPlanModelInputComparer.Instance);
+            .WithComparer(DestinationPlanModelInputComparer.Instance)
+            .WithTrackingName("Build" + stage + "PlanModelInputs");
     }
 
     // Configuration binding needs one local declaration per destination. Global
@@ -90,12 +99,9 @@ internal static class DestinationPlanPipeline
 
     private static DestinationPlanModelInput? TryBuildInput(
         DestinationPlanGenerationCandidate candidate,
-        DestinationPlanCoordination coordination,
         DestinationPlanKind kind,
         CancellationToken cancellationToken)
     {
-        if (!coordination.IsOwner(candidate.Coordination)) return null;
-
         var target = candidate.Target;
         var compilation = candidate.Compilation;
         var destination = target.IsTuple

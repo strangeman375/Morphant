@@ -51,6 +51,52 @@ internal sealed class GlobalCoordinationTests
         "Morphant.Generated.TypeMapper.StableMapper__3251a87cd2d93d3948a4f1646b88e0d3.g.cs";
 
     [Test]
+    public void Adding_an_unrelated_mapping_keeps_destination_dependencies_cached()
+    {
+        var models = SourceFile("Models.cs", SurfaceModelsSource);
+        var stable = SourceFile("StableMapper.cs", StableMapperSource);
+        var added = SourceFile("CollisionMapper.cs", BuildCollisionMapper(
+            includeUpperCase: true, includeTitleCase: false));
+        var initialHints = new[]
+        {
+            StableConstruction, StableMapping, StableMember,
+            StableMemberExtension, StableMapper
+        };
+        var addedHints = new[]
+        {
+            StableConstruction, StableMapping, StableMember,
+            StableMemberExtension, StableMapper,
+            UpperConstruction, UpperMapping, UpperMember,
+            UpperMemberExtension, CollisionMapper
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step("initial mapper", [models, stable], initialHints),
+            Step(
+                "unrelated destination added",
+                [models, stable, added],
+                addedHints,
+                Stage("BuildConstructionPlanModelInputs",
+                    Expected(StableConstruction, IncrementalStepRunReason.Cached),
+                    Expected(UpperConstruction, IncrementalStepRunReason.New)),
+                Stage("BuildMemberPlanModelInputs",
+                    Expected(StableMember, IncrementalStepRunReason.Cached),
+                    Expected(UpperMember, IncrementalStepRunReason.New))),
+            Step(
+                "unrelated destination removed",
+                [models, stable],
+                initialHints,
+                Stage("BuildConstructionPlanModelInputs",
+                    Expected(StableConstruction, IncrementalStepRunReason.Cached),
+                    Expected(UpperConstruction, IncrementalStepRunReason.Removed)),
+                Stage("BuildMemberPlanModelInputs",
+                    Expected(StableMember, IncrementalStepRunReason.Cached),
+                    Expected(UpperMember, IncrementalStepRunReason.Removed))));
+    }
+
+    [Test]
     public void Adding_and_removing_similar_surface_labels_preserves_existing_files()
     {
         var models = SourceFile("Models.cs", SurfaceModelsSource);
