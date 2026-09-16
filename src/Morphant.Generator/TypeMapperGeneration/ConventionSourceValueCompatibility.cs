@@ -7,32 +7,26 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class ConventionSourceValueCompatibility
 {
-    public static ImmutableArray<ConventionReadableMember>
+    public static ImmutableArray<ImmutableArray<ConventionReadableMember>>
         FindCompatibleCandidates(
             ITypeSymbol sourceType,
-            ITypeSymbol targetType,
-            ImmutableArray<ConventionReadableMember> candidates,
+            ImmutableArray<ConventionSourceValueRequest> requests,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
             CancellationToken cancellationToken)
     {
-        var potential = candidates.Where(candidate =>
-                MappingExpressionCompatibility
-                    .HasPotentiallyCompatibleConversion(
-                        candidate.Type,
-                        targetType,
-                        compilation))
+        var results = requests.Select(_ =>
+            ImmutableArray.CreateBuilder<ConventionReadableMember>()).ToArray();
+        var potential = requests.SelectMany((request, group) => request.Candidates
+                .Where(candidate => MappingExpressionCompatibility.HasPotentiallyCompatibleConversion(
+                    candidate.Type, request.TargetType, compilation))
+                .Select(member => (Group: group, request.TargetType, Member: member)))
             .ToImmutableArray();
 
         if (potential.IsEmpty)
-        {
-            return potential;
-        }
+            return results.Select(result => result.ToImmutable()).ToImmutableArray();
 
-        var sourceTypeName =
-            TypeMapperMappingTypePolicy.GetGeneratedTypeName(sourceType);
-        var targetTypeName = targetType.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable);
+        var sourceTypeName = TypeMapperMappingTypePolicy.GetGeneratedTypeName(sourceType);
         var tree = MapperProbeSyntax.Build(
             mapperType,
             "Morphant.FlatteningCompatibilityProbe.g.cs",
@@ -45,6 +39,8 @@ internal static class ConventionSourceValueCompatibility
                         writer.Line();
                     }
 
+                    var targetTypeName = potential[index].TargetType.ToDisplayString(
+                        SymbolDisplayFormats.FullyQualifiedNullable);
                     writer.Line(
                         $"private static {targetTypeName} " +
                         $"__MorphantFlatteningProbe{index}(");
@@ -55,7 +51,7 @@ internal static class ConventionSourceValueCompatibility
                     writer.Indent();
                     writer.Line(
                         "return " + SourceExpression(
-                            potential[index],
+                            potential[index].Member,
                             mapperType) + ";");
                     writer.Unindent();
                     writer.Line("}");
@@ -72,9 +68,6 @@ internal static class ConventionSourceValueCompatibility
             .ToImmutableArray();
         var diagnostics = semanticModel.GetDiagnostics(
             cancellationToken: cancellationToken);
-        var result =
-            ImmutableArray.CreateBuilder<ConventionReadableMember>();
-
         for (var index = 0; index < potential.Length; index++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -89,11 +82,11 @@ internal static class ConventionSourceValueCompatibility
                     diagnostics,
                     returns[index].Span))
             {
-                result.Add(potential[index]);
+                results[potential[index].Group].Add(potential[index].Member);
             }
         }
 
-        return result.ToImmutable();
+        return results.Select(result => result.ToImmutable()).ToImmutableArray();
     }
 
     private static string SourceExpression(
@@ -115,3 +108,7 @@ internal static class ConventionSourceValueCompatibility
             ? "@" + value
             : value;
 }
+
+internal readonly record struct ConventionSourceValueRequest(
+    ITypeSymbol TargetType,
+    ImmutableArray<ConventionReadableMember> Candidates);

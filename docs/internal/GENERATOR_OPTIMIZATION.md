@@ -19,8 +19,9 @@ Keep caches local to an analysis/compilation. Keep actual changed-argument
 constructor rebinding, nullable checks and warning handling intact. Preserve
 separate analysis where generic substitutions or execution paths change inputs.
 
-Status: registration reuse and shared dependency traversal passed 200 focused
-tests. Constructor parameter analysis is shared with diagnostics; its focused
-validation and probe batching are pending. Baseline local commit: `5d72659c`;
+Status: registration/dependency changes passed 200 focused tests; shared constructor
+analysis passed 158. Independent constructor and flattening probes now bind in
+batches; new snapshot/runtime coverage added, batch validation pending.
+Baseline local commit: `5d72659c`;
 corresponding remote main: `b41cd7e6663b4f8e06e31b4752d9d858e4ddef27`.
 This temporary checkpoint will be removed after validation.
