@@ -32,7 +32,7 @@ namespace TestCase
 """;
 
         await ProductionGeneratorTest.RunAndAssert(LanguageVersion.CSharp9,
-            source.Replace("\n", "\r\n"),
+            source.ReplaceLineEndings("\r\n"),
             ("Morphant.Generated.MappingExtension.Mapper.Int32ToTask__984574881a6da474b6b1729e785b7af6.g.cs",
 // lang=c#
 """

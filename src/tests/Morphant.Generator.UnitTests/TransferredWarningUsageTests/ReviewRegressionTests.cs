@@ -228,8 +228,10 @@ namespace TestCase
             return;
         }
 
-        const string generatedPath = "Morphant.Generator/Morphant.Generator.MorphantGenerator/" +
-            "Morphant.Generated.TypeMapper.Mapper__f6afa7d38a3eeb111905cdec012f335d.g.cs";
+        var generatedPath = Path.Combine(
+            "Morphant.Generator",
+            "Morphant.Generator.MorphantGenerator",
+            "Morphant.Generated.TypeMapper.Mapper__f6afa7d38a3eeb111905cdec012f335d.g.cs");
         Assert.Multiple(() =>
         {
             Assert.That(result.EffectiveDiagnostics, Is.Empty);

@@ -133,7 +133,7 @@ namespace TestCase
 """;
 
         await ProductionGeneratorTest.RunAndAssert(LanguageVersion.CSharp9,
-            source.Replace("\n", "\r\n"),
+            source.ReplaceLineEndings("\r\n"),
             FactoryTypesSurfaces.Append(("Morphant.Generated.TypeMapper.Mapper__f6afa7d38a3eeb111905cdec012f335d.g.cs", expectedMapper)).ToArray());
     }
 }
