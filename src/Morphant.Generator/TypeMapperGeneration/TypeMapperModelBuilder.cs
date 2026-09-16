@@ -573,22 +573,63 @@ internal static class TypeMapperModelBuilder
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
-        CancellationToken cancellationToken,
-        MappingExecutionPathSet? executionPath = null)
+        CancellationToken cancellationToken)
     {
-        if (executionPath is null && BasicMembersMappingPlanner.RequiresExecutionSpecialization(
+        var pair = configuration.Pair;
+        var declarativeSourceType =
+            MappingTypeNormalization.NormalizeDeclarativeSource(
+                pair.SourceType,
+                compilation);
+        var nonNullSourceName = BuildNonNullSourceName(
+            pair.SourceType,
+            mapperType);
+        var destinationPlan = BuildDestinationPlan(
+            pair.DestinationType,
+            compilation,
+            cancellationToken);
+        var mapping = BuildEmptyMapping(
+            pair,
+            destinationPlan,
+            declarativeSourceType,
+            nonNullSourceName,
+            mapperType) with
+        {
+            EffectiveSettings = effectiveSettings,
+            DerivedMappings = BuildDerivedMappings(
+                configuration,
+                compilation)
+        };
+
+        // The variants share only semantic preparation. Their lowering, helper
+        // allocation and path-specific diagnostics still run in the original order.
+        var included = new Lazy<IncludedSourceMemberSetResult>(() => IncludedSourceMemberSet.Build(
+            declarativeSourceType, configuration.Declarative.IncludeMembers,
+            compilation, mapperType, cancellationToken));
+        var convention = new Lazy<ConventionMemberMappingPlan>(() =>
+        {
+            var members = included.Value;
+            return ConventionMemberMappingPlanner.Build(
+                declarativeSourceType, destinationPlan.MemberType, pair.Capabilities,
+                new ConventionSourceMemberContext(declarativeSourceType, members.Members,
+                    members.Scopes, effectiveSettings.Flattening!.Value),
+                nonNullSourceName, compilation, mapperType, cancellationToken);
+        });
+        var preparation = new MappingPreparation(
+            mapping, declarativeSourceType, destinationPlan, included, convention);
+
+        if (BasicMembersMappingPlanner.RequiresExecutionSpecialization(
                 configuration.Declarative.Members, cancellationToken, out var usesOperation))
         {
-            var create = BuildMapping(configuration, effectiveSettings, compilation, mapperType,
+            var create = BuildMappingPath(configuration, effectiveSettings, preparation, compilation, mapperType,
                 usedGeneratedMethodNames, cancellationToken,
                 usesOperation ? MappingExecutionPathSet.Create : MappingExecutionPathSet.NoPrevious);
-            var existing = BuildMapping(configuration, effectiveSettings, compilation, mapperType,
+            var existing = BuildMappingPath(configuration, effectiveSettings, preparation, compilation, mapperType,
                 usedGeneratedMethodNames, cancellationToken, MappingExecutionPathSet.UpdateWithPrevious);
             var variants = new List<TypeMapperMappingModel> { create, existing };
             var createRoot = MembersControlFlowMappingPlanner.SelectRoot(create, create: true);
             if (usesOperation && effectiveSettings.NullDestinationHandling == NullDestinationHandlingValue.Create)
             {
-                var missing = BuildMapping(configuration, effectiveSettings, compilation, mapperType,
+                var missing = BuildMappingPath(configuration, effectiveSettings, preparation, compilation, mapperType,
                     usedGeneratedMethodNames, cancellationToken, MappingExecutionPathSet.UpdateWithoutPrevious);
                 variants.Add(missing);
                 createRoot = new TypeMapperControlFlowNode(
@@ -611,31 +652,25 @@ internal static class TypeMapperModelBuilder
                     .Distinct(StringComparer.Ordinal).ToImmutableArray()
             };
         }
+        return BuildMappingPath(configuration, effectiveSettings, preparation, compilation, mapperType,
+            usedGeneratedMethodNames, cancellationToken, executionPath: null);
+    }
+
+    private static TypeMapperMappingModel BuildMappingPath(
+        PairConfigurationModel configuration,
+        EffectiveMappingSettings effectiveSettings,
+        MappingPreparation preparation,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        HashSet<string> usedGeneratedMethodNames,
+        CancellationToken cancellationToken,
+        MappingExecutionPathSet? executionPath)
+    {
         var pair = configuration.Pair;
-        var declarativeSourceType =
-            MappingTypeNormalization.NormalizeDeclarativeSource(
-                pair.SourceType,
-                compilation);
-        var nonNullSourceName = BuildNonNullSourceName(
-            pair.SourceType,
-            mapperType);
-        var destinationPlan = BuildDestinationPlan(
-            pair.DestinationType,
-            compilation,
-            cancellationToken);
-        var mapping = BuildEmptyMapping(
-            pair,
-            destinationPlan,
-            declarativeSourceType,
-            nonNullSourceName,
-            mapperType) with
-        {
-            EffectiveSettings = effectiveSettings,
-            KnownExecutionPath = executionPath,
-            DerivedMappings = BuildDerivedMappings(
-                configuration,
-                compilation)
-        };
+        var mapping = preparation.Mapping with { KnownExecutionPath = executionPath };
+        var declarativeSourceType = preparation.SourceType;
+        var destinationPlan = preparation.Destination;
+        var nonNullSourceName = mapping.NonNullSourceName;
 
         if (configuration.Conflicts != PairConfigurationConflict.None)
         {
@@ -753,12 +788,7 @@ internal static class TypeMapperModelBuilder
             };
         }
 
-        var includedSourceMembers = IncludedSourceMemberSet.Build(
-            declarativeSourceType,
-            configuration.Declarative.IncludeMembers,
-            compilation,
-            mapperType,
-            cancellationToken);
+        var includedSourceMembers = preparation.IncludedMembers.Value;
         mapping = mapping with
         {
             SourceMembers = includedSourceMembers.Members,
@@ -791,16 +821,7 @@ internal static class TypeMapperModelBuilder
             includedSourceMembers.Scopes,
             effectiveSettings.Flattening!.Value);
 
-        var conventionMemberMappings =
-            ConventionMemberMappingPlanner.Build(
-            declarativeSourceType,
-            destinationPlan.MemberType,
-            pair.Capabilities,
-            conventionSourceContext,
-            nonNullSourceName,
-            compilation,
-            mapperType,
-            cancellationToken);
+        var conventionMemberMappings = preparation.ConventionMembers.Value;
         var members = BasicMembersMappingPlanner.Build(
             configuration.Declarative.Members,
             effectiveSettings.MemberSelection!.Value,
@@ -1832,6 +1853,13 @@ internal static class TypeMapperModelBuilder
                       static parameter => parameter.Identifier.Text)) +
               ">";
     }
+
+    private readonly record struct MappingPreparation(
+        TypeMapperMappingModel Mapping,
+        ITypeSymbol SourceType,
+        DestinationPlan Destination,
+        Lazy<IncludedSourceMemberSetResult> IncludedMembers,
+        Lazy<ConventionMemberMappingPlan> ConventionMembers);
 
     private readonly record struct DestinationPlan(
         ITypeSymbol MemberType,

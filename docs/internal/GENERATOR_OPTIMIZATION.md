@@ -22,7 +22,9 @@ separate analysis where generic substitutions or execution paths change inputs.
 Status: registration/dependency changes passed 200 focused tests; shared constructor
 analysis passed 158. Independent constructor and flattening probes now bind in
 batches; 254 focused tests including warnings and the new snapshot passed.
-Dependency sequences now use remaining-use counts; evaluation validation pending.
+Dependency sequences now use remaining-use counts; 279 focused snapshot and
+evaluation-generation tests passed. Create/Update variants now share lazy semantic
+preparation; specialization validation and final full verification are pending.
 Baseline local commit: `5d72659c`;
 corresponding remote main: `b41cd7e6663b4f8e06e31b4752d9d858e4ddef27`.
 This temporary checkpoint will be removed after validation.
