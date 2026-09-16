@@ -1,8 +1,8 @@
-namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.RequiredMembers;
+namespace Morphant.Generator.UnitTests.ConstructionAndMembersUsageTests.EvaluationOrder;
 
-internal sealed partial class RequiredMembersTests
+internal sealed partial class EvaluationOrderTests
 {
-    private static readonly (string HintName, string Source)[] RequiredStringMemberWithObjectConstructorArgumentSurfaces =
+    private static readonly (string HintName, string Source)[] ThrowingConstructorExpressionWithMemberOverrideSurfacesFileScoped =
     [
             ("Morphant.Generated.Construction.Destination__78409e4ae9aaeef534a067d95eb70f27.g.cs",
             // lang=c#
@@ -20,7 +20,7 @@ internal sealed class DestinationConstructorParameters
     /// <summary>
     /// Maps the <c>name</c> argument.
     /// </summary>
-    public global::Morphant.Members.ConstructorParameter<object> name = null!;
+    public global::Morphant.Members.ConstructorParameter<string> name = null!;
 }
 
 /// <summary>
@@ -43,7 +43,7 @@ internal sealed class DestinationConstruction
     /// Uses the corresponding destination constructor.
     /// </summary>
     /// <param name="name">Maps the <c>name</c> argument.</param>
-    public DestinationConstruction(global::Morphant.Members.ConstructorParameter<object> name)
+    public DestinationConstruction(global::Morphant.Members.ConstructorParameter<string> name)
     {
     }
 

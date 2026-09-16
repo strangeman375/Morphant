@@ -43,7 +43,8 @@ internal static class TypeMapperModelBuilder
             MapperContractAnalysis Analysis,
             MappingSettings AssemblySettings
         ) source,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool fileScopedNamespace)
     {
         var (analysis, assemblySettings) = source;
         var configuration = analysis.Configuration;
@@ -86,8 +87,7 @@ internal static class TypeMapperModelBuilder
                 .OfType<QueryExpressionSyntax>()
                 .Any())
         {
-            FileScopedNamespace = ((CSharpParseOptions)configureSyntax.SyntaxTree.Options)
-                .LanguageVersion >= LanguageVersion.CSharp10,
+            FileScopedNamespace = fileScopedNamespace,
             ObsoleteWarnings = ObsoleteTypeWarnings.CollectDeclarations(
                 mappings.Models.SelectMany(mapping => new[]
                 {

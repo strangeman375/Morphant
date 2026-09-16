@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.Incrementality;
 using Morphant.Generator.MapperDeclaration;
 using Morphant.Generator.PairConfiguration;
@@ -26,16 +27,19 @@ internal static class TypeMapperPipeline
         IncrementalValueProvider<MappingSettings> assemblySettings,
         IncrementalValuesProvider<MapperContractAnalysis> contractAnalyses)
     {
+        var fileScopedNamespace = context.ParseOptionsProvider.Select(
+            static (options, _) => ((CSharpParseOptions)options).LanguageVersion >= LanguageVersion.CSharp10);
         var models = GeneratorStageGuard
             .Select(
                 context,
-                contractAnalyses.Combine(assemblySettings),
+                contractAnalyses.Combine(assemblySettings).Combine(fileScopedNamespace),
                 MorphantGeneratorStageNames.BuildTypeMapperModels,
                 static (source, cancellationToken) =>
                     TypeMapperModelBuilder.TryBuild(
-                        (source.Left, source.Right),
-                        cancellationToken),
-                static source => source.Left.Configuration.Declaration
+                        source.Left,
+                        cancellationToken,
+                        source.Right),
+                static source => source.Left.Left.Configuration.Declaration
                     .AttributedDeclaration.Identifier.GetLocation())
             .WhereHasValue()
             .WithTrackingName(
