@@ -57,6 +57,22 @@ internal static class TransferredCodeWarnings
             new SyntaxAnnotation(AnnotationKind, annotation)))).TrimEnd();
     }
 
+    public static string AnnotateTechnicalType(string reference, ITypeSymbol type)
+    {
+        var ids = ObsoleteTypeWarnings.Collect(type)
+            .Select(warning => warning.DiagnosticId).Distinct(StringComparer.Ordinal).ToArray();
+        if (ids.Length == 0) return reference;
+
+        // These occurrences only spell the type of an existing result or previous
+        // value. Use the same scoped suppression as transferred warnings, without
+        // marking actual constructor calls or convention member accesses.
+        var annotation = new SyntaxAnnotation(AnnotationKind,
+            "type_" + Convert.ToBase64String(Encoding.UTF8.GetBytes(reference)) + ":" + string.Join(",", ids));
+        var syntax = SyntaxFactory.ParseTypeName(reference).WithTrailingTrivia(SyntaxFactory.Space);
+        return Serialize(syntax.ReplaceTokens(syntax.DescendantTokens(),
+            (token, _) => token.WithAdditionalAnnotations(annotation))).TrimEnd();
+    }
+
     public static string Serialize(SyntaxNode syntax)
     {
         var text = syntax.ToFullString();

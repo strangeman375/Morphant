@@ -139,7 +139,8 @@ internal static class RuntimeResultMappingPlanner
     {
         var optionTypeName =
             "global::Morphant.Option<" +
-            mapping.NonNullDestinationTypeName +
+            TransferredCodeWarnings.AnnotateTechnicalType(
+                mapping.NonNullDestinationTypeName, mapping.AnalysisContext.DestinationType) +
             ">";
 
         return hasPrevious

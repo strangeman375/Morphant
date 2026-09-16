@@ -1100,7 +1100,9 @@ internal static class TypeMapperEmitter
             Identifier(factory.DestinationLocalName);
 
         writer.Line(
-            $"{mapping.DestinationTypeName} {destinationLocalName} = " +
+            TransferredCodeWarnings.AnnotateTechnicalType(
+                mapping.DestinationTypeName, mapping.AnalysisContext.DestinationType) +
+            $" {destinationLocalName} = " +
             factory.ValueExpression +
             ";");
 
