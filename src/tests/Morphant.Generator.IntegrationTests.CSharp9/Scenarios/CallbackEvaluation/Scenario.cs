@@ -7,6 +7,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackEvaluati
     public sealed class Source { public int Value { get; set; } }
     public sealed class DelegateTag { }
     public sealed class FinallyTag { }
+    public sealed class LocalEvaluationException : Exception { }
     public sealed class Destination<T>
     {
         public Destination(int value) => Value = value;
@@ -25,6 +26,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackEvaluati
         public int DelegateReads { get; private set; }
         public int FinallyCalls { get; private set; }
         public int DeferredReads { get; private set; }
+        public int ImmediateReads { get; private set; }
+        public int UnusedLocalReads { get; private set; }
+        public bool ThrowFromUnusedLocal { get; set; }
+        public LocalEvaluationException LocalFailure { get; } = new();
         private Morphant.Delegates.Convert<Source?, Destination<DelegateTag>> Callback
         {
             get
@@ -35,7 +40,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackEvaluati
             }
         }
         private int ReadLater(Source source) { DeferredReads++; return source.Value; }
-        private static int Fail() => throw new InvalidOperationException("An unused structured local was evaluated.");
+        private int ReadNow(Source source) { ImmediateReads++; return source.Value; }
+        private int ReadUnused()
+        {
+            UnusedLocalReads++;
+            if (ThrowFromUnusedLocal) throw LocalFailure;
+            return 0;
+        }
 
         protected override void Configure(MapperBuilder builder)
         {
@@ -54,10 +65,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackEvaluati
             });
             builder.Map<Source, DeferredDestination>().Members(source =>
             {
-                var unused = Fail();
+                var unused = ReadUnused();
                 return new()
                 {
-                    Value = source.Value,
+                    Value = ReadNow(source),
                     Later = Value<Func<int>>(() => ReadLater(source))
                 };
             });
@@ -93,14 +104,36 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackEvaluati
                 throw new InvalidOperationException("A null-source return inside try must execute finally exactly once.");
         }
 
-        public static void VerifyDeferredSourceCapture()
+        public static void VerifyDeferredSourceCapture(int operation, bool throwLocal)
         {
-            var concrete = new TestMapper();
+            var concrete = new TestMapper { ThrowFromUnusedLocal = throwLocal };
             var mapper = (ITypeMapper<Source, DeferredDestination>)concrete;
             var source = new Source { Value = 20 };
-            var result = mapper.Create(source);
-            if (result.Value != 20 || concrete.DeferredReads != 0)
-                throw new InvalidOperationException("Creating a delegate must not evaluate its body or unrelated structured locals.");
+            var previous = new DeferredDestination { Value = 7, Later = () => -1 };
+            DeferredDestination? result = null;
+            LocalEvaluationException? failure = null;
+            try
+            {
+                result = operation == 0
+                    ? mapper.Create(source)
+                    : mapper.Update(source, operation == 1 ? null : previous);
+            }
+            catch (LocalEvaluationException exception)
+            {
+                failure = exception;
+            }
+            if (concrete.UnusedLocalReads != 1 || concrete.DeferredReads != 0)
+                throw new InvalidOperationException("The ordinary local must execute once; the delegate body must remain deferred.");
+            if (throwLocal)
+            {
+                if (!ReferenceEquals(failure, concrete.LocalFailure) || result is not null ||
+                    concrete.ImmediateReads != 0 || previous.Value != 7 || previous.Later() != -1)
+                    throw new InvalidOperationException("The local's exception must propagate before member reads or writes.");
+                return;
+            }
+            if (failure is not null || result is null || result.Value != 20 || concrete.ImmediateReads != 1 ||
+                ReferenceEquals(result, previous) != (operation == 2))
+                throw new InvalidOperationException("The selected destination must receive the member values once.");
             source.Value = 30;
             if (result.Later() != 30 || concrete.DeferredReads != 1)
                 throw new InvalidOperationException("The deferred expression must read the captured source when invoked.");

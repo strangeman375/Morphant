@@ -30,9 +30,11 @@ internal sealed class TypeMapperCSharpSemanticsTests
     }
 
     [Test]
-    public void Defers_source_reads_and_skips_unused_structured_locals()
+    public void Evaluates_unused_locals_before_members_and_defers_delegate_bodies(
+        [Values(0, 1, 2)] int operation,
+        [Values(false, true)] bool throwLocal)
     {
-        CSharp9.Scenarios.CallbackEvaluation.Scenario.VerifyDeferredSourceCapture();
+        CSharp9.Scenarios.CallbackEvaluation.Scenario.VerifyDeferredSourceCapture(operation, throwLocal);
     }
 
     [Test]
