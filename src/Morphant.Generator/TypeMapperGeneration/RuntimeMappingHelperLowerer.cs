@@ -115,9 +115,9 @@ internal static class RuntimeMappingHelperLowerer
                 !symbol.DeclaringSyntaxReferences.Any(reference => source.Span.Contains(reference.Span)))
             .Distinct(SymbolEqualityComparer.Default).ToArray();
         var capture = source.DescendantNodesAndSelf().Any(node => node is ThisExpressionSyntax or BaseExpressionSyntax) ||
-            inputs.Any(symbol => flow.WrittenInside.Contains(symbol, SymbolEqualityComparer.Default) ||
-                flow.CapturedInside.Contains(symbol, SymbolEqualityComparer.Default) ||
-                flow.CapturedOutside.Contains(symbol, SymbolEqualityComparer.Default) ||
+            inputs.Any(symbol => flow.WrittenInside.Contains(symbol!, SymbolEqualityComparer.Default) ||
+                flow.CapturedInside.Contains(symbol!, SymbolEqualityComparer.Default) ||
+                flow.CapturedOutside.Contains(symbol!, SymbolEqualityComparer.Default) ||
                 TypeOf(symbol!) is not { } type ||
                 !type.IsReferenceType && type.SpecialType == SpecialType.None && type.TypeKind != TypeKind.Enum &&
                     type is not INamedTypeSymbol { IsReadOnly: true }) ||
