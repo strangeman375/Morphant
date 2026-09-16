@@ -27,12 +27,14 @@ internal static class PairConfigurationModelBuilder
             throw new InvalidOperationException(
                 "The root mapper configuration must have a declaration model.");
 
-        var bindingMapperModels = discovery.Levels
-            .Select(level =>
-                MappingPairPipeline.BuildModel(
-                    level.BindingRegistrations,
-                    compilation,
-                    cancellationToken))
+        var bindingModelsByLevel = discovery.Levels
+            .Select(level => SameRegistrations(
+                    level.BindingRegistrations, discovery.MappingRegistrations)
+                ? mappingPairs
+                : MappingPairPipeline.BuildModel(
+                    level.BindingRegistrations, compilation, cancellationToken))
+            .ToImmutableArray();
+        var bindingMapperModels = bindingModelsByLevel
             .Where(static model => model.HasValue)
             .Select(static model => model!.Value)
             .ToImmutableArray();
@@ -103,11 +105,16 @@ internal static class PairConfigurationModelBuilder
                     cancellationToken) is INamedTypeSymbol declaredType
                     ? declaredType
                     : level.ConfigureInfo.MapperType;
-            var localMappingPairs = MappingPairPipeline.BuildModel(
-                level.InstantiatedRegistrations,
-                compilation,
-                cancellationToken,
-                level.BindingRegistrations);
+            var localMappingPairs = SameRegistrations(
+                    level.InstantiatedRegistrations, level.BindingRegistrations)
+                ? bindingModelsByLevel[levelOrder]
+                : MappingPairPipeline.BuildModel(
+                    level.InstantiatedRegistrations,
+                    compilation,
+                    cancellationToken,
+                    level.BindingRegistrations);
+            var substitutions = MapperTypeSubstitution.Build(
+                level.ConfigureInfo.MapperType, level.ConstructedMapperType);
             var localPairs =
                 ImmutableArray.CreateBuilder<PairConfigurationModel>();
 
@@ -128,9 +135,7 @@ internal static class PairConfigurationModelBuilder
                             chain,
                             semanticModel,
                             sourceSemanticModel,
-                            MapperTypeSubstitution.Build(
-                                level.ConfigureInfo.MapperType,
-                                level.ConstructedMapperType),
+                            substitutions,
                             knownSymbols,
                             augmentedCompilation,
                             targetMapperType,
@@ -176,6 +181,29 @@ internal static class PairConfigurationModelBuilder
             augmentedCompilation,
             targetMapperType,
             cancellationToken);
+    }
+
+    private static bool SameRegistrations(
+        MapperMappingRegistrationModel left,
+        MapperMappingRegistrationModel right)
+    {
+        if (left.ConfigureSyntax != right.ConfigureSyntax ||
+            left.Registrations.Length != right.Registrations.Length)
+            return false;
+
+        for (var index = 0; index < left.Registrations.Length; index++)
+        {
+            var first = left.Registrations[index];
+            var second = right.Registrations[index];
+            // Reuse only unchanged symbols, including their tuple presentation
+            // and nullable annotations. Substituted registrations stay separate.
+            if (first.Syntax != second.Syntax ||
+                !ReferenceEquals(first.SourceType, second.SourceType) ||
+                !ReferenceEquals(first.DestinationType, second.DestinationType))
+                return false;
+        }
+
+        return true;
     }
 
     private static ImmutableArray<BuilderFlowBreakModel>

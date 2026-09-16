@@ -81,11 +81,10 @@ internal static class MapperSemanticFingerprintBuilder
             }
         }
 
-        var dependencies = dependencyTypes.Types
-            .SelectMany(type => TypeContractDependencies.Build(
-                type,
+        var dependencies = TypeContractDependencies.Build(
+                dependencyTypes.Types,
                 compilation,
-                cancellationToken))
+                cancellationToken)
             .GroupBy(
                 static dependency => dependency.Identity,
                 StringComparer.Ordinal)

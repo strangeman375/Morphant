@@ -40,6 +40,12 @@ internal static class TypeContractDependencies
     public static ImmutableArray<TypeContractDependency> Build(
         INamedTypeSymbol type,
         CSharpCompilation compilation,
+        CancellationToken cancellationToken) =>
+        Build(new[] { type }, compilation, cancellationToken);
+
+    public static ImmutableArray<TypeContractDependency> Build(
+        IEnumerable<INamedTypeSymbol> types,
+        CSharpCompilation compilation,
         CancellationToken cancellationToken)
     {
         var result =
@@ -47,37 +53,28 @@ internal static class TypeContractDependencies
         var visitedTypes = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
 
-        AddTypeAndContainingTypeDependencies(
-            type,
-            compilation,
-            result,
-            visitedTypes,
-            cancellationToken);
+        foreach (var type in types)
+        {
+            AddTypeAndContainingTypeDependencies(
+                type, compilation, result, visitedTypes, cancellationToken);
 
-        if (type.TypeKind == TypeKind.Interface)
-        {
-            foreach (var baseInterface in type.AllInterfaces)
+            if (type.TypeKind == TypeKind.Interface)
             {
-                AddTypeAndContainingTypeDependencies(
-                    baseInterface,
-                    compilation,
-                    result,
-                    visitedTypes,
-                    cancellationToken);
+                foreach (var baseInterface in type.AllInterfaces)
+                {
+                    AddTypeAndContainingTypeDependencies(
+                        baseInterface, compilation, result, visitedTypes, cancellationToken);
+                }
             }
-        }
-        else
-        {
-            for (var baseType = type.BaseType;
-                 baseType is not null;
-                 baseType = baseType.BaseType)
+            else
             {
-                AddTypeAndContainingTypeDependencies(
-                    baseType,
-                    compilation,
-                    result,
-                    visitedTypes,
-                    cancellationToken);
+                for (var baseType = type.BaseType;
+                     baseType is not null;
+                     baseType = baseType.BaseType)
+                {
+                    AddTypeAndContainingTypeDependencies(
+                        baseType, compilation, result, visitedTypes, cancellationToken);
+                }
             }
         }
 

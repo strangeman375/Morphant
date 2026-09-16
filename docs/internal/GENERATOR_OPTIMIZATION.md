@@ -19,6 +19,7 @@ Keep caches local to an analysis/compilation. Keep actual changed-argument
 constructor rebinding, nullable checks and warning handling intact. Preserve
 separate analysis where generic substitutions or execution paths change inputs.
 
-Status: implementation has not started. Baseline local commit: `5d72659c`;
+Status: registration reuse and shared dependency traversal implemented;
+focused validation pending. Baseline local commit: `5d72659c`;
 corresponding remote main: `b41cd7e6663b4f8e06e31b4752d9d858e4ddef27`.
 This temporary checkpoint will be removed after validation.

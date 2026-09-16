@@ -40,6 +40,39 @@ internal sealed class SemanticDependencyTests
     ];
 
     [Test]
+    public void Actualizes_a_base_contract_shared_by_source_and_destination()
+    {
+        // lang=c#
+        const string models = """
+#nullable enable
+#pragma warning disable CS1591
+namespace TestCase
+{
+    public class ContractBase { public __TYPE__ Value { get; set; } }
+    public sealed class Source : ContractBase { }
+    public sealed class Destination : ContractBase { }
+}
+""";
+        var mapper = SourceFile("Mapper.cs", MapperSource);
+        ExpectedIncrementalStage[] changed =
+        [
+            .. EarlyPipeline(Reason(IncrementalStepRunReason.Modified, 1)),
+            Stage("BuildMemberPlanModels", Expected(Member, IncrementalStepRunReason.Modified)),
+            Stage("BuildMemberPlanRequests", Expected(Member, IncrementalStepRunReason.Modified))
+        ];
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step("int base contract",
+                [mapper, SourceFile("Models.cs", models.Replace("__TYPE__", "int"))], Generated),
+            Step("long base contract",
+                [mapper, SourceFile("Models.cs", models.Replace("__TYPE__", "long"))], Generated, changed),
+            Step("int base contract restored",
+                [mapper, SourceFile("Models.cs", models.Replace("__TYPE__", "int"))], Generated, changed));
+    }
+
+    [Test]
     public void Actualizes_a_contract_when_an_alias_changes_its_type()
     {
         var mapper = SourceFile("Mapper.cs", MapperSource);
