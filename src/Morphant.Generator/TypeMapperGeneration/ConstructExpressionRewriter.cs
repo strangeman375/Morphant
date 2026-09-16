@@ -547,6 +547,16 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         {
             rewritten = UserExpressionLayout.Preserve(node, rewritten);
             rewritten = TransferredCodeWarnings.Annotate(node, rewritten, _semanticModel);
+            rewritten = (node, rewritten) switch
+            {
+                (LambdaExpressionSyntax source, LambdaExpressionSyntax target) =>
+                    target.WithArrowToken(TransferredCodeWarnings.Annotate(
+                        source.ArrowToken, target.ArrowToken, _semanticModel)),
+                (LocalFunctionStatementSyntax source, LocalFunctionStatementSyntax target) =>
+                    target.WithIdentifier(TransferredCodeWarnings.Annotate(
+                        source.Identifier, target.Identifier, _semanticModel)),
+                _ => rewritten
+            };
         }
 
         return node is not null &&

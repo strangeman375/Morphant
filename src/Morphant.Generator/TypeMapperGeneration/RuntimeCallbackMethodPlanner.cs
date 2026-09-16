@@ -130,6 +130,9 @@ internal static class RuntimeCallbackMethodPlanner
             TransferredCodePolicy.RequiresUnsafeContextFor(
                 configuration));
 
+        helper = helper.WithIdentifier(TransferredCodeWarnings.Annotate(
+            lambda.ArrowToken, helper.Identifier, configuration.SemanticModel));
+
         helper = rewrittenSyntax switch
         {
             ExpressionSyntax expression => helper

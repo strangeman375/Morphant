@@ -28,13 +28,23 @@ internal static class TransferredCodeWarnings
     }
 
     public static string? GetAnnotation(SyntaxNode source, SemanticModel model)
+        => GetAnnotation(source.SyntaxTree, source.SpanStart, model);
+
+    public static SyntaxToken Annotate(SyntaxToken source, SyntaxToken rewritten, SemanticModel model)
     {
-        if (source.SyntaxTree != model.SyntaxTree) return null;
+        var data = GetAnnotation(source.SyntaxTree, source.SpanStart, model);
+        return data is null ? rewritten : rewritten.WithAdditionalAnnotations(
+            new SyntaxAnnotation(AnnotationKind, data));
+    }
+
+    private static string? GetAnnotation(SyntaxTree? tree, int position, SemanticModel model)
+    {
+        if (tree != model.SyntaxTree) return null;
         var warnings = Sources.GetValue(model, static semanticModel => new SourceWarnings(semanticModel));
-        var ids = warnings.At(source.SpanStart);
-        if (!model.GetNullableContext(source.SpanStart).WarningsEnabled())
+        var ids = warnings.At(position);
+        if (!model.GetNullableContext(position).WarningsEnabled())
             ids = ids.Add("nullable");
-        return ids.IsEmpty ? null : warnings.Identity + "_" + source.SpanStart + ":" + string.Join(",", ids);
+        return ids.IsEmpty ? null : warnings.Identity + "_" + position + ":" + string.Join(",", ids);
     }
 
     public static string AnnotateReference(string reference, string? annotation)
