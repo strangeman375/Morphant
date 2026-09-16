@@ -66,6 +66,11 @@ See [current limitations](docs/limitations.md) for features not yet included.
   retaining diagnostics for user API use and conventions. A conventional
   obsolete constructor remains a compiler warning when `Members` is configured;
   local warning suppression applies only to the corresponding transferred use.
+- Preserve warning ownership for local declarations, anonymous methods,
+  explicit construction, and `#warning`. Custom obsolete diagnostic IDs that
+  cannot be named in a pragma remain compiler warnings instead of `MORPH0030`.
+- Preserve multiline interpolated string values when formatting mappings and
+  applying local warning suppression, including verbatim and raw strings.
 - Preserve discarded `out var` inference and user-defined logical operators
   in previous-value guards.
 - Correct synthesized nullable type spacing without changing user layout.

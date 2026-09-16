@@ -47,6 +47,23 @@ inside `Configure`.
 Inside declarative callbacks, use [`Auto`, `Ignore`, `Value`, `ByConvention`,
 `Map`, `Create`, and `Update`](declarative-expressions.md).
 
+## Compiler warnings
+
+Warnings in callbacks remain diagnostics in the user's source. Morphant avoids
+reporting the same warning again for the transferred code. Local suppression
+applies to the corresponding use; it does not hide unrelated warnings from
+constructors or members selected by conventions. A `#warning` directive is
+reported only in its original file.
+
+`Obsolete` attributes on destination types, constructors, and members also
+apply when those APIs are selected explicitly in configuration. Technical
+references to an obsolete type do not add warnings. Errors are not hidden,
+including `Obsolete(..., true)` and warnings promoted to errors.
+
+If a custom `Obsolete.DiagnosticId` cannot be named in a C# warning pragma
+(for example, `OLD-001`), its warnings remain visible and can repeat in the
+generated code. The mapping still generates normally.
+
 ## Callback inputs
 
 | Input | Meaning |

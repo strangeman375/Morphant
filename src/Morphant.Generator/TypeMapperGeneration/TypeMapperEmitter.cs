@@ -1101,8 +1101,8 @@ internal static class TypeMapperEmitter
 
         writer.Line(
             TransferredCodeWarnings.AnnotateTechnicalType(
-                mapping.DestinationTypeName, mapping.AnalysisContext.DestinationType) +
-            $" {destinationLocalName} = " +
+                mapping.DestinationTypeName + " ", mapping.AnalysisContext.DestinationType) +
+            $"{destinationLocalName} = " +
             factory.ValueExpression +
             ";");
 
@@ -2762,13 +2762,7 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         string declaration)
     {
-        foreach (var line in declaration
-                     .Replace("\r\n", "\n")
-                     .Replace('\r', '\n')
-                     .Split('\n'))
-        {
-            writer.Line(line);
-        }
+        writer.Line(declaration);
     }
 
     private static string SourceValueExpression(

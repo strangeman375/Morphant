@@ -7,15 +7,18 @@ namespace Morphant.Generator.UnitTests.TransferredWarningUsageTests;
 [TestFixture]
 internal sealed class ReviewRegressionTests
 {
-    [TestCase("Construct")]
-    [TestCase("Resolve")]
-    [TestCase("Members")]
-    [TestCase("ConstructUsing")]
-    [TestCase("ResolveUsing")]
-    [TestCase("Convert")]
-    public void Keeps_multiline_interpolation_warnings_at_their_source(string callback)
+    [Test]
+    public void Keeps_multiline_interpolation_warnings_at_their_source(
+        [Values("Construct", "Resolve", "Members", "ConstructUsing", "ResolveUsing", "Convert")] string callback,
+        [Values("verbatim", "nested", "before", "after")] string placement)
     {
-        const string value = "Normalize($@\"first\n{source!.Legacy}\nlast\")";
+        var value = placement switch
+        {
+            "nested" => "Normalize($@\"first\n{$\"value:{source!.Legacy}\"}\nlast\")",
+            "before" => "string.Concat($@\"first\n\", source!.Legacy)",
+            "after" => "string.Concat(source!.Legacy, $@\"\nlast\")",
+            _ => "Normalize($@\"first\n{source!.Legacy}\nlast\")"
+        };
         var rule = callback switch
         {
             "Construct" => ".Construct(source => new(" + value + "))",
@@ -59,13 +62,10 @@ namespace TestCase
             "CS0618", "source!.Legacy");
     }
 
-    [TestCase("Construct")]
-    [TestCase("Resolve")]
-    [TestCase("Members")]
-    [TestCase("ConstructUsing")]
-    [TestCase("ResolveUsing")]
-    [TestCase("Convert")]
-    public void Keeps_local_declaration_warnings_at_their_source(string callback)
+    [Test]
+    public void Keeps_local_declaration_warnings_at_their_source(
+        [Values("Construct", "Resolve", "Members", "ConstructUsing", "ResolveUsing", "Convert")] string callback,
+        [Values(ReportDiagnostic.Warn, ReportDiagnostic.Error, ReportDiagnostic.Suppress)] ReportDiagnostic reporting)
     {
         var rule = callback switch
         {
@@ -98,8 +98,11 @@ namespace TestCase
     }
 }
 """;
-        AssertSourceWarningOnly(Run(source.Replace("__RULE__", rule)),
-            "CS0219", "unused");
+        var result = GeneratorTestDriver.Run("TestProject", source.Replace("__RULE__", rule),
+            LanguageVersion.CSharp9, new Dictionary<string, ReportDiagnostic> { ["CS0219"] = reporting });
+        if (reporting == ReportDiagnostic.Suppress) AssertNoDiagnostics(result);
+        else AssertSourceWarningOnly(result, "CS0219", "unused",
+            reporting == ReportDiagnostic.Error ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning);
     }
 
     [TestCase("ConstructUsing", false)]
@@ -139,9 +142,23 @@ namespace TestCase
             .Replace("__EXPRESSION__", expression)), "CS1998", "delegate");
     }
 
-    [Test]
-    public void Keeps_warning_directives_compiler_owned()
+    [TestCase("Construct")]
+    [TestCase("Resolve")]
+    [TestCase("Members")]
+    [TestCase("ConstructUsing")]
+    [TestCase("ResolveUsing")]
+    [TestCase("Convert")]
+    public void Keeps_warning_directives_compiler_owned(string callback)
     {
+        var expression = callback switch
+        {
+            "Construct" => ".Construct(source => { __WARNING__ return new(source); })",
+            "Resolve" => ".Resolve((source, previous) => { __WARNING__ if (previous.HasValue) return previous.Value; return new(source); })",
+            "Members" => ".Members(source => { __WARNING__ return new() { Value = source }; })",
+            "ConstructUsing" => ".ConstructUsing(source => { __WARNING__ return new Destination(source); })",
+            "ResolveUsing" => ".ResolveUsing((source, previous) => { __WARNING__ return previous.HasValue ? previous.Value : new Destination(source); })",
+            _ => ".Convert(source => { __WARNING__ return new Destination(source); })"
+        };
         // lang=c#
         const string source =
 """
@@ -150,19 +167,22 @@ namespace TestCase
 using Morphant;
 namespace TestCase
 {
+    public sealed class Destination
+    {
+        public Destination(int value) => Value = value;
+        public int Value { get; set; }
+    }
     [MorphantMapper]
     public partial class Mapper : TypeMapper<Mapper>
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<int, int>().Convert(source =>
-            {
-#warning review reminder
-                return source;
-            });
+            builder.Map<int, Destination>()__EXPRESSION__;
     }
 }
 """;
-        AssertSourceWarningOnly(Run(source), "CS1030", "review reminder");
+        AssertSourceWarningOnly(Run(source.Replace("__EXPRESSION__",
+                expression.Replace("__WARNING__", "\n#warning review reminder\n"))),
+            "CS1030", "review reminder");
     }
 
     [TestCase("OLD001", true)]
@@ -293,7 +313,8 @@ namespace TestCase
         GeneratorTestDriver.Run("TestProject", source, LanguageVersion.CSharp9);
 
     private static void AssertSourceWarningOnly(
-        GeneratorTestDriverResult result, string id, string sourceSpan)
+        GeneratorTestDriverResult result, string id, string sourceSpan,
+        DiagnosticSeverity severity = DiagnosticSeverity.Warning)
     {
         Assert.Multiple(() =>
         {
@@ -302,7 +323,7 @@ namespace TestCase
                 (diagnostic.Id, diagnostic.Severity,
                     diagnostic.Location.SourceTree!.FilePath,
                     GeneratorTestDriver.GetSourceText(diagnostic.Location))),
-                Is.EqualTo(new[] { (id, DiagnosticSeverity.Warning, "TestCase.cs", sourceSpan) }));
+                Is.EqualTo(new[] { (id, severity, "TestCase.cs", sourceSpan) }));
         });
     }
 

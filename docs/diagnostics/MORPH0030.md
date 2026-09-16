@@ -9,8 +9,9 @@ expression violates the input or nullable contract where the mapping uses it,
 including a `Members` value passed to a constructor.
 
 Ordinary obsolete-use warnings from constructors or members selected by
-conventions remain compiler diagnostics. Local suppression in a callback
-does not suppress an unrelated convention warning with the same code.
+conventions remain compiler diagnostics. See
+[compiler warnings](../api/README.md#compiler-warnings) for warning ownership
+and local suppression.
 
 ## Fix
 

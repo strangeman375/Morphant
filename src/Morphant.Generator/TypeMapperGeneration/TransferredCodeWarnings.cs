@@ -68,13 +68,19 @@ internal static class TransferredCodeWarnings
         // marking actual constructor calls or convention member accesses.
         var annotation = new SyntaxAnnotation(AnnotationKind,
             "type_" + Convert.ToBase64String(Encoding.UTF8.GetBytes(reference)) + ":" + string.Join(",", ids));
-        var syntax = SyntaxFactory.ParseTypeName(reference).WithTrailingTrivia(SyntaxFactory.Space);
+        var syntax = SyntaxFactory.ParseTypeName(reference);
         return Serialize(syntax.ReplaceTokens(syntax.DescendantTokens(),
             (token, _) => token.WithAdditionalAnnotations(annotation))).TrimEnd();
     }
 
     public static string Serialize(SyntaxNode syntax)
     {
+        // Qualification can retain trivia on tokens that the expression
+        // rewriter does not visit. A source #warning still belongs only to its
+        // original file, regardless of which token carries the directive.
+        syntax = syntax.ReplaceTrivia(syntax.DescendantTrivia()
+            .Where(trivia => trivia.IsKind(SyntaxKind.WarningDirectiveTrivia)),
+            (_, _) => default);
         var text = syntax.ToFullString();
         var changes = new List<TextChange>();
         foreach (var token in syntax.DescendantTokens())
