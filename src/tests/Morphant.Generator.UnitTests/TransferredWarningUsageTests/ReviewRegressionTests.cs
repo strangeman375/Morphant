@@ -189,6 +189,8 @@ namespace TestCase
     [TestCase("class", true)]
     [TestCase("OLD-001", false)]
     [TestCase("001", false)]
+    [TestCase("OLD:001", false)]
+    [TestCase("OLD*/001", false)]
     public void Keeps_custom_obsolete_diagnostics_compiler_owned(string diagnosticId, bool suppressible)
     {
         // lang=c#

@@ -274,6 +274,7 @@ internal static class TransferredCodeWarnings
             var compilation = model.Compilation.WithOptions(model.Compilation.Options.WithReportSuppressedDiagnostics(true));
             _warnings = compilation.GetSemanticModel(model.SyntaxTree).GetDiagnostics()
                 .Where(diagnostic => diagnostic.DefaultSeverity == DiagnosticSeverity.Warning &&
+                    SyntaxFacts.IsValidIdentifier(diagnostic.Id) &&
                     diagnostic.Location.SourceTree == model.SyntaxTree)
                 .ToLookup(diagnostic => diagnostic.Location.SourceSpan.Start, diagnostic => diagnostic.Id);
         }
