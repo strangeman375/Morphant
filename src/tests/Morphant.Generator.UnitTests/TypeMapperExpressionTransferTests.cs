@@ -88,8 +88,6 @@ namespace TestCase
                     destinationType == typeof(global::TestCase.Destination)) ||
                 base.Supports(sourceType, destinationType);
 
-        #pragma warning disable CS0618
-
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
@@ -104,9 +102,9 @@ namespace TestCase
             => __ConvertDestination(source);
 
         private global::TestCase.Destination __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(
+            #pragma warning disable CS0618
             global::TestCase.TestMapper.Read(source));
-
-        #pragma warning restore CS0618
+            #pragma warning restore CS0618
     }
 }
 """;
@@ -208,8 +206,6 @@ namespace TestCase
                     destinationType == typeof(global::System.Threading.Tasks.Task<int>)) ||
                 base.Supports(sourceType, destinationType);
 
-        #pragma warning disable CS8602
-
         /// <inheritdoc/>
         global::System.Threading.Tasks.Task<int> global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Threading.Tasks.Task<int>>.Create(
             global::TestCase.Source? source,
@@ -227,10 +223,10 @@ namespace TestCase
         {
             await global::System.Threading.Tasks.Task.Yield();
             return ((source!.ReadText() is { } conditionalReceiver ? global::TransferExtensions.TextExtensions.Measure(conditionalReceiver) : default(int?)) ?? 0) +
+                #pragma warning disable CS8602
                 source.Text.Length;
+                #pragma warning restore CS8602
         }
-
-        #pragma warning restore CS8602
     }
 }
 """;

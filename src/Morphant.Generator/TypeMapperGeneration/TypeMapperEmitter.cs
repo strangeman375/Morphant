@@ -948,7 +948,7 @@ internal static class TypeMapperEmitter
         else if (constructor.Arguments.IsEmpty)
         {
             writer.Line(
-                $"{constructionPrefix}new " +
+                constructionPrefix + constructor.ConstructionKeyword +
                 $"{constructor.ConstructedTypeName}()" +
                 (mapping.CreateMemberMappings.IsEmpty
                     ? ";"
@@ -957,7 +957,7 @@ internal static class TypeMapperEmitter
         else
         {
             writer.Line(
-                $"{constructionPrefix}new " +
+                constructionPrefix + constructor.ConstructionKeyword +
                 $"{constructor.ConstructedTypeName}(");
             writer.Indent();
 
@@ -1070,8 +1070,7 @@ internal static class TypeMapperEmitter
         {
             WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
-                $"{resultLocalName}." +
-                $"{DestinationAccess(memberMapping)} = " +
+                $"{DestinationAccess(memberMapping, resultLocalName)} = " +
                 MemberValueExpression(
                     mapping,
                     memberMapping,
@@ -1171,8 +1170,7 @@ internal static class TypeMapperEmitter
         {
             WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
-                $"{assignmentTarget}." +
-                $"{DestinationAccess(memberMapping)} = " +
+                $"{DestinationAccess(memberMapping, assignmentTarget)} = " +
                 MemberValueExpression(
                     mapping,
                     memberMapping,
@@ -2371,8 +2369,7 @@ internal static class TypeMapperEmitter
         {
             WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
-                "destination." +
-                $"{DestinationAccess(memberMapping)} = " +
+                $"{DestinationAccess(memberMapping, "destination")} = " +
                 MemberValueExpression(
                     mapping,
                     memberMapping,
@@ -2530,8 +2527,7 @@ internal static class TypeMapperEmitter
         {
             WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
-                assignmentTarget + "." +
-                $"{DestinationAccess(memberMapping)} = " +
+                $"{DestinationAccess(memberMapping, assignmentTarget)} = " +
                 MemberValueExpression(
                     mapping,
                     memberMapping,
@@ -2918,9 +2914,12 @@ internal static class TypeMapperEmitter
     }
 
     private static string DestinationAccess(
-        TypeMapperMemberMappingModel mapping) =>
-        mapping.DestinationAccessPath ??
-        Identifier(mapping.DestinationMemberName);
+        TypeMapperMemberMappingModel mapping,
+        string? receiver = null) =>
+        TransferredCodeWarnings.AnnotateReference(
+            (receiver is null ? string.Empty : receiver + ".") +
+            (mapping.DestinationAccessPath ?? Identifier(mapping.DestinationMemberName)),
+            mapping.WarningOrigin);
 
     private static string BuildTupleConstructionExpression(
         TypeMapperTupleConstructionModel tuple,

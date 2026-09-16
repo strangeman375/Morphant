@@ -8,6 +8,10 @@ generated mapper. This applies to `Construct`, `Resolve`, `Members`,
 expression violates the input or nullable contract where the mapping uses it,
 including a `Members` value passed to a constructor.
 
+Ordinary obsolete-use warnings from constructors or members selected by
+conventions remain compiler diagnostics. Local suppression in a callback
+does not suppress an unrelated convention warning with the same code.
+
 ## Fix
 
 Use constants or accessible mapper or static members. Do not capture

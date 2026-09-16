@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Morphant.Generator.TypeMapperGeneration;
@@ -20,16 +21,30 @@ internal static class TransferredCodeWarnings
 
     public static SyntaxNode Annotate(SyntaxNode source, SyntaxNode rewritten, SemanticModel model)
     {
-        if (source.SyntaxTree != model.SyntaxTree) return rewritten;
+        var data = GetAnnotation(source, model);
+        if (data is null) return rewritten;
+        var token = rewritten.GetFirstToken();
+        return rewritten.ReplaceToken(token, token.WithAdditionalAnnotations(new SyntaxAnnotation(AnnotationKind, data)));
+    }
+
+    public static string? GetAnnotation(SyntaxNode source, SemanticModel model)
+    {
+        if (source.SyntaxTree != model.SyntaxTree) return null;
         var warnings = Sources.GetValue(model, static semanticModel => new SourceWarnings(semanticModel));
         var ids = warnings.At(source.SpanStart);
         if (!model.GetNullableContext(source.SpanStart).WarningsEnabled())
             ids = ids.Add("nullable");
-        if (ids.IsEmpty) return rewritten;
+        return ids.IsEmpty ? null : warnings.Identity + "_" + source.SpanStart + ":" + string.Join(",", ids);
+    }
 
-        var token = rewritten.GetFirstToken();
-        var data = warnings.Identity + "_" + source.SpanStart + ":" + string.Join(",", ids);
-        return rewritten.ReplaceToken(token, token.WithAdditionalAnnotations(new SyntaxAnnotation(AnnotationKind, data)));
+    public static string AnnotateReference(string reference, string? annotation)
+    {
+        if (annotation is null) return reference;
+        var syntax = SyntaxFactory.ParseExpression(reference)
+            .WithTrailingTrivia(SyntaxFactory.Space);
+        var token = syntax.GetFirstToken();
+        return Serialize(syntax.ReplaceToken(token, token.WithAdditionalAnnotations(
+            new SyntaxAnnotation(AnnotationKind, annotation)))).TrimEnd();
     }
 
     public static string Serialize(SyntaxNode syntax)
@@ -107,9 +122,16 @@ internal static class TransferredCodeWarnings
             foreach (var decision in decisions[site.Origin])
             {
                 var line = text.Lines.GetLineFromPosition(token.SpanStart);
+                var referenceEnd = token.Parent?.AncestorsAndSelf()
+                    .Where(node => node.SpanStart == token.SpanStart &&
+                        node is NameSyntax or MemberAccessExpressionSyntax)
+                    .Select(node => node.Span.End).DefaultIfEmpty(token.Span.End).Max()
+                    ?? token.Span.End;
+                var start = text.ToString(TextSpan.FromBounds(line.Start, token.SpanStart))
+                    .All(char.IsWhiteSpace) ? line.Start : token.SpanStart;
                 ranges.Add(decision.WholeLine
                     ? (line.Start, line.EndIncludingLineBreak, decision.DiagnosticId)
-                    : (token.SpanStart, token.Span.End, decision.DiagnosticId));
+                    : (start, referenceEnd, decision.DiagnosticId));
             }
         }
         var insertions = new SortedDictionary<int, List<string>>();
@@ -131,8 +153,15 @@ internal static class TransferredCodeWarnings
                 AddDirective(range.End, "restore", group.Key, indentation);
             }
         }
-        return text.WithChanges(insertions.Select(pair => new TextChange(new TextSpan(pair.Key, 0),
-            string.Concat(pair.Value)))).ToString();
+        return text.WithChanges(insertions.Select(pair =>
+        {
+            var end = pair.Key;
+            if (pair.Key != text.Lines.GetLineFromPosition(pair.Key).Start)
+            {
+                while (end < text.Length && text[end] is ' ' or '\t') end++;
+            }
+            return new TextChange(TextSpan.FromBounds(pair.Key, end), string.Concat(pair.Value));
+        })).ToString();
 
         void AddDirective(int position, string action, string id, string indentation)
         {
@@ -150,12 +179,22 @@ internal static class TransferredCodeWarnings
         origin = gap = string.Empty;
         ids = Array.Empty<string>();
         var text = trivia.ToString();
-        if (!trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) || !text.StartsWith(Prefix, StringComparison.Ordinal)) return false;
+        if (!trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) ||
+            !text.StartsWith(Prefix, StringComparison.Ordinal) ||
+            !text.EndsWith("*/", StringComparison.Ordinal) ||
+            text.Length < Prefix.Length + 2) return false;
         var parts = text.Substring(Prefix.Length, text.Length - Prefix.Length - 2).Split(':');
         if (parts.Length != 3) return false;
         origin = parts[0];
         ids = parts[1].Split(',');
-        gap = Encoding.UTF8.GetString(Convert.FromBase64String(parts[2]));
+        try
+        {
+            gap = Encoding.UTF8.GetString(Convert.FromBase64String(parts[2]));
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
         return true;
     }
 

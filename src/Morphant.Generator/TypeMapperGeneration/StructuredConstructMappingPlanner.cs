@@ -399,7 +399,16 @@ internal static class StructuredConstructMappingPlanner
                         {
                             constructor = constructor with
                             {
-                                Observation = explicitPlanning.Observation
+                                Observation = explicitPlanning.Observation,
+                                Constructor = constructor.Constructor with
+                                {
+                                    ConstructionKeyword = TransferredCodeWarnings.Serialize(
+                                        TransferredCodeWarnings.Annotate(
+                                            leaf.ObjectCreation,
+                                            SyntaxFactory.IdentifierName("new")
+                                                .WithTrailingTrivia(SyntaxFactory.Space),
+                                            configuration.Expression.SemanticModel))
+                                }
                             };
                             plannedLeaf = new StructuredConstructLeafNode(
                                 StructuredConstructLeafKind.Constructor,

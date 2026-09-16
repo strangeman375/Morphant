@@ -63,7 +63,9 @@ See [current limitations](docs/limitations.md) for features not yet included.
 - Preserve effects in member callback local initializers even when their
   values are not used by a member rule.
 - Suppress obsolete warnings from technical generated declarations while
-  retaining diagnostics for user API use and conventions.
+  retaining diagnostics for user API use and conventions. A conventional
+  obsolete constructor remains a compiler warning when `Members` is configured;
+  local warning suppression applies only to the corresponding transferred use.
 - Preserve discarded `out var` inference and user-defined logical operators
   in previous-value guards.
 - Correct synthesized nullable type spacing without changing user layout.

@@ -71,7 +71,8 @@ internal static class TypeMapperRuntimeEquality
         AreEquivalent(left.Arguments, right.Arguments) &&
         AreEquivalent(left.ValueLocals, right.ValueLocals) &&
         AreEquivalent(left.TupleConstruction, right.TupleConstruction) &&
-        left.DeferTupleConstruction == right.DeferTupleConstruction;
+        left.DeferTupleConstruction == right.DeferTupleConstruction &&
+        StringComparer.Ordinal.Equals(left.ConstructionKeyword, right.ConstructionKeyword);
 
     public static bool AreEquivalent(
         ImmutableArray<TypeMapperMemberMappingModel> left,
@@ -683,7 +684,8 @@ internal static class TypeMapperRuntimeEquality
                    right.InvocationArgumentLocals) &&
                StringComparer.Ordinal.Equals(
                    left.DestinationAccessPath,
-                   right.DestinationAccessPath);
+                   right.DestinationAccessPath) &&
+               StringComparer.Ordinal.Equals(left.WarningOrigin, right.WarningOrigin);
     }
 
     private static bool AreEquivalent(

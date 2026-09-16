@@ -126,7 +126,8 @@ internal readonly record struct TypeMapperConstructorMappingModel
     ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments,
     ImmutableArray<TypeMapperLocalValueModel> ValueLocals = default,
     TypeMapperTupleConstructionModel? TupleConstruction = null,
-    bool DeferTupleConstruction = false
+    bool DeferTupleConstruction = false,
+    string ConstructionKeyword = "new "
 );
 
 internal readonly record struct TypeMapperTupleConstructionModel
@@ -201,7 +202,8 @@ internal readonly record struct TypeMapperMemberMappingModel
         default,
     string? DestinationAccessPath = null,
     bool HasGeneratedDestination = false,
-    bool UsesPreparedDestination = false
+    bool UsesPreparedDestination = false,
+    string? WarningOrigin = null
 );
 
 internal sealed record TypeMapperControlFlowMappingModel

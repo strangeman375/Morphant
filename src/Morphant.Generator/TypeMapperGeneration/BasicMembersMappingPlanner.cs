@@ -526,6 +526,7 @@ internal static class BasicMembersMappingPlanner
                         StringComparer.Ordinal)
                 : new Dictionary<string, string>(StringComparer.Ordinal);
 
+        var warningOrigins = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var configuredAssignment in assignments)
         {
             var assignment = configurationNames.TryGetValue(
@@ -533,6 +534,12 @@ internal static class BasicMembersMappingPlanner
                 ? configuredAssignment with { MemberName = destinationName }
                 : configuredAssignment;
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (assignment.DesignatorNode is { } designator)
+            {
+                warningOrigins[assignment.MemberName] =
+                    TransferredCodeWarnings.GetAnnotation(designator, semanticModel);
+            }
 
             if (!occupiedNames.Add(assignment.MemberName))
             {
@@ -861,7 +868,13 @@ internal static class BasicMembersMappingPlanner
                         rule.DestinationMember.Name)));
         }
 
-        var immutableCreate = create.ToImmutable();
+        ImmutableArray<TypeMapperMemberMappingModel> WithWarningOrigins(
+            ImmutableArray<TypeMapperMemberMappingModel>.Builder members) =>
+            members.Select(member => warningOrigins.TryGetValue(member.DestinationMemberName, out var origin)
+                ? member with { WarningOrigin = origin }
+                : member).ToImmutableArray();
+
+        var immutableCreate = WithWarningOrigins(create);
         var invalidMembers = observedRules
             .Where(static rule =>
                 rule.InvalidReason != MemberRuleInvalidReason.None)
@@ -876,10 +889,10 @@ internal static class BasicMembersMappingPlanner
 
         plan = new ConventionMemberMappingPlan(
             immutableCreate,
-            createPost.ToImmutable(),
-            mapReplacement.ToImmutable(),
-            mapReplacementPost.ToImmutable(),
-            update.ToImmutable(),
+            WithWarningOrigins(createPost),
+            WithWarningOrigins(mapReplacement),
+            WithWarningOrigins(mapReplacementPost),
+            WithWarningOrigins(update),
             convention.Observation with
             {
                 Rules = observedRules.ToImmutable(),
