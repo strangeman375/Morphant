@@ -4,10 +4,10 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using Morphant.Generator.ConstructionSurface;
+using Morphant.Generator.ConstructionSurface.ConstructionPlan;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.MapperDeclaration;
-using Morphant.Generator.MemberSurface;
+using Morphant.Generator.MemberSurface.MemberPlan;
 using Morphant.Generator.Settings;
 using Morphant.Generator.TypeMapperGeneration;
 
@@ -224,10 +224,10 @@ internal static class PairConfigurationModelBuilder
             cancellationToken.ThrowIfCancellationRequested();
             return MappingExtensionPipeline.BuildModel(candidate, compilation);
         }).ToImmutableArray();
-        var requests = ConstructionSurfacePipeline.BuildPlanRequests(
+        var requests = ConstructionPlanPipeline.BuildRequests(
                 candidates, compilation, cancellationToken)
             .Concat(extensionModels.Select(MappingExtensionPipeline.BuildConstructionRequest))
-            .Concat(MemberSurfacePipeline.BuildPlanRequests(
+            .Concat(MemberPlanPipeline.BuildRequests(
                 candidates, compilation, cancellationToken))
             .Concat(extensionModels
                 .Where(static model => model.MemberHintName is not null)
