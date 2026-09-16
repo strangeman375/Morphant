@@ -211,7 +211,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             return false;
         }
 
-        rewrittenExpression = UserExpressionLayout.Normalize(rewritten, expression).ToFullString();
+        rewrittenExpression = TransferredCodeWarnings.Serialize(UserExpressionLayout.Normalize(rewritten, expression));
         return true;
     }
 
@@ -254,7 +254,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             return false;
         }
 
-        rewrittenExpression = UserExpressionLayout.Normalize(rewritten, expression).ToFullString();
+        rewrittenExpression = TransferredCodeWarnings.Serialize(UserExpressionLayout.Normalize(rewritten, expression));
         return true;
     }
 
@@ -544,7 +544,10 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     {
         var rewritten = base.Visit(node);
         if (node is not null && rewritten is not null)
+        {
             rewritten = UserExpressionLayout.Preserve(node, rewritten);
+            rewritten = TransferredCodeWarnings.Annotate(node, rewritten, _semanticModel);
+        }
 
         return node is not null &&
                rewritten is not null &&
@@ -555,6 +558,12 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             ? rewritten.WithAdditionalAnnotations(annotation)
             : rewritten;
     }
+
+    public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia) =>
+        trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia) ||
+        trivia.IsKind(SyntaxKind.NullableDirectiveTrivia)
+            ? default
+            : base.VisitTrivia(trivia);
 
     public override SyntaxNode? VisitInvocationExpression(
         InvocationExpressionSyntax node)

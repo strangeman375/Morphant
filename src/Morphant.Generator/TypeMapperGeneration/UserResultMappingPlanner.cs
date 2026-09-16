@@ -532,9 +532,8 @@ internal static class UserResultMappingPlanner
     {
         var normalized = function.WithoutTrivia().NormalizeWhitespace(
             indentation: "    ", eol: "\r\n");
-        return new NullableSuppressionTriviaRewriter()
-            .Visit(UserExpressionLayout.Restore(function, normalized))!
-            .ToFullString();
+        return TransferredCodeWarnings.Serialize(new NullableSuppressionTriviaRewriter()
+            .Visit(UserExpressionLayout.Restore(function, normalized))!);
     }
 
     private static void AddIdentifiers(

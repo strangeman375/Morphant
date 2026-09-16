@@ -331,7 +331,7 @@ internal static class DeclarativeControlFlowLowerer
                 return null;
             }
 
-            return UserExpressionLayout.Normalize(rewritten, pattern).ToFullString();
+            return TransferredCodeWarnings.Serialize(UserExpressionLayout.Normalize(rewritten, pattern));
         }
 
         string? RewriteLabel(DeclarativeSwitchLabelSyntax label)

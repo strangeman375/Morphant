@@ -44,7 +44,7 @@ internal static class TypeMapperTransferValidator
         }
 
         var mappings = model.Mappings.ToArray();
-        var suppressions = new HashSet<string>?[mappings.Length];
+        var suppressions = new HashSet<TransferredWarningSuppression>?[mappings.Length];
         var failures = new MappingFailureObservation?[mappings.Length];
         var unmappedDiagnostics =
             ImmutableArray.CreateBuilder<TransferPreflightDiagnostic>();
@@ -61,22 +61,27 @@ internal static class TypeMapperTransferValidator
                 mappingIndex >= policies.Length ||
                 !policies[mappingIndex].HasTransferredCode)
             {
-                unmappedDiagnostics.Add(preflightDiagnostic);
+                if (!TransferredCodeWarnings.IsObsoleteWarning(diagnostic))
+                {
+                    unmappedDiagnostics.Add(preflightDiagnostic);
+                }
                 continue;
             }
 
-            if (diagnostic.DefaultSeverity ==
-                    DiagnosticSeverity.Warning &&
-                (policies[mappingIndex].IsSourceOwned(
-                     diagnostic,
-                     cancellationToken) ||
-                 policies[mappingIndex].CanSuppress(
-                     diagnostic,
-                     cancellationToken)))
+            var origin = TransferredCodeWarnings.GetOrigin(diagnostic);
+            if (diagnostic.DefaultSeverity == DiagnosticSeverity.Warning && origin is not null)
             {
-                (suppressions[mappingIndex] ??=
-                    new HashSet<string>(StringComparer.Ordinal))
-                    .Add(diagnostic.Id);
+                var line = diagnostic.Location.GetLineSpan().StartLinePosition.Line;
+                var wholeLine = !diagnostics.Any(other => other.Diagnostic.Id == diagnostic.Id &&
+                    other.Diagnostic.Location.GetLineSpan().StartLinePosition.Line == line &&
+                    TransferredCodeWarnings.GetOrigin(other.Diagnostic) is null);
+                (suppressions[mappingIndex] ??= new HashSet<TransferredWarningSuppression>())
+                    .Add(new TransferredWarningSuppression(origin, diagnostic.Id, wholeLine));
+            }
+            else if (TransferredCodeWarnings.IsObsoleteWarning(diagnostic))
+            {
+                // Convention uses remain compiler-owned, including warnings promoted to errors.
+                continue;
             }
             else
             {
@@ -137,6 +142,10 @@ internal static class TypeMapperTransferValidator
         {
             cancellationToken.ThrowIfCancellationRequested();
             var diagnostic = preflightDiagnostic.Diagnostic;
+            if (TransferredCodeWarnings.IsObsoleteWarning(diagnostic))
+            {
+                continue;
+            }
 
             if (TypeMapperEmitter.TryGetTransferProbeMappingIndex(
                     diagnostic,
@@ -211,7 +220,7 @@ internal static class TypeMapperTransferValidator
 
     private static void ApplyDecisions(
         TypeMapperMappingModel[] mappings,
-        IReadOnlyList<HashSet<string>?> suppressions,
+        IReadOnlyList<HashSet<TransferredWarningSuppression>?> suppressions,
         IReadOnlyList<MappingFailureObservation?> failures)
     {
         for (var index = 0; index < mappings.Length; index++)
@@ -232,7 +241,8 @@ internal static class TypeMapperTransferValidator
             mappings[index] = mappings[index] with
             {
                 TransferredWarningSuppressions = warningIds
-                    .OrderBy(static id => id, StringComparer.Ordinal)
+                    .OrderBy(static item => item.Origin, StringComparer.Ordinal)
+                    .ThenBy(static item => item.DiagnosticId, StringComparer.Ordinal)
                     .ToImmutableArray()
             };
         }
@@ -279,7 +289,7 @@ internal static class TypeMapperTransferValidator
             CreateImplUsesOperation = false,
             SharedConstructionMethodDeclarations = default,
             HelperMethodDeclarations = ImmutableArray<string>.Empty,
-            TransferredWarningSuppressions = ImmutableArray<string>.Empty
+            TransferredWarningSuppressions = ImmutableArray<TransferredWarningSuppression>.Empty
         };
     }
 

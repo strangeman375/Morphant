@@ -527,9 +527,8 @@ internal static class RuntimeCallbackMethodPlanner
             .Visit(normalizedMethod)!;
         stableMethod = UserExpressionLayout.Restore(method, stableMethod);
 
-        return new NullableSuppressionTriviaRewriter()
-            .Visit(stableMethod)!
-            .ToFullString();
+        return TransferredCodeWarnings.Serialize(new NullableSuppressionTriviaRewriter()
+            .Visit(stableMethod)!);
     }
 
     private sealed class MultilineObjectInitializerRewriter :

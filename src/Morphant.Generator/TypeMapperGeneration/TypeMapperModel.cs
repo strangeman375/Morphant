@@ -80,7 +80,7 @@ internal readonly record struct TypeMapperMappingModel
     string? UpdateImplMethodName = null,
     bool CreateImplUsesOperation = false,
     ImmutableArray<string> HelperMethodDeclarations = default,
-    ImmutableArray<string> TransferredWarningSuppressions = default,
+    ImmutableArray<TransferredWarningSuppression> TransferredWarningSuppressions = default,
     bool RequiresUnsafeContext = false,
     TypeMapperTupleReconstructionModel? CreateTupleReconstruction = null,
     MappingExecutionPathSet? KnownExecutionPath = null,

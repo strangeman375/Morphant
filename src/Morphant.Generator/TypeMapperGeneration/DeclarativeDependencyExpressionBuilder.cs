@@ -166,7 +166,7 @@ internal static class DeclarativeDependencyExpressionBuilder
                 return false;
             }
 
-            rewrittenExpression = UserExpressionLayout.Normalize(directlyRewritten, expression).ToFullString();
+            rewrittenExpression = TransferredCodeWarnings.Serialize(UserExpressionLayout.Normalize(directlyRewritten, expression));
             return true;
         }
 
@@ -426,15 +426,14 @@ internal static class DeclarativeDependencyExpressionBuilder
                     BuildNode(child, nested)));
         }
 
-        var template = current.Syntax
+        var template = TransferredCodeWarnings.Serialize(current.Syntax
             .ReplaceNodes(
                 replacements.Keys,
                 (original, _) =>
                     SyntaxFactory.IdentifierName(
                             replacements[original])
                         .WithTriviaFrom(original))
-            .WithoutTrivia()
-            .ToFullString();
+            .WithoutTrivia());
 
         return new TypeMapperDependencyExpressionNodeModel(
             current.Candidate.Key,

@@ -107,7 +107,10 @@ internal static class TypeMapperEmitter
             writer.CloseBlock();
         }
 
-        var source = writer.ToString();
+        var source = TransferredCodeWarnings.Apply(writer.ToString(),
+            model.Mappings.SelectMany(mapping => mapping.TransferredWarningSuppressions.IsDefault
+                ? ImmutableArray<TransferredWarningSuppression>.Empty : mapping.TransferredWarningSuppressions),
+            retainOrigins: includeTransferProbeLocations);
         if (rewrite is not null) source = rewrite(source);
         return SourceText.From(ObsoleteTypeWarnings.Suppress(source, model.ObsoleteWarnings), Encoding.UTF8);
     }
@@ -196,19 +199,6 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
-        var warningSuppressions =
-            mapping.TransferredWarningSuppressions.IsDefault
-                ? ImmutableArray<string>.Empty
-                : mapping.TransferredWarningSuppressions;
-
-        if (!warningSuppressions.IsEmpty)
-        {
-            writer.Line(
-                "#pragma warning disable " +
-                string.Join(", ", warningSuppressions));
-            writer.Line();
-        }
-
         WriteCreate(writer, mapping);
         writer.Line();
         WriteUpdate(writer, mapping);
@@ -259,14 +249,6 @@ internal static class TypeMapperEmitter
                     writer,
                     declaration);
             }
-        }
-
-        if (!warningSuppressions.IsEmpty)
-        {
-            writer.Line();
-            writer.Line(
-                "#pragma warning restore " +
-                string.Join(", ", warningSuppressions));
         }
     }
 

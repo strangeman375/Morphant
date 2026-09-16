@@ -241,9 +241,9 @@ internal static class TypeMapperRuntimeEquality
                AreEquivalent(
                    leftMapping.HelperMethodDeclarations,
                    rightMapping.HelperMethodDeclarations) &&
-               AreEquivalent(
-                   leftMapping.TransferredWarningSuppressions,
-                   rightMapping.TransferredWarningSuppressions) &&
+               (Count(leftMapping.TransferredWarningSuppressions) == Count(rightMapping.TransferredWarningSuppressions) &&
+                   (leftMapping.TransferredWarningSuppressions.IsDefaultOrEmpty ||
+                    leftMapping.TransferredWarningSuppressions.SequenceEqual(rightMapping.TransferredWarningSuppressions))) &&
                leftMapping.RequiresUnsafeContext ==
                    rightMapping.RequiresUnsafeContext;
     }
