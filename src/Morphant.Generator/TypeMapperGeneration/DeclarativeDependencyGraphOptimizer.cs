@@ -90,23 +90,13 @@ internal static class DeclarativeDependencyGraphOptimizer
     {
         var changed = false;
         var locals = ImmutableArray.CreateBuilder<TypeMapperLocalValueModel>();
-        var bodyKeys = CollectBodyKeys(node, create);
+        var remainingLocals = new RemainingDependencyKeys(
+            node.Locals.Select(local => local.DependencyExpression), CollectBodyKeys(node, create));
 
         for (var index = 0; index < node.Locals.Length; index++)
         {
             var local = node.Locals[index];
-            var later = new HashSet<string>(
-                bodyKeys,
-                StringComparer.Ordinal);
-
-            for (var next = index + 1;
-                 next < node.Locals.Length;
-                 next++)
-            {
-                AddExpressionKeys(
-                    node.Locals[next].DependencyExpression,
-                    later);
-            }
+            var later = remainingLocals.Consume(local.DependencyExpression);
 
             if (local.DependencyExpression is { } dependency)
             {
@@ -386,6 +376,10 @@ internal static class DeclarativeDependencyGraphOptimizer
             postKeys.UnionWith(CollectKeys(postControlFlow));
         }
 
+        initializerKeys.UnionWith(postKeys);
+        var remainingArguments = new RemainingDependencyKeys(
+            arguments.Select(argument => argument.DependencyExpression), initializerKeys);
+
         for (var index = 0; index < arguments.Length; index++)
         {
             var argument = arguments[index];
@@ -395,19 +389,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 continue;
             }
 
-            var later = new HashSet<string>(
-                initializerKeys,
-                StringComparer.Ordinal);
-            later.UnionWith(postKeys);
-
-            for (var next = index + 1;
-                 next < arguments.Length;
-                 next++)
-            {
-                AddExpressionKeys(
-                    arguments[next].DependencyExpression,
-                    later);
-            }
+            var later = remainingArguments.Consume(dependency);
 
             var optimized = OptimizeExpression(
                 dependency,
@@ -457,6 +439,8 @@ internal static class DeclarativeDependencyGraphOptimizer
 
         var valueLocals = Normalize(constructor.ValueLocals).ToBuilder();
         var initializerArray = initializerMappings.ToArray();
+        var remainingInitializers = new RemainingDependencyKeys(
+            initializerMappings.Select(member => member.DependencyExpression), postKeys);
 
         for (var index = 0;
              index < initializerArray.Length;
@@ -469,16 +453,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 continue;
             }
 
-            var later = new HashSet<string>(postKeys, StringComparer.Ordinal);
-
-            for (var next = index + 1;
-                 next < initializerArray.Length;
-                 next++)
-            {
-                AddExpressionKeys(
-                    initializerArray[next].DependencyExpression,
-                    later);
-            }
+            var later = remainingInitializers.Consume(dependency);
 
             var optimized = OptimizeExpression(
                 dependency,
@@ -534,6 +509,8 @@ internal static class DeclarativeDependencyGraphOptimizer
 
         var changed = false;
         var result = mappings.ToArray();
+        var remaining = new RemainingDependencyKeys(
+            mappings.Select(member => member.DependencyExpression));
 
         for (var index = 0; index < result.Length; index++)
         {
@@ -544,14 +521,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 continue;
             }
 
-            var later = new HashSet<string>(StringComparer.Ordinal);
-
-            for (var next = index + 1; next < result.Length; next++)
-            {
-                AddExpressionKeys(
-                    result[next].DependencyExpression,
-                    later);
-            }
+            var later = remaining.Consume(dependency);
 
             var optimized = OptimizeExpression(
                 dependency,
@@ -583,21 +553,13 @@ internal static class DeclarativeDependencyGraphOptimizer
     {
         var changed = false;
         var locals = ImmutableArray.CreateBuilder<TypeMapperLocalValueModel>();
-        var bodyKeys = CollectBodyKeys(node);
+        var remainingLocals = new RemainingDependencyKeys(
+            node.Locals.Select(local => local.DependencyExpression), CollectBodyKeys(node));
 
         for (var index = 0; index < node.Locals.Length; index++)
         {
             var local = node.Locals[index];
-            var later = new HashSet<string>(bodyKeys, StringComparer.Ordinal);
-
-            for (var next = index + 1;
-                 next < node.Locals.Length;
-                 next++)
-            {
-                AddExpressionKeys(
-                    node.Locals[next].DependencyExpression,
-                    later);
-            }
+            var later = remainingLocals.Consume(local.DependencyExpression);
 
             if (local.DependencyExpression is { } dependency)
             {
@@ -1133,6 +1095,37 @@ internal static class DeclarativeDependencyGraphOptimizer
         foreach (var child in node.Children)
         {
             AddNodeKeys(child.Node, result);
+        }
+    }
+
+    // Count once, then consume in evaluation order. A key stays available while
+    // any later expression or continuation still needs it.
+    private sealed class RemainingDependencyKeys
+    {
+        private readonly Dictionary<string, int> _counts = new(StringComparer.Ordinal);
+        private readonly HashSet<string> _keys;
+
+        public RemainingDependencyKeys(
+            IEnumerable<TypeMapperDependencyExpressionModel?> expressions,
+            IEnumerable<string>? continuationKeys = null)
+        {
+            if (continuationKeys is not null)
+                foreach (var key in continuationKeys) _counts[key] = 1;
+            foreach (var expression in expressions)
+                if (expression is not null) CountKeys(expression.Root, _counts);
+            _keys = new HashSet<string>(_counts.Keys, StringComparer.Ordinal);
+        }
+
+        public HashSet<string> Consume(TypeMapperDependencyExpressionModel? expression)
+        {
+            if (expression is not null) ConsumeNode(expression.Root);
+            return _keys;
+        }
+
+        private void ConsumeNode(TypeMapperDependencyExpressionNodeModel node)
+        {
+            if (--_counts[node.Key] == 0) _keys.Remove(node.Key);
+            foreach (var child in node.Children) ConsumeNode(child.Node);
         }
     }
 
