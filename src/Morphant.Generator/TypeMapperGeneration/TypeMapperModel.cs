@@ -17,6 +17,8 @@ internal readonly record struct TypeMapperModel
     bool RequiresSystemLinq
 )
 {
+    public bool FileScopedNamespace { get; init; }
+
     public ImmutableArray<ObsoleteTypeWarning> ObsoleteWarnings { get; init; } =
         ImmutableArray<ObsoleteTypeWarning>.Empty;
 }

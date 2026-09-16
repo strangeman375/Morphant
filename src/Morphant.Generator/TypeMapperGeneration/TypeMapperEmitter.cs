@@ -77,10 +77,7 @@ internal static class TypeMapperEmitter
             writer.Line();
         }
 
-        if (model.Namespace.Length > 0)
-        {
-            writer.OpenBlock($"namespace {model.Namespace}");
-        }
+        writer.OpenNamespace(model.Namespace, model.FileScopedNamespace);
 
         foreach (var containingType in model.ContainingTypes)
         {
@@ -102,10 +99,7 @@ internal static class TypeMapperEmitter
             writer.CloseBlock();
         }
 
-        if (model.Namespace.Length > 0)
-        {
-            writer.CloseBlock();
-        }
+        writer.CloseNamespace();
 
         var source = TransferredCodeWarnings.Apply(writer.ToString(),
             model.Mappings.SelectMany(mapping => mapping.TransferredWarningSuppressions.IsDefault

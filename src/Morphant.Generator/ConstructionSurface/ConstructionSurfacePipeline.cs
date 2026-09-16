@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.ConstructionSurface.ConstructionPlan;
 using Morphant.Generator.MappingPair;
@@ -17,14 +18,16 @@ internal static class ConstructionSurfacePipeline
         var planModels = ConstructionPlanPipeline.BuildModels(
             context,
             canonicalPairs);
+        var fileScopedNamespace = context.ParseOptionsProvider.Select(
+            static (options, _) => ((CSharpParseOptions)options).LanguageVersion >= LanguageVersion.CSharp10);
         var planRequests = GeneratorStageGuard.SelectTrackedSourceRequest(
                 context,
-                planModels,
+                planModels.Combine(fileScopedNamespace),
                 MorphantGeneratorStageNames.BuildConstructionPlanRequests,
                 static (model, _) =>
                     new DslSurfaceRequest(
-                        model.HintName,
-                        ConstructionPlanEmitter.Emit(model.Model)),
+                        model.Left.HintName,
+                        ConstructionPlanEmitter.Emit(model.Left.Model, model.Right)),
                 static _ => Location.None);
         GeneratorStageGuard.RegisterSourceOutput(
             context,

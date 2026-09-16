@@ -254,12 +254,12 @@ internal static class PairConfigurationModelBuilder
         }).ToImmutableArray();
         var requests = ConstructionPlanPipeline.BuildRequests(
                 candidates, compilation, cancellationToken)
-            .Concat(extensionModels.Select(MappingExtensionPipeline.BuildConstructionRequest))
+            .Concat(extensionModels.Select(static model => MappingExtensionPipeline.BuildConstructionRequest(model)))
             .Concat(MemberPlanPipeline.BuildRequests(
                 candidates, compilation, cancellationToken))
             .Concat(extensionModels
                 .Where(static model => model.MemberHintName is not null)
-                .Select(MappingExtensionPipeline.BuildMemberRequest));
+                .Select(static model => MappingExtensionPipeline.BuildMemberRequest(model)));
         var parseOptions = (mapperModels.IsEmpty
                 ? compilation.SyntaxTrees.FirstOrDefault()?.Options
                 : mapperModels[0].ConfigureSyntax.SyntaxTree.Options) as

@@ -86,6 +86,8 @@ internal static class TypeMapperModelBuilder
                 .OfType<QueryExpressionSyntax>()
                 .Any())
         {
+            FileScopedNamespace = ((CSharpParseOptions)configureSyntax.SyntaxTree.Options)
+                .LanguageVersion >= LanguageVersion.CSharp10,
             ObsoleteWarnings = ObsoleteTypeWarnings.CollectDeclarations(
                 mappings.Models.SelectMany(mapping => new[]
                 {

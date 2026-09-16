@@ -11,6 +11,28 @@ internal sealed class CodeWriter
 
     private readonly StringBuilder _builder = new();
     private int _indent;
+    private bool _hasNamespaceBlock;
+
+    public void OpenNamespace(string name, bool fileScoped)
+    {
+        if (name.Length == 0) return;
+
+        _hasNamespaceBlock = !fileScoped;
+        if (fileScoped)
+        {
+            Line($"namespace {name};");
+            Line();
+        }
+        else
+        {
+            OpenBlock($"namespace {name}");
+        }
+    }
+
+    public void CloseNamespace()
+    {
+        if (_hasNamespaceBlock) CloseBlock();
+    }
 
     public void Line(string value = "")
     {

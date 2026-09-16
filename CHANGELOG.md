@@ -25,6 +25,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Use file-scoped namespaces in generated files for C# 10 and newer, while
+  retaining C# 9 compatibility.
 - Simplify known `previous.TryGetValue` guards and omit unnecessary supporting
   copies and private helper parameters while preserving evaluation order.
 - Use short readable labels and permanent stable IDs for generated filenames.

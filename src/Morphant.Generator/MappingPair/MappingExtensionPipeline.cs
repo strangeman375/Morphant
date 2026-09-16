@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.ConstructionSurface.PairConfiguration;
 using Morphant.Generator.MemberSurface.PairConfiguration;
@@ -38,11 +39,13 @@ internal static class MappingExtensionPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<MappingExtensionModelResult> models)
     {
+        var fileScopedNamespace = context.ParseOptionsProvider.Select(
+            static (options, _) => ((CSharpParseOptions)options).LanguageVersion >= LanguageVersion.CSharp10);
         var requests = GeneratorStageGuard.SelectTrackedSourceRequest(
             context,
-            models,
+            models.Combine(fileScopedNamespace),
             MorphantGeneratorStageNames.BuildMappingExtensionRequests,
-            static (model, _) => BuildConstructionRequest(model),
+            static (model, _) => BuildConstructionRequest(model.Left, model.Right),
             static _ => Location.None);
 
         GeneratorStageGuard.RegisterSourceOutput(
@@ -54,11 +57,13 @@ internal static class MappingExtensionPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<MappingExtensionModelResult> models)
     {
+        var fileScopedNamespace = context.ParseOptionsProvider.Select(
+            static (options, _) => ((CSharpParseOptions)options).LanguageVersion >= LanguageVersion.CSharp10);
         var requests = GeneratorStageGuard.SelectTrackedSourceRequest(
             context,
-            models.Where(static model => model.MemberHintName is not null),
+            models.Where(static model => model.MemberHintName is not null).Combine(fileScopedNamespace),
             MorphantGeneratorStageNames.BuildMemberExtensionRequests,
-            static (model, _) => BuildMemberRequest(model),
+            static (model, _) => BuildMemberRequest(model.Left, model.Right),
             static _ => Location.None);
 
         GeneratorStageGuard.RegisterSourceOutput(
@@ -66,11 +71,11 @@ internal static class MappingExtensionPipeline
             static request => request.HintName, AddSource);
     }
 
-    public static DslSurfaceRequest BuildConstructionRequest(MappingExtensionModelResult model) =>
-        new(model.HintName, PairConfigurationEmitter.Emit(model.Model));
+    public static DslSurfaceRequest BuildConstructionRequest(MappingExtensionModelResult model, bool fileScopedNamespace = false) =>
+        new(model.HintName, PairConfigurationEmitter.Emit(model.Model, fileScopedNamespace));
 
-    public static DslSurfaceRequest BuildMemberRequest(MappingExtensionModelResult model) =>
-        new(model.MemberHintName!, MemberConfigurationEmitter.Emit(model.Model));
+    public static DslSurfaceRequest BuildMemberRequest(MappingExtensionModelResult model, bool fileScopedNamespace = false) =>
+        new(model.MemberHintName!, MemberConfigurationEmitter.Emit(model.Model, fileScopedNamespace));
 
     private static void AddSource(SourceProductionContext context, DslSurfaceRequest request) =>
         context.AddSource(request.HintName, SourceText.From(request.Source, Encoding.UTF8));

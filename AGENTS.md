@@ -47,6 +47,12 @@
 - A source file's namespace must match its directory under the owning project.
 - The minimum supported user language version is C# 9. Tests may select newer
   language versions when the scenario requires them.
+- Generate file-scoped namespaces for C# 10 and newer; retain block namespaces
+  for C# 9 and omit the namespace for global-namespace mappers. Select this
+  automatically from the consumer's effective language version. Preserve
+  namespace identities, hint names, using scopes and literal values; changing
+  the language version must invalidate affected generated output. Approved on
+  2026-09-16.
 - Generated construction and member plans must preserve the destination input
   contract, including nullable types and annotations, `AllowNull` /
   `DisallowNull`, optional parameters and default values.
