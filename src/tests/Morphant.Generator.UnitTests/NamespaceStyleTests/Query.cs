@@ -6,8 +6,13 @@ internal sealed partial class NamespaceStyleTests
 {
     [TestCase(LanguageVersion.CSharp9)]
     [TestCase(LanguageVersion.CSharp10)]
-    public void Query_namespace_preserves_all_generated_sources(LanguageVersion version) =>
-        Verify(QuerySource, version, version == LanguageVersion.CSharp9 ? QueryBlockSources : QueryFileSources);
+    public void Query_namespace_preserves_all_generated_sources(LanguageVersion version)
+    {
+        // Generated query-local names include source offsets; keep this fixture
+        // stable when Git converts the checkout's line endings on Windows.
+        Verify(QuerySource.ReplaceLineEndings("\n"), version,
+            version == LanguageVersion.CSharp9 ? QueryBlockSources : QueryFileSources);
+    }
 
     // lang=c#
     private const string QuerySource =
