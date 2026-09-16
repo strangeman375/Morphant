@@ -71,9 +71,13 @@ internal static class TypeMapperTransferValidator
             var origin = TransferredCodeWarnings.GetOrigin(diagnostic);
             if (diagnostic.DefaultSeverity == DiagnosticSeverity.Warning && origin is not null)
             {
-                var line = diagnostic.Location.GetLineSpan().StartLinePosition.Line;
+                // Some custom Obsolete IDs cannot be named in a warning pragma.
+                // Keep those compiler diagnostics instead of emitting invalid C#.
+                if (!SyntaxFacts.IsValidIdentifier(diagnostic.Id)) continue;
+                var span = TransferredCodeWarnings.GetSuppressionSpan(diagnostic, wholeLine: true);
                 var wholeLine = !diagnostics.Any(other => other.Diagnostic.Id == diagnostic.Id &&
-                    other.Diagnostic.Location.GetLineSpan().StartLinePosition.Line == line &&
+                    other.Diagnostic.Location.SourceTree == diagnostic.Location.SourceTree &&
+                    span.Contains(other.Diagnostic.Location.SourceSpan.Start) &&
                     TransferredCodeWarnings.GetOrigin(other.Diagnostic) is null);
                 (suppressions[mappingIndex] ??= new HashSet<TransferredWarningSuppression>())
                     .Add(new TransferredWarningSuppression(origin, diagnostic.Id, wholeLine));

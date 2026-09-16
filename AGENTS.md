@@ -170,6 +170,10 @@
   transfers user code. Suppress a source-owned warning's generated duplicate
   only at its transferred occurrence; local warning suppression must not hide
   unrelated warnings with the same diagnostic ID. Approved on 2026-09-16.
+- If an `Obsolete.DiagnosticId` cannot be represented in a C# warning pragma,
+  keep its compiler warnings, including generated duplicates. Do not reject
+  the mapping or suppress other warning IDs to remove the duplicate. Approved
+  on 2026-09-16.
 - Preserve the structure of user-written expressions, locals and branches.
   Change it only as necessary to implement the agreed mapping semantics.
   The user controls how their computations are organized and inspected.

@@ -797,7 +797,10 @@ internal static class TypeMapperRuntimeEquality
                     rightLocal.DeclaredValueKey) ||
                 !StringComparer.Ordinal.Equals(
                     leftLocal.StoredValueTypeName,
-                    rightLocal.StoredValueTypeName))
+                    rightLocal.StoredValueTypeName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftLocal.WarningOrigin,
+                    rightLocal.WarningOrigin))
             {
                 return false;
             }

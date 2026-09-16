@@ -2845,7 +2845,8 @@ internal static class TypeMapperEmitter
             (local.IsConst
                 ? "const "
                 : string.Empty) +
-            $"{local.DeclarationType} {local.Name} = " +
+            local.DeclarationType + " " +
+            TransferredCodeWarnings.AnnotateReference(local.Name, local.WarningOrigin) + " = " +
             local.ValueExpression +
             ";");
     }

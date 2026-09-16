@@ -577,7 +577,12 @@ internal static class DeclarativeControlFlowLowerer
                                         resultParameter),
                             StoredValueTypeName:
                                 TypeMapperMappingTypePolicy
-                                    .GetGeneratedTypeName(storedType)));
+                                    .GetGeneratedTypeName(storedType),
+                            WarningOrigin:
+                                declaredSymbol.DeclaringSyntaxReferences.FirstOrDefault()
+                                    ?.GetSyntax(cancellationToken) is { } declaration
+                                    ? TransferredCodeWarnings.GetAnnotation(declaration, semanticModel)
+                                    : null));
                 }
 
                 return next with

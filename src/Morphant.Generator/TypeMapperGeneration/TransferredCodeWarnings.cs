@@ -91,6 +91,48 @@ internal static class TransferredCodeWarnings
         (diagnostic.Id is "CS0612" or "CS0618" ||
          diagnostic.Descriptor.CustomTags.Contains("CustomObsolete"));
 
+    public static TextSpan GetSuppressionSpan(Diagnostic diagnostic, bool wholeLine) =>
+        GetSuppressionSpan(
+            diagnostic.Location.SourceTree!.GetRoot().FindToken(diagnostic.Location.SourceSpan.Start),
+            diagnostic.Location.SourceTree.GetText(), wholeLine);
+
+    private static TextSpan GetSuppressionSpan(SyntaxToken token, SourceText text, bool wholeLine)
+    {
+        // Directives inside interpolations are invalid C#; inside string text
+        // they would silently change the value. Enclose the outermost string.
+        var interpolation = token.Parent?.AncestorsAndSelf()
+            .OfType<InterpolatedStringExpressionSyntax>().LastOrDefault();
+        var reference = interpolation?.Span ?? TextSpan.FromBounds(token.SpanStart,
+            token.Parent?.AncestorsAndSelf()
+                .Where(node => node.SpanStart == token.SpanStart &&
+                    node is NameSyntax or MemberAccessExpressionSyntax)
+                .Select(node => node.Span.End).DefaultIfEmpty(token.Span.End).Max()
+                ?? token.Span.End);
+        var firstLine = text.Lines.GetLineFromPosition(reference.Start);
+        var lastLine = text.Lines.GetLineFromPosition(reference.End);
+        var root = token.Parent!.SyntaxTree.GetRoot();
+        if (wholeLine && IsDirectiveBoundary(firstLine.Start) &&
+            IsDirectiveBoundary(lastLine.EndIncludingLineBreak))
+            return TextSpan.FromBounds(firstLine.Start, lastLine.EndIncludingLineBreak);
+
+        var start = text.ToString(TextSpan.FromBounds(firstLine.Start, reference.Start))
+            .All(char.IsWhiteSpace) ? firstLine.Start : reference.Start;
+        return TextSpan.FromBounds(start, reference.End);
+
+        bool IsDirectiveBoundary(int position)
+        {
+            var boundaryToken = root.FindToken(position);
+            if (boundaryToken.SpanStart < position && position < boundaryToken.Span.End)
+                return false;
+            if (boundaryToken.Parent!.AncestorsAndSelf().OfType<InterpolatedStringExpressionSyntax>()
+                .Any(value => value.SpanStart < position && position < value.Span.End))
+                return false;
+            var trivia = root.FindTrivia(position);
+            return !trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) ||
+                position <= trivia.SpanStart || position >= trivia.Span.End;
+        }
+    }
+
     public static string Apply(string source, IEnumerable<TransferredWarningSuppression> suppressions, bool retainOrigins)
     {
         if (source.IndexOf(Prefix, StringComparison.Ordinal) < 0) return source;
@@ -131,17 +173,8 @@ internal static class TransferredCodeWarnings
             var token = tokens[site.Token];
             foreach (var decision in decisions[site.Origin])
             {
-                var line = text.Lines.GetLineFromPosition(token.SpanStart);
-                var referenceEnd = token.Parent?.AncestorsAndSelf()
-                    .Where(node => node.SpanStart == token.SpanStart &&
-                        node is NameSyntax or MemberAccessExpressionSyntax)
-                    .Select(node => node.Span.End).DefaultIfEmpty(token.Span.End).Max()
-                    ?? token.Span.End;
-                var start = text.ToString(TextSpan.FromBounds(line.Start, token.SpanStart))
-                    .All(char.IsWhiteSpace) ? line.Start : token.SpanStart;
-                ranges.Add(decision.WholeLine
-                    ? (line.Start, line.EndIncludingLineBreak, decision.DiagnosticId)
-                    : (start, referenceEnd, decision.DiagnosticId));
+                var span = GetSuppressionSpan(token, text, decision.WholeLine);
+                ranges.Add((span.Start, span.End, decision.DiagnosticId));
             }
         }
         var insertions = new SortedDictionary<int, List<string>>();

@@ -165,9 +165,11 @@ namespace TestCase
         AssertSourceWarningOnly(Run(source), "CS1030", "review reminder");
     }
 
-    [TestCase("OLD001")]
-    [TestCase("OLD-001")]
-    public void Keeps_custom_obsolete_diagnostics_compiler_owned(string diagnosticId)
+    [TestCase("OLD001", true)]
+    [TestCase("class", true)]
+    [TestCase("OLD-001", false)]
+    [TestCase("001", false)]
+    public void Keeps_custom_obsolete_diagnostics_compiler_owned(string diagnosticId, bool suppressible)
     {
         // lang=c#
         const string source =
@@ -197,8 +199,27 @@ namespace TestCase
     }
 }
 """;
-        AssertSourceWarningOnly(Run(source.Replace("__ID__", diagnosticId)),
-            diagnosticId, "source.Legacy");
+        var result = Run(source.Replace("__ID__", diagnosticId));
+        if (suppressible)
+        {
+            AssertSourceWarningOnly(result, diagnosticId, "source.Legacy");
+            return;
+        }
+
+        const string generatedPath = "Morphant.Generator/Morphant.Generator.MorphantGenerator/" +
+            "Morphant.Generated.TypeMapper.Mapper__f6afa7d38a3eeb111905cdec012f335d.g.cs";
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors.Select(diagnostic =>
+                (diagnostic.Id, diagnostic.Severity, diagnostic.Location.SourceTree!.FilePath,
+                    GeneratorTestDriver.GetSourceText(diagnostic.Location))), Is.EqualTo(new[]
+                {
+                    (diagnosticId, DiagnosticSeverity.Warning, "TestCase.cs", "source.Legacy"),
+                    (diagnosticId, DiagnosticSeverity.Warning, generatedPath, "source.Legacy"),
+                    (diagnosticId, DiagnosticSeverity.Warning, generatedPath, "source.Legacy")
+                }));
+        });
     }
 
     [TestCase("ConstructUsing", false)]

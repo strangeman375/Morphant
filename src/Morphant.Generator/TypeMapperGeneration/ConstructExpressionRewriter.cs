@@ -552,6 +552,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 (LambdaExpressionSyntax source, LambdaExpressionSyntax target) =>
                     target.WithArrowToken(TransferredCodeWarnings.Annotate(
                         source.ArrowToken, target.ArrowToken, _semanticModel)),
+                (AnonymousMethodExpressionSyntax source, AnonymousMethodExpressionSyntax target) =>
+                    target.WithDelegateKeyword(TransferredCodeWarnings.Annotate(
+                        source.DelegateKeyword, target.DelegateKeyword, _semanticModel)),
                 (LocalFunctionStatementSyntax source, LocalFunctionStatementSyntax target) =>
                     target.WithIdentifier(TransferredCodeWarnings.Annotate(
                         source.Identifier, target.Identifier, _semanticModel)),
@@ -571,7 +574,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 
     public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia) =>
         trivia.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia) ||
-        trivia.IsKind(SyntaxKind.NullableDirectiveTrivia)
+        trivia.IsKind(SyntaxKind.NullableDirectiveTrivia) ||
+        trivia.IsKind(SyntaxKind.WarningDirectiveTrivia)
             ? default
             : base.VisitTrivia(trivia);
 
@@ -1271,9 +1275,10 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             INamedTypeSymbol createdType)
         {
             rewritten = node.WithType(
-                SyntaxFactory.ParseTypeName(
-                    SubstituteMapperType(createdType).ToDisplayString(
-                        SymbolDisplayFormats.FullyQualifiedNullable)));
+                (TypeSyntax)TransferredCodeWarnings.Annotate(node.Type,
+                    SyntaxFactory.ParseTypeName(
+                        SubstituteMapperType(createdType).ToDisplayString(
+                            SymbolDisplayFormats.FullyQualifiedNullable)), _semanticModel));
 
             if (node.ArgumentList is { } argumentList)
             {

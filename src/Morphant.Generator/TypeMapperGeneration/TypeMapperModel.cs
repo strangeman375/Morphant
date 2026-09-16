@@ -221,7 +221,8 @@ internal readonly record struct TypeMapperLocalValueModel
     bool IsSynthetic = false,
     TypeMapperDependencyExpressionModel? DependencyExpression = null,
     string? DeclaredValueKey = null,
-    string? StoredValueTypeName = null
+    string? StoredValueTypeName = null,
+    string? WarningOrigin = null
 );
 
 internal sealed record TypeMapperControlFlowNode
