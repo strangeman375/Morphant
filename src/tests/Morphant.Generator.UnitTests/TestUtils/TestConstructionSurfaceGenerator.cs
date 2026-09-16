@@ -20,8 +20,10 @@ internal sealed class TestConstructionSurfaceGenerator :
             context,
             pairConfigurations);
 
+        var extensionModels = MappingExtensionPipeline.BuildModels(context, canonicalPairs);
         ConstructionSurfacePipeline.Register(
             context,
-            canonicalPairs);
+            canonicalPairs,
+            extensionModels);
     }
 }

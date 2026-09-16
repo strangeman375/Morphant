@@ -219,44 +219,29 @@ internal static class PairConfigurationModelBuilder
         ImmutableArray<CanonicalMappingPairCandidate> candidates,
         CancellationToken cancellationToken)
     {
-        var constructionRequests =
-            ConstructionSurfacePipeline.BuildRequests(
-                candidates,
-                compilation,
-                cancellationToken);
-        var memberRequests = MemberSurfacePipeline.BuildRequests(
-            candidates,
-            compilation,
-            cancellationToken);
+        var extensionModels = candidates.Select(candidate =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return MappingExtensionPipeline.BuildModel(candidate, compilation);
+        }).ToImmutableArray();
+        var requests = ConstructionSurfacePipeline.BuildPlanRequests(
+                candidates, compilation, cancellationToken)
+            .Concat(extensionModels.Select(MappingExtensionPipeline.BuildConstructionRequest))
+            .Concat(MemberSurfacePipeline.BuildPlanRequests(
+                candidates, compilation, cancellationToken))
+            .Concat(extensionModels
+                .Where(static model => model.MemberHintName is not null)
+                .Select(MappingExtensionPipeline.BuildMemberRequest));
         var parseOptions = (mapperModels.IsEmpty
                 ? compilation.SyntaxTrees.FirstOrDefault()?.Options
                 : mapperModels[0].ConfigureSyntax.SyntaxTree.Options) as
             CSharpParseOptions;
-        var syntaxTrees =
-            ImmutableArray.CreateBuilder<SyntaxTree>(
-                constructionRequests.Length + memberRequests.Length);
-
-        foreach (var request in constructionRequests)
-        {
-            syntaxTrees.Add(
-                ParseGeneratedSource(
-                    request.Source,
-                    request.HintName,
-                    parseOptions,
-                    cancellationToken));
-        }
-
-        foreach (var request in memberRequests)
-        {
-            syntaxTrees.Add(
-                ParseGeneratedSource(
-                    request.Source,
-                    request.HintName,
-                    parseOptions,
-                    cancellationToken));
-        }
-
-        return compilation.AddSyntaxTrees(syntaxTrees);
+        return compilation.AddSyntaxTrees(requests.Select(request =>
+            ParseGeneratedSource(
+                request.Source,
+                request.HintName,
+                parseOptions,
+                cancellationToken)));
     }
 
     private static bool RequiresAugmentedCompilation(

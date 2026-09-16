@@ -100,12 +100,15 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
         var canonicalSurfacePairs = CanonicalMappingPairPipeline.Build(
             context,
             pairConfigurations);
+        var extensionModels = MappingExtensionPipeline.BuildModels(context, canonicalSurfacePairs);
         ConstructionSurfacePipeline.Register(
             context,
-            canonicalSurfacePairs);
+            canonicalSurfacePairs,
+            extensionModels);
         MemberSurfacePipeline.Register(
             context,
-            canonicalSurfacePairs);
+            canonicalSurfacePairs,
+            extensionModels);
 
         TypeMapperPipeline.Register(
             context,

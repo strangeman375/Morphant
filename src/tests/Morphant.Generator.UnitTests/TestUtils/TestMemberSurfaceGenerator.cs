@@ -19,8 +19,10 @@ internal sealed class TestMemberSurfaceGenerator : IIncrementalGenerator
             context,
             pairConfigurations);
 
+        var extensionModels = MappingExtensionPipeline.BuildModels(context, canonicalPairs);
         MemberSurfacePipeline.Register(
             context,
-            canonicalPairs);
+            canonicalPairs,
+            extensionModels);
     }
 }

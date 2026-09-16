@@ -83,11 +83,6 @@ internal sealed class CachingTests
                         MemberHint,
                         IncrementalStepRunReason.New)),
                 Stage(
-                    "BuildMemberExtensionModels",
-                    Expected(
-                        MemberExtensionHint,
-                        IncrementalStepRunReason.New)),
-                Stage(
                     "BuildMemberExtensionRequests",
                     Expected(
                         MemberExtensionHint,
@@ -134,11 +129,6 @@ internal sealed class CachingTests
                         "BuildMemberPlanRequests",
                         Expected(
                             MemberHint,
-                            IncrementalStepRunReason.Cached)),
-                    Stage(
-                        "BuildMemberExtensionModels",
-                        Expected(
-                            MemberExtensionHint,
                             IncrementalStepRunReason.Cached)),
                     Stage(
                         "BuildMemberExtensionRequests",
@@ -197,11 +187,6 @@ internal sealed class CachingTests
             Stage(
                 "BuildMemberPlanRequests",
                 Expected(MemberHint, IncrementalStepRunReason.Cached)),
-            Stage(
-                "BuildMemberExtensionModels",
-                Expected(
-                    MemberExtensionHint,
-                    IncrementalStepRunReason.Cached)),
             Stage(
                 "BuildMemberExtensionRequests",
                 Expected(

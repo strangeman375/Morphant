@@ -24,9 +24,11 @@ internal sealed class TestStructuredConstructTypeMapperGenerator
             context,
             pairConfigurations);
 
+        var extensionModels = MappingExtensionPipeline.BuildModels(context, canonicalPairs);
         ConstructionSurfacePipeline.Register(
             context,
-            canonicalPairs);
+            canonicalPairs,
+            extensionModels);
         TypeMapperPipeline.Register(
             context,
             assemblySettings,

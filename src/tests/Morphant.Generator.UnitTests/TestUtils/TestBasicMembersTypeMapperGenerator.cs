@@ -25,12 +25,15 @@ internal sealed class TestBasicMembersTypeMapperGenerator
             context,
             pairConfigurations);
 
+        var extensionModels = MappingExtensionPipeline.BuildModels(context, canonicalPairs);
         ConstructionSurfacePipeline.Register(
             context,
-            canonicalPairs);
+            canonicalPairs,
+            extensionModels);
         MemberSurfacePipeline.Register(
             context,
-            canonicalPairs);
+            canonicalPairs,
+            extensionModels);
         TypeMapperPipeline.Register(
             context,
             assemblySettings,
