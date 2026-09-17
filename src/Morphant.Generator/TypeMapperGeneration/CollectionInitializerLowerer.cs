@@ -208,7 +208,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         scope.Helpers.Add(helper);
         ExpressionSyntax invocation = SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName(functionName),
             SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)).NormalizeWhitespace());
-        return invocation.WithTriviaFrom(original);
+        return CreationTrivia(invocation, original);
     }
 
     private ExpressionSyntax RewriteAwaitedCollection(BaseObjectCreationExpressionSyntax original,
@@ -219,9 +219,9 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         var metadata = CollectionCallerInformation.Metadata(initializer);
         for (var index = 0; index < initializer.Expressions.Count; index++)
         {
-            var types = metadata[index * 3 + 2].Split('\u001f');
+            var types = metadata[index * 3 + 2].Substring(1).Split('\u001f');
             var template = metadata[index * 3 + 1];
-            var key = typeName + "\0" + template + "\0" + metadata[index * 3 + 2];
+            var key = typeName + "\0" + template + "\0" + metadata[index * 3 + 2].Substring(1);
             if (!scope.ElementHelpers.TryGetValue(key, out var name))
             {
                 name = Allocate(scope, "Add" + _semantic.GetTypeInfo(original, _cancellationToken).Type!.Name + "Item");
@@ -253,7 +253,15 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                 SyntaxFactory.SeparatedList(arguments, Enumerable.Repeat(SyntaxFactory.Token(SyntaxKind.CommaToken)
                     .WithTrailingTrivia(SyntaxFactory.Space), types.Length))));
         }
-        return result.WithTriviaFrom(original);
+        return CreationTrivia(result, original);
+    }
+
+    private static ExpressionSyntax CreationTrivia(ExpressionSyntax expression, BaseObjectCreationExpressionSyntax original)
+    {
+        expression = expression.WithTriviaFrom(original);
+        return original.GetLastToken().GetNextToken().IsKind(SyntaxKind.CloseParenToken) &&
+            original.GetTrailingTrivia().All(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia))
+                ? expression.WithoutTrailingTrivia() : expression;
     }
 
     private static ExpressionSyntax AddCall(string template, ExpressionSyntax receiver, IReadOnlyList<ExpressionSyntax> arguments)

@@ -35,7 +35,9 @@ internal static class CollectionCallerInformation
         {
             var element = elements[index];
             var arguments = Arguments(element);
-            var argumentTypes = string.Join("\u001f", Arguments(original.Expressions[index]).Select(argument =>
+            var elementLines = original.Expressions[index].GetLocation().GetLineSpan();
+            var argumentTypes = (elementLines.StartLinePosition.Line == elementLines.EndLinePosition.Line ? "S" : "M") +
+                string.Join("\u001f", Arguments(original.Expressions[index]).Select(argument =>
                 typeName(semantic.GetTypeInfo(argument).ConvertedType ?? semantic.GetTypeInfo(argument).Type!)));
             var placeholders = Enumerable.Range(0, arguments.Count)
                 .Select(i => ArgumentPrefix + i.ToString(CultureInfo.InvariantCulture)).ToList();
@@ -99,6 +101,7 @@ internal static class CollectionCallerInformation
         {
             var marker = marked[original].ToString();
             var data = Encoding.UTF8.GetString(Convert.FromBase64String(marker.Substring(prefix.Length, marker.Length - prefix.Length - 2)));
+            var fields = data.Split('\0');
             rewritten = rewritten.ReplaceTrivia(rewritten.DescendantTrivia().Where(trivia => trivia.ToString() == marker), (_, _) => default);
             rewritten = rewritten.ReplaceTokens(rewritten.DescendantTokens(), (token, _) => token
                 .WithLeadingTrivia(TrimLineEnds(token.LeadingTrivia)).WithTrailingTrivia(TrimLineEnds(token.TrailingTrivia)));
@@ -107,6 +110,14 @@ internal static class CollectionCallerInformation
                     ? element.OpenBraceToken.WithTrailingTrivia(SyntaxFactory.Space) : element.OpenBraceToken)
                 .WithCloseBraceToken(element.CloseBraceToken.LeadingTrivia.Count == 0
                     ? element.CloseBraceToken.WithLeadingTrivia(SyntaxFactory.Space) : element.CloseBraceToken));
+            // Roslyn versions disagree about line breaks in complex elements.
+            // Keep originally single-line values and synthesized caller arguments
+            // together without reflowing multiline user expressions.
+            var expressions = rewritten.Expressions;
+            for (var index = 0; index < expressions.Count; index++)
+                if (fields[index * 3 + 2][0] == 'S' && expressions[index] is InitializerExpressionSyntax element)
+                    expressions = expressions.Replace(element, element.NormalizeWhitespace(indentation: "", eol: " ").WithTriviaFrom(element));
+            rewritten = rewritten.WithExpressions(expressions);
             return rewritten.WithAdditionalAnnotations(new SyntaxAnnotation(Annotation, data));
         });
         var tree = CSharpSyntaxTree.Create(root, options);
