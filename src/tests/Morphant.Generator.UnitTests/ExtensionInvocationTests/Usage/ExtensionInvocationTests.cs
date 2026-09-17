@@ -39,6 +39,26 @@ internal sealed partial class ExtensionInvocationTests
     }
 
     [Test]
+    public void Marker_like_comments_in_another_file_do_not_change_transferred_code()
+    {
+        var initial = GeneratorTestDriver.Run("ExtensionInvocation", CommentMarkersSource, LanguageVersion.CSharp10);
+        var updated = GeneratorTestDriver.Run("ExtensionInvocation",
+            new[]
+            {
+                new GeneratorTestSourceFile("TestCase.cs", CommentMarkersSource),
+                new GeneratorTestSourceFile("Comments.cs", "/*Morphant.Extension___Call*/")
+            }, LanguageVersion.CSharp10, driver: initial.Driver);
+        foreach (var result in new[] { initial, updated })
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.EffectiveDiagnostics, Is.Empty);
+                Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+                Assert.That(result.GeneratedSources.Select(item => (item.HintName, item.SourceText.ToString())),
+                    Is.EquivalentTo(CommentMarkers10Sources.Select(item => (item.Hint, GeneratedSourceText.Normalize(item.Source)))));
+            });
+    }
+
+    [Test]
     public void Adding_a_query_and_changing_language_version_reconsiders_existing_imports()
     {
         const string queryRegistration = """
@@ -96,6 +116,8 @@ internal sealed partial class ExtensionInvocationTests
             ("ConditionalFallback", ConditionalFallbackSource, ConditionalFallback10Sources, LanguageVersion.CSharp10),
             ("ConditionalFallbackMembers", ConditionalFallbackMembersSource, ConditionalFallbackMembers9Sources, LanguageVersion.CSharp9),
             ("ConditionalFallbackMembers", ConditionalFallbackMembersSource, ConditionalFallbackMembers10Sources, LanguageVersion.CSharp10),
+            ("CommentMarkers", CommentMarkersSource, CommentMarkers9Sources, LanguageVersion.CSharp9),
+            ("CommentMarkers", CommentMarkersSource, CommentMarkers10Sources, LanguageVersion.CSharp10),
             ("ObsoleteImport", ObsoleteImportSource, ObsoleteImport9Sources, LanguageVersion.CSharp9),
             ("ObsoleteImport", ObsoleteImportSource, ObsoleteImport10Sources, LanguageVersion.CSharp10),
             ("ImportIsolationReversed", ImportIsolationReversedSource, ImportIsolationReversed9Sources, LanguageVersion.CSharp9),

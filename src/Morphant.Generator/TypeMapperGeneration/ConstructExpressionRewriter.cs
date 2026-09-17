@@ -2108,7 +2108,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         return _semanticModel.GetTypeInfo(syntax).Type is { } type
             ? SyntaxFactory.ParseTypeName(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                        SubstituteMapperType(type)))
+                        SubstituteMapperType(syntax is NullableTypeSyntax
+                            ? type.WithNullableAnnotation(NullableAnnotation.Annotated)
+                            : type)))
                 .WithTriviaFrom(syntax)
             : (TypeSyntax)base.Visit(syntax)!;
     }
