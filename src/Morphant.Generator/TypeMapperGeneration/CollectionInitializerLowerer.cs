@@ -183,7 +183,8 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         var flow = _semantic.AnalyzeDataFlow(creation);
         foreach (var name in creation.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            if (_semantic.GetSymbolInfo(name, _cancellationToken).Symbol is not (ILocalSymbol or IParameterSymbol or IRangeVariableSymbol) symbol ||
+            var symbol = _semantic.GetSymbolInfo(name, _cancellationToken).Symbol;
+            if (symbol is not (ILocalSymbol or IParameterSymbol or IRangeVariableSymbol) ||
                 !seen.Add(symbol) || symbol.DeclaringSyntaxReferences.Any(reference => creation.Span.Contains(reference.Span)) ||
                 _semantic.LookupSymbols(scope.Owner.Span.End - 1, name: symbol.Name).Any(visible => SymbolEqualityComparer.Default.Equals(visible, symbol))) continue;
             var type = _semantic.GetTypeInfo(name, _cancellationToken).Type!;
