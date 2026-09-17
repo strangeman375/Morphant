@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests.ExtensionInvocationTests.Usage;
@@ -22,20 +25,36 @@ internal sealed partial class ExtensionInvocationTests
         var independent = conflicting.Replace("Describe(", "Other(", StringComparison.Ordinal);
         var initial = GeneratorTestDriver.Run("ExtensionInvocation",
             new[] { mapperFile, new GeneratorTestSourceFile("Overloads.cs", independent) }, version);
-        var added = GeneratorTestDriver.Run("ExtensionInvocation",
-            new[] { mapperFile, new GeneratorTestSourceFile("Overloads.cs", conflicting) }, version, driver: initial.Driver);
-        var removed = GeneratorTestDriver.Run("ExtensionInvocation",
-            new[] { mapperFile, new GeneratorTestSourceFile("Overloads.cs", independent) }, version, driver: added.Driver);
         var before = version == LanguageVersion.CSharp9 ? IncrementalOverloads9Sources : IncrementalOverloads10Sources;
         var after = version == LanguageVersion.CSharp9 ? SourceScope9Sources : SourceScope10Sources;
-        foreach (var (result, expected) in new[] { (initial, before), (added, after), (removed, before) })
+        var driver = initial.Driver;
+        var compilation = initial.OutputCompilation.RemoveSyntaxTrees(driver.GetRunResult().GeneratedTrees);
+        var mapperTree = compilation.SyntaxTrees.Single(tree => tree.FilePath == "Mapper.cs");
+        var overloadTree = compilation.SyntaxTrees.Single(tree => tree.FilePath == "Overloads.cs");
+        Verify(driver, initial.OutputCompilation, before);
+        foreach (var (source, expected) in new[] { (conflicting, after), (independent, before) })
+        {
+            var updatedTree = overloadTree.WithChangedText(SourceText.From(source, Encoding.UTF8));
+            compilation = compilation.ReplaceSyntaxTree(overloadTree, updatedTree);
+            overloadTree = updatedTree;
+            Assert.That(compilation.SyntaxTrees.Single(tree => tree.FilePath == "Mapper.cs"), Is.SameAs(mapperTree));
+            driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
+            Assert.That(diagnostics, Is.Empty);
+            Verify(driver, output, expected);
+        }
+
+        static void Verify(GeneratorDriver driver, Compilation output, (string Hint, string Source)[] expected)
+        {
+            var result = driver.GetRunResult().Results.Single();
             Assert.Multiple(() =>
             {
-                Assert.That(result.EffectiveDiagnostics, Is.Empty);
-                Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+                Assert.That(result.Exception, Is.Null);
+                Assert.That(result.Diagnostics, Is.Empty);
+                Assert.That(output.GetDiagnostics().Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error), Is.Empty);
                 Assert.That(result.GeneratedSources.Select(item => (item.HintName, item.SourceText.ToString())),
                     Is.EquivalentTo(expected.Select(item => (item.Hint, GeneratedSourceText.Normalize(item.Source)))));
             });
+        }
     }
 
     private static readonly (string Hint, string Source)[] IncrementalOverloads9Sources =
