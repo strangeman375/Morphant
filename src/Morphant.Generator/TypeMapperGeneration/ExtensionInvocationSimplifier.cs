@@ -297,7 +297,24 @@ internal static class ExtensionInvocationSimplifier
         semantic.GetDiagnostics(cancellationToken: token).Where(IsDiagnostic).GroupBy(DiagnosticKey)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
-    private static string Clean(SyntaxNode root) => root.ToFullString();
+    private static string Clean(SyntaxNode root) => new FallbackLayoutRewriter().Visit(root)!.ToFullString();
+
+    private sealed class FallbackLayoutRewriter : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitIsPatternExpression(IsPatternExpressionSyntax node)
+        {
+            var rewritten = (IsPatternExpressionSyntax)base.VisitIsPatternExpression(node)!;
+            if (!Rewriter.IsConditional(node)) return rewritten;
+            var designation = (SingleVariableDesignationSyntax)((RecursivePatternSyntax)node.Pattern).Designation!;
+            var layout = designation.Identifier.GetAnnotations(ConditionalMarker).Single().Data!.Split('\0');
+            return rewritten.WithExpression(rewritten.Expression.WithTrailingTrivia(Separated(LayoutTrivia(layout, 1, node))))
+                .WithIsKeyword(rewritten.IsKeyword.WithTrailingTrivia(Separated(LayoutTrivia(layout, 2, node))));
+        }
+
+        private static SyntaxTriviaList Separated(SyntaxTriviaList trivia) =>
+            trivia.Count != 0 && (trivia.Last().IsKind(SyntaxKind.WhitespaceTrivia) || trivia.Last().IsKind(SyntaxKind.EndOfLineTrivia))
+                ? trivia : trivia.Add(SyntaxFactory.Space);
+    }
 
     private static CompilationUnitSyntax ReadMarkers(CompilationUnitSyntax root)
     {
@@ -402,6 +419,10 @@ internal static class ExtensionInvocationSimplifier
                 .Where(identifier => identifier.Identifier.ValueText == designation.Identifier.ValueText).ToArray();
             if (receivers.Length != 1) return null;
             var receiver = receivers[0];
+            // A member binding is legal only on the receiver chain of ?. .
+            // A rejected extension can leave the receiver inside a static-call
+            // argument; replacing that occurrence would create an invalid tree.
+            if (!IsReceiverChain(receiver, continuation)) return null;
             var binding = receiver.Parent switch
             {
                 MemberAccessExpressionSyntax access when access.Expression == receiver =>
@@ -416,6 +437,24 @@ internal static class ExtensionInvocationSimplifier
             return SyntaxFactory.ConditionalAccessExpression(pattern.Expression.WithTrailingTrivia(LayoutTrivia(layout, 1, original)), body)
                 .WithOperatorToken(SyntaxFactory.Token(SyntaxKind.QuestionToken).WithTrailingTrivia(LayoutTrivia(layout, 2, original)))
                 .WithAdditionalAnnotations(new SyntaxAnnotation(ConditionalIndentation, Indentation(original)));
+        }
+
+        private static bool IsReceiverChain(ExpressionSyntax receiver, ExpressionSyntax continuation)
+        {
+            for (ExpressionSyntax? expression = continuation; expression is not null;)
+            {
+                if (expression == receiver) return true;
+                expression = expression switch
+                {
+                    MemberAccessExpressionSyntax member => member.Expression,
+                    ElementAccessExpressionSyntax element => element.Expression,
+                    InvocationExpressionSyntax invocation => invocation.Expression,
+                    ConditionalAccessExpressionSyntax conditional => conditional.Expression,
+                    PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) => postfix.Operand,
+                    _ => null
+                };
+            }
+            return false;
         }
 
         public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
