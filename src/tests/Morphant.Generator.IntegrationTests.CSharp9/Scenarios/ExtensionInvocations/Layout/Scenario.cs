@@ -36,6 +36,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
     {
         public static void Verify()
         {
+            // Use the literal's source line ending, which Git checkout may change.
+            const string literalLineEnding = @"
+";
             ITypeMapper<Source, string> mapper = new Mapper();
             foreach (var text in new string?[] { "abc", null })
             {
@@ -44,7 +47,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
                     var source = new Source { Text = text };
                     Calls.Operations.Touches = 0;
                     var result = update == 0 ? mapper.Create(source) : mapper.Update(source, "old");
-                    if (result != (text is null ? "\n--" : "abc1\n--abc0") || source.Calls != (text is null ? 0 : 1) || Calls.Operations.Touches != (text is null ? 0 : 2))
+                    var expected = text is null ? literalLineEnding + "--" : "abc1" + literalLineEnding + "--abc0";
+                    if (result != expected || source.Calls != (text is null ? 0 : 1) || Calls.Operations.Touches != (text is null ? 0 : 2))
                         throw new InvalidOperationException("Multiline conditional calls must preserve branch effects and literal line endings.");
                 }
             }
