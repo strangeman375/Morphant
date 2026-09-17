@@ -11,7 +11,7 @@ internal static class UserExpressionLayout
     public static SyntaxNode Preserve(SyntaxNode source, SyntaxNode rewritten)
     {
         if (source is ExpressionSyntax &&
-            (source is SwitchExpressionSyntax or QueryExpressionSyntax ||
+            (source is SwitchExpressionSyntax or QueryExpressionSyntax or StackAllocArrayCreationExpressionSyntax or ImplicitStackAllocArrayCreationExpressionSyntax ||
                 source.GetLocation().GetLineSpan() is var span &&
                 span.StartLinePosition.Line != span.EndLinePosition.Line))
         {
@@ -139,7 +139,8 @@ internal static class UserExpressionLayout
         text.IndexOf('\r') >= 0 || text.IndexOf('\n') >= 0;
 
     public static bool ContainsLayoutSensitiveExpression(SyntaxNode syntax) =>
-        syntax.DescendantNodesAndSelf().Any(static node => node is SwitchExpressionSyntax or QueryExpressionSyntax);
+        syntax.DescendantNodesAndSelf().Any(static node => node is SwitchExpressionSyntax or QueryExpressionSyntax or
+            StackAllocArrayCreationExpressionSyntax or ImplicitStackAllocArrayCreationExpressionSyntax);
 
     private static SyntaxTriviaList PreserveGap(
         string original,

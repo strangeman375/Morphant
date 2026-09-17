@@ -11,6 +11,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
 {
     private const string DirectCreation = "Morphant.DirectCollectionCreation";
     private const string Declaration = "Morphant.CollectionVariableDeclaration";
+    private const string IndexArguments = "Morphant.CollectionIndexArguments";
     private readonly SemanticModel _semantic;
     private readonly HashSet<InitializerExpressionSyntax> _rejected;
     private readonly CancellationToken _cancellationToken;
@@ -141,6 +142,17 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
     public override SyntaxNode? VisitDeclarationExpression(DeclarationExpressionSyntax node) =>
         base.VisitDeclarationExpression(node)!.WithAdditionalAnnotations(new SyntaxAnnotation(Declaration,
             node.SpanStart.ToString(CultureInfo.InvariantCulture)));
+
+    public override SyntaxNode? VisitImplicitElementAccess(ImplicitElementAccessSyntax node)
+    {
+        var property = _semantic.GetSymbolInfo(node, _cancellationToken).Symbol as IPropertySymbol;
+        var data = node.ArgumentList.Arguments.SelectMany((argument, index) => new[]
+        {
+            TypeMapperMappingTypePolicy.GetGeneratedTypeName(_semantic.GetTypeInfo(argument.Expression, _cancellationToken).ConvertedType!),
+            argument.NameColon?.Name.Identifier.ValueText ?? (property is not null && index < property.Parameters.Length ? property.Parameters[index].Name : "index")
+        });
+        return base.VisitImplicitElementAccess(node)!.WithAdditionalAnnotations(new SyntaxAnnotation(IndexArguments, string.Join("\0", data)));
+    }
 
     private ExpressionSyntax RewriteCreation(BaseObjectCreationExpressionSyntax original, BaseObjectCreationExpressionSyntax rewritten)
     {
@@ -299,9 +311,25 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
 
         foreach (var assignment in initializer.Expressions.Cast<AssignmentExpressionSyntax>())
         {
-            ExpressionSyntax member = assignment.Left is ImplicitElementAccessSyntax index
-                ? SyntaxFactory.ElementAccessExpression(receiver, index.ArgumentList)
-                : SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, (SimpleNameSyntax)assignment.Left);
+            ExpressionSyntax member;
+            if (assignment.Left is ImplicitElementAccessSyntax index)
+            {
+                var arguments = index.ArgumentList.Arguments;
+                if (assignment.Right is InitializerExpressionSyntax indexed && PopulationCount(indexed) > 1)
+                {
+                    var data = index.GetAnnotations(IndexArguments).Single().Data!.Split('\0');
+                    for (var ordinal = 0; ordinal < arguments.Count; ordinal++)
+                    {
+                        var argument = arguments[ordinal];
+                        var name = Allocate(_scopes.Peek(), data[ordinal * 2 + 1]);
+                        yield return Line(SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(data[ordinal * 2]))
+                            .AddVariables(SyntaxFactory.VariableDeclarator(name).WithInitializer(SyntaxFactory.EqualsValueClause(argument.Expression)))), indentation);
+                        arguments = arguments.Replace(argument, argument.WithExpression(SyntaxFactory.IdentifierName(name)));
+                    }
+                }
+                member = SyntaxFactory.ElementAccessExpression(receiver, index.ArgumentList.WithArguments(arguments));
+            }
+            else member = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, (SimpleNameSyntax)assignment.Left);
             if (assignment.Right is InitializerExpressionSyntax nested)
             {
                 foreach (var statement in Populate(member, nested, indentation)) yield return statement;
@@ -309,6 +337,10 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             else yield return Line(SyntaxFactory.ExpressionStatement(assignment.WithLeft(member)), indentation);
         }
     }
+
+    private static int PopulationCount(InitializerExpressionSyntax initializer) => initializer.IsKind(SyntaxKind.CollectionInitializerExpression)
+        ? initializer.Expressions.Count : initializer.Expressions.Cast<AssignmentExpressionSyntax>()
+            .Sum(assignment => assignment.Right is InitializerExpressionSyntax nested ? PopulationCount(nested) : 1);
 
     private static BaseObjectCreationExpressionSyntax WithoutInitializer(BaseObjectCreationExpressionSyntax creation) => creation switch
     {
@@ -325,12 +357,14 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
     {
         var used = new HashSet<string>(scope.Owner.DescendantTokens().Where(token => token.IsKind(SyntaxKind.IdentifierToken))
             .Select(token => token.ValueText), StringComparer.Ordinal);
-        used.UnionWith(_semantic.LookupSymbols(ScopePosition(scope.Owner)).Select(symbol => symbol.Name));
-        used.UnionWith(_names.Where(item => item.Scope.FullSpan.Contains(scope.Owner.FullSpan) ||
-            scope.Owner.FullSpan.Contains(item.Scope.FullSpan)).Select(item => item.Name));
+        var function = FunctionScope(scope.Owner);
+        used.UnionWith(_semantic.LookupSymbols(ScopePosition(scope.Owner)).Where(symbol => symbol.DeclaringSyntaxReferences
+            .Any(reference => FunctionScope(reference.GetSyntax(_cancellationToken)) == function)).Select(symbol => symbol.Name));
+        used.UnionWith(_names.Where(item => FunctionScope(item.Scope) == function &&
+            (item.Scope.FullSpan.Contains(scope.Owner.FullSpan) || scope.Owner.FullSpan.Contains(item.Scope.FullSpan))).Select(item => item.Name));
         var name = UserResultMappingPlanner.AllocateName(preferred, used);
         _names.Add((scope.Owner, name));
-        return name;
+        return Escape(name);
     }
 
     private BaseObjectCreationExpressionSyntax? LeadingCreation(ExpressionSyntax expression) => expression switch
@@ -385,9 +419,13 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
     {
         var used = new HashSet<string>(original.DescendantTokens().Where(token => token.IsKind(SyntaxKind.IdentifierToken))
             .Select(token => token.ValueText), StringComparer.Ordinal);
-        used.UnionWith(_semantic.LookupSymbols(original.SpanStart).Select(symbol => symbol.Name));
-        return UserResultMappingPlanner.AllocateName(char.ToLowerInvariant(typeName[0]) + typeName.Substring(1), used);
+        return Escape(UserResultMappingPlanner.AllocateName(char.ToLowerInvariant(typeName[0]) + typeName.Substring(1), used));
     }
+
+    private static string Escape(string name) => SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None || name == "await" ? "@" + name : name;
+
+    private static SyntaxNode? FunctionScope(SyntaxNode node) => node.AncestorsAndSelf()
+        .FirstOrDefault(ancestor => ancestor is BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax);
 
     private static BaseObjectCreationExpressionSyntax ExplicitAllocation(BaseObjectCreationExpressionSyntax creation, string typeName) =>
         creation is ImplicitObjectCreationExpressionSyntax implicitCreation
