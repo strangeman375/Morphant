@@ -287,6 +287,11 @@ internal static class ExtensionInvocationSimplifier
             (converted is null ? "" : TypeName(converted));
         if (node is InvocationExpressionSyntax && semantic.GetOperation(node, token) is IInvocationOperation invocation)
             result += "|" + Invocation(invocation);
+        if (node is ExpressionSyntax element && element.Parent is InitializerExpressionSyntax initializer &&
+            initializer.IsKind(SyntaxKind.CollectionInitializerExpression) &&
+            semantic.GetOperation(initializer, token) is IObjectOrCollectionInitializerOperation operation &&
+            operation.Initializers[initializer.Expressions.IndexOf(element)] is IInvocationOperation add)
+            result += "|" + Invocation(add);
         return result;
     }
 
@@ -304,7 +309,10 @@ internal static class ExtensionInvocationSimplifier
         Symbol(operation.TargetMethod) + "|" + string.Join(";", operation.Arguments.Select(argument =>
             argument.Parameter?.Name + ":" + argument.Parameter?.RefKind + ":" + argument.ArgumentKind + ":" +
             (argument.Value.Type is null ? "" : TypeName(argument.Value.Type)) + ":" +
-            Conversion(argument.InConversion) + ":" + Conversion(argument.OutConversion) + ":" + ValueConversions(argument.Value)));
+            Conversion(argument.InConversion) + ":" + Conversion(argument.OutConversion) + ":" + ValueConversions(argument.Value) + ":" +
+            (argument.Value.ConstantValue is { HasValue: true } constant
+                ? "constant=" + SymbolDisplay.FormatPrimitive(constant.Value, quoteStrings: true, useHexadecimalNumbers: false)
+                : "nonconstant")));
 
     private static string ValueConversions(IOperation value) => value is IConversionOperation conversion
         ? Conversion(conversion.Conversion) + ":" + conversion.IsChecked + ":" + conversion.IsTryCast + ":" +
