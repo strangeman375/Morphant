@@ -144,11 +144,12 @@ internal static class TypeMapperModelBuilder
                 "TypeMapper",
                 HintNameHelper.ToHintNamePart(mapperType.Name),
                 GeneratedEntityIdentity.ForTypeDefinition(mapperType, compilation)),
-            TypeMapperEmitter.Emit(model, generatedSource => TransferredProjectionNames.Restore(localNames.Restore(
+            TypeMapperEmitter.Emit(model, generatedSource => ExtensionInvocationSimplifier.Simplify(TransferredProjectionNames.Restore(localNames.Restore(
                 PrivateHelperParameters.RemoveUnused(generatedSource, compilation,
                     configureSyntax.SyntaxTree.Options as CSharpParseOptions, cancellationToken),
                 compilation, configureSyntax.SyntaxTree.Options as CSharpParseOptions,
                 cancellationToken), configureSyntax.SyntaxTree.Options as CSharpParseOptions,
+                cancellationToken), compilation, configureSyntax.SyntaxTree.Options as CSharpParseOptions,
                 cancellationToken)).ToString(),
             callbackDiagnostics,
             constructionDiagnostics,
