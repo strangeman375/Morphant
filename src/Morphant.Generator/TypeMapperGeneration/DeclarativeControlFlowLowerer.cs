@@ -1249,6 +1249,19 @@ internal static class DeclarativeControlFlowLowerer
 
         foreach (var local in program.BoundLocals)
         {
+            if (usedNames.Add(local.PreferredName))
+            {
+                names.Add(local.PlaceholderName, local.PreferredName);
+            }
+        }
+
+        foreach (var local in program.BoundLocals)
+        {
+            if (names.ContainsKey(local.PlaceholderName))
+            {
+                continue;
+            }
+
             names.Add(
                 local.PlaceholderName,
                 UserResultMappingPlanner.AllocateName(
