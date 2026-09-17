@@ -67,6 +67,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 - Preserve nullable local declarations and comments in transferred callbacks,
   including conditional extension calls that retain their static form.
+- Reconsider generated extension calls after edits to competing extensions,
+  global imports or inherited interfaces, even when the mapper is unchanged.
 - Keep LINQ variable names readable and stable across source line-ending changes,
   renaming only for real scope conflicts. Preserve escaped identifiers,
   query layout, interpolation bindings and inferred projection member names

@@ -350,6 +350,14 @@ internal static class MapperSemanticFingerprintBuilder
                 case INamedTypeSymbol namedType:
                     AddNamed(namedType);
 
+                    // Extension overloads and generic constraints can become
+                    // applicable after an inherited interface changes, even
+                    // when the receiver declaration and original call do not.
+                    foreach (var implementedInterface in namedType.AllInterfaces)
+                    {
+                        Add(implementedInterface);
+                    }
+
                     foreach (var typeArgument in namedType.TypeArguments)
                     {
                         Add(typeArgument);
