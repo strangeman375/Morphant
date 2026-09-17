@@ -1703,7 +1703,7 @@ internal static class DeclarativeControlFlowLowerer
         string expression,
         string identifier)
     {
-        return SyntaxFactory.ParseTokens(expression)
+        return ParseFragment(expression).DescendantTokens()
             .Any(token =>
                 token.IsKind(SyntaxKind.IdentifierToken) &&
                 StringComparer.Ordinal.Equals(
@@ -1720,17 +1720,12 @@ internal static class DeclarativeControlFlowLowerer
             return syntax;
         }
 
-        var builder = new System.Text.StringBuilder();
-
-        foreach (var token in SyntaxFactory.ParseTokens(syntax))
+        var fragment = ParseFragment(syntax);
+        return fragment.ReplaceTokens(fragment.DescendantTokens().Where(token =>
+                token.IsKind(SyntaxKind.IdentifierToken) && names.ContainsKey(token.ValueText)),
+            (token, _) =>
         {
-            if (!token.IsKind(SyntaxKind.IdentifierToken) ||
-                !names.TryGetValue(token.ValueText, out var replacement))
-            {
-                builder.Append(token.ToFullString());
-                continue;
-            }
-
+            var replacement = names[token.ValueText];
             var valueText = replacement.StartsWith(
                 "@",
                 StringComparison.Ordinal)
@@ -1741,16 +1736,24 @@ internal static class DeclarativeControlFlowLowerer
             {
                 replacement = "@" + replacement;
             }
-            builder.Append(
-                SyntaxFactory.Identifier(
+            return SyntaxFactory.Identifier(
                         token.LeadingTrivia,
                         SyntaxKind.IdentifierToken,
                         replacement,
                         valueText,
-                        token.TrailingTrivia)
-                    .ToFullString());
-        }
+                        token.TrailingTrivia);
+        }).ToFullString();
+    }
 
-        return builder.ToString();
+    private static SyntaxNode ParseFragment(string syntax)
+    {
+        // Parsing expressions exposes identifiers inside interpolation holes;
+        // lexical tokenization treats an entire interpolated string as one token.
+        if (syntax.StartsWith("case ", StringComparison.Ordinal) ||
+            syntax.StartsWith("default:", StringComparison.Ordinal))
+            return ((SwitchStatementSyntax)SyntaxFactory.ParseStatement(
+                "switch (0) {" + syntax + "break;}")).Sections[0].Labels[0];
+
+        return SyntaxFactory.ParseExpression(syntax);
     }
 }

@@ -1806,7 +1806,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             base.VisitAnonymousObjectMemberDeclarator(node)!;
 
         return node.NameEquals is null &&
-               IsRenamedQueryVariable(node.Expression)
+               HasChangedInferredName(node.Expression, rewritten.Expression)
             ? rewritten.WithNameEquals(SyntaxFactory.NameEquals(
                 ((IdentifierNameSyntax)node.Expression).WithoutTrivia()))
             : rewritten;
@@ -1818,7 +1818,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 
         return node.Parent is TupleExpressionSyntax tuple &&
                node.NameColon is null &&
-               IsRenamedQueryVariable(node.Expression) &&
+               HasChangedInferredName(node.Expression, rewritten.Expression) &&
                _semanticModel.GetTypeInfo(tuple).Type is
                    INamedTypeSymbol { IsTupleType: true } type &&
                type.TupleElements[tuple.Arguments.IndexOf(node)].Name ==
@@ -1828,12 +1828,15 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             : rewritten;
     }
 
-    private bool IsRenamedQueryVariable(ExpressionSyntax expression) =>
-        expression is IdentifierNameSyntax identifier &&
-        _semanticModel.GetSymbolInfo(identifier).Symbol is
-            IRangeVariableSymbol symbol &&
-        _localSubstitutions is not null &&
-        _localSubstitutions.ContainsKey(symbol);
+    private static bool HasChangedInferredName(
+        ExpressionSyntax original, ExpressionSyntax rewritten) =>
+        original is IdentifierNameSyntax identifier &&
+        identifier.Identifier.ValueText != (rewritten switch
+        {
+            IdentifierNameSyntax name => name.Identifier.ValueText,
+            MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
+            _ => null
+        });
 
     public override SyntaxNode? VisitSingleVariableDesignation(
         SingleVariableDesignationSyntax node)
