@@ -80,6 +80,65 @@ internal sealed partial class ExtensionInvocationTests
         }
     }
 
+    [TestCase(LanguageVersion.CSharp9)]
+    [TestCase(LanguageVersion.CSharp10)]
+    public void Unused_extension_bodies_and_comments_keep_early_mapper_analysis_cached(LanguageVersion version)
+    {
+        const string closer = """
+    public static class CloserOperations
+    {
+        public static int Describe(this string value) => 99;
+    }
+""";
+        const string extension = """
+#nullable enable
+#pragma warning disable CS1591
+namespace ExtensionCases
+{
+    public static class UnusedOperations
+    {
+        public static int Unused(this byte value, int offset = 1) => value + offset;
+        public static string Format(this byte value) { return value.ToString(); }
+    }
+}
+""";
+        var mapper = new GeneratorTestSourceFile("Mapper.cs",
+            SourceScopeSource.Replace(closer, string.Empty, StringComparison.Ordinal));
+        var driver = CSharpGeneratorDriver.Create([new MorphantGenerator().AsSourceGenerator()],
+            parseOptions: new CSharpParseOptions(version),
+            driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
+        var initial = GeneratorTestDriver.Run("ExtensionInvocation",
+            [mapper, new GeneratorTestSourceFile("Unused.cs", extension)], version, driver: driver);
+        var expected = version == LanguageVersion.CSharp9 ? IncrementalOverloads9Sources : IncrementalOverloads10Sources;
+        VerifyIncrementalExtensions(initial.Driver, initial.OutputCompilation, expected);
+        GeneratorDriver current = initial.Driver;
+        var compilation = initial.OutputCompilation.RemoveSyntaxTrees(current.GetRunResult().GeneratedTrees);
+        var tree = compilation.SyntaxTrees.Single(tree => tree.FilePath == "Unused.cs");
+        var edits = new[]
+        {
+            (extension.Replace("value + offset", "value + offset + 1", StringComparison.Ordinal), IncrementalStepRunReason.Cached),
+            (extension.Replace("public static int", "/* comment */ public static int", StringComparison.Ordinal), IncrementalStepRunReason.Cached),
+            (extension.Replace("return value.ToString();", "var result = value.ToString(); return result;", StringComparison.Ordinal), IncrementalStepRunReason.Cached),
+            (extension.Replace("offset = 1", "offset = 2", StringComparison.Ordinal), IncrementalStepRunReason.Modified),
+            (extension, IncrementalStepRunReason.Modified),
+            (extension.Replace("int Unused", "long Unused", StringComparison.Ordinal), IncrementalStepRunReason.Modified),
+            (extension, IncrementalStepRunReason.Modified),
+            (extension.Replace("string Format", "string? Format", StringComparison.Ordinal), IncrementalStepRunReason.Modified),
+            (extension, IncrementalStepRunReason.Modified)
+        };
+        foreach (var (source, reason) in edits)
+        {
+            var updated = tree.WithChangedText(SourceText.From(source, Encoding.UTF8));
+            compilation = compilation.ReplaceSyntaxTree(tree, updated);
+            tree = updated;
+            current = current.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
+            Assert.That(diagnostics, Is.Empty);
+            VerifyIncrementalExtensions(current, output, expected);
+            Assert.That(current.GetRunResult().Results.Single().TrackedSteps["BuildMapperDeclarationInfos"]
+                .SelectMany(step => step.Outputs).Select(output => output.Reason), Is.EqualTo(new[] { reason }));
+        }
+    }
+
     private static void VerifyIncrementalExtensions(GeneratorDriver driver, Compilation output, (string Hint, string Source)[] expected)
     {
         var result = driver.GetRunResult().Results.Single();
