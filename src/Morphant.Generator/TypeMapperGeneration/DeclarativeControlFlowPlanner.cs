@@ -326,6 +326,10 @@ internal static class DeclarativeControlFlowPlanner
             runtimeLocalPlaceholders.Add(
                 rangeVariable,
                 placeholder);
+            boundLocals.Add(
+                new DeclarativeBoundLocalSyntax(
+                    placeholder,
+                    rangeVariable.Name));
         }
 
         var transferableExpressions =

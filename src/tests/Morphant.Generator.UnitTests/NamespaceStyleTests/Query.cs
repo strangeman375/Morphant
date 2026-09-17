@@ -4,14 +4,29 @@ namespace Morphant.Generator.UnitTests.NamespaceStyleTests;
 
 internal sealed partial class NamespaceStyleTests
 {
+    [TestCase(LanguageVersion.CSharp9, "\n")]
+    [TestCase(LanguageVersion.CSharp9, "\r\n")]
+    [TestCase(LanguageVersion.CSharp10, "\n")]
+    [TestCase(LanguageVersion.CSharp10, "\r\n")]
+    public void Query_namespace_preserves_all_generated_sources(
+        LanguageVersion version, string lineEnding)
+    {
+        Verify(QuerySource.ReplaceLineEndings(lineEnding), version,
+            version == LanguageVersion.CSharp9 ? QueryBlockSources : QueryFileSources);
+    }
+
     [TestCase(LanguageVersion.CSharp9)]
     [TestCase(LanguageVersion.CSharp10)]
-    public void Query_namespace_preserves_all_generated_sources(LanguageVersion version)
+    public void Query_names_remain_stable_after_line_ending_and_adjacent_edits(
+        LanguageVersion version)
     {
-        // Generated query-local names include source offsets; keep this fixture
-        // stable when Git converts the checkout's line endings on Windows.
-        Verify(QuerySource.ReplaceLineEndings("\n"), version,
-            version == LanguageVersion.CSharp9 ? QueryBlockSources : QueryFileSources);
+        var expected = version == LanguageVersion.CSharp9
+            ? QueryBlockSources : QueryFileSources;
+        var initial = Verify(QuerySource.ReplaceLineEndings("\n"), version, expected);
+        var updated = Verify(QuerySource.ReplaceLineEndings("\r\n"), version,
+            expected, initial.Driver);
+        Verify("// Unrelated edit before the mapper.\r\n\r\n" +
+            QuerySource.ReplaceLineEndings("\r\n"), version, expected, updated.Driver);
     }
 
     // lang=c#
@@ -381,8 +396,8 @@ namespace Example
             global::Example.Source source)
         {
             return new global::Example.Destination(
-                value: string.Join(",", from __morphantDeclarativeLocal613_0 in source.Values
-                    select __morphantDeclarativeLocal613_0 + 1));
+                value: string.Join(",", from value in source.Values
+                    select value + 1));
         }
 
         private global::Example.Destination __Update(
@@ -723,8 +738,8 @@ public partial class Mapper :
         global::Example.Source source)
     {
         return new global::Example.Destination(
-            value: string.Join(",", from __morphantDeclarativeLocal613_0 in source.Values
-                select __morphantDeclarativeLocal613_0 + 1));
+            value: string.Join(",", from value in source.Values
+                select value + 1));
     }
 
     private global::Example.Destination __Update(
