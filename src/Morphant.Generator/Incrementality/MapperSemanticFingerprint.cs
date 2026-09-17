@@ -81,6 +81,12 @@ internal static class MapperSemanticFingerprintBuilder
             }
         }
 
+        ExtensionLookupDependencies.Add(
+            compilation,
+            mapperType,
+            dependencyTypes.Add,
+            cancellationToken);
+
         var dependencies = TypeContractDependencies.Build(
                 dependencyTypes.Types,
                 compilation,
