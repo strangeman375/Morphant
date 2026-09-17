@@ -168,6 +168,8 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             .FirstOrDefault(node => node is CheckedExpressionSyntax or CheckedStatementSyntax);
         var isAsync = original.DescendantNodes(node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
             .OfType<AwaitExpressionSyntax>().Any();
+        if (isAsync && original.Initializer!.IsKind(SyntaxKind.CollectionInitializerExpression))
+            return RewriteAwaitedCollection(original, rewritten, scope, typeName, indentation);
         var innerIndentation = indentation + (overflow is null ? "    " : "        ");
         var receiver = SyntaxFactory.IdentifierName(receiverName);
         var (allocation, remaining) = Split(original, rewritten);
@@ -193,9 +195,11 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         body = body.ReplaceNodes(body.GetAnnotatedNodes(Declaration).OfType<DeclarationExpressionSyntax>()
             .Where(declaration => declarations.Contains(declaration.GetAnnotations(Declaration).Single().Data!)),
             (declaration, _) => SyntaxFactory.IdentifierName(((SingleVariableDesignationSyntax)declaration.Designation).Identifier).WithTriviaFrom(declaration));
-        var helper = SyntaxFactory.LocalFunctionStatement(SyntaxFactory.ParseTypeName(isAsync ? "global::System.Threading.Tasks.Task<" + typeName + ">" : typeName), functionName)
+        // A new async boundary would isolate AsyncLocal mutations and add a
+        // continuation-context capture. Complex object initializers that still
+        // require moving await are rejected by the ordinary transfer validator.
+        var helper = SyntaxFactory.LocalFunctionStatement(SyntaxFactory.ParseTypeName(typeName), functionName)
             .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)).NormalizeWhitespace()).WithBody(body);
-        if (isAsync) helper = helper.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.AsyncKeyword).WithTrailingTrivia(SyntaxFactory.Space)));
         // Format the signature alone. The body contains user expressions with
         // their original multiline layout and literal token contents.
         helper = helper.WithReturnType(helper.ReturnType.WithTrailingTrivia(SyntaxFactory.Space))
@@ -204,9 +208,62 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         scope.Helpers.Add(helper);
         ExpressionSyntax invocation = SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName(functionName),
             SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)).NormalizeWhitespace());
-        if (isAsync) invocation = SyntaxFactory.ParenthesizedExpression(SyntaxFactory.AwaitExpression(invocation)
-            .WithAwaitKeyword(SyntaxFactory.Token(SyntaxKind.AwaitKeyword).WithTrailingTrivia(SyntaxFactory.Space)));
         return invocation.WithTriviaFrom(original);
+    }
+
+    private ExpressionSyntax RewriteAwaitedCollection(BaseObjectCreationExpressionSyntax original,
+        BaseObjectCreationExpressionSyntax rewritten, Scope scope, string typeName, string indentation)
+    {
+        ExpressionSyntax result = ExplicitAllocation(WithoutInitializer(rewritten), typeName);
+        var initializer = rewritten.Initializer!;
+        var metadata = CollectionCallerInformation.Metadata(initializer);
+        for (var index = 0; index < initializer.Expressions.Count; index++)
+        {
+            var types = metadata[index * 3 + 2].Split('\u001f');
+            var template = metadata[index * 3 + 1];
+            var key = typeName + "\0" + template + "\0" + metadata[index * 3 + 2];
+            if (!scope.ElementHelpers.TryGetValue(key, out var name))
+            {
+                name = Allocate(scope, "Add" + _semantic.GetTypeInfo(original, _cancellationToken).Type!.Name + "Item");
+                scope.ElementHelpers.Add(key, name);
+                var parameters = new List<ParameterSyntax> { SyntaxFactory.Parameter(SyntaxFactory.Identifier("collection")).WithType(SyntaxFactory.ParseTypeName(typeName)) };
+                var values = new List<ExpressionSyntax>();
+                for (var ordinal = 0; ordinal < types.Length; ordinal++)
+                {
+                    var value = types.Length == 1 ? "value" : "value" + (ordinal + 1).ToString(CultureInfo.InvariantCulture);
+                    parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(value)).WithType(SyntaxFactory.ParseTypeName(types[ordinal])));
+                    values.Add(SyntaxFactory.IdentifierName(value));
+                }
+                var receiver = SyntaxFactory.IdentifierName("collection");
+                var body = Block(new[]
+                {
+                    Line(SyntaxFactory.ExpressionStatement(AddCall(template, receiver, values)), indentation + "    "),
+                    Line(SyntaxFactory.ReturnStatement(receiver), indentation + "    ")
+                }, indentation);
+                var helper = SyntaxFactory.LocalFunctionStatement(SyntaxFactory.ParseTypeName(typeName).WithTrailingTrivia(SyntaxFactory.Space), name)
+                    .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.StaticKeyword).WithTrailingTrivia(SyntaxFactory.Space)))
+                    .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)).NormalizeWhitespace()
+                        .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed)).WithBody(body)
+                    .WithLeadingTrivia(SyntaxFactory.CarriageReturnLineFeed, SyntaxFactory.Whitespace(indentation));
+                scope.Helpers.Add(helper);
+            }
+            var arguments = new[] { SyntaxFactory.Argument(result.WithoutTrivia()) }.Concat(
+                CollectionCallerInformation.Arguments(initializer.Expressions[index]).Take(types.Length).Select(SyntaxFactory.Argument));
+            result = SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName(name), SyntaxFactory.ArgumentList(
+                SyntaxFactory.SeparatedList(arguments, Enumerable.Repeat(SyntaxFactory.Token(SyntaxKind.CommaToken)
+                    .WithTrailingTrivia(SyntaxFactory.Space), types.Length))));
+        }
+        return result.WithTriviaFrom(original);
+    }
+
+    private static ExpressionSyntax AddCall(string template, ExpressionSyntax receiver, IReadOnlyList<ExpressionSyntax> arguments)
+    {
+        var call = SyntaxFactory.ParseExpression(template);
+        var substitutions = call.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
+            .Where(name => name.Identifier.ValueText == CollectionCallerInformation.Receiver ||
+                name.Identifier.ValueText.StartsWith(CollectionCallerInformation.ArgumentPrefix, StringComparison.Ordinal)).ToArray();
+        return call.ReplaceNodes(substitutions, (name, _) => name.Identifier.ValueText == CollectionCallerInformation.Receiver
+            ? receiver : arguments[int.Parse(name.Identifier.ValueText.Substring(CollectionCallerInformation.ArgumentPrefix.Length), CultureInfo.InvariantCulture)]);
     }
 
     private bool NeedsLowering(BaseObjectCreationExpressionSyntax creation) => creation.Initializer is { } initializer &&
@@ -295,12 +352,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             {
                 var element = initializer.Expressions[index];
                 var arguments = CollectionCallerInformation.Arguments(element);
-                var call = SyntaxFactory.ParseExpression(metadata[index * 2 + 1]);
-                var substitutions = call.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
-                    .Where(name => name.Identifier.ValueText == CollectionCallerInformation.Receiver ||
-                        name.Identifier.ValueText.StartsWith(CollectionCallerInformation.ArgumentPrefix, StringComparison.Ordinal)).ToArray();
-                call = call.ReplaceNodes(substitutions, (name, _) => name.Identifier.ValueText == CollectionCallerInformation.Receiver
-                    ? receiver : arguments[int.Parse(name.Identifier.ValueText.Substring(CollectionCallerInformation.ArgumentPrefix.Length), CultureInfo.InvariantCulture)]);
+                var call = AddCall(metadata[index * 3 + 1], receiver, arguments.ToArray());
                 var leading = element.GetLeadingTrivia();
                 if (index == 0) leading = initializer.OpenBraceToken.TrailingTrivia.AddRange(leading);
                 var trailing = element.GetTrailingTrivia();
@@ -493,5 +545,6 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         public SyntaxNode Owner { get; }
         public bool Isolated { get; }
         public List<LocalFunctionStatementSyntax> Helpers { get; } = new();
+        public Dictionary<string, string> ElementHelpers { get; } = new(StringComparer.Ordinal);
     }
 }

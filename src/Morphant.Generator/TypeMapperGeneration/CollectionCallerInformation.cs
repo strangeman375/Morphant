@@ -35,12 +35,15 @@ internal static class CollectionCallerInformation
         {
             var element = elements[index];
             var arguments = Arguments(element);
+            var argumentTypes = string.Join("\u001f", Arguments(original.Expressions[index]).Select(argument =>
+                typeName(semantic.GetTypeInfo(argument).ConvertedType ?? semantic.GetTypeInfo(argument).Type!)));
             var placeholders = Enumerable.Range(0, arguments.Count)
                 .Select(i => ArgumentPrefix + i.ToString(CultureInfo.InvariantCulture)).ToList();
             if (operation.Initializers[index] is not IInvocationOperation call)
             {
                 metadata.Add(string.Empty);
                 metadata.Add(Receiver + ".Add(" + string.Join(", ", placeholders) + ")");
+                metadata.Add(argumentTypes);
                 continue;
             }
 
@@ -60,6 +63,7 @@ internal static class CollectionCallerInformation
             // not source literals. An explicit Add can leave those arguments omitted.
             metadata.Add((defaults.Any(argument => !HasConstant(argument.Value)) ? "!" : "") + MethodKey(method, typeName));
             metadata.Add(target + "." + name + "(" + string.Join(", ", placeholders) + ")");
+            metadata.Add(argumentTypes);
             foreach (var argument in defaults)
                 arguments = arguments.Add(SyntaxFactory.ParseExpression(Constant(argument, typeName)));
 
@@ -119,9 +123,9 @@ internal static class CollectionCallerInformation
         var metadata = Metadata(initializer);
         for (var index = 0; index < initializer.Expressions.Count; index++)
         {
-            if (metadata[index * 2].Length == 0) continue;
+            if (metadata[index * 3].Length == 0) continue;
             if (semantic.GetCollectionInitializerSymbolInfo(initializer.Expressions[index], token).Symbol is not IMethodSymbol method ||
-                MethodKey(method, TypeMapperMappingTypePolicy.GetGeneratedTypeName) != metadata[index * 2]) return false;
+                MethodKey(method, TypeMapperMappingTypePolicy.GetGeneratedTypeName) != metadata[index * 3]) return false;
         }
         return true;
     }
