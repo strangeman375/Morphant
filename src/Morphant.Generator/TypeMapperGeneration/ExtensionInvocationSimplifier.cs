@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -20,23 +21,25 @@ internal static class ExtensionInvocationSimplifier
     private const string NodeIdentity = "Morphant.ExtensionBinding";
     private const string ImportIdentity = "Morphant.ExtensionImport";
     private const string ConditionalIndentation = "Morphant.ExtensionIndentation";
+    private const string MarkerPrefix = "/*Morphant.Extension";
+    private static readonly ConditionalWeakTable<Compilation, MarkerScope> MarkerScopes = new();
 
-    public static SimpleNameSyntax MarkCall(SimpleNameSyntax name) =>
-        name.WithIdentifier(Mark(name.Identifier, CallMarker));
+    public static SimpleNameSyntax MarkCall(SimpleNameSyntax name, Compilation compilation) =>
+        name.WithIdentifier(Mark(name.Identifier, CallMarker, compilation));
 
-    public static SyntaxToken MarkConditional(SyntaxToken token, ConditionalAccessExpressionSyntax source) =>
+    public static SyntaxToken MarkConditional(SyntaxToken token, ConditionalAccessExpressionSyntax source, Compilation compilation) =>
         Mark(token, Metadata(ConditionalMarker, Indentation(source),
             source.Expression.GetTrailingTrivia().ToFullString() + source.OperatorToken.LeadingTrivia,
-            source.OperatorToken.TrailingTrivia.ToFullString(), source.WhenNotNull.GetLeadingTrivia().ToFullString()));
+            source.OperatorToken.TrailingTrivia.ToFullString(), source.WhenNotNull.GetLeadingTrivia().ToFullString()), compilation);
 
     public static BlockSyntax MarkBody(BlockSyntax body, SyntaxNode function,
-        SyntaxToken arrow, ExpressionSyntax expression)
+        SyntaxToken arrow, ExpressionSyntax expression, Compilation compilation)
     {
         var marker = Metadata(BodyMarker, Indentation(function),
             arrow.GetPreviousToken().TrailingTrivia.ToFullString() + arrow.LeadingTrivia,
             arrow.TrailingTrivia.ToFullString() + expression.GetLeadingTrivia(),
             expression.GetTrailingTrivia().ToFullString(), function.GetTrailingTrivia().ToFullString());
-        return body.WithOpenBraceToken(Mark(body.OpenBraceToken, marker));
+        return body.WithOpenBraceToken(Mark(body.OpenBraceToken, marker, compilation));
     }
 
     private static string Metadata(string marker, params string[] layout) =>
@@ -47,8 +50,28 @@ internal static class ExtensionInvocationSimplifier
         SyntaxFactory.ParseLeadingTrivia((layout[index] + suffix).Replace("\r\n", "\n").Replace("\r", "\n")
             .Replace("\n" + layout[0], "\n" + Indentation(target)).Replace("\n", "\r\n"));
 
-    private static SyntaxToken Mark(SyntaxToken token, string marker) =>
-        token.WithTrailingTrivia(token.TrailingTrivia.Add(SyntaxFactory.Comment(marker)));
+    private static SyntaxToken Mark(SyntaxToken token, string marker, Compilation compilation) =>
+        token.WithTrailingTrivia(token.TrailingTrivia.Add(SyntaxFactory.Comment(
+            Scope(compilation).Prefix + marker.Substring(MarkerPrefix.Length))));
+
+    private static MarkerScope Scope(Compilation compilation) =>
+        MarkerScopes.GetValue(compilation, static source => new MarkerScope(source));
+
+    private sealed class MarkerScope
+    {
+        public string Prefix { get; }
+
+        public MarkerScope(Compilation compilation)
+        {
+            // The entire compilation matters: callbacks may be inherited or
+            // declared in another partial file. Include literals as well as
+            // comments, so copied user text can never become control metadata.
+            var texts = compilation.SyntaxTrees.Select(tree => tree.GetText().ToString()).ToArray();
+            var prefix = MarkerPrefix;
+            while (texts.Any(text => text.IndexOf(prefix, StringComparison.Ordinal) >= 0)) prefix += "_";
+            Prefix = prefix;
+        }
+    }
 
     private static bool HasMarker(SyntaxToken token, string marker) =>
         token.HasAnnotations(marker);
@@ -64,9 +87,10 @@ internal static class ExtensionInvocationSimplifier
     public static string Simplify(string source, CSharpCompilation compilation,
         CSharpParseOptions? options, CancellationToken cancellationToken)
     {
-        if (source.IndexOf("/*Morphant.Extension", StringComparison.Ordinal) < 0) return source;
+        var prefix = Scope(compilation).Prefix;
+        if (source.IndexOf(prefix, StringComparison.Ordinal) < 0) return source;
         var parsed = ReadMarkers(CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken)
-            .GetCompilationUnitRoot(cancellationToken));
+            .GetCompilationUnitRoot(cancellationToken), prefix);
         var ordinal = 0;
         var root = parsed.ReplaceNodes(parsed.DescendantNodes().Where(Observe),
             (_, rewritten) => rewritten.WithAdditionalAnnotations(new SyntaxAnnotation(
@@ -317,7 +341,7 @@ internal static class ExtensionInvocationSimplifier
                 ? trivia : trivia.Add(SyntaxFactory.Space);
     }
 
-    private static CompilationUnitSyntax ReadMarkers(CompilationUnitSyntax root)
+    private static CompilationUnitSyntax ReadMarkers(CompilationUnitSyntax root, string markerPrefix)
     {
         var tokens = root.DescendantTokens().ToArray();
         var replacements = new Dictionary<SyntaxToken, SyntaxToken>();
@@ -326,19 +350,29 @@ internal static class ExtensionInvocationSimplifier
             var previous = tokens[index - 1];
             var current = tokens[index];
             var gap = previous.TrailingTrivia.AddRange(current.LeadingTrivia);
-            var bodyPrefix = BodyMarker.Substring(0, BodyMarker.Length - 2) + ":";
-            var conditionalPrefix = ConditionalMarker.Substring(0, ConditionalMarker.Length - 2) + ":";
+            var callMarker = markerPrefix + "Call*/";
+            var bodyPrefix = markerPrefix + "Body:";
+            var conditionalPrefix = markerPrefix + "Conditional:";
             var marker = gap.FirstOrDefault(trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) &&
-                (trivia.ToString() == CallMarker || trivia.ToString().StartsWith(bodyPrefix, StringComparison.Ordinal) ||
+                (trivia.ToString() == callMarker || trivia.ToString().StartsWith(bodyPrefix, StringComparison.Ordinal) ||
                     trivia.ToString().StartsWith(conditionalPrefix, StringComparison.Ordinal)));
             if (marker == default) continue;
 
             var text = marker.ToString();
             var prefix = text.StartsWith(bodyPrefix, StringComparison.Ordinal) ? bodyPrefix : conditionalPrefix;
-            var annotation = text != CallMarker
-                ? new SyntaxAnnotation(prefix == bodyPrefix ? BodyMarker : ConditionalMarker,
-                    Encoding.UTF8.GetString(Convert.FromBase64String(text.Substring(prefix.Length, text.Length - prefix.Length - 2))))
-                : new SyntaxAnnotation(text);
+            SyntaxAnnotation annotation;
+            if (text == callMarker) annotation = new SyntaxAnnotation(CallMarker);
+            else
+            {
+                string data;
+                try
+                {
+                    data = Encoding.UTF8.GetString(Convert.FromBase64String(text.Substring(prefix.Length, text.Length - prefix.Length - 2)));
+                }
+                catch (FormatException) { continue; }
+                if (data.Split('\0').Length != (prefix == bodyPrefix ? 5 : 4)) continue;
+                annotation = new SyntaxAnnotation(prefix == bodyPrefix ? BodyMarker : ConditionalMarker, data);
+            }
             gap = gap.Remove(marker);
             if (gap.All(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)))
                 gap = annotation.Kind == ConditionalMarker && !current.IsKind(SyntaxKind.CloseParenToken)

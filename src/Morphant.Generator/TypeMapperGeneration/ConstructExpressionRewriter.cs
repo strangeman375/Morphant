@@ -840,14 +840,14 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         RequiresConditionalStatementBody(node, node.Body)
             ? node.WithParameter((ParameterSyntax)Visit(node.Parameter)!)
                 .WithBody(ExtensionInvocationSimplifier.MarkBody(SyntaxFactory.Block(RewriteConditionalStatement((ExpressionSyntax)node.Body)),
-                    node, node.ArrowToken, (ExpressionSyntax)node.Body))
+                    node, node.ArrowToken, (ExpressionSyntax)node.Body, _semanticModel.Compilation))
             : base.VisitSimpleLambdaExpression(node);
 
     public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) =>
         RequiresConditionalStatementBody(node, node.Body)
             ? node.WithParameterList((ParameterListSyntax)Visit(node.ParameterList)!)
                 .WithBody(ExtensionInvocationSimplifier.MarkBody(SyntaxFactory.Block(RewriteConditionalStatement((ExpressionSyntax)node.Body)),
-                    node, node.ArrowToken, (ExpressionSyntax)node.Body))
+                    node, node.ArrowToken, (ExpressionSyntax)node.Body, _semanticModel.Compilation))
             : base.VisitParenthesizedLambdaExpression(node);
 
     private bool RequiresConditionalStatementBody(SyntaxNode function, CSharpSyntaxNode body) =>
@@ -895,7 +895,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 .WithDesignation(
                     SyntaxFactory.SingleVariableDesignation(
                         ExtensionInvocationSimplifier.MarkConditional(
-                            SyntaxFactory.Identifier(Identifier(receiverName)), node))));
+                            SyntaxFactory.Identifier(Identifier(receiverName)), node, _semanticModel.Compilation))));
 
         // Bind the entire continuation to the captured receiver, including
         // ordinary members, indexers and further conditional accesses.
@@ -1000,7 +1000,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     containingType.WithTrailingTrivia(rewrittenReceiver.GetTrailingTrivia()),
-                    ExtensionInvocationSimplifier.MarkCall(rewrittenMethodName))
+                    ExtensionInvocationSimplifier.MarkCall(rewrittenMethodName, _semanticModel.Compilation))
                     .WithOperatorToken(node.Expression switch
                     {
                         MemberAccessExpressionSyntax access => access.OperatorToken,
@@ -1647,7 +1647,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         var statementBody = node.ExpressionBody is { } arrow &&
             RequiresConditionalStatementBody(node, arrow.Expression)
                 ? ExtensionInvocationSimplifier.MarkBody(SyntaxFactory.Block(RewriteConditionalStatement(arrow.Expression)),
-                    node, arrow.ArrowToken, arrow.Expression)
+                    node, arrow.ArrowToken, arrow.Expression, _semanticModel.Compilation)
                 : null;
 
         return node
