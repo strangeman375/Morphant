@@ -1799,6 +1799,38 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             (ExpressionSyntax)base.VisitIdentifierName(node)!);
     }
 
+    public override SyntaxNode? VisitAnonymousObjectMemberDeclarator(
+        AnonymousObjectMemberDeclaratorSyntax node)
+    {
+        var rewritten = (AnonymousObjectMemberDeclaratorSyntax)
+            base.VisitAnonymousObjectMemberDeclarator(node)!;
+
+        return node.NameEquals is null &&
+               IsRenamedQueryVariable(node.Expression)
+            ? rewritten.WithNameEquals(SyntaxFactory.NameEquals(
+                ((IdentifierNameSyntax)node.Expression).WithoutTrivia()))
+            : rewritten;
+    }
+
+    public override SyntaxNode? VisitArgument(ArgumentSyntax node)
+    {
+        var rewritten = (ArgumentSyntax)base.VisitArgument(node)!;
+
+        return node.Parent is TupleExpressionSyntax &&
+               node.NameColon is null &&
+               IsRenamedQueryVariable(node.Expression)
+            ? rewritten.WithNameColon(SyntaxFactory.NameColon(
+                ((IdentifierNameSyntax)node.Expression).WithoutTrivia()))
+            : rewritten;
+    }
+
+    private bool IsRenamedQueryVariable(ExpressionSyntax expression) =>
+        expression is IdentifierNameSyntax identifier &&
+        _semanticModel.GetSymbolInfo(identifier).Symbol is
+            IRangeVariableSymbol symbol &&
+        _localSubstitutions is not null &&
+        _localSubstitutions.ContainsKey(symbol);
+
     public override SyntaxNode? VisitSingleVariableDesignation(
         SingleVariableDesignationSyntax node)
     {

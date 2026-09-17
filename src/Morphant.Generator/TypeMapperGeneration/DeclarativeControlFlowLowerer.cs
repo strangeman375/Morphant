@@ -1723,6 +1723,11 @@ internal static class DeclarativeControlFlowLowerer
                 StringComparison.Ordinal)
                 ? replacement.Substring(1)
                 : replacement;
+            if (SyntaxFacts.GetKeywordKind(replacement) != SyntaxKind.None ||
+                SyntaxFacts.GetContextualKeywordKind(replacement) != SyntaxKind.None)
+            {
+                replacement = "@" + replacement;
+            }
             builder.Append(
                 SyntaxFactory.Identifier(
                         token.LeadingTrivia,
