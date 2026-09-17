@@ -140,7 +140,8 @@ internal static class CollectionCallerInformation
         ConstructExpressionRewriter.HasCallerInfoAttribute(parameter);
 
     private static bool HasConstant(IOperation value) => value is IConversionOperation conversion
-        ? HasConstant(conversion.Operand) : value.ConstantValue.HasValue || value is IDefaultValueOperation;
+        ? HasConstant(conversion.Operand) : value is IDefaultValueOperation || value.ConstantValue.HasValue &&
+            value.ConstantValue.Value is null or string or bool or char or byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal;
 
     private static string MethodKey(IMethodSymbol method, Func<ITypeSymbol, string> typeName)
     {
@@ -156,7 +157,7 @@ internal static class CollectionCallerInformation
         var value = argument.Value;
         while (value is IConversionOperation conversion) value = conversion.Operand;
         var type = argument.Parameter!.Type;
-        if (!value.ConstantValue.HasValue || value.ConstantValue.Value is null)
+        if (!HasConstant(value) || !value.ConstantValue.HasValue || value.ConstantValue.Value is null)
             return "default(" + typeName(type) + ")!";
         var constant = value.ConstantValue.Value;
         var text = constant switch

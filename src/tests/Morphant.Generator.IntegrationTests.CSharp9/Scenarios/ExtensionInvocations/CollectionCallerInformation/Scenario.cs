@@ -69,10 +69,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
             {
                 Trace.Events.Clear();
                 var actual = update ? mapper.Update(3, "previous") : mapper.Create(3);
-                const string expected = "6:7:Configure:CollectionCalls.cs:100:source.Twice()|8:9:Configure:CollectionCalls.cs:100:(source + 1).Twice()|6:Configure:110:source.Twice()|3:Configure";
+                var file = System.IO.Path.Combine(SourceDirectory(), "CollectionCalls.cs");
+                var expected = "6:7:Configure:" + file + ":100:source.Twice()|8:9:Configure:" + file + ":100:(source + 1).Twice()|6:Configure:110:source.Twice()|3:Configure";
                 if (actual != expected || string.Join(",", Trace.Events) != "new,value:3,add:6,value:4,add:8,value:3")
-                    throw new InvalidOperationException("Collection caller values, overloads, argument expressions and order must match their source call sites.");
+                    throw new InvalidOperationException("Collection caller values, overloads, argument expressions and order must match their source call sites: " + actual + "; " + string.Join(",", Trace.Events));
             }
         }
+
+        private static string SourceDirectory([CallerFilePath] string file = "") => System.IO.Path.GetDirectoryName(file)!;
     }
 }
