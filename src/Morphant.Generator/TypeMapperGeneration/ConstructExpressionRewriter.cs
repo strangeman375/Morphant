@@ -1819,7 +1819,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         return node.Parent is TupleExpressionSyntax tuple &&
                node.NameColon is null &&
                IsRenamedQueryVariable(node.Expression) &&
-               _semanticModel.GetTypeInfo(tuple).Type is INamedTypeSymbol type &&
+               _semanticModel.GetTypeInfo(tuple).Type is
+                   INamedTypeSymbol { IsTupleType: true } type &&
                type.TupleElements[tuple.Arguments.IndexOf(node)].Name ==
                    ((IdentifierNameSyntax)node.Expression).Identifier.ValueText
             ? rewritten.WithNameColon(SyntaxFactory.NameColon(
