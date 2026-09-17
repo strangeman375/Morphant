@@ -149,7 +149,10 @@ internal static class CollectionCallerInformation
             method = method.IsGenericMethod ? reduced.ConstructedFrom.Construct(method.TypeArguments, method.TypeArgumentNullableAnnotations) : reduced;
         return typeName(method.ContainingType) + "." + method.MetadataName + "<" +
             string.Join(",", method.TypeArguments.Select(typeName)) + ">(" +
-            string.Join(",", method.Parameters.Select(parameter => parameter.RefKind + ":" + typeName(parameter.Type))) + ")";
+            string.Join(",", method.Parameters.Select(parameter => parameter.RefKind + ":" + typeName(parameter.Type))) + ")|" +
+            method.OriginalDefinition.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat
+                .WithMemberOptions(SymbolDisplayMemberOptions.IncludeContainingType | SymbolDisplayMemberOptions.IncludeParameters)
+                .WithParameterOptions(SymbolDisplayParameterOptions.IncludeType | SymbolDisplayParameterOptions.IncludeParamsRefOut));
     }
 
     private static string Constant(IArgumentOperation argument, Func<ITypeSymbol, string> typeName)

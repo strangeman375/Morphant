@@ -273,7 +273,9 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         {
             if (declaration.Designation is not SingleVariableDesignationSyntax designation ||
                 _semantic.GetDeclaredSymbol(designation, _cancellationToken) is not ILocalSymbol local ||
-                flow?.ReadOutside.Contains(local, SymbolEqualityComparer.Default) != true) continue;
+                !scope.Owner.DescendantNodes().OfType<IdentifierNameSyntax>().Any(name =>
+                    !creation.Span.Contains(name.Span) && SymbolEqualityComparer.Default.Equals(local,
+                        _semantic.GetSymbolInfo(name, _cancellationToken).Symbol))) continue;
             declarations.Add(declaration.SpanStart.ToString(CultureInfo.InvariantCulture));
             parameters.Add(SyntaxFactory.Parameter(designation.Identifier).WithType(SyntaxFactory.ParseTypeName(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(local.Type)))
