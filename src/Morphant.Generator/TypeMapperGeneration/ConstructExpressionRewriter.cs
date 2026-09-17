@@ -1044,6 +1044,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 arguments));
     }
 
+    public override SyntaxNode? VisitInitializerExpression(InitializerExpressionSyntax node) =>
+        CollectionCallerInformation.Mark(node,
+            (InitializerExpressionSyntax)base.VisitInitializerExpression(node)!,
+            _semanticModel, type => TypeMapperMappingTypePolicy.GetGeneratedTypeName(SubstituteMapperType(type)));
+
     public override SyntaxNode? VisitCastExpression(
         CastExpressionSyntax node)
     {
@@ -1130,7 +1135,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
     }
 
-    private static bool HasCallerInfoAttribute(
+    internal static bool HasCallerInfoAttribute(
         IParameterSymbol parameter)
     {
         return parameter.GetAttributes().Any(attribute =>

@@ -31,7 +31,9 @@ internal sealed class TypeMapperProbe
 
     public TypeMapperModel Model { get; }
 
-    public SourceText Source => _source ??= TypeMapperEmitter.EmitTransferProbe(Model);
+    public SourceText Source => _source ??= SourceText.From(
+        CollectionCallerInformation.Restore(TypeMapperEmitter.EmitTransferProbe(Model).ToString(),
+            _compilation, _parseOptions, _cancellationToken), System.Text.Encoding.UTF8);
 
     public SyntaxTree Tree => _tree ??= CSharpSyntaxTree.ParseText(
         Source, _parseOptions, "Morphant.TransferProbe.g.cs", _cancellationToken);

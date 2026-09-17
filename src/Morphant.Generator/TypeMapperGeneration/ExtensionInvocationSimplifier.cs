@@ -57,6 +57,11 @@ internal static class ExtensionInvocationSimplifier
     private static MarkerScope Scope(Compilation compilation) =>
         MarkerScopes.GetValue(compilation, static source => new MarkerScope(source));
 
+    internal static string MarkerScopePrefix(Compilation compilation) => Scope(compilation).Prefix;
+
+    internal static SyntaxToken MarkCollection(SyntaxToken token, string[] calls, Compilation compilation) =>
+        Mark(token, Metadata("/*Morphant.ExtensionCollection*/", calls), compilation);
+
     private sealed class MarkerScope
     {
         public string Prefix { get; }
@@ -87,6 +92,7 @@ internal static class ExtensionInvocationSimplifier
     public static string Simplify(string source, CSharpCompilation compilation,
         CSharpParseOptions? options, CancellationToken cancellationToken)
     {
+        source = CollectionCallerInformation.Restore(source, compilation, options, cancellationToken);
         var prefix = Scope(compilation).Prefix;
         if (source.IndexOf(prefix, StringComparison.Ordinal) < 0) return source;
         var parsed = ReadMarkers(CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken)
