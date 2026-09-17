@@ -37,7 +37,10 @@ internal sealed partial class ExtensionInvocationTests
         var initial = GeneratorTestDriver.Run("ExtensionInvocation",
             new[] { mapperFile, new GeneratorTestSourceFile("Overloads.cs", absent) }, version);
         var before = version == LanguageVersion.CSharp9 ? IncrementalOverloads9Sources : IncrementalOverloads10Sources;
-        var after = version == LanguageVersion.CSharp9 ? SourceScope9Sources : SourceScope10Sources;
+        // A method in the mapper's own namespace changes the original binding
+        // too, so both files correctly retain the same extension-call syntax.
+        var after = scope == "ExtensionCases.Mappers" ? before :
+            version == LanguageVersion.CSharp9 ? SourceScope9Sources : SourceScope10Sources;
         var driver = initial.Driver;
         var compilation = initial.OutputCompilation.RemoveSyntaxTrees(driver.GetRunResult().GeneratedTrees);
         var mapperTree = compilation.SyntaxTrees.Single(tree => tree.FilePath == "Mapper.cs");
