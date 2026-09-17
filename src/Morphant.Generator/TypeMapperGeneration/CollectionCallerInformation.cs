@@ -92,9 +92,15 @@ internal static class CollectionCallerInformation
         {
             var marker = marked[original].ToString();
             var data = Encoding.UTF8.GetString(Convert.FromBase64String(marker.Substring(prefix.Length, marker.Length - prefix.Length - 2)));
-            return rewritten.ReplaceTrivia(rewritten.DescendantTrivia().Where(trivia => trivia.ToString() == marker),
-                    (_, _) => default)
-                .WithAdditionalAnnotations(new SyntaxAnnotation(Annotation, data));
+            rewritten = rewritten.ReplaceTrivia(rewritten.DescendantTrivia().Where(trivia => trivia.ToString() == marker), (_, _) => default);
+            rewritten = rewritten.ReplaceTokens(rewritten.DescendantTokens(), (token, _) => token
+                .WithLeadingTrivia(TrimLineEnds(token.LeadingTrivia)).WithTrailingTrivia(TrimLineEnds(token.TrailingTrivia)));
+            rewritten = rewritten.ReplaceNodes(rewritten.Expressions.OfType<InitializerExpressionSyntax>(), (_, element) => element
+                .WithOpenBraceToken(element.OpenBraceToken.TrailingTrivia.Count == 0
+                    ? element.OpenBraceToken.WithTrailingTrivia(SyntaxFactory.Space) : element.OpenBraceToken)
+                .WithCloseBraceToken(element.CloseBraceToken.LeadingTrivia.Count == 0
+                    ? element.CloseBraceToken.WithLeadingTrivia(SyntaxFactory.Space) : element.CloseBraceToken));
+            return rewritten.WithAdditionalAnnotations(new SyntaxAnnotation(Annotation, data));
         });
         var tree = CSharpSyntaxTree.Create(root, options);
         root = tree.GetCompilationUnitRoot(cancellationToken);
@@ -119,6 +125,9 @@ internal static class CollectionCallerInformation
 
     internal static string[] Metadata(InitializerExpressionSyntax initializer) =>
         initializer.GetAnnotations(Annotation).Single().Data!.Split('\0');
+
+    private static SyntaxTriviaList TrimLineEnds(SyntaxTriviaList trivia) => SyntaxFactory.TriviaList(trivia.Where((item, index) =>
+        !item.IsKind(SyntaxKind.WhitespaceTrivia) || index + 1 == trivia.Count || !trivia[index + 1].IsKind(SyntaxKind.EndOfLineTrivia)));
 
     internal static SeparatedSyntaxList<ExpressionSyntax> Arguments(ExpressionSyntax element) =>
         element is InitializerExpressionSyntax complex ? complex.Expressions : SyntaxFactory.SingletonSeparatedList(element);
