@@ -524,9 +524,9 @@ internal static class RuntimeCallbackMethodPlanner
                 indentation: "    ",
                 eol: "\r\n");
 
-        // Roslyn 4.4 and newer hosts choose different layouts for object
+        // Roslyn 4.4 and newer hosts choose different layouts for object/collection
         // initializers. Reapply the public generated-source layout explicitly.
-        var stableMethod = new MultilineObjectInitializerRewriter()
+        var stableMethod = new StableLayoutRewriter()
             .Visit(normalizedMethod)!;
         stableMethod = UserExpressionLayout.Restore(method, stableMethod);
 
@@ -534,9 +534,18 @@ internal static class RuntimeCallbackMethodPlanner
             .Visit(stableMethod)!);
     }
 
-    private sealed class MultilineObjectInitializerRewriter :
+    private sealed class StableLayoutRewriter :
         CSharpSyntaxRewriter
     {
+        public override SyntaxNode? VisitForEachVariableStatement(ForEachVariableStatementSyntax node)
+        {
+            var rewritten = (ForEachVariableStatementSyntax)base.VisitForEachVariableStatement(node)!;
+            // Older normalizers omit the separator after a typed deconstruction.
+            return rewritten.Variable.GetTrailingTrivia().Count == 0 && rewritten.InKeyword.LeadingTrivia.Count == 0
+                ? rewritten.WithInKeyword(rewritten.InKeyword.WithLeadingTrivia(SyntaxFactory.Space))
+                : rewritten;
+        }
+
         public override SyntaxNode? VisitInitializerExpression(
             InitializerExpressionSyntax node)
         {
@@ -544,8 +553,8 @@ internal static class RuntimeCallbackMethodPlanner
                 (InitializerExpressionSyntax)
                 base.VisitInitializerExpression(node)!;
 
-            if (!rewritten.IsKind(
-                    SyntaxKind.ObjectInitializerExpression) ||
+            if (!(rewritten.IsKind(SyntaxKind.ObjectInitializerExpression) ||
+                    rewritten.IsKind(SyntaxKind.CollectionInitializerExpression)) ||
                 rewritten.Expressions.Count == 0)
             {
                 return rewritten;

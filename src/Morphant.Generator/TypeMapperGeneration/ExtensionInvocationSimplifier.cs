@@ -195,7 +195,8 @@ internal static class ExtensionInvocationSimplifier
         return root.WithUsings(root.Usings.AddRange(imports));
     }
 
-    private static bool Observe(SyntaxNode node) => node is ExpressionSyntax or QueryClauseSyntax or SelectOrGroupClauseSyntax;
+    private static bool Observe(SyntaxNode node) => node is ExpressionSyntax or QueryClauseSyntax or
+        SelectOrGroupClauseSyntax or RecursivePatternSyntax or ForEachVariableStatementSyntax;
     private static string? Identity(SyntaxNode node) => node.GetAnnotations(NodeIdentity).FirstOrDefault()?.Data;
     private static string TypeName(ITypeSymbol type) => type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable);
 
@@ -211,6 +212,38 @@ internal static class ExtensionInvocationSimplifier
             foreach (var candidate in query.OperationInfo.CandidateSymbols) yield return candidate;
             if (query.CastInfo.Symbol is { } cast) yield return cast;
         }
+        // Imports also participate in compiler-synthesized calls. Their result
+        // type can stay identical even when another extension starts running.
+        if (node is AwaitExpressionSyntax awaited)
+        {
+            var awaitInfo = semantic.GetAwaitExpressionInfo(awaited);
+            if (awaitInfo.GetAwaiterMethod is { } getAwaiter) yield return getAwaiter;
+            if (awaitInfo.IsCompletedProperty is { } isCompleted) yield return isCompleted;
+            if (awaitInfo.GetResultMethod is { } getResult) yield return getResult;
+        }
+        if (node is RecursivePatternSyntax && semantic.GetOperation(node, token) is IRecursivePatternOperation
+            { DeconstructSymbol: { } deconstruct })
+            yield return deconstruct;
+        if (node is ExpressionSyntax element && element.Parent is InitializerExpressionSyntax initializer &&
+            initializer.IsKind(SyntaxKind.CollectionInitializerExpression))
+        {
+            var add = semantic.GetCollectionInitializerSymbolInfo(element, token);
+            if (add.Symbol is { } method) yield return method;
+            foreach (var candidate in add.CandidateSymbols) yield return candidate;
+        }
+        if (node is AssignmentExpressionSyntax { Left: TupleExpressionSyntax or DeclarationExpressionSyntax } assignment)
+            foreach (var method in DeconstructionMethods(semantic.GetDeconstructionInfo(assignment))) yield return method;
+        if (node is ForEachVariableStatementSyntax loop)
+            foreach (var method in DeconstructionMethods(semantic.GetDeconstructionInfo(loop))) yield return method;
+    }
+
+    private static IEnumerable<IMethodSymbol> DeconstructionMethods(DeconstructionInfo info)
+    {
+        if (info.Method is { } method) yield return method;
+        if (!info.Nested.IsDefault)
+            foreach (var nested in info.Nested)
+            foreach (var nestedMethod in DeconstructionMethods(nested))
+                yield return nestedMethod;
     }
 
     private static string Binding(SyntaxNode node, SemanticModel semantic, CancellationToken token)

@@ -30,7 +30,28 @@ internal sealed class ExtensionInvocationTests
     [Test]
     public void ImportIsolation_preserves_runtime_semantics() =>
         CSharp9.Scenarios.ExtensionInvocations.ImportIsolation.Scenario.Verify();
+
     [Test]
     public void Multiline_layout_preserves_literal_values_and_conditional_effects() =>
         CSharp9.Scenarios.ExtensionInvocations.Layout.Scenario.Verify();
+
+    [Test]
+    public Task Imports_preserve_implicit_awaiter_binding() =>
+        CSharp11.Scenarios.ExtensionInvocations.ImplicitBindings.Scenario.VerifyAwait();
+
+    [Test]
+    public void Imports_preserve_deconstruction_binding() =>
+        CSharp11.Scenarios.ExtensionInvocations.ImplicitBindings.Scenario.VerifyDeconstruction();
+
+    [Test]
+    public void Imports_preserve_foreach_deconstruction_binding() =>
+        CSharp11.Scenarios.ExtensionInvocations.ImplicitBindings.Scenario.VerifyLoopDeconstruction();
+
+    [Test]
+    public void Imports_preserve_positional_pattern_binding() =>
+        CSharp11.Scenarios.ExtensionInvocations.ImplicitBindings.Scenario.VerifyPattern();
+
+    [Test]
+    public void Imports_preserve_collection_initializer_binding() =>
+        CSharp11.Scenarios.ExtensionInvocations.ImplicitBindings.Scenario.VerifyInitializer();
 }
