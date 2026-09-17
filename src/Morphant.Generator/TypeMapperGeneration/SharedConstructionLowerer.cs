@@ -49,27 +49,33 @@ internal static class SharedConstructionLowerer
             var implementations = new[] { mapping.CreateImplMethodName, mapping.UpdateImplMethodName }
                 .Where(name => name is not null && methods.ContainsKey(name))
                 .Select(name => methods[name!]).ToArray();
-            var candidates = implementations.SelectMany(method => FindCandidates(method, mapping, text))
-                .GroupBy(candidate => candidate.Body, StringComparer.Ordinal)
+            var candidateGroups = implementations.SelectMany(method => FindCandidates(method, mapping, text))
+                .GroupBy(candidate => candidate.Fingerprint)
                 .Where(group => group.Count() > 1)
-                .SelectMany(group => group)
+                .OrderByDescending(group => group.First().Span.Length);
+            var changes = new List<TextChange>();
+            var helpers = new List<string>();
+
+            // Fingerprints only shortlist candidates. Compare their complete text
+            // and binding before sharing; hash collisions cannot change output.
+            // Bind lazily so a selected large region removes overlapping suffixes
+            // before they allocate text or request data/control-flow analysis.
+            var candidates = candidateGroups.SelectMany(group => group
+                .Where(candidate => !changes.Any(change => change.Span.OverlapsWith(candidate.Span)))
+                .GroupBy(candidate => candidate.Body, StringComparer.Ordinal)
+                .Where(matches => matches.Count() > 1)
+                .SelectMany(matches => matches)
                 .Select(candidate => Bind(candidate, mapping, semanticModel, cancellationToken))
                 .Where(candidate => candidate is not null)
                 .Select(candidate => candidate!)
                 .GroupBy(candidate => candidate.Key, StringComparer.Ordinal)
-                .Where(group => group.Count() > 1)
-                .OrderByDescending(group => group.First().Syntax.Span.Length);
-            var changes = new List<TextChange>();
-            var helpers = new List<string>();
+                .Where(matches => matches.Count() > 1));
 
             foreach (var group in candidates)
             {
                 var available = group.Where(candidate => !changes.Any(change =>
                     change.Span.OverlapsWith(candidate.Syntax.Span))).ToArray();
-                if (available.Length < 2)
-                {
-                    continue;
-                }
+                if (available.Length < 2) continue;
 
                 var existing = available.FirstOrDefault(candidate =>
                     candidate.Syntax.Method.Identifier.ValueText == mapping.CreateImplMethodName &&
@@ -182,28 +188,32 @@ internal static class SharedConstructionLowerer
                      (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)).OfType<BlockSyntax>())
         {
             var statements = block.Statements;
-            for (var index = 0; index < statements.Count; index++)
+            // Only a suffix which terminates its caller can be extracted.
+            if (statements.Count == 0 || statements.Last() is not
+                (ReturnStatementSyntax or ThrowStatementSyntax or IfStatementSyntax or SwitchStatementSyntax)) continue;
+
+            var candidates = new List<Candidate>();
+            var containsCreation = false;
+            var fingerprint = 0;
+            for (var index = statements.Count - 1; index >= 0; index--)
             {
-                if (!statements.Skip(index).Any(statement => statement.DescendantNodesAndSelf(node => node is not
+                var statement = statements[index];
+                containsCreation |= statement.DescendantNodesAndSelf(node => node is not
                         (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
                     .OfType<ObjectCreationExpressionSyntax>().Any(creation =>
-                        creation.Type.ToString() == mapping.NonNullDestinationTypeName)))
+                        creation.Type.ToString() == mapping.NonNullDestinationTypeName);
+                foreach (var token in statement.DescendantTokens().Reverse())
                 {
-                    continue;
+                    fingerprint = unchecked(fingerprint * 31 + token.RawKind);
+                    for (var character = token.Text.Length - 1; character >= 0; character--)
+                        fingerprint = unchecked(fingerprint * 31 + token.Text[character]);
                 }
-
-                // A shared branch must terminate its caller, not just a nested
-                // block or loop. Generated selection paths end in return/throw.
-                if (statements.Last() is not (ReturnStatementSyntax or ThrowStatementSyntax or
-                    IfStatementSyntax or SwitchStatementSyntax))
-                {
-                    continue;
-                }
-
-                var span = TextSpan.FromBounds(statements[index].SpanStart, statements.Last().Span.End);
-                yield return new Candidate(method, statements[index], statements.Last(), span,
-                    Unindent(text.ToString(span), Column(text, span.Start)));
+                if (!containsCreation) continue;
+                var span = TextSpan.FromBounds(statement.SpanStart, statements.Last().Span.End);
+                candidates.Add(new Candidate(method, statement, statements.Last(), span, fingerprint, text));
             }
+            for (var index = candidates.Count - 1; index >= 0; index--)
+                yield return candidates[index];
         }
     }
 
@@ -326,7 +336,12 @@ internal static class SharedConstructionLowerer
         StatementSyntax First,
         StatementSyntax Last,
         TextSpan Span,
-        string Body);
+        int Fingerprint,
+        SourceText Text)
+    {
+        private string? _body;
+        public string Body => _body ??= Unindent(Text.ToString(Span), Column(Text, Span.Start));
+    }
 
     private sealed record Parameter(ISymbol Symbol, string TypeName, string Name, bool ByReference = false);
 

@@ -70,55 +70,49 @@ internal sealed class TransferredLocalNames
 
         var candidates = declarations.Where(pair => _preferred.ContainsKey(pair.Key.Name))
             .OrderBy(pair => pair.Value.SpanStart).Select(pair => pair.Key).ToArray();
-        var conflicts = candidates.ToDictionary(symbol => symbol,
-            _ => new HashSet<ISymbol>(SymbolEqualityComparer.Default), SymbolEqualityComparer.Default);
-        foreach (var pair in declarations)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            foreach (var visible in semantic.LookupSymbols(pair.Value.SpanStart))
-            {
-                if (SymbolEqualityComparer.Default.Equals(pair.Key, visible) ||
-                    !declarations.TryGetValue(visible, out var visibleToken) ||
-                    SeparateJoinBindings(pair.Value.Parent, visibleToken.Parent)) continue;
-                if (conflicts.TryGetValue(pair.Key, out var own)) own.Add(visible);
-                if (conflicts.TryGetValue(visible, out var other)) other.Add(pair.Key);
-            }
-        }
-
-        // A local can keep a member's name: qualify a captured member reference
-        // instead of needlessly renaming the user's declaration.
-        var memberReferences = new List<(SimpleNameSyntax Syntax, ISymbol Member, ISymbol[] Locals)>();
-        foreach (var identifier in root.DescendantNodes().OfType<SimpleNameSyntax>())
-        {
-            if (identifier.Parent is MemberAccessExpressionSyntax access && access.Name == identifier ||
-                identifier.Parent is MemberBindingExpressionSyntax or QualifiedNameSyntax or AliasQualifiedNameSyntax
-                    or NameEqualsSyntax or NameColonSyntax ||
-                identifier.Parent is AssignmentExpressionSyntax assignment && assignment.Left == identifier &&
-                    assignment.Parent is InitializerExpressionSyntax) continue;
-            var symbol = semantic.GetSymbolInfo(identifier, cancellationToken).Symbol;
-            if (symbol is not (IMethodSymbol { MethodKind: MethodKind.Ordinary } or IFieldSymbol or IPropertySymbol or IEventSymbol)) continue;
-            var visibleLocals = semantic.LookupSymbols(identifier.SpanStart).Where(conflicts.ContainsKey).ToArray();
-            if (visibleLocals.Length != 0) memberReferences.Add((identifier, symbol, visibleLocals));
-        }
-
         var names = new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default);
-        bool Available(ISymbol symbol, string name) => !conflicts[symbol].Any(other =>
-            StringComparer.Ordinal.Equals(name,
-                names.TryGetValue(other, out var allocated) ? allocated :
-                _preferred.ContainsKey(other.Name) ? null : other.Name));
+        var allocated = declarations.Keys.Where(symbol => !_preferred.ContainsKey(symbol.Name))
+            .ToLookup(symbol => symbol.Name, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+
+        bool Visible(ISymbol symbol, int position) => semantic.LookupSymbols(position, name: symbol.Name)
+            .Contains(symbol, SymbolEqualityComparer.Default);
+
+        bool Available(ISymbol symbol, string name)
+        {
+            if (!allocated.TryGetValue(name, out var others)) return true;
+            var token = declarations[symbol];
+            foreach (var other in others)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var otherToken = declarations[other];
+                if (SeparateJoinBindings(token.Parent, otherToken.Parent)) continue;
+                // Check both directions: a nested declaration can precede the
+                // enclosing declaration, and C# still forbids the collision.
+                if (Visible(other, token.SpanStart) || Visible(symbol, otherToken.SpanStart)) return false;
+            }
+            return true;
+        }
+
+        void Allocate(ISymbol symbol, string name)
+        {
+            names.Add(symbol, name);
+            if (!allocated.TryGetValue(name, out var others)) allocated.Add(name, others = []);
+            others.Add(symbol);
+        }
 
         // Preserve available user names before allocating suffixes, including
         // names such as source1 which a conflicting source must not take.
         foreach (var symbol in candidates)
             if (Available(symbol, _preferred[symbol.Name]))
-                names.Add(symbol, _preferred[symbol.Name]);
+                Allocate(symbol, _preferred[symbol.Name]);
         foreach (var symbol in candidates)
         {
             if (names.ContainsKey(symbol)) continue;
             var preferred = _preferred[symbol.Name];
             var suffix = 1;
             while (!Available(symbol, preferred + suffix)) suffix++;
-            names.Add(symbol, preferred + suffix);
+            Allocate(symbol, preferred + suffix);
         }
 
         var replacements = new Dictionary<SyntaxToken, string>();
@@ -131,13 +125,23 @@ internal sealed class TransferredLocalNames
                 names.TryGetValue(symbol, out var name)) replacements[identifier.Identifier] = Spell(symbol, name);
 
         var changes = replacements.Select(pair => new TextChange(pair.Key.Span, pair.Value)).ToList();
-        foreach (var reference in memberReferences)
+        // Only names actually taken by a visible local can capture a member.
+        // Qualify that reference instead of renaming the user's declaration.
+        foreach (var identifier in root.DescendantNodes().OfType<SimpleNameSyntax>())
         {
-            if (!reference.Locals.Any(local => names[local] == reference.Syntax.Identifier.ValueText)) continue;
-            var receiver = reference.Member.IsStatic
-                ? reference.Member.ContainingType.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable) + "."
+            if (!allocated.TryGetValue(identifier.Identifier.ValueText, out var locals) ||
+                !locals.Any(local => names.ContainsKey(local) && Visible(local, identifier.SpanStart))) continue;
+            if (identifier.Parent is MemberAccessExpressionSyntax access && access.Name == identifier ||
+                identifier.Parent is MemberBindingExpressionSyntax or QualifiedNameSyntax or AliasQualifiedNameSyntax
+                    or NameEqualsSyntax or NameColonSyntax ||
+                identifier.Parent is AssignmentExpressionSyntax assignment && assignment.Left == identifier &&
+                    assignment.Parent is InitializerExpressionSyntax) continue;
+            var symbol = semantic.GetSymbolInfo(identifier, cancellationToken).Symbol;
+            if (symbol is not (IMethodSymbol { MethodKind: MethodKind.Ordinary } or IFieldSymbol or IPropertySymbol or IEventSymbol)) continue;
+            var receiver = symbol.IsStatic
+                ? symbol.ContainingType.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable) + "."
                 : "this.";
-            changes.Add(new TextChange(new TextSpan(reference.Syntax.SpanStart, 0), receiver));
+            changes.Add(new TextChange(new TextSpan(identifier.SpanStart, 0), receiver));
         }
         return tree.GetText(cancellationToken).WithChanges(changes).ToString();
     }
