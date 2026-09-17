@@ -310,10 +310,16 @@ internal static class ExtensionInvocationSimplifier
             argument.Parameter?.Name + ":" + argument.Parameter?.RefKind + ":" + argument.ArgumentKind + ":" +
             (argument.Value.Type is null ? "" : TypeName(argument.Value.Type)) + ":" +
             Conversion(argument.InConversion) + ":" + Conversion(argument.OutConversion) + ":" + ValueConversions(argument.Value) + ":" +
-            (argument.Value.ConstantValue is { HasValue: true } constant
-                ? "constant=" + (constant.Value is null ? "null" :
-                    SymbolDisplay.FormatPrimitive(constant.Value, quoteStrings: true, useHexadecimalNumbers: false))
-                : "nonconstant")));
+            ConstantValue(argument.Value)));
+
+    private static string ConstantValue(IOperation operation)
+    {
+        while (operation is IConversionOperation conversion) operation = conversion.Operand;
+        return operation.ConstantValue is { HasValue: true } constant
+            ? "constant=" + (constant.Value is null ? "null" :
+                SymbolDisplay.FormatPrimitive(constant.Value, quoteStrings: true, useHexadecimalNumbers: false))
+            : "nonconstant";
+    }
 
     private static string ValueConversions(IOperation value) => value is IConversionOperation conversion
         ? Conversion(conversion.Conversion) + ":" + conversion.IsChecked + ":" + conversion.IsTryCast + ":" +

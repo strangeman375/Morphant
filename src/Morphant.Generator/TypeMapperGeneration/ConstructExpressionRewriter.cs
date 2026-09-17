@@ -1142,66 +1142,6 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 CallerMemberNameAttributeMetadataName);
     }
 
-    public override SyntaxNode? VisitInitializerExpression(InitializerExpressionSyntax node)
-    {
-        var rewritten = (InitializerExpressionSyntax)base.VisitInitializerExpression(node)!;
-        if (!node.IsKind(SyntaxKind.CollectionInitializerExpression) ||
-            _semanticModel.GetOperation(node) is not IObjectOrCollectionInitializerOperation initializer)
-            return rewritten;
-
-        var elements = rewritten.Expressions;
-        for (var index = 0; index < initializer.Initializers.Length; index++)
-        {
-            if (initializer.Initializers[index] is not IInvocationOperation add) continue;
-            var lastCaller = add.Arguments.Where(argument => argument.ArgumentKind == ArgumentKind.DefaultValue &&
-                    argument.Parameter is { } parameter && HasCallerInfoAttribute(parameter))
-                .Select(argument => argument.Parameter!.Ordinal).DefaultIfEmpty(-1).Max();
-            if (lastCaller < 0) continue;
-
-            var element = elements[index];
-            var arguments = element is InitializerExpressionSyntax complex
-                ? complex.Expressions
-                : SyntaxFactory.SingletonSeparatedList(element.WithoutTrivia());
-            // Collection elements have positional arguments. Materialize any
-            // intervening ordinary defaults before the original caller values.
-            foreach (var argument in add.Arguments.Where(argument => argument.ArgumentKind == ArgumentKind.DefaultValue &&
-                         argument.Parameter!.Ordinal <= lastCaller).OrderBy(argument => argument.Parameter!.Ordinal))
-                arguments = arguments.Add(CollectionArgument(argument));
-
-            var replacement = element is InitializerExpressionSyntax existing
-                ? existing.WithExpressions(arguments)
-                : SyntaxFactory.InitializerExpression(SyntaxKind.ComplexElementInitializerExpression, arguments).WithTriviaFrom(element);
-            elements = elements.Replace(element, replacement);
-        }
-        return rewritten.WithExpressions(elements);
-    }
-
-    private ExpressionSyntax CollectionArgument(IArgumentOperation argument)
-    {
-        var type = SubstituteMapperType(argument.Parameter!.Type);
-        var value = argument.Value.ConstantValue;
-        if (!value.HasValue || value.Value is null)
-            return SyntaxFactory.DefaultExpression(SyntaxFactory.ParseTypeName(
-                TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)));
-
-        var expression = SyntaxFactory.ParseExpression(SymbolDisplay.FormatPrimitive(
-            value.Value, quoteStrings: true, useHexadecimalNumbers: false));
-        // The implicit default already had the parameter's type. Preserve it
-        // when an explicit literal could select another Add overload.
-        var literalType = value.Value switch
-        {
-            string => SpecialType.System_String,
-            int => SpecialType.System_Int32,
-            bool => SpecialType.System_Boolean,
-            char => SpecialType.System_Char,
-            _ => SpecialType.None
-        };
-        return type.SpecialType == literalType && literalType != SpecialType.None
-            ? expression
-            : SyntaxFactory.CastExpression(SyntaxFactory.ParseTypeName(
-                TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)), expression);
-    }
-
     private static bool TryBuildCallerInfoExpression(
         IOperation operation,
         out ExpressionSyntax expression)
