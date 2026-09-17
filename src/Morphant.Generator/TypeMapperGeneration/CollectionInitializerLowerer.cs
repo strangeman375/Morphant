@@ -56,7 +56,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                 _directCreation = first;
                 var rewritten = (ReturnStatementSyntax)Visit(statement)!;
                 _directCreation = previous;
-                statements.AddRange(ExpandResult(first, rewritten, Indentation(statement)));
+                statements.AddRange(ExpandResult(first, rewritten, scope, Indentation(statement)));
             }
             else if (statement is LocalDeclarationStatementSyntax
                 { UsingKeyword.RawKind: 0, Declaration.Variables.Count: 1 } declaration &&
@@ -66,7 +66,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                 _directCreation = leading;
                 var rewritten = (LocalDeclarationStatementSyntax)Visit(statement)!;
                 _directCreation = previous;
-                statements.AddRange(ExpandResult(leading, rewritten, Indentation(statement)));
+                statements.AddRange(ExpandResult(leading, rewritten, scope, Indentation(statement)));
             }
             else statements.Add((StatementSyntax)Visit(statement)!);
         }
@@ -213,7 +213,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                  _semantic.LookupSymbols(ScopePosition(scope.Owner), name: symbol.Name).Any(visible => SymbolEqualityComparer.Default.Equals(visible, symbol)))) continue;
             var type = symbol switch
             {
-                IParameterSymbol parameter => parameter.Type,
+                IParameterSymbol parameterSymbol => parameterSymbol.Type,
                 ILocalSymbol local => local.Type,
                 _ => _semantic.GetTypeInfo(name, _cancellationToken).Type!
             };
@@ -301,18 +301,19 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
 
     private bool NeedsRootBody(ExpressionSyntax expression) => LeadingCreation(expression) is not null;
 
-    private IEnumerable<StatementSyntax> ExpandResult(BaseObjectCreationExpressionSyntax original, StatementSyntax statement, string indentation)
+    private IEnumerable<StatementSyntax> ExpandResult(BaseObjectCreationExpressionSyntax original, StatementSyntax statement, Scope scope, string indentation)
     {
         var rewritten = (BaseObjectCreationExpressionSyntax)statement.GetAnnotatedNodes(DirectCreation).Single();
         var type = _semantic.GetTypeInfo(original, _cancellationToken).Type!;
-        var name = ReceiverName(original, type.Name);
+        var name = Allocate(scope, char.ToLowerInvariant(type.Name[0]) + type.Name.Substring(1));
         var receiver = SyntaxFactory.IdentifierName(name);
         var (allocation, remaining) = Split(original, rewritten);
-        yield return Line(SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+        var declaration = Line(SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
             .AddVariables(SyntaxFactory.VariableDeclarator(name).WithInitializer(SyntaxFactory.EqualsValueClause(
                 ExplicitAllocation(allocation, TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)))))), indentation);
+        yield return HasContent(statement.GetLeadingTrivia()) ? declaration.WithLeadingTrivia(statement.GetLeadingTrivia()) : declaration;
         foreach (var addition in Populate(receiver, remaining, indentation)) yield return addition;
-        yield return Line(statement.ReplaceNode(rewritten, receiver.WithTriviaFrom(rewritten)), indentation);
+        yield return Line(statement.ReplaceNode(rewritten, receiver.WithTriviaFrom(rewritten)).WithoutLeadingTrivia(), indentation);
     }
 
     private BlockSyntax FunctionBody(ExpressionSyntax expression, bool returnsVoid, Scope scope, string indentation)
@@ -327,7 +328,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         if (LeadingCreation(original) is { } creation)
         {
             StatementSyntax resultStatement = returnsVoid ? SyntaxFactory.ExpressionStatement(expression) : SyntaxFactory.ReturnStatement(expression);
-            var statements = ExpandResult(creation, resultStatement, indentation + "    ").ToList();
+            var statements = ExpandResult(creation, resultStatement, scope, indentation + "    ").ToList();
             statements.AddRange(scope.Helpers);
             return Block(statements, indentation).WithLeadingTrivia(SyntaxFactory.CarriageReturnLineFeed, SyntaxFactory.Whitespace(indentation));
         }
@@ -352,6 +353,8 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
 
     private static SyntaxTriviaList WithoutWhitespace(SyntaxTriviaList trivia) =>
         trivia.All(item => item.IsKind(SyntaxKind.WhitespaceTrivia) || item.IsKind(SyntaxKind.EndOfLineTrivia)) ? default : trivia;
+
+    private static bool HasContent(SyntaxTriviaList trivia) => WithoutWhitespace(trivia).Count != 0;
 
     private static int ScopePosition(SyntaxNode scope) => scope switch
     {
