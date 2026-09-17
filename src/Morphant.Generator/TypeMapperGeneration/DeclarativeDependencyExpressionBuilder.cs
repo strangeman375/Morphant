@@ -275,6 +275,9 @@ internal static class DeclarativeDependencyExpressionBuilder
                      .OfType<ExpressionSyntax>())
         {
             cancellationToken.ThrowIfCancellationRequested();
+            // Initializers occupy a required syntax slot. Their implicit Add
+            // operations are not independently replaceable value expressions.
+            if (expression is InitializerExpressionSyntax) continue;
             var operation = semanticModel.GetOperation(
                 expression,
                 cancellationToken);
