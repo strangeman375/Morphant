@@ -66,7 +66,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         _scopes.Pop();
         return scope.Helpers.Count == 0 ? rewritten : rewritten.WithExpressionBody(null)
             .WithSemicolonToken(default).WithBody(FunctionBody(rewritten.ExpressionBody!.Expression,
-                _semantic.GetDeclaredSymbol(node, _cancellationToken)?.ReturnsVoid == true, scope, Indentation(node)));
+                _semantic.GetDeclaredSymbol(node, _cancellationToken) is IMethodSymbol { ReturnsVoid: true }, scope, Indentation(node)));
     }
 
     public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
@@ -78,7 +78,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         _scopes.Pop();
         return scope.Helpers.Count == 0 ? rewritten : rewritten.WithExpressionBody(null)
             .WithSemicolonToken(default).WithBody(FunctionBody(rewritten.ExpressionBody!.Expression,
-                _semantic.GetDeclaredSymbol(node, _cancellationToken)?.ReturnsVoid == true, scope, Indentation(node)));
+                _semantic.GetDeclaredSymbol(node, _cancellationToken) is IMethodSymbol { ReturnsVoid: true }, scope, Indentation(node)));
     }
 
     public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) => RewriteLambda(node);
@@ -114,7 +114,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         var typeName = TypeMapperMappingTypePolicy.GetGeneratedTypeName(type);
         var functionName = Allocate(scope, "Create" + type.Name);
         var receiverName = Allocate(scope, char.ToLowerInvariant(type.Name[0]) + type.Name.Substring(1));
-        var indentation = scope.Owner is BlockSyntax ? Indentation(scope.Owner) + "    " : Indentation(scope.Owner) + "    ";
+        var indentation = Indentation(scope.Owner) + "    ";
         var innerIndentation = indentation + "    ";
         var receiver = SyntaxFactory.IdentifierName(receiverName);
         var allocation = WithoutInitializer(rewritten);

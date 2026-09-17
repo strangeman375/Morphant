@@ -20,8 +20,13 @@ internal static class CollectionCallerInformation
         InitializerExpressionSyntax rewritten, SemanticModel semantic, Func<ITypeSymbol, string> typeName)
     {
         if (!original.IsKind(SyntaxKind.CollectionInitializerExpression) ||
-            semantic.GetOperation(original) is not IObjectOrCollectionInitializerOperation operation ||
-            !operation.Initializers.OfType<IInvocationOperation>().Any(call => call.Arguments.Any(IsCaller)))
+            semantic.GetOperation(original) is not IObjectOrCollectionInitializerOperation operation)
+            return rewritten;
+        var creation = original.Ancestors().OfType<BaseObjectCreationExpressionSyntax>().FirstOrDefault();
+        if (!operation.Initializers.OfType<IInvocationOperation>().Any(call => call.Arguments.Any(IsCaller)) &&
+            (creation is null || semantic.GetOperation(creation) is not { } creationOperation ||
+             !creationOperation.DescendantsAndSelf().OfType<IObjectOrCollectionInitializerOperation>()
+                 .Any(initializer => initializer.Initializers.OfType<IInvocationOperation>().Any(call => call.Arguments.Any(IsCaller)))))
             return rewritten;
 
         var metadata = new List<string>();
@@ -94,8 +99,8 @@ internal static class CollectionCallerInformation
         var tree = CSharpSyntaxTree.Create(root, options);
         root = tree.GetCompilationUnitRoot(cancellationToken);
         var semantic = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
-        var rejected = root.GetAnnotatedNodes(Annotation).OfType<InitializerExpressionSyntax>()
-            .Where(initializer => !Matches(initializer, semantic, cancellationToken)).ToHashSet();
+        var rejected = new HashSet<InitializerExpressionSyntax>(root.GetAnnotatedNodes(Annotation).OfType<InitializerExpressionSyntax>()
+            .Where(initializer => !Matches(initializer, semantic, cancellationToken)));
         return rejected.Count == 0 ? root.ToFullString() :
             new CollectionInitializerLowerer(semantic, rejected, cancellationToken).Visit(root)!.ToFullString();
     }
@@ -125,7 +130,7 @@ internal static class CollectionCallerInformation
     private static string MethodKey(IMethodSymbol method, Func<ITypeSymbol, string> typeName)
     {
         if (method.ReducedFrom is { } reduced)
-            method = method.IsGenericMethod ? reduced.ConstructedFrom.Construct(method.TypeArguments) : reduced;
+            method = method.IsGenericMethod ? reduced.ConstructedFrom.Construct(method.TypeArguments, method.TypeArgumentNullableAnnotations) : reduced;
         return typeName(method.ContainingType) + "." + method.MetadataName + "<" +
             string.Join(",", method.TypeArguments.Select(typeName)) + ">(" +
             string.Join(",", method.Parameters.Select(parameter => parameter.RefKind + ":" + typeName(parameter.Type))) + ")";
