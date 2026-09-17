@@ -81,16 +81,19 @@ internal static class MapperSemanticFingerprintBuilder
             }
         }
 
+        var lookupTypes = new DependencyTypeSet();
         ExtensionLookupDependencies.Add(
             compilation,
             mapperType,
-            dependencyTypes.Add,
+            lookupTypes.Add,
             cancellationToken);
 
         var dependencies = TypeContractDependencies.Build(
                 dependencyTypes.Types,
                 compilation,
                 cancellationToken)
+            .Concat(TypeContractDependencies.Build(lookupTypes.Types, compilation,
+                cancellationToken, lookupOnly: true))
             .GroupBy(
                 static dependency => dependency.Identity,
                 StringComparer.Ordinal)

@@ -1,3 +1,6 @@
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -6,71 +9,85 @@ namespace Morphant.Generator.Incrementality;
 
 internal static class ExtensionLookupDependencies
 {
-    public static void Add(
-        CSharpCompilation compilation,
-        INamedTypeSymbol mapperType,
-        Action<ITypeSymbol> addDependency,
-        CancellationToken cancellationToken)
-    {
-        var visited = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+    private static readonly ConditionalWeakTable<CSharpCompilation, Index> Indexes = new();
 
-        // Transferred calls are rebound in the generated file, where the
-        // mapper's enclosing namespaces precede its file-level static imports.
-        // A new competing extension can change that binding without changing
-        // any operation in the original Configure method.
-        for (var scope = compilation.GetCompilationNamespace(mapperType.ContainingNamespace);
-             scope is not null;
-             scope = scope.ContainingNamespace)
+    public static void Add(CSharpCompilation compilation, INamedTypeSymbol mapperType,
+        Action<ITypeSymbol> addDependency, CancellationToken cancellationToken)
+    {
+        var index = Indexes.GetValue(compilation, static value => new Index(value));
+        foreach (var type in index.GetTypes(mapperType.ContainingNamespace, cancellationToken))
+            addDependency(type);
+    }
+
+    // Symbols and semantic models never outlive the compilation that owns them.
+    private sealed class Index(CSharpCompilation compilation)
+    {
+        private readonly ConcurrentDictionary<INamespaceSymbol, ImmutableArray<ITypeSymbol>> _scopes =
+            new(SymbolEqualityComparer.Default);
+        private readonly ConcurrentDictionary<INamedTypeSymbol, ImmutableArray<ITypeSymbol>> _types =
+            new(SymbolEqualityComparer.Default);
+        private ImmutableArray<ITypeSymbol> _globalTypes;
+
+        public IEnumerable<ITypeSymbol> GetTypes(INamespaceSymbol mapperNamespace, CancellationToken cancellationToken)
         {
-            AddNamespace(scope);
+            // Enclosing namespaces precede the generated file's static imports.
+            // Track competitors even when Configure does not currently select them.
+            for (var scope = compilation.GetCompilationNamespace(mapperNamespace);
+                 scope is not null; scope = scope.ContainingNamespace)
+                foreach (var type in InNamespace(scope, cancellationToken))
+                    yield return type;
+
+            if (_globalTypes.IsDefault)
+                ImmutableInterlocked.InterlockedInitialize(ref _globalTypes, BuildGlobalTypes(cancellationToken));
+            foreach (var type in _globalTypes)
+                yield return type;
         }
 
-        foreach (var tree in compilation.SyntaxTrees)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var root = (CompilationUnitSyntax)tree.GetRoot(cancellationToken);
-            var globalUsings = root.Usings.Where(directive =>
-                directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword) &&
-                directive.Alias is null && directive.Name is not null);
-            SemanticModel? semanticModel = null;
-            foreach (var directive in globalUsings)
+        private ImmutableArray<ITypeSymbol> InNamespace(INamespaceSymbol scope, CancellationToken cancellationToken) =>
+            _scopes.GetOrAdd(scope, value => value.GetTypeMembers()
+                .Where(type => type.MightContainExtensionMethods)
+                .SelectMany(type => InType(type, cancellationToken)).ToImmutableArray());
+
+        private ImmutableArray<ITypeSymbol> InType(INamedTypeSymbol type, CancellationToken cancellationToken) =>
+            _types.GetOrAdd(type, value =>
             {
-                semanticModel ??= compilation.GetSemanticModel(tree);
-                switch (semanticModel.GetSymbolInfo(directive.Name!, cancellationToken).Symbol)
+                cancellationToken.ThrowIfCancellationRequested();
+                var result = ImmutableArray.CreateBuilder<ITypeSymbol>();
+                result.Add(value);
+                // Applicability also depends on argument hierarchies and constraints.
+                foreach (var method in value.GetMembers().OfType<IMethodSymbol>().Where(method => method.IsExtensionMethod))
                 {
-                    case INamespaceSymbol scope:
-                        AddNamespace(scope);
-                        break;
-                    case INamedTypeSymbol type:
-                        AddType(type);
-                        break;
+                    result.AddRange(method.Parameters.Select(parameter => parameter.Type));
+                    result.AddRange(method.TypeParameters);
+                }
+                return result.ToImmutable();
+            });
+
+        private ImmutableArray<ITypeSymbol> BuildGlobalTypes(CancellationToken cancellationToken)
+        {
+            var result = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+            foreach (var tree in compilation.SyntaxTrees)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var root = (CompilationUnitSyntax)tree.GetRoot(cancellationToken);
+                SemanticModel? semanticModel = null;
+                foreach (var directive in root.Usings.Where(directive =>
+                             directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword) &&
+                             directive.Alias is null && directive.Name is not null))
+                {
+                    semanticModel ??= compilation.GetSemanticModel(tree);
+                    switch (semanticModel.GetSymbolInfo(directive.Name!, cancellationToken).Symbol)
+                    {
+                        case INamespaceSymbol scope:
+                            result.UnionWith(InNamespace(scope, cancellationToken));
+                            break;
+                        case INamedTypeSymbol type:
+                            result.UnionWith(InType(type, cancellationToken));
+                            break;
+                    }
                 }
             }
-        }
-
-        void AddNamespace(INamespaceSymbol scope)
-        {
-            if (!visited.Add(scope)) return;
-            foreach (var type in scope.GetTypeMembers())
-                if (type.MightContainExtensionMethods)
-                    AddType(type);
-        }
-
-        void AddType(INamedTypeSymbol type)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!visited.Add(type)) return;
-            addDependency(type);
-            // Overload applicability also depends on receiver/argument
-            // hierarchies and generic constraints outside the extension class.
-            foreach (var method in type.GetMembers().OfType<IMethodSymbol>()
-                         .Where(method => method.IsExtensionMethod))
-            {
-                foreach (var parameter in method.Parameters)
-                    addDependency(parameter.Type);
-                foreach (var parameter in method.TypeParameters)
-                    addDependency(parameter);
-            }
+            return result.ToImmutableArray();
         }
     }
 }

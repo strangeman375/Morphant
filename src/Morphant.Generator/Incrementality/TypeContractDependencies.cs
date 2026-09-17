@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -10,6 +11,16 @@ namespace Morphant.Generator.Incrementality;
 
 internal static class TypeContractDependencies
 {
+    private static readonly ConditionalWeakTable<CSharpCompilation, ContractCache> Caches = new();
+
+    private sealed class ContractCache
+    {
+        public readonly ConcurrentDictionary<INamedTypeSymbol, ImmutableArray<TypeContractDependency>> Full =
+            new(SymbolEqualityComparer.Default);
+        public readonly ConcurrentDictionary<INamedTypeSymbol, ImmutableArray<TypeContractDependency>> Lookup =
+            new(SymbolEqualityComparer.Default);
+    }
+
     public static INamedTypeSymbol? ResolveType(
         CSharpCompilation compilation,
         string assemblyIdentity,
@@ -46,7 +57,8 @@ internal static class TypeContractDependencies
     public static ImmutableArray<TypeContractDependency> Build(
         IEnumerable<INamedTypeSymbol> types,
         CSharpCompilation compilation,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool lookupOnly = false)
     {
         var result =
             ImmutableArray.CreateBuilder<TypeContractDependency>();
@@ -56,14 +68,14 @@ internal static class TypeContractDependencies
         foreach (var type in types)
         {
             AddTypeAndContainingTypeDependencies(
-                type, compilation, result, visitedTypes, cancellationToken);
+                type, compilation, result, visitedTypes, cancellationToken, lookupOnly);
 
             if (type.TypeKind == TypeKind.Interface)
             {
                 foreach (var baseInterface in type.AllInterfaces)
                 {
                     AddTypeAndContainingTypeDependencies(
-                        baseInterface, compilation, result, visitedTypes, cancellationToken);
+                        baseInterface, compilation, result, visitedTypes, cancellationToken, lookupOnly);
                 }
             }
             else
@@ -73,7 +85,7 @@ internal static class TypeContractDependencies
                      baseType = baseType.BaseType)
                 {
                     AddTypeAndContainingTypeDependencies(
-                        baseType, compilation, result, visitedTypes, cancellationToken);
+                        baseType, compilation, result, visitedTypes, cancellationToken, lookupOnly);
                 }
             }
         }
@@ -135,7 +147,8 @@ internal static class TypeContractDependencies
         CSharpCompilation compilation,
         ImmutableArray<TypeContractDependency>.Builder result,
         HashSet<ISymbol> visitedTypes,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool lookupOnly)
     {
         var containingTypes = new Stack<INamedTypeSymbol>();
 
@@ -153,7 +166,8 @@ internal static class TypeContractDependencies
                 compilation,
                 result,
                 visitedTypes,
-                cancellationToken);
+                cancellationToken,
+                lookupOnly);
         }
     }
 
@@ -162,7 +176,8 @@ internal static class TypeContractDependencies
         CSharpCompilation compilation,
         ImmutableArray<TypeContractDependency>.Builder result,
         HashSet<ISymbol> visitedTypes,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool lookupOnly)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -171,6 +186,15 @@ internal static class TypeContractDependencies
             return;
         }
 
+        var cache = Caches.GetValue(compilation, static _ => new ContractCache());
+        result.AddRange((lookupOnly ? cache.Lookup : cache.Full).GetOrAdd(type,
+            value => BuildTypeDependencies(value, compilation, cancellationToken, lookupOnly)));
+    }
+
+    private static ImmutableArray<TypeContractDependency> BuildTypeDependencies(
+        INamedTypeSymbol type, CSharpCompilation compilation, CancellationToken cancellationToken, bool lookupOnly)
+    {
+        var result = ImmutableArray.CreateBuilder<TypeContractDependency>();
         var metadataName = SymbolNameHelper.GetFullMetadataName(type);
         var syntaxReferences = type.DeclaringSyntaxReferences
             .OrderBy(
@@ -214,10 +238,10 @@ internal static class TypeContractDependencies
                             sourceCompilation,
                             type.ContainingAssembly.GivesAccessTo(
                                 compilation.Assembly),
-                            cancellationToken)));
+                            cancellationToken, lookupOnly)));
             }
 
-            return;
+            return result.ToImmutable();
         }
 
         var metadataReference = compilation.GetMetadataReference(
@@ -232,6 +256,7 @@ internal static class TypeContractDependencies
                     type.ContainingAssembly.Identity,
                     metadataReference));
         }
+        return result.ToImmutable();
     }
 
     private static CSharpCompilation? FindSourceCompilation(
@@ -266,18 +291,22 @@ internal static class TypeContractDependencies
         SyntaxReference syntaxReference,
         CSharpCompilation compilation,
         bool hasInternalAccess,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool lookupOnly)
     {
         var declaration = syntaxReference.GetSyntax(cancellationToken);
         var parseOptions =
             (CSharpParseOptions)syntaxReference.SyntaxTree.Options;
 
         return new TypeContractSourceVersion(
-            declaration.ToFullString(),
+            lookupOnly
+                ? string.Join("|", declaration.DescendantTokens(descendIntoChildren: ContractChildren)
+                    .Select(token => token.Text.Length + ":" + token.Text))
+                : declaration.ToFullString(),
             BuildSemanticContext(
                 declaration,
                 compilation,
-                cancellationToken),
+                cancellationToken, lookupOnly),
             BuildParseOptionsVersion(parseOptions),
             hasInternalAccess);
     }
@@ -285,14 +314,16 @@ internal static class TypeContractDependencies
     private static string BuildSemanticContext(
         SyntaxNode declaration,
         CSharpCompilation compilation,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool lookupOnly)
     {
         var semanticModel = compilation.GetSemanticModel(
             declaration.SyntaxTree);
         var result = new StringBuilder();
+        var nodes = declaration.DescendantNodesAndSelf(lookupOnly ? ContractChildren : null).ToArray();
+        var ordinal = 0;
 
-        foreach (var typeSyntax in declaration
-                     .DescendantNodesAndSelf()
+        foreach (var typeSyntax in nodes
                      .OfType<TypeSyntax>())
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -303,7 +334,7 @@ internal static class TypeContractDependencies
 
             result
                 .Append("type|")
-                .Append(typeSyntax.SpanStart - declaration.SpanStart)
+                .Append(lookupOnly ? ordinal++ : typeSyntax.SpanStart - declaration.SpanStart)
                 .Append('|');
 
             if (type is null)
@@ -324,8 +355,7 @@ internal static class TypeContractDependencies
             result.AppendLine();
         }
 
-        foreach (var attribute in declaration
-                     .DescendantNodesAndSelf()
+        foreach (var attribute in nodes
                      .OfType<AttributeSyntax>())
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -336,7 +366,7 @@ internal static class TypeContractDependencies
 
             result
                 .Append("attribute|")
-                .Append(attribute.SpanStart - declaration.SpanStart)
+                .Append(lookupOnly ? ordinal++ : attribute.SpanStart - declaration.SpanStart)
                 .Append('|')
                 .Append(
                     constructor?.ToDisplayString(
@@ -345,7 +375,7 @@ internal static class TypeContractDependencies
                 .AppendLine();
         }
 
-        foreach (var expression in GetConstantExpressions(declaration))
+        foreach (var expression in GetConstantExpressions(nodes))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -358,7 +388,7 @@ internal static class TypeContractDependencies
 
             result
                 .Append("constant|")
-                .Append(expression.SpanStart - declaration.SpanStart)
+                .Append(lookupOnly ? ordinal++ : expression.SpanStart - declaration.SpanStart)
                 .Append('|')
                 .Append(
                     type?.ToDisplayString(
@@ -374,17 +404,15 @@ internal static class TypeContractDependencies
     }
 
     private static IEnumerable<ExpressionSyntax> GetConstantExpressions(
-        SyntaxNode declaration)
+        SyntaxNode[] nodes)
     {
-        foreach (var argument in declaration
-                     .DescendantNodesAndSelf()
+        foreach (var argument in nodes
                      .OfType<AttributeArgumentSyntax>())
         {
             yield return argument.Expression;
         }
 
-        foreach (var parameter in declaration
-                     .DescendantNodesAndSelf()
+        foreach (var parameter in nodes
                      .OfType<ParameterSyntax>())
         {
             if (parameter.Default is { } defaultValue)
@@ -393,6 +421,18 @@ internal static class TypeContractDependencies
             }
         }
     }
+
+    // Only declarations can affect extension lookup. Keep attributes, defaults,
+    // constraints and constant fields, but exclude implementation syntax/trivia.
+    private static bool ContractChildren(SyntaxNode node) => node switch
+    {
+        BlockSyntax or ArrowExpressionClauseSyntax => false,
+        EqualsValueClauseSyntax { Parent: ParameterSyntax or EnumMemberDeclarationSyntax } => true,
+        EqualsValueClauseSyntax { Parent.Parent.Parent: FieldDeclarationSyntax field } =>
+            field.Modifiers.Any(SyntaxKind.ConstKeyword),
+        EqualsValueClauseSyntax => false,
+        _ => true
+    };
 
     private static string FormatConstant(Optional<object?> constant)
     {
