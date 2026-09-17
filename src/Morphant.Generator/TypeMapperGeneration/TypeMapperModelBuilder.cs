@@ -144,13 +144,7 @@ internal static class TypeMapperModelBuilder
                 "TypeMapper",
                 HintNameHelper.ToHintNamePart(mapperType.Name),
                 GeneratedEntityIdentity.ForTypeDefinition(mapperType, compilation)),
-            TypeMapperEmitter.Emit(model, generatedSource => ExtensionInvocationSimplifier.Simplify(TransferredProjectionNames.Restore(localNames.Restore(
-                PrivateHelperParameters.RemoveUnused(generatedSource, compilation,
-                    configureSyntax.SyntaxTree.Options as CSharpParseOptions, cancellationToken),
-                compilation, configureSyntax.SyntaxTree.Options as CSharpParseOptions,
-                cancellationToken), configureSyntax.SyntaxTree.Options as CSharpParseOptions,
-                cancellationToken), compilation, configureSyntax.SyntaxTree.Options as CSharpParseOptions,
-                cancellationToken)).ToString(),
+            TypeMapperEmitter.Emit(model, FinalizeSource).ToString(),
             callbackDiagnostics,
             constructionDiagnostics,
             memberDiagnostics,
@@ -158,6 +152,16 @@ internal static class TypeMapperModelBuilder
             mappingCompletenessDiagnostics,
             includeMembersDiagnostics,
             flatteningDiagnostics);
+
+        string FinalizeSource(string generatedSource)
+        {
+            var syntax = GeneratedMapperSyntax.Parse(generatedSource, compilation,
+                configureSyntax.SyntaxTree.Options as CSharpParseOptions, cancellationToken);
+            syntax = PrivateHelperParameters.RemoveUnused(syntax);
+            syntax = localNames.Restore(syntax);
+            syntax = TransferredProjectionNames.Restore(syntax);
+            return ExtensionInvocationSimplifier.Simplify(syntax).ToString();
+        }
     }
 
     private static TypeMapperMappingsBuildResult BuildMappings(

@@ -82,14 +82,13 @@ internal static class CollectionCallerInformation
             ExtensionInvocationSimplifier.MarkCollection(rewritten.OpenBraceToken, metadata.ToArray(), semantic.Compilation));
     }
 
-    public static string Restore(string source, CSharpCompilation compilation,
-        CSharpParseOptions? options, CancellationToken cancellationToken)
+    public static GeneratedMapperSyntax Restore(GeneratedMapperSyntax source)
     {
-        if (source.IndexOf("/*Morphant.Extension", StringComparison.Ordinal) < 0) return source;
-        var prefix = ExtensionInvocationSimplifier.MarkerScopePrefix(compilation) + "Collection:";
-        if (source.IndexOf(prefix, StringComparison.Ordinal) < 0) return source;
-        var root = CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken)
-            .GetCompilationUnitRoot(cancellationToken);
+        if (!source.Contains("/*Morphant.Extension")) return source;
+        var prefix = ExtensionInvocationSimplifier.MarkerScopePrefix(source.Compilation) + "Collection:";
+        if (!source.Contains(prefix)) return source;
+        var cancellationToken = source.CancellationToken;
+        var root = source.Root;
         var marked = root.DescendantNodes().OfType<InitializerExpressionSyntax>()
             .Where(node => node.IsKind(SyntaxKind.CollectionInitializerExpression))
             .Select(node => (Node: node, Marker: node.OpenBraceToken.TrailingTrivia
@@ -120,13 +119,13 @@ internal static class CollectionCallerInformation
                     ? element.CloseBraceToken.WithLeadingTrivia(SyntaxFactory.Space) : element.CloseBraceToken));
             return rewritten.WithAdditionalAnnotations(new SyntaxAnnotation(Annotation, data));
         });
-        var tree = CSharpSyntaxTree.Create(root, options);
-        root = tree.GetCompilationUnitRoot(cancellationToken);
-        var semantic = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
+        source = source.WithRoot(root);
+        root = source.Root;
+        var semantic = source.SemanticModel;
         var rejected = new HashSet<InitializerExpressionSyntax>(root.GetAnnotatedNodes(Annotation).OfType<InitializerExpressionSyntax>()
             .Where(initializer => !Matches(initializer, semantic, cancellationToken)));
-        return rejected.Count == 0 ? root.ToFullString() :
-            new CollectionInitializerLowerer(semantic, rejected, cancellationToken).Visit(root)!.ToFullString();
+        return rejected.Count == 0 ? source : source.WithRoot(
+            (CompilationUnitSyntax)new CollectionInitializerLowerer(semantic, rejected, cancellationToken).Visit(root)!);
     }
 
     private static bool Matches(InitializerExpressionSyntax initializer, SemanticModel semantic, CancellationToken token)

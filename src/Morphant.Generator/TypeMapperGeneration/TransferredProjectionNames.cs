@@ -18,14 +18,9 @@ internal static class TransferredProjectionNames
         return name.ReplaceToken(token, token.WithTrailingTrivia(trivia.Add(SyntaxFactory.Comment(Marker))));
     }
 
-    public static string Restore(string source, CSharpParseOptions? options,
-        CancellationToken cancellationToken)
-    {
-        if (source.IndexOf(Marker, StringComparison.Ordinal) < 0) return source;
-        var root = CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken)
-            .GetRoot(cancellationToken);
-        return new Rewriter().Visit(root)!.ToFullString();
-    }
+    public static GeneratedMapperSyntax Restore(GeneratedMapperSyntax source) => !source.Contains(Marker)
+        ? source
+        : source.WithRoot((CompilationUnitSyntax)new Rewriter().Visit(source.Root)!);
 
     private sealed class Rewriter : CSharpSyntaxRewriter
     {

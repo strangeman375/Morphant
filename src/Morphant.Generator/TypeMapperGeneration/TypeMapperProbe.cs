@@ -13,10 +13,7 @@ internal sealed class TypeMapperProbe
     private readonly CSharpCompilation _compilation;
     private readonly CSharpParseOptions? _parseOptions;
     private readonly CancellationToken _cancellationToken;
-    private SourceText? _source;
-    private SyntaxTree? _tree;
-    private SyntaxNode? _root;
-    private SemanticModel? _semanticModel;
+    private GeneratedMapperSyntax? _syntax;
     private Dictionary<string, MethodDeclarationSyntax>? _methods;
     private ImmutableArray<Diagnostic> _diagnostics;
 
@@ -31,17 +28,14 @@ internal sealed class TypeMapperProbe
 
     public TypeMapperModel Model { get; }
 
-    public SourceText Source => _source ??= SourceText.From(
-        CollectionCallerInformation.Restore(TypeMapperEmitter.EmitTransferProbe(Model).ToString(),
-            _compilation, _parseOptions, _cancellationToken), System.Text.Encoding.UTF8);
+    private GeneratedMapperSyntax Syntax => _syntax ??= CollectionCallerInformation.Restore(
+        GeneratedMapperSyntax.Parse(TypeMapperEmitter.EmitTransferProbe(Model).ToString(),
+            _compilation, _parseOptions, _cancellationToken, "Morphant.TransferProbe.g.cs"));
 
-    public SyntaxTree Tree => _tree ??= CSharpSyntaxTree.ParseText(
-        Source, _parseOptions, "Morphant.TransferProbe.g.cs", _cancellationToken);
-
-    public SyntaxNode Root => _root ??= Tree.GetRoot(_cancellationToken);
-
-    public SemanticModel SemanticModel => _semanticModel ??=
-        _compilation.AddSyntaxTrees(Tree).GetSemanticModel(Tree);
+    public SourceText Source => Syntax.Text;
+    public SyntaxTree Tree => Syntax.Tree;
+    public SyntaxNode Root => Syntax.Root;
+    public SemanticModel SemanticModel => Syntax.SemanticModel;
 
     public IReadOnlyDictionary<string, MethodDeclarationSyntax> Methods => _methods ??=
         Root.DescendantNodes().OfType<MethodDeclarationSyntax>()

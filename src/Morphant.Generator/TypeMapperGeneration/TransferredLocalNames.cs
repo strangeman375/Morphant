@@ -53,13 +53,12 @@ internal sealed class TransferredLocalNames
         return name;
     }
 
-    public string Restore(string source, CSharpCompilation compilation,
-        CSharpParseOptions? options, CancellationToken cancellationToken)
+    public GeneratedMapperSyntax Restore(GeneratedMapperSyntax source)
     {
         if (_preferred.Count == 0) return source;
-        var tree = CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken);
-        var root = tree.GetRoot(cancellationToken);
-        var semantic = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
+        var cancellationToken = source.CancellationToken;
+        var root = source.Root;
+        var semantic = source.SemanticModel;
         var declarations = new Dictionary<ISymbol, SyntaxToken>(SymbolEqualityComparer.Default);
         foreach (var node in root.DescendantNodes())
         {
@@ -143,7 +142,7 @@ internal sealed class TransferredLocalNames
                 : "this.";
             changes.Add(new TextChange(new TextSpan(identifier.SpanStart, 0), receiver));
         }
-        return tree.GetText(cancellationToken).WithChanges(changes).ToString();
+        return source.WithChanges(changes);
     }
 
     private static bool SeparateJoinBindings(SyntaxNode? first, SyntaxNode? second) =>

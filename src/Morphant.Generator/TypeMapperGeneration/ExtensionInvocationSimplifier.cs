@@ -89,21 +89,21 @@ internal static class ExtensionInvocationSimplifier
             .TakeWhile(character => character is ' ' or '\t').ToArray());
     }
 
-    public static string Simplify(string source, CSharpCompilation compilation,
-        CSharpParseOptions? options, CancellationToken cancellationToken)
+    public static GeneratedMapperSyntax Simplify(GeneratedMapperSyntax source)
     {
-        source = CollectionCallerInformation.Restore(source, compilation, options, cancellationToken);
-        var prefix = Scope(compilation).Prefix;
-        if (source.IndexOf(prefix, StringComparison.Ordinal) < 0) return source;
-        var parsed = ReadMarkers(CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken)
-            .GetCompilationUnitRoot(cancellationToken), prefix);
+        if (!source.Contains(MarkerPrefix)) return source;
+        source = CollectionCallerInformation.Restore(source);
+        var cancellationToken = source.CancellationToken;
+        var prefix = Scope(source.Compilation).Prefix;
+        if (!source.Contains(prefix)) return source;
+        var parsed = ReadMarkers(source.Root, prefix);
         var ordinal = 0;
         var root = parsed.ReplaceNodes(parsed.DescendantNodes().Where(Observe),
             (_, rewritten) => rewritten.WithAdditionalAnnotations(new SyntaxAnnotation(
                 NodeIdentity, (ordinal++).ToString(CultureInfo.InvariantCulture))));
-        var tree = CSharpSyntaxTree.Create(root, options);
-        root = tree.GetCompilationUnitRoot(cancellationToken);
-        var semantic = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
+        source = source.WithRoot(root);
+        root = source.Root;
+        var semantic = source.SemanticModel;
         var candidates = root.DescendantNodes().OfType<InvocationExpressionSyntax>()
             .Where(node => node.Expression is MemberAccessExpressionSyntax access && HasMarker(access.Name.Identifier, CallMarker))
             .Select(node => (Syntax: node, Method: (semantic.GetOperation(node, cancellationToken) as IInvocationOperation)?.TargetMethod))
@@ -111,7 +111,7 @@ internal static class ExtensionInvocationSimplifier
                 item.Syntax.ArgumentList.Arguments.Count > 0 &&
                 item.Syntax.ArgumentList.Arguments[0].NameColon is null)
             .ToDictionary(item => Identity(item.Syntax)!, item => item.Method!.ContainingType, StringComparer.Ordinal);
-        if (candidates.Count == 0) return Clean(root);
+        if (candidates.Count == 0) return source.WithRoot(Clean(root));
 
         var bindings = root.GetAnnotatedNodes(NodeIdentity).ToDictionary(node => Identity(node)!,
             node => Binding(node, semantic, cancellationToken), StringComparer.Ordinal);
@@ -121,9 +121,9 @@ internal static class ExtensionInvocationSimplifier
         {
             cancellationToken.ThrowIfCancellationRequested();
             var rewritten = (CompilationUnitSyntax)new Rewriter(enabled).Visit(root)!;
-            var candidateTree = CSharpSyntaxTree.Create(rewritten, options);
-            rewritten = candidateTree.GetCompilationUnitRoot(cancellationToken);
-            var candidateModel = compilation.AddSyntaxTrees(candidateTree).GetSemanticModel(candidateTree);
+            var candidate = source.WithRoot(rewritten);
+            rewritten = candidate.Root;
+            var candidateModel = candidate.SemanticModel;
             var imports = rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>()
                 .Where(node => Identity(node) is { } id && enabled.Contains(id) &&
                     Binding(node, candidateModel, cancellationToken) != bindings[id])
@@ -132,9 +132,9 @@ internal static class ExtensionInvocationSimplifier
                 .OrderBy(TypeName, StringComparer.Ordinal).ToArray();
             if (imports.Length != 0)
             {
-                candidateTree = CSharpSyntaxTree.Create(AddImports(rewritten, imports), options);
-                rewritten = candidateTree.GetCompilationUnitRoot(cancellationToken);
-                candidateModel = compilation.AddSyntaxTrees(candidateTree).GetSemanticModel(candidateTree);
+                candidate = candidate.WithRoot(AddImports(rewritten, imports));
+                rewritten = candidate.Root;
+                candidateModel = candidate.SemanticModel;
             }
             var rejected = new HashSet<string>(StringComparer.Ordinal);
             var rejectedImports = new HashSet<string>(StringComparer.Ordinal);
@@ -181,13 +181,13 @@ internal static class ExtensionInvocationSimplifier
                     Reject(rewritten.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true));
             }
 
-            if (rejected.Count == 0 && rejectedImports.Count == 0) return Clean(rewritten);
+            if (rejected.Count == 0 && rejectedImports.Count == 0) return candidate.WithRoot(Clean(rewritten));
             rejected.UnionWith(enabled.Where(id => rejectedImports.Contains(TypeName(candidates[id]))));
             if (rejected.Count == 0) break;
             enabled.ExceptWith(rejected);
         }
 
-        return Clean(root);
+        return source.WithRoot(Clean(root));
     }
 
     private static CompilationUnitSyntax AddImports(CompilationUnitSyntax root, IEnumerable<INamedTypeSymbol> types)
@@ -341,7 +341,8 @@ internal static class ExtensionInvocationSimplifier
         semantic.GetDiagnostics(cancellationToken: token).Where(IsDiagnostic).GroupBy(DiagnosticKey)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
-    private static string Clean(SyntaxNode root) => new FallbackLayoutRewriter().Visit(root)!.ToFullString();
+    private static CompilationUnitSyntax Clean(CompilationUnitSyntax root) =>
+        (CompilationUnitSyntax)new FallbackLayoutRewriter().Visit(root)!;
 
     private sealed class FallbackLayoutRewriter : CSharpSyntaxRewriter
     {

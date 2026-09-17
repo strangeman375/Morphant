@@ -8,12 +8,11 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class PrivateHelperParameters
 {
-    public static string RemoveUnused(string source, CSharpCompilation compilation,
-        CSharpParseOptions? options, CancellationToken cancellationToken)
+    public static GeneratedMapperSyntax RemoveUnused(GeneratedMapperSyntax source)
     {
-        var tree = CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken);
-        var root = tree.GetRoot(cancellationToken);
-        var semantic = compilation.AddSyntaxTrees(tree).GetSemanticModel(tree);
+        var cancellationToken = source.CancellationToken;
+        var root = source.Root;
+        var semantic = source.SemanticModel;
         var methods = new Dictionary<IMethodSymbol, MethodDeclarationSyntax>(SymbolEqualityComparer.Default);
         foreach (var method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
         {
@@ -102,7 +101,7 @@ internal static class PrivateHelperParameters
             RemoveItems(call.Syntax.ArgumentList.Arguments, removable.Contains,
                 call.Syntax.ArgumentList.OpenParenToken, call.Syntax.ArgumentList.CloseParenToken, changes);
         }
-        return changes.Count == 0 ? source : tree.GetText(cancellationToken).WithChanges(changes).ToString();
+        return source.WithChanges(changes);
     }
 
     private static bool CanDiscard(IArgumentOperation argument)
