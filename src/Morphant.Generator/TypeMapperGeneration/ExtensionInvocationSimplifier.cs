@@ -1,5 +1,5 @@
-using System.Collections.Immutable;
 using System.Globalization;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -23,21 +23,38 @@ internal static class ExtensionInvocationSimplifier
     public static SyntaxToken MarkConditional(SyntaxToken token) => Mark(token, ConditionalMarker)
         .WithTrailingTrivia(SyntaxFactory.Comment(ConditionalMarker), SyntaxFactory.Space);
 
-    public static BlockSyntax MarkBody(BlockSyntax body) =>
-        body.WithOpenBraceToken(Mark(body.OpenBraceToken, BodyMarker));
+    public static BlockSyntax MarkBody(BlockSyntax body, SyntaxNode function,
+        SyntaxToken arrow, ExpressionSyntax expression)
+    {
+        var layout = string.Join("\0", Indentation(function),
+            arrow.GetPreviousToken().TrailingTrivia.ToFullString() + arrow.LeadingTrivia,
+            arrow.TrailingTrivia.ToFullString() + expression.GetLeadingTrivia(),
+            expression.GetTrailingTrivia().ToFullString(), function.GetTrailingTrivia().ToFullString());
+        var marker = BodyMarker.Substring(0, BodyMarker.Length - 2) + ":" +
+            Convert.ToBase64String(Encoding.UTF8.GetBytes(layout)) + "*/";
+        return body.WithOpenBraceToken(Mark(body.OpenBraceToken, marker));
+    }
 
     private static SyntaxToken Mark(SyntaxToken token, string marker) =>
         token.WithTrailingTrivia(token.TrailingTrivia.Add(SyntaxFactory.Comment(marker)));
 
     private static bool HasMarker(SyntaxToken token, string marker) =>
-        token.TrailingTrivia.Any(trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) && trivia.ToString() == marker);
+        token.HasAnnotations(marker);
+
+    private static string Indentation(SyntaxNode node)
+    {
+        var text = node.SyntaxTree.GetText();
+        var line = text.Lines.GetLineFromPosition(node.SpanStart);
+        return new string(text.ToString(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(line.Start, node.SpanStart))
+            .TakeWhile(character => character is ' ' or '\t').ToArray());
+    }
 
     public static string Simplify(string source, CSharpCompilation compilation,
         CSharpParseOptions? options, CancellationToken cancellationToken)
     {
         if (source.IndexOf(CallMarker, StringComparison.Ordinal) < 0) return source;
-        var parsed = CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken)
-            .GetCompilationUnitRoot(cancellationToken);
+        var parsed = ReadMarkers(CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken)
+            .GetCompilationUnitRoot(cancellationToken));
         var ordinal = 0;
         var root = parsed.ReplaceNodes(parsed.DescendantNodes().Where(Observe),
             (_, rewritten) => rewritten.WithAdditionalAnnotations(new SyntaxAnnotation(
@@ -51,7 +68,7 @@ internal static class ExtensionInvocationSimplifier
             .Where(item => item.Method is { IsExtensionMethod: true, Parameters.Length: > 0 } &&
                 item.Syntax.ArgumentList.Arguments.Count > 0 &&
                 item.Syntax.ArgumentList.Arguments[0].NameColon is null)
-            .ToDictionary(item => Identity(item.Syntax)!, item => new Candidate(item.Syntax, item.Method!.ContainingType), StringComparer.Ordinal);
+            .ToDictionary(item => Identity(item.Syntax)!, item => item.Method!.ContainingType, StringComparer.Ordinal);
         if (candidates.Count == 0) return Clean(root);
 
         var bindings = root.GetAnnotatedNodes(NodeIdentity).ToDictionary(node => Identity(node)!,
@@ -68,7 +85,7 @@ internal static class ExtensionInvocationSimplifier
             var imports = rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>()
                 .Where(node => Identity(node) is { } id && enabled.Contains(id) &&
                     Binding(node, candidateModel, cancellationToken) != bindings[id])
-                .Select(node => candidates[Identity(node)!].Type)
+                .Select(node => candidates[Identity(node)!])
                 .GroupBy(TypeName, StringComparer.Ordinal).Select(group => group.First())
                 .OrderBy(TypeName, StringComparer.Ordinal).ToArray();
             if (imports.Length != 0)
@@ -123,7 +140,7 @@ internal static class ExtensionInvocationSimplifier
             }
 
             if (rejected.Count == 0 && rejectedImports.Count == 0) return Clean(rewritten);
-            rejected.UnionWith(enabled.Where(id => rejectedImports.Contains(TypeName(candidates[id].Type))));
+            rejected.UnionWith(enabled.Where(id => rejectedImports.Contains(TypeName(candidates[id]))));
             if (rejected.Count == 0) break;
             enabled.ExceptWith(rejected);
         }
@@ -193,7 +210,9 @@ internal static class ExtensionInvocationSimplifier
         // outside WhenNotNull. Observe that conversion at the enclosing node.
         var converted = node.Parent is ConditionalExpressionSyntax conditional && conditional.WhenTrue == node &&
                 Rewriter.IsConditional(conditional.Condition) ||
-            node.Parent is ConditionalAccessExpressionSyntax access && access.WhenNotNull == node
+            node.Parent is ConditionalAccessExpressionSyntax access && access.WhenNotNull == node ||
+            node.Parent is MemberAccessExpressionSyntax member && member.Name == node ||
+            node.Parent is MemberBindingExpressionSyntax binding && binding.Name == node
                 ? type.Type : type.ConvertedType;
         var result = symbols + "|" + (type.Type is null ? "" : TypeName(type.Type)) + "|" +
             (converted is null ? "" : TypeName(converted));
@@ -233,14 +252,35 @@ internal static class ExtensionInvocationSimplifier
         semantic.GetDiagnostics(cancellationToken: token).Where(IsDiagnostic).GroupBy(DiagnosticKey)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
-    private static string Clean(SyntaxNode root) => new MarkerRemover().Visit(root)!.ToFullString();
-    private sealed record Candidate(InvocationExpressionSyntax Syntax, INamedTypeSymbol Type);
+    private static string Clean(SyntaxNode root) => root.ToFullString();
 
-    private sealed class MarkerRemover : CSharpSyntaxRewriter
+    private static CompilationUnitSyntax ReadMarkers(CompilationUnitSyntax root)
     {
-        public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia) =>
-            trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) && trivia.ToString() is CallMarker or ConditionalMarker or BodyMarker
-                ? default : base.VisitTrivia(trivia);
+        var tokens = root.DescendantTokens().ToArray();
+        var replacements = new Dictionary<SyntaxToken, SyntaxToken>();
+        for (var index = 1; index < tokens.Length; index++)
+        {
+            var previous = tokens[index - 1];
+            var current = tokens[index];
+            var gap = previous.TrailingTrivia.AddRange(current.LeadingTrivia);
+            var bodyPrefix = BodyMarker.Substring(0, BodyMarker.Length - 2) + ":";
+            var marker = gap.FirstOrDefault(trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) &&
+                (trivia.ToString() is CallMarker or ConditionalMarker || trivia.ToString().StartsWith(bodyPrefix, StringComparison.Ordinal)));
+            if (marker == default) continue;
+
+            var text = marker.ToString();
+            var annotation = text.StartsWith(bodyPrefix, StringComparison.Ordinal)
+                ? new SyntaxAnnotation(BodyMarker, Encoding.UTF8.GetString(Convert.FromBase64String(
+                    text.Substring(bodyPrefix.Length, text.Length - bodyPrefix.Length - 2))))
+                : new SyntaxAnnotation(text);
+            gap = gap.Remove(marker);
+            if (gap.All(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)))
+                gap = text == ConditionalMarker ? SyntaxFactory.TriviaList(SyntaxFactory.Space) : default;
+            replacements[previous] = (replacements.TryGetValue(previous, out var before) ? before : previous)
+                .WithTrailingTrivia(default(SyntaxTriviaList)).WithAdditionalAnnotations(annotation);
+            replacements[current] = current.WithLeadingTrivia(gap);
+        }
+        return root.ReplaceTokens(replacements.Keys, (token, _) => replacements[token]);
     }
 
     private sealed class Rewriter : CSharpSyntaxRewriter
@@ -254,7 +294,7 @@ internal static class ExtensionInvocationSimplifier
             if (Identity(node) is not { } id || !_enabled.Contains(id) ||
                 rewritten.Expression is not MemberAccessExpressionSyntax access) return rewritten;
             var arguments = rewritten.ArgumentList.Arguments;
-            var receiver = arguments[0].Expression;
+            var receiver = arguments[0].Expression.WithTrailingTrivia(access.Expression.GetTrailingTrivia());
             return rewritten.WithExpression(access.WithExpression(receiver))
                 .WithArgumentList(rewritten.ArgumentList.WithArguments(arguments.RemoveAt(0)))
                 .WithTriviaFrom(node);
@@ -316,28 +356,45 @@ internal static class ExtensionInvocationSimplifier
         public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
         {
             var rewritten = (SimpleLambdaExpressionSyntax)base.VisitSimpleLambdaExpression(node)!;
-            return ExpressionBody(rewritten.Body) is { } expression ? rewritten.WithBody(expression) : rewritten;
+            return ExpressionBody(rewritten.Body, node) is { } body
+                ? rewritten.WithParameter(rewritten.Parameter.WithoutTrailingTrivia())
+                    .WithArrowToken(body.Arrow).WithBody(body.Expression) : rewritten;
         }
 
         public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)
         {
             var rewritten = (ParenthesizedLambdaExpressionSyntax)base.VisitParenthesizedLambdaExpression(node)!;
-            return ExpressionBody(rewritten.Body) is { } expression ? rewritten.WithBody(expression) : rewritten;
+            return ExpressionBody(rewritten.Body, node) is { } body
+                ? rewritten.WithParameterList(rewritten.ParameterList.WithoutTrailingTrivia())
+                    .WithArrowToken(body.Arrow).WithBody(body.Expression) : rewritten;
         }
 
         public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
         {
             var rewritten = (LocalFunctionStatementSyntax)base.VisitLocalFunctionStatement(node)!;
-            return rewritten.Body is { } body && ExpressionBody(body) is { } expression
-                ? rewritten.WithBody(null).WithExpressionBody(SyntaxFactory.ArrowExpressionClause(expression)
-                    .WithArrowToken(SyntaxFactory.Token(SyntaxKind.EqualsGreaterThanToken).WithTrailingTrivia(SyntaxFactory.Space)))
-                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken).WithTrailingTrivia(body.GetTrailingTrivia()))
+            return rewritten.Body is { } block && ExpressionBody(block, node) is { } body
+                ? rewritten.WithBody(null).WithParameterList(rewritten.ParameterList.WithoutTrailingTrivia())
+                    .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(body.Expression).WithArrowToken(body.Arrow))
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken).WithTrailingTrivia(body.Trailing))
                 : rewritten;
         }
 
-        private static ExpressionSyntax? ExpressionBody(CSharpSyntaxNode body) =>
-            body is BlockSyntax { Statements.Count: 1 } block && HasMarker(block.OpenBraceToken, BodyMarker) &&
-            block.Statements[0] is ExpressionStatementSyntax { Expression: ConditionalAccessExpressionSyntax expression }
-                ? expression.WithTriviaFrom(block) : null;
+        private static (ExpressionSyntax Expression, SyntaxToken Arrow, SyntaxTriviaList Trailing)? ExpressionBody(
+            CSharpSyntaxNode body, SyntaxNode function)
+        {
+            if (body is not BlockSyntax { Statements.Count: 1 } block ||
+                block.OpenBraceToken.GetAnnotations(BodyMarker).FirstOrDefault()?.Data is not { } data ||
+                block.Statements[0] is not ExpressionStatementSyntax { Expression: ConditionalAccessExpressionSyntax expression })
+                return null;
+
+            var layout = data.Split('\0');
+            var indentation = Indentation(function);
+            SyntaxTriviaList Trivia(int index) => SyntaxFactory.ParseLeadingTrivia(layout[index]
+                .Replace("\r\n", "\n").Replace("\r", "\n")
+                .Replace("\n" + layout[0], "\n" + indentation).Replace("\n", "\r\n"));
+            return (expression.WithoutTrivia().WithTrailingTrivia(Trivia(3)),
+                SyntaxFactory.Token(SyntaxKind.EqualsGreaterThanToken).WithLeadingTrivia(Trivia(1)).WithTrailingTrivia(Trivia(2)),
+                Trivia(4));
+        }
     }
 }
