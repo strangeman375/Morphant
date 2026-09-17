@@ -6,6 +6,8 @@ For supported features and examples, see the [mapping guides](README.md#mapping-
 ## Not included
 
 - automatic collection, dictionary or buffer element mapping;
+- some collection initializers inside callbacks
+  ([`MORPH0030`](diagnostics/MORPH0030.md#collection-initializers));
 - projection to `IQueryable`;
 - unflattening a flat source into newly created nested destination objects;
 - distinguishing missing, null and default values for patch/merge mappings;

@@ -67,7 +67,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 - Preserve source caller information and overload selection in collection
   initializers across mapping callbacks, including nested expressions and
-  deferred execution.
+  deferred execution. Unsupported initializer combinations report
+  [`MORPH0030`](docs/diagnostics/MORPH0030.md#collection-initializers).
 - Preserve nullable local declarations and comments in transferred callbacks,
   including conditional extension calls that retain their static form.
 - Reconsider generated extension calls after edits to competing extensions,

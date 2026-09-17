@@ -49,6 +49,8 @@ Inside declarative callbacks, use [`Auto`, `Ignore`, `Value`, `ByConvention`,
 
 Caller-information arguments retain the original source call site when callback
 code is transferred, including implicit `Add` calls in collection initializers.
+For unsupported initializer combinations and their workaround, see
+[`MORPH0030`](../diagnostics/MORPH0030.md#collection-initializers).
 
 ## Compiler warnings
 

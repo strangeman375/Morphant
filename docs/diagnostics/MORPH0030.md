@@ -13,6 +13,21 @@ conventions remain compiler diagnostics. See
 [compiler warnings](../api/README.md#compiler-warnings) for warning ownership
 and local suppression.
 
+### Collection initializers
+
+Collection initializers can also produce this diagnostic when preserving the
+original caller-information values and `Add` overload requires explicit method
+calls. Two combinations are unsupported:
+
+- an `init` assignment after a property collection initializer, such as
+  `new Holder { Items = { value }, After = value }` when `After` is init-only;
+- `await` inside a property collection initializer nested in an expression
+  where preserving execution would require moving the await to another
+  function, for example the creation branch of a conditional expression.
+
+These cases report `MORPH0030` with `CS8852` or `CS4032`, respectively. Ordinary
+initializers that can retain their original `Add` binding are unaffected.
+
 ## Fix
 
 Use constants or accessible mapper or static members. Do not capture
@@ -20,6 +35,12 @@ Use constants or accessible mapper or static members. Do not capture
 file-local symbols. The end of the diagnostic identifies the unavailable
 reference or incompatible expression. For nullable values, provide a value
 that satisfies the receiving parameter or member, for example with `??`.
+
+For an unsupported collection initializer, move the complete object creation
+into an ordinary accessible mapper or static method and call it from the
+callback. Move an enclosing async operation as a whole so its context-dependent
+work stays together. An ordinary method is supported; a local function declared
+in `Configure` is not available to the generated mapper.
 
 See [Callback forms](../api/README.md#callback-forms).
 

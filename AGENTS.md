@@ -209,6 +209,13 @@
   position, conditional execution, evaluation order and single evaluations.
   Cover all callback surfaces with reviewed full-source snapshots and runtime
   tests of caller values, overloads and effects. Approved on 2026-09-17.
+- First-class collection mapping remains deferred. Do not add complex callback
+  transformations solely to expand collection support. When preserving caller
+  information requires explicit `Add` calls, an init-only assignment after a
+  member collection initializer and an awaited member initializer that would
+  require moving `await` across a function boundary may be rejected with
+  `MORPH0030`. Retain complete typed mapper stubs and recommend an ordinary
+  accessible user method for these cases. Approved on 2026-09-17.
 - Calls, arithmetic, conversions, conditional and switch expressions,
   multiline source and expression length are not reasons to introduce a
   local. This applies equally to arguments, member assignments, object
