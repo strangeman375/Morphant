@@ -101,7 +101,7 @@ namespace QueryNames
                     from matched in matches
                     orderby doubled descending, matched
                     group doubled by matched into grouped
-                    select grouped.Key + ":" + global::System.Linq.Enumerable.Sum(grouped)));
+                    select grouped.Key + ":" + grouped.Sum()));
         }
 
         private global::QueryNames.Destination __Update(

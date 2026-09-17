@@ -100,14 +100,14 @@ namespace QueryNames
             var result = new global::QueryNames.Destination(
                 value: string.Join(",",
                     from value in source.Values
-                    let nested = global::System.Linq.Enumerable.Sum((from other in source.Values
+                    let nested = (from other in source.Values
                                   where other > value
-                                  select other))
+                                  select other).Sum()
                     select value + nested into total
                     select total));
 
-            result.Value = string.Join(",", global::System.Linq.Enumerable.Select(source.Values, value =>
-                global::System.Linq.Enumerable.Sum((from item in source.Values select item + value))));
+            result.Value = string.Join(",", source.Values.Select(value =>
+                (from item in source.Values select item + value).Sum()));
 
             return result;
         }
@@ -116,8 +116,8 @@ namespace QueryNames
             global::QueryNames.Source source,
             global::QueryNames.Destination destination)
         {
-            destination.Value = string.Join(",", global::System.Linq.Enumerable.Select(source.Values, value =>
-                global::System.Linq.Enumerable.Sum((from item in source.Values select item + value))));
+            destination.Value = string.Join(",", source.Values.Select(value =>
+                (from item in source.Values select item + value).Sum()));
 
             return destination;
         }

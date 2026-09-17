@@ -25,6 +25,9 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Preserve extension-call chains and conditional access in generated callbacks
+  when their original binding can be retained. Conflicting calls keep an
+  explicit static form without changing mapping behavior.
 - Use file-scoped namespaces in generated files for C# 10 and newer, while
   retaining C# 9 compatibility.
 - Simplify known `previous.TryGetValue` guards and omit unnecessary supporting

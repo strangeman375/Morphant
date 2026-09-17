@@ -9,6 +9,9 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 // Plans keep the unambiguous static form. Mark only syntax synthesized from a
 // user's extension call; explicit static calls are never readability candidates.
+// Transferred expressions pass through text-based emission, so trivia carries
+// provenance until ReadMarkers restores syntax annotations. Layout metadata
+// contains only trivia; literal token text is never reformatted.
 internal static class ExtensionInvocationSimplifier
 {
     private const string CallMarker = "/*Morphant.ExtensionCall*/";
@@ -16,24 +19,33 @@ internal static class ExtensionInvocationSimplifier
     private const string BodyMarker = "/*Morphant.ExtensionBody*/";
     private const string NodeIdentity = "Morphant.ExtensionBinding";
     private const string ImportIdentity = "Morphant.ExtensionImport";
+    private const string ConditionalIndentation = "Morphant.ExtensionIndentation";
 
     public static SimpleNameSyntax MarkCall(SimpleNameSyntax name) =>
         name.WithIdentifier(Mark(name.Identifier, CallMarker));
 
-    public static SyntaxToken MarkConditional(SyntaxToken token) => Mark(token, ConditionalMarker)
-        .WithTrailingTrivia(SyntaxFactory.Comment(ConditionalMarker), SyntaxFactory.Space);
+    public static SyntaxToken MarkConditional(SyntaxToken token, ConditionalAccessExpressionSyntax source) =>
+        Mark(token, Metadata(ConditionalMarker, Indentation(source),
+            source.Expression.GetTrailingTrivia().ToFullString() + source.OperatorToken.LeadingTrivia,
+            source.OperatorToken.TrailingTrivia.ToFullString()));
 
     public static BlockSyntax MarkBody(BlockSyntax body, SyntaxNode function,
         SyntaxToken arrow, ExpressionSyntax expression)
     {
-        var layout = string.Join("\0", Indentation(function),
+        var marker = Metadata(BodyMarker, Indentation(function),
             arrow.GetPreviousToken().TrailingTrivia.ToFullString() + arrow.LeadingTrivia,
             arrow.TrailingTrivia.ToFullString() + expression.GetLeadingTrivia(),
             expression.GetTrailingTrivia().ToFullString(), function.GetTrailingTrivia().ToFullString());
-        var marker = BodyMarker.Substring(0, BodyMarker.Length - 2) + ":" +
-            Convert.ToBase64String(Encoding.UTF8.GetBytes(layout)) + "*/";
         return body.WithOpenBraceToken(Mark(body.OpenBraceToken, marker));
     }
+
+    private static string Metadata(string marker, params string[] layout) =>
+        marker.Substring(0, marker.Length - 2) + ":" +
+        Convert.ToBase64String(Encoding.UTF8.GetBytes(string.Join("\0", layout))) + "*/";
+
+    private static SyntaxTriviaList LayoutTrivia(string[] layout, int index, SyntaxNode target) =>
+        SyntaxFactory.ParseLeadingTrivia(layout[index].Replace("\r\n", "\n").Replace("\r", "\n")
+            .Replace("\n" + layout[0], "\n" + Indentation(target)).Replace("\n", "\r\n"));
 
     private static SyntaxToken Mark(SyntaxToken token, string marker) =>
         token.WithTrailingTrivia(token.TrailingTrivia.Add(SyntaxFactory.Comment(marker)));
@@ -52,7 +64,7 @@ internal static class ExtensionInvocationSimplifier
     public static string Simplify(string source, CSharpCompilation compilation,
         CSharpParseOptions? options, CancellationToken cancellationToken)
     {
-        if (source.IndexOf(CallMarker, StringComparison.Ordinal) < 0) return source;
+        if (source.IndexOf("/*Morphant.Extension", StringComparison.Ordinal) < 0) return source;
         var parsed = ReadMarkers(CSharpSyntaxTree.ParseText(source, options, cancellationToken: cancellationToken)
             .GetCompilationUnitRoot(cancellationToken));
         var ordinal = 0;
@@ -264,23 +276,32 @@ internal static class ExtensionInvocationSimplifier
             var current = tokens[index];
             var gap = previous.TrailingTrivia.AddRange(current.LeadingTrivia);
             var bodyPrefix = BodyMarker.Substring(0, BodyMarker.Length - 2) + ":";
+            var conditionalPrefix = ConditionalMarker.Substring(0, ConditionalMarker.Length - 2) + ":";
             var marker = gap.FirstOrDefault(trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) &&
-                (trivia.ToString() is CallMarker or ConditionalMarker || trivia.ToString().StartsWith(bodyPrefix, StringComparison.Ordinal)));
+                (trivia.ToString() == CallMarker || trivia.ToString().StartsWith(bodyPrefix, StringComparison.Ordinal) ||
+                    trivia.ToString().StartsWith(conditionalPrefix, StringComparison.Ordinal)));
             if (marker == default) continue;
 
             var text = marker.ToString();
-            var annotation = text.StartsWith(bodyPrefix, StringComparison.Ordinal)
-                ? new SyntaxAnnotation(BodyMarker, Encoding.UTF8.GetString(Convert.FromBase64String(
-                    text.Substring(bodyPrefix.Length, text.Length - bodyPrefix.Length - 2))))
+            var prefix = text.StartsWith(bodyPrefix, StringComparison.Ordinal) ? bodyPrefix : conditionalPrefix;
+            var annotation = text != CallMarker
+                ? new SyntaxAnnotation(prefix == bodyPrefix ? BodyMarker : ConditionalMarker,
+                    Encoding.UTF8.GetString(Convert.FromBase64String(text.Substring(prefix.Length, text.Length - prefix.Length - 2))))
                 : new SyntaxAnnotation(text);
             gap = gap.Remove(marker);
             if (gap.All(trivia => trivia.IsKind(SyntaxKind.WhitespaceTrivia)))
-                gap = text == ConditionalMarker ? SyntaxFactory.TriviaList(SyntaxFactory.Space) : default;
+                gap = annotation.Kind == ConditionalMarker && !current.IsKind(SyntaxKind.CloseParenToken)
+                    ? SyntaxFactory.TriviaList(SyntaxFactory.Space) : default;
+            for (var trivia = gap.Count - 2; trivia >= 0; trivia--)
+                if (gap[trivia].IsKind(SyntaxKind.WhitespaceTrivia) && gap[trivia + 1].IsKind(SyntaxKind.EndOfLineTrivia))
+                    gap = gap.RemoveAt(trivia);
             replacements[previous] = (replacements.TryGetValue(previous, out var before) ? before : previous)
                 .WithTrailingTrivia(default(SyntaxTriviaList)).WithAdditionalAnnotations(annotation);
             replacements[current] = current.WithLeadingTrivia(gap);
         }
-        return root.ReplaceTokens(replacements.Keys, (token, _) => replacements[token]);
+        root = root.ReplaceTokens(replacements.Keys, (token, _) => replacements[token]);
+        return root.ReplaceNodes(root.DescendantNodes().OfType<IsPatternExpressionSyntax>().Where(Rewriter.IsConditional),
+            (_, rewritten) => rewritten.WithExpression(rewritten.Expression.WithTrailingTrivia(SyntaxFactory.Space)));
     }
 
     private sealed class Rewriter : CSharpSyntaxRewriter
@@ -295,8 +316,15 @@ internal static class ExtensionInvocationSimplifier
                 rewritten.Expression is not MemberAccessExpressionSyntax access) return rewritten;
             var arguments = rewritten.ArgumentList.Arguments;
             var receiver = arguments[0].Expression.WithTrailingTrivia(access.Expression.GetTrailingTrivia());
+            var list = rewritten.ArgumentList;
+            if (arguments.Count > 1)
+            {
+                var gap = arguments.GetSeparator(0).TrailingTrivia;
+                if (gap.Any(trivia => !trivia.IsKind(SyntaxKind.WhitespaceTrivia)))
+                    list = list.WithOpenParenToken(list.OpenParenToken.WithTrailingTrivia(gap));
+            }
             return rewritten.WithExpression(access.WithExpression(receiver))
-                .WithArgumentList(rewritten.ArgumentList.WithArguments(arguments.RemoveAt(0)))
+                .WithArgumentList(list.WithArguments(arguments.RemoveAt(0)))
                 .WithTriviaFrom(node);
         }
 
@@ -314,7 +342,7 @@ internal static class ExtensionInvocationSimplifier
         public override SyntaxNode? VisitConditionalExpression(ConditionalExpressionSyntax node)
         {
             var rewritten = (ConditionalExpressionSyntax)base.VisitConditionalExpression(node)!;
-            return TryRestore(rewritten.Condition, rewritten.WhenTrue) is { } restored
+            return TryRestore(rewritten.Condition, rewritten.WhenTrue, node.Condition) is { } restored
                 ? node.CopyAnnotationsTo(restored.WithTriviaFrom(node)) : rewritten;
         }
 
@@ -323,7 +351,7 @@ internal static class ExtensionInvocationSimplifier
             var rewritten = (IfStatementSyntax)base.VisitIfStatement(node)!;
             return rewritten.Else is null && rewritten.Statement is BlockSyntax { Statements.Count: 1 } block &&
                 block.Statements[0] is ExpressionStatementSyntax expression &&
-                TryRestore(rewritten.Condition, expression.Expression) is { } restored
+                TryRestore(rewritten.Condition, expression.Expression, node.Condition) is { } restored
                 ? SyntaxFactory.ExpressionStatement(restored).WithTriviaFrom(node) : rewritten;
         }
 
@@ -331,7 +359,8 @@ internal static class ExtensionInvocationSimplifier
             { Pattern: RecursivePatternSyntax { Designation: SingleVariableDesignationSyntax designation } } &&
             HasMarker(designation.Identifier, ConditionalMarker);
 
-        private static ConditionalAccessExpressionSyntax? TryRestore(ExpressionSyntax condition, ExpressionSyntax continuation)
+        private static ConditionalAccessExpressionSyntax? TryRestore(ExpressionSyntax condition, ExpressionSyntax continuation,
+            SyntaxNode original)
         {
             if (!IsConditional(condition)) return null;
             var pattern = (IsPatternExpressionSyntax)condition;
@@ -350,7 +379,10 @@ internal static class ExtensionInvocationSimplifier
             };
             if (binding is null) return null;
             var body = continuation.ReplaceNode(receiver.Parent!, binding);
-            return SyntaxFactory.ConditionalAccessExpression(pattern.Expression.WithoutTrailingTrivia(), body);
+            var layout = designation.Identifier.GetAnnotations(ConditionalMarker).Single().Data!.Split('\0');
+            return SyntaxFactory.ConditionalAccessExpression(pattern.Expression.WithTrailingTrivia(LayoutTrivia(layout, 1, original)), body)
+                .WithOperatorToken(SyntaxFactory.Token(SyntaxKind.QuestionToken).WithTrailingTrivia(LayoutTrivia(layout, 2, original)))
+                .WithAdditionalAnnotations(new SyntaxAnnotation(ConditionalIndentation, Indentation(original)));
         }
 
         public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
@@ -388,10 +420,19 @@ internal static class ExtensionInvocationSimplifier
                 return null;
 
             var layout = data.Split('\0');
-            var indentation = Indentation(function);
-            SyntaxTriviaList Trivia(int index) => SyntaxFactory.ParseLeadingTrivia(layout[index]
-                .Replace("\r\n", "\n").Replace("\r", "\n")
-                .Replace("\n" + layout[0], "\n" + indentation).Replace("\n", "\r\n"));
+            SyntaxTriviaList Trivia(int index) => LayoutTrivia(layout, index, function);
+            var afterArrow = Trivia(2).ToFullString();
+            var indentation = afterArrow.Contains('\n')
+                ? new string(afterArrow.Substring(afterArrow.LastIndexOf('\n') + 1).TakeWhile(character => character is ' ' or '\t').ToArray())
+                : Indentation(function);
+            if (expression.GetAnnotations(ConditionalIndentation).FirstOrDefault()?.Data is { } previousIndentation &&
+                previousIndentation != indentation)
+            {
+                SyntaxTriviaList Shift(SyntaxTriviaList trivia) => SyntaxFactory.ParseLeadingTrivia(
+                    trivia.ToFullString().Replace("\r\n" + previousIndentation, "\r\n" + indentation));
+                expression = expression.ReplaceTokens(expression.DescendantTokens(), (token, _) => token
+                    .WithLeadingTrivia(Shift(token.LeadingTrivia)).WithTrailingTrivia(Shift(token.TrailingTrivia)));
+            }
             return (expression.WithoutTrivia().WithTrailingTrivia(Trivia(3)),
                 SyntaxFactory.Token(SyntaxKind.EqualsGreaterThanToken).WithLeadingTrivia(Trivia(1)).WithTrailingTrivia(Trivia(2)),
                 Trivia(4));

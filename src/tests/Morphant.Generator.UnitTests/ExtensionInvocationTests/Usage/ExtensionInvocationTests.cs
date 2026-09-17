@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests.ExtensionInvocationTests.Usage;
@@ -23,7 +24,43 @@ internal sealed partial class ExtensionInvocationTests
             Assert.That(result.EffectiveDiagnostics, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(result.GeneratedSources.Select(item => (item.HintName, item.SourceText.ToString())),
-                Is.EquivalentTo(expected.Select(item => (item.Hint, GeneratedSourceText.Normalize(item.Source)))));
+                Is.EquivalentTo(expected.Select(item => (item.Hint, NormalizeExpected(item.Source, lineEnding)))));
+        });
+    }
+
+    private static string NormalizeExpected(string source, string literalLineEnding)
+    {
+        var text = SourceText.From(GeneratedSourceText.Normalize(source));
+        var root = CSharpSyntaxTree.ParseText(text).GetRoot();
+        // Generated trivia is always CRLF. Only literal token contents retain
+        // input line endings, including interpolated verbatim strings.
+        return text.WithChanges(root.DescendantTokens().Where(token => token.Text.Contains('\n'))
+            .Select(token => new TextChange(token.Span, token.Text.ReplaceLineEndings(literalLineEnding)))).ToString();
+    }
+
+    [Test]
+    public void Adding_a_query_and_changing_language_version_reconsiders_existing_imports()
+    {
+        const string queryRegistration = """
+            builder.Map<Source, string>().Convert(source =>
+            {
+                Func<int, int> increment = source!.Increment;
+                return string.Join(",", from value in source!.Values select increment(value));
+            });
+""";
+        var initial = GeneratorTestDriver.Run("ExtensionInvocation",
+            ImportIsolationSource.Replace(queryRegistration, string.Empty, StringComparison.Ordinal), LanguageVersion.CSharp9);
+        var updated = GeneratorTestDriver.Run("ExtensionInvocation", ImportIsolationSource,
+            LanguageVersion.CSharp10, driver: initial.Driver);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(initial.EffectiveDiagnostics, Is.Empty);
+            Assert.That(initial.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(updated.EffectiveDiagnostics, Is.Empty);
+            Assert.That(updated.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(updated.GeneratedSources.Select(item => (item.HintName, item.SourceText.ToString())),
+                Is.EquivalentTo(ImportIsolation10Sources.Select(item => (item.Hint, GeneratedSourceText.Normalize(item.Source)))));
         });
     }
 
@@ -64,6 +101,8 @@ internal sealed partial class ExtensionInvocationTests
             ("GlobalNamespace", GlobalNamespaceSource, GlobalNamespace9Sources, LanguageVersion.CSharp9),
             ("GlobalNamespace", GlobalNamespaceSource, GlobalNamespace10Sources, LanguageVersion.CSharp10),
             ("GlobalImports", GlobalImportsSource, GlobalImports10Sources, LanguageVersion.CSharp10),
+            ("Layout", LayoutSource, Layout9Sources, LanguageVersion.CSharp9),
+            ("Layout", LayoutSource, Layout10Sources, LanguageVersion.CSharp10),
         };
         foreach (var item in cases)
         foreach (var (ending, edited, label) in new[] { ("\n", false, "LF"), ("\r\n", false, "CRLF"), ("\r\n", true, "IncrementalEdit") })

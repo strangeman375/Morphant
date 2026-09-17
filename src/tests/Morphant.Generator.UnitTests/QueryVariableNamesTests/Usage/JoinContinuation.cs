@@ -87,7 +87,7 @@ namespace QueryNames
             global::QueryNames.Source source)
         {
             return new global::QueryNames.Destination(
-                value: string.Join(",", from first in source.Values join value in source.Values on first equals value into value select global::System.Linq.Enumerable.Count(value)));
+                value: string.Join(",", from first in source.Values join value in source.Values on first equals value into value select value.Count()));
         }
 
         private global::QueryNames.Destination __Update(

@@ -895,7 +895,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 .WithDesignation(
                     SyntaxFactory.SingleVariableDesignation(
                         ExtensionInvocationSimplifier.MarkConditional(
-                            SyntaxFactory.Identifier(Identifier(receiverName))))));
+                            SyntaxFactory.Identifier(Identifier(receiverName)), node))));
 
         // Bind the entire continuation to the captured receiver, including
         // ordinary members, indexers and further conditional accesses.
@@ -976,6 +976,14 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         var arguments = ((ArgumentListSyntax)Visit(node.ArgumentList)!).Arguments
             .Insert(0, receiverArgument);
 
+        var openParen = node.ArgumentList.OpenParenToken;
+        if (node.ArgumentList.Arguments.Count != 0)
+        {
+            arguments = arguments.ReplaceSeparator(arguments.GetSeparator(0),
+                arguments.GetSeparator(0).WithTrailingTrivia(openParen.TrailingTrivia));
+            openParen = openParen.WithTrailingTrivia(default(SyntaxTriviaList));
+        }
+
         AppendCallerInfoArguments(
             ref arguments,
             _semanticModel.GetOperation(node) as
@@ -1000,7 +1008,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                         _ => SyntaxFactory.Token(SyntaxKind.DotToken)
                     }))
             .WithArgumentList(
-                node.ArgumentList.WithArguments(
+                node.ArgumentList.WithOpenParenToken(openParen).WithArguments(
                     arguments))
             .WithTriviaFrom(node);
     }

@@ -30,4 +30,7 @@ internal sealed class ExtensionInvocationTests
     [Test]
     public void ImportIsolation_preserves_runtime_semantics() =>
         CSharp9.Scenarios.ExtensionInvocations.ImportIsolation.Scenario.Verify();
+    [Test]
+    public void Multiline_layout_preserves_literal_values_and_conditional_effects() =>
+        CSharp9.Scenarios.ExtensionInvocations.Layout.Scenario.Verify();
 }
