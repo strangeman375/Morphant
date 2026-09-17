@@ -583,33 +583,56 @@ internal static class RuntimeCallbackMethodPlanner
             var expressions = SyntaxFactory.SeparatedList(
                 rewritten.Expressions
                     .Select(expression => expression
-                        .WithoutLeadingTrivia()
-                        .WithoutTrailingTrivia()),
+                        .WithLeadingTrivia(TrimLeadingWhitespace(expression.GetLeadingTrivia()))
+                        .WithTrailingTrivia(WithTrailingLayout(expression.GetTrailingTrivia()))),
                 rewritten.Expressions.GetSeparators()
                     .Select(separator => separator
-                        .WithoutTrivia()
-                        .WithTrailingTrivia(
+                        .WithLeadingTrivia(TrimLeadingWhitespace(separator.LeadingTrivia))
+                        .WithTrailingTrivia(WithTrailingLayout(
+                            separator.TrailingTrivia,
                             SyntaxFactory.CarriageReturnLineFeed,
-                            memberIndentation)));
+                            memberIndentation))));
             var last = expressions[expressions.Count - 1];
 
             expressions = expressions.Replace(
                 last,
-                last.WithTrailingTrivia(
+                last.WithTrailingTrivia(WithTrailingLayout(
+                    last.GetTrailingTrivia(),
                     SyntaxFactory.CarriageReturnLineFeed,
-                    indentation));
+                    indentation)));
 
             return rewritten
                 .WithOpenBraceToken(
                     rewritten.OpenBraceToken
-                        .WithLeadingTrivia(openBraceLeadingTrivia)
-                        .WithTrailingTrivia(
+                        .WithLeadingTrivia(WithTrailingLayout(
+                            rewritten.OpenBraceToken.LeadingTrivia,
+                            openBraceLeadingTrivia.ToArray()))
+                        .WithTrailingTrivia(WithTrailingLayout(
+                            rewritten.OpenBraceToken.TrailingTrivia,
                             SyntaxFactory.CarriageReturnLineFeed,
-                            memberIndentation))
+                            memberIndentation)))
                 .WithExpressions(expressions)
                 .WithCloseBraceToken(
-                    rewritten.CloseBraceToken.WithoutTrivia());
+                    rewritten.CloseBraceToken
+                        .WithLeadingTrivia(TrimLeadingWhitespace(rewritten.CloseBraceToken.LeadingTrivia))
+                        .WithTrailingTrivia(WithTrailingLayout(rewritten.CloseBraceToken.TrailingTrivia)));
         }
+
+        private static SyntaxTriviaList TrimLeadingWhitespace(SyntaxTriviaList trivia) =>
+            SyntaxFactory.TriviaList(trivia.SkipWhile(IsWhitespace));
+
+        private static SyntaxTriviaList WithTrailingLayout(SyntaxTriviaList trivia, params SyntaxTrivia[] layout)
+        {
+            var count = trivia.Count;
+            while (count > 0 && IsWhitespace(trivia[count - 1])) count--;
+            // A line comment still needs its newline when no replacement is supplied.
+            if (count > 0 && trivia[count - 1].IsKind(SyntaxKind.SingleLineCommentTrivia) && layout.Length == 0)
+                return trivia;
+            return SyntaxFactory.TriviaList(trivia.Take(count)).AddRange(layout);
+        }
+
+        private static bool IsWhitespace(SyntaxTrivia trivia) =>
+            trivia.IsKind(SyntaxKind.WhitespaceTrivia) || trivia.IsKind(SyntaxKind.EndOfLineTrivia);
     }
 
     private sealed class NullableSuppressionTriviaRewriter :

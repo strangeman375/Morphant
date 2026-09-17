@@ -58,7 +58,7 @@ namespace ExtensionCases
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int>().Convert(source =>
             {
-                var bag = new Bag { source!.Number };
+                var bag = new Bag { /* opening */ source!.Number /* first */, /* separator */ source!.Number /* last */ } /* closing */;
                 return bag.Items[0] + source!.Number.Extra();
             });
     }
@@ -190,9 +190,10 @@ public partial class Mapper :
     private int __ConvertDestination(global::ExtensionCases.Source? source)
     {
         var bag = new global::ExtensionCases.Bag
-        {
-            source!.Number
-        };
+        { /* opening */
+            source!.Number /* first */, /* separator */
+            source!.Number /* last */
+        } /* closing */;
         return bag.Items[0] + global::Alternate.Operations.Extra(source!.Number);
     }
 }
