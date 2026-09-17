@@ -489,7 +489,7 @@ namespace Morphant
     }
 
     [Test]
-    public void UserLocalsAndNullableFlow()
+    public void LongSharedSuffixKeepsUserLocalsAndNullableFlow()
     {
         // lang=c#
         const string source =
@@ -524,7 +524,39 @@ namespace TestCase
                         throw new InvalidOperationException("missing name");
                     if (previous.HasValue && previous.Value.Name == name)
                         return previous.Value;
-                    return new(name);
+                    var trimmed01 = name.Trim();
+                    var trimmed02 = trimmed01.Trim();
+                    var trimmed03 = trimmed02.Trim();
+                    var trimmed04 = trimmed03.Trim();
+                    var trimmed05 = trimmed04.Trim();
+                    var trimmed06 = trimmed05.Trim();
+                    var trimmed07 = trimmed06.Trim();
+                    var trimmed08 = trimmed07.Trim();
+                    var trimmed09 = trimmed08.Trim();
+                    var trimmed10 = trimmed09.Trim();
+                    var trimmed11 = trimmed10.Trim();
+                    var trimmed12 = trimmed11.Trim();
+                    var trimmed13 = trimmed12.Trim();
+                    var trimmed14 = trimmed13.Trim();
+                    var trimmed15 = trimmed14.Trim();
+                    var trimmed16 = trimmed15.Trim();
+                    var trimmed17 = trimmed16.Trim();
+                    var trimmed18 = trimmed17.Trim();
+                    var trimmed19 = trimmed18.Trim();
+                    var trimmed20 = trimmed19.Trim();
+                    var trimmed21 = trimmed20.Trim();
+                    var trimmed22 = trimmed21.Trim();
+                    var trimmed23 = trimmed22.Trim();
+                    var trimmed24 = trimmed23.Trim();
+                    var trimmed25 = trimmed24.Trim();
+                    var trimmed26 = trimmed25.Trim();
+                    var trimmed27 = trimmed26.Trim();
+                    var trimmed28 = trimmed27.Trim();
+                    var trimmed29 = trimmed28.Trim();
+                    var trimmed30 = trimmed29.Trim();
+                    var trimmed31 = trimmed30.Trim();
+                    var trimmed32 = trimmed31.Trim();
+                    return new(trimmed32);
                 });
     }
 }
@@ -618,8 +650,41 @@ namespace TestCase
         private global::TestCase.Destination __Construct(
             string name)
         {
+            var trimmed01 = name.Trim();
+            var trimmed02 = trimmed01.Trim();
+            var trimmed03 = trimmed02.Trim();
+            var trimmed04 = trimmed03.Trim();
+            var trimmed05 = trimmed04.Trim();
+            var trimmed06 = trimmed05.Trim();
+            var trimmed07 = trimmed06.Trim();
+            var trimmed08 = trimmed07.Trim();
+            var trimmed09 = trimmed08.Trim();
+            var trimmed10 = trimmed09.Trim();
+            var trimmed11 = trimmed10.Trim();
+            var trimmed12 = trimmed11.Trim();
+            var trimmed13 = trimmed12.Trim();
+            var trimmed14 = trimmed13.Trim();
+            var trimmed15 = trimmed14.Trim();
+            var trimmed16 = trimmed15.Trim();
+            var trimmed17 = trimmed16.Trim();
+            var trimmed18 = trimmed17.Trim();
+            var trimmed19 = trimmed18.Trim();
+            var trimmed20 = trimmed19.Trim();
+            var trimmed21 = trimmed20.Trim();
+            var trimmed22 = trimmed21.Trim();
+            var trimmed23 = trimmed22.Trim();
+            var trimmed24 = trimmed23.Trim();
+            var trimmed25 = trimmed24.Trim();
+            var trimmed26 = trimmed25.Trim();
+            var trimmed27 = trimmed26.Trim();
+            var trimmed28 = trimmed27.Trim();
+            var trimmed29 = trimmed28.Trim();
+            var trimmed30 = trimmed29.Trim();
+            var trimmed31 = trimmed30.Trim();
+            var trimmed32 = trimmed31.Trim();
+
             return new global::TestCase.Destination(
-                name: name);
+                name: trimmed32);
         }
     }
 }

@@ -45,6 +45,7 @@ internal sealed partial class QueryVariableNamesTests
     {
         var cases = new (string Name, string Source, string Mapper)[]
         {
+            ("ManyLocals", ManyLocalsSource, ManyLocalsMapper),
             ("Clauses", ClausesSource, ClausesMapper),
             ("Collisions", CollisionsSource, CollisionsMapper),
             ("Escaped", EscapedSource, EscapedMapper),
