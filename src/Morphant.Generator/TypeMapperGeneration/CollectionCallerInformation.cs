@@ -161,9 +161,24 @@ internal static class CollectionCallerInformation
             double number when double.IsNaN(number) => "double.NaN",
             double number when double.IsPositiveInfinity(number) => "double.PositiveInfinity",
             double number when double.IsNegativeInfinity(number) => "double.NegativeInfinity",
+            float number => number.ToString("R", CultureInfo.InvariantCulture) + "F",
+            double number => number.ToString("R", CultureInfo.InvariantCulture) + "D",
+            decimal number => number.ToString(CultureInfo.InvariantCulture) + "M",
+            long number => number.ToString(CultureInfo.InvariantCulture) + "L",
+            ulong number => number.ToString(CultureInfo.InvariantCulture) + "UL",
+            uint number => number.ToString(CultureInfo.InvariantCulture) + "U",
             _ => SymbolDisplay.FormatPrimitive(constant, quoteStrings: true, useHexadecimalNumbers: false)
         };
-        return SymbolEqualityComparer.Default.Equals(value.Type, type) ? text : "(" + typeName(type) + ")" + text;
+        var literalType = constant switch
+        {
+            string => SpecialType.System_String, int => SpecialType.System_Int32,
+            bool => SpecialType.System_Boolean, char => SpecialType.System_Char,
+            float => SpecialType.System_Single, double => SpecialType.System_Double,
+            decimal => SpecialType.System_Decimal, long => SpecialType.System_Int64,
+            ulong => SpecialType.System_UInt64, uint => SpecialType.System_UInt32,
+            _ => SpecialType.None
+        };
+        return literalType == type.SpecialType && literalType != SpecialType.None ? text : "(" + typeName(type) + ")" + text;
     }
 
     private static string Escape(string name) => SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None ? "@" + name : name;

@@ -44,11 +44,10 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                 var variable = rewritten.Declaration.Variables[0];
                 var rewrittenCreation = (BaseObjectCreationExpressionSyntax)variable.Initializer!.Value;
                 var receiver = SyntaxFactory.IdentifierName(variable.Identifier);
-                var populated = Populate(receiver, rewrittenCreation.Initializer!, Indentation(statement));
-                var allocation = WithoutInitializer(rewrittenCreation);
+                var (allocation, remaining) = Split(creation, rewrittenCreation);
                 statements.Add(rewritten.WithDeclaration(rewritten.Declaration.WithVariables(
                     SyntaxFactory.SingletonSeparatedList(variable.WithInitializer(variable.Initializer.WithValue(allocation))))));
-                statements.AddRange(populated);
+                statements.AddRange(Populate(receiver, remaining, Indentation(statement)));
             }
             else statements.Add((StatementSyntax)Visit(statement)!);
         }
@@ -68,6 +67,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         _directCreation = previous;
         _scopes.Pop();
         return scope.Helpers.Count == 0 && !NeedsRootBody(node.ExpressionBody.Expression) ? rewritten : rewritten.WithExpressionBody(null)
+            .WithParameterList(rewritten.ParameterList.WithTrailingTrivia(WithoutWhitespace(rewritten.ParameterList.GetTrailingTrivia())))
             .WithSemicolonToken(default).WithBody(FunctionBody(rewritten.ExpressionBody!.Expression,
                 _semantic.GetDeclaredSymbol(node, _cancellationToken) is IMethodSymbol { ReturnsVoid: true }, scope, Indentation(node)));
     }
@@ -83,6 +83,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         _directCreation = previous;
         _scopes.Pop();
         return scope.Helpers.Count == 0 && !NeedsRootBody(node.ExpressionBody.Expression) ? rewritten : rewritten.WithExpressionBody(null)
+            .WithParameterList(rewritten.ParameterList.WithTrailingTrivia(WithoutWhitespace(rewritten.ParameterList.GetTrailingTrivia())))
             .WithSemicolonToken(default).WithBody(FunctionBody(rewritten.ExpressionBody!.Expression,
                 _semantic.GetDeclaredSymbol(node, _cancellationToken) is IMethodSymbol { ReturnsVoid: true }, scope, Indentation(node)));
     }
@@ -127,29 +128,79 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         var indentation = Indentation(scope.Owner) + "    ";
         var innerIndentation = indentation + "    ";
         var receiver = SyntaxFactory.IdentifierName(receiverName);
-        var allocation = ExplicitAllocation(rewritten, typeName);
+        var (allocation, remaining) = Split(original, rewritten);
+        allocation = ExplicitAllocation(allocation, typeName);
         var statements = new List<StatementSyntax>
         {
             Line(SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
                 .AddVariables(SyntaxFactory.VariableDeclarator(receiverName).WithInitializer(SyntaxFactory.EqualsValueClause(allocation)))), innerIndentation)
         };
-        statements.AddRange(Populate(receiver, rewritten.Initializer!, innerIndentation));
+        statements.AddRange(Populate(receiver, remaining, innerIndentation));
         statements.Add(Line(SyntaxFactory.ReturnStatement(receiver), innerIndentation));
         var body = Block(statements, indentation);
+        var (parameters, arguments) = ScopedVariables(original, scope);
         var helper = SyntaxFactory.LocalFunctionStatement(SyntaxFactory.ParseTypeName(typeName), functionName)
-            .WithParameterList(SyntaxFactory.ParameterList()).WithBody(body);
+            .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)).NormalizeWhitespace()).WithBody(body);
         // Format the signature alone. The body contains user expressions with
         // their original multiline layout and literal token contents.
         helper = helper.WithReturnType(helper.ReturnType.WithTrailingTrivia(SyntaxFactory.Space))
             .WithParameterList(helper.ParameterList.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed))
             .WithLeadingTrivia(SyntaxFactory.CarriageReturnLineFeed, SyntaxFactory.Whitespace(indentation));
         scope.Helpers.Add(helper);
-        return SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName(functionName), SyntaxFactory.ArgumentList()).WithTriviaFrom(original);
+        return SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName(functionName),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)).NormalizeWhitespace()).WithTriviaFrom(original);
     }
 
     private bool NeedsLowering(BaseObjectCreationExpressionSyntax creation) => creation.Initializer is { } initializer &&
         initializer.DescendantNodesAndSelf().OfType<InitializerExpressionSyntax>().Any(node =>
             _rejected.Contains(node) && node.Ancestors().OfType<BaseObjectCreationExpressionSyntax>().FirstOrDefault() == creation);
+
+    private (BaseObjectCreationExpressionSyntax Allocation, InitializerExpressionSyntax Remaining) Split(
+        BaseObjectCreationExpressionSyntax original, BaseObjectCreationExpressionSyntax rewritten)
+    {
+        var initializer = rewritten.Initializer!;
+        var prefix = original.Initializer!.IsKind(SyntaxKind.ObjectInitializerExpression)
+            ? original.Initializer.Expressions.TakeWhile(expression => !expression.DescendantNodesAndSelf()
+                .OfType<InitializerExpressionSyntax>().Any(node => _rejected.Contains(node) &&
+                    node.Ancestors().OfType<BaseObjectCreationExpressionSyntax>().FirstOrDefault() == original)).Count()
+            : 0;
+        if (prefix == 0) return (WithoutInitializer(rewritten), initializer);
+        var retained = initializer.WithExpressions(SyntaxFactory.SeparatedList(initializer.Expressions.Take(prefix)));
+        BaseObjectCreationExpressionSyntax allocation = rewritten switch
+        {
+            ObjectCreationExpressionSyntax creation => creation.WithInitializer(retained),
+            ImplicitObjectCreationExpressionSyntax creation => creation.WithInitializer(retained),
+            _ => throw new InvalidOperationException()
+        };
+        return (allocation, initializer.WithExpressions(SyntaxFactory.SeparatedList(initializer.Expressions.Skip(prefix))));
+    }
+
+    private (List<ParameterSyntax> Parameters, List<ArgumentSyntax> Arguments) ScopedVariables(SyntaxNode creation, Scope scope)
+    {
+        var parameters = new List<ParameterSyntax>();
+        var arguments = new List<ArgumentSyntax>();
+        var seen = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var flow = _semantic.AnalyzeDataFlow(creation);
+        foreach (var name in creation.DescendantNodes().OfType<IdentifierNameSyntax>())
+        {
+            if (_semantic.GetSymbolInfo(name, _cancellationToken).Symbol is not (ILocalSymbol or IParameterSymbol or IRangeVariableSymbol) symbol ||
+                !seen.Add(symbol) || symbol.DeclaringSyntaxReferences.Any(reference => creation.Span.Contains(reference.Span)) ||
+                _semantic.LookupSymbols(scope.Owner.Span.End - 1, name: symbol.Name).Any(visible => SymbolEqualityComparer.Default.Equals(visible, symbol))) continue;
+            var type = _semantic.GetTypeInfo(name, _cancellationToken).Type!;
+            var byRef = flow?.WrittenInside.Contains(symbol, SymbolEqualityComparer.Default) == true;
+            var parameter = SyntaxFactory.Parameter(name.Identifier).WithType(SyntaxFactory.ParseTypeName(
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)));
+            var argument = SyntaxFactory.Argument(name.WithoutTrivia());
+            if (byRef)
+            {
+                parameter = parameter.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.RefKeyword)));
+                argument = argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
+            }
+            parameters.Add(parameter);
+            arguments.Add(argument);
+        }
+        return (parameters, arguments);
+    }
 
     private IEnumerable<StatementSyntax> Populate(ExpressionSyntax receiver, InitializerExpressionSyntax initializer, string indentation)
     {
@@ -211,25 +262,26 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
 
     private BlockSyntax FunctionBody(ExpressionSyntax expression, bool returnsVoid, Scope scope, string indentation)
     {
-        if (expression is BaseObjectCreationExpressionSyntax { Initializer: { } initializer } creation && initializer.HasAnnotations(CollectionCallerInformation.Annotation))
+        var original = scope.Owner switch
         {
-            var original = scope.Owner switch
-            {
-                MethodDeclarationSyntax method => method.ExpressionBody!.Expression,
-                LocalFunctionStatementSyntax function => function.ExpressionBody!.Expression,
-                LambdaExpressionSyntax lambda => (ExpressionSyntax)lambda.Body,
-                _ => expression
-            };
+            MethodDeclarationSyntax method => method.ExpressionBody!.Expression,
+            LocalFunctionStatementSyntax function => function.ExpressionBody!.Expression,
+            LambdaExpressionSyntax lambda => (ExpressionSyntax)lambda.Body,
+            _ => expression
+        };
+        if (NeedsRootBody(original) && expression is BaseObjectCreationExpressionSyntax creation)
+        {
             var type = _semantic.GetTypeInfo(original, _cancellationToken).Type!;
             var name = ReceiverName(original, type.Name);
             var receiver = SyntaxFactory.IdentifierName(name);
+            var (allocation, remaining) = Split((BaseObjectCreationExpressionSyntax)original, creation);
             var statements = new List<StatementSyntax>
             {
                 Line(SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
                     .AddVariables(SyntaxFactory.VariableDeclarator(name).WithInitializer(SyntaxFactory.EqualsValueClause(
-                        ExplicitAllocation(creation, TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)))))), indentation + "    ")
+                        ExplicitAllocation(allocation, TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)))))), indentation + "    ")
             };
-            statements.AddRange(Populate(receiver, initializer, indentation + "    "));
+            statements.AddRange(Populate(receiver, remaining, indentation + "    "));
             statements.Add(Line(SyntaxFactory.ReturnStatement(receiver), indentation + "    "));
             statements.AddRange(scope.Helpers);
             return Block(statements, indentation).WithLeadingTrivia(SyntaxFactory.CarriageReturnLineFeed, SyntaxFactory.Whitespace(indentation));
@@ -248,9 +300,10 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
     }
 
     private static BaseObjectCreationExpressionSyntax ExplicitAllocation(BaseObjectCreationExpressionSyntax creation, string typeName) =>
-        WithoutInitializer(creation) is ImplicitObjectCreationExpressionSyntax implicitCreation
+        creation is ImplicitObjectCreationExpressionSyntax implicitCreation
             ? SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(typeName)).WithArgumentList(implicitCreation.ArgumentList)
-            : WithoutInitializer(creation);
+                .WithInitializer(implicitCreation.Initializer)
+            : creation;
 
     private static SyntaxTriviaList WithoutWhitespace(SyntaxTriviaList trivia) =>
         trivia.All(item => item.IsKind(SyntaxKind.WhitespaceTrivia) || item.IsKind(SyntaxKind.EndOfLineTrivia)) ? default : trivia;
