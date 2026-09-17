@@ -58,4 +58,24 @@ internal sealed class ExtensionInvocationTests
     [Test]
     public void Imports_preserve_collection_initializer_binding() =>
         CSharp11.Scenarios.ExtensionInvocations.ImplicitBindings.Scenario.VerifyInitializer();
+
+    [Test]
+    public void CollectionCallerInformation_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionCallerInformation.Scenario.Verify();
+
+    [Test]
+    public void CollectionNested_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionNested.Scenario.Verify();
+
+    [Test]
+    public void CollectionPattern_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionPattern.Scenario.Verify();
+
+    [Test]
+    public void CollectionQuery_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionQuery.Scenario.Verify();
+
+    [Test]
+    public void CollectionSurfaces_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionSurfaces.Scenario.Verify();
 }

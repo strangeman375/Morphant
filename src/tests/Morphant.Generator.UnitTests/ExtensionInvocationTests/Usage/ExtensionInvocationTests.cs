@@ -129,6 +129,16 @@ internal sealed partial class ExtensionInvocationTests
             ("ImplicitPattern", ImplicitPatternSource, ImplicitPattern10Sources, LanguageVersion.CSharp10),
             ("ImplicitLoopDeconstruction", ImplicitLoopDeconstructionSource, ImplicitLoopDeconstruction10Sources, LanguageVersion.CSharp10),
             ("ImplicitInitializer", ImplicitInitializerSource, ImplicitInitializer10Sources, LanguageVersion.CSharp10),
+            ("CollectionCallerInformation", CollectionCallerInformationSource, CollectionCallerInformation9Sources, LanguageVersion.CSharp9),
+            ("CollectionCallerInformation", CollectionCallerInformationSource, CollectionCallerInformation10Sources, LanguageVersion.CSharp10),
+            ("CollectionNested", CollectionNestedSource, CollectionNested9Sources, LanguageVersion.CSharp9),
+            ("CollectionNested", CollectionNestedSource, CollectionNested10Sources, LanguageVersion.CSharp10),
+            ("CollectionPattern", CollectionPatternSource, CollectionPattern9Sources, LanguageVersion.CSharp9),
+            ("CollectionPattern", CollectionPatternSource, CollectionPattern10Sources, LanguageVersion.CSharp10),
+            ("CollectionQuery", CollectionQuerySource, CollectionQuery9Sources, LanguageVersion.CSharp9),
+            ("CollectionQuery", CollectionQuerySource, CollectionQuery10Sources, LanguageVersion.CSharp10),
+            ("CollectionSurfaces", CollectionSurfacesSource, CollectionSurfaces9Sources, LanguageVersion.CSharp9),
+            ("CollectionSurfaces", CollectionSurfacesSource, CollectionSurfaces10Sources, LanguageVersion.CSharp10),
         };
         foreach (var item in cases)
         foreach (var (ending, edited, label) in new[] { ("\n", false, "LF"), ("\r\n", false, "CRLF"), ("\r\n", true, "IncrementalEdit") })
