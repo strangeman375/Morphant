@@ -65,6 +65,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Preserve nullable local declarations and comments in transferred callbacks,
+  including conditional extension calls that retain their static form.
 - Keep LINQ variable names readable and stable across source line-ending changes,
   renaming only for real scope conflicts. Preserve escaped identifiers,
   query layout, interpolation bindings and inferred projection member names
