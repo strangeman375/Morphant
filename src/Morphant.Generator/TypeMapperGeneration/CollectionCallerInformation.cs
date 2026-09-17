@@ -105,11 +105,6 @@ internal static class CollectionCallerInformation
             rewritten = rewritten.ReplaceTrivia(rewritten.DescendantTrivia().Where(trivia => trivia.ToString() == marker), (_, _) => default);
             rewritten = rewritten.ReplaceTokens(rewritten.DescendantTokens(), (token, _) => token
                 .WithLeadingTrivia(TrimLineEnds(token.LeadingTrivia)).WithTrailingTrivia(TrimLineEnds(token.TrailingTrivia)));
-            rewritten = rewritten.ReplaceNodes(rewritten.Expressions.OfType<InitializerExpressionSyntax>(), (_, element) => element
-                .WithOpenBraceToken(element.OpenBraceToken.TrailingTrivia.Count == 0
-                    ? element.OpenBraceToken.WithTrailingTrivia(SyntaxFactory.Space) : element.OpenBraceToken)
-                .WithCloseBraceToken(element.CloseBraceToken.LeadingTrivia.Count == 0
-                    ? element.CloseBraceToken.WithLeadingTrivia(SyntaxFactory.Space) : element.CloseBraceToken));
             // Roslyn versions disagree about line breaks in complex elements.
             // Keep originally single-line values and synthesized caller arguments
             // together without reflowing multiline user expressions.
@@ -118,6 +113,11 @@ internal static class CollectionCallerInformation
                 if (fields[index * 3 + 2][0] == 'S' && expressions[index] is InitializerExpressionSyntax element)
                     expressions = expressions.Replace(element, element.NormalizeWhitespace(indentation: "", eol: " ").WithTriviaFrom(element));
             rewritten = rewritten.WithExpressions(expressions);
+            rewritten = rewritten.ReplaceNodes(rewritten.Expressions.OfType<InitializerExpressionSyntax>(), (_, element) => element
+                .WithOpenBraceToken(element.OpenBraceToken.TrailingTrivia.Count + (element.Expressions.FirstOrDefault()?.GetLeadingTrivia().Count ?? 0) == 0
+                    ? element.OpenBraceToken.WithTrailingTrivia(SyntaxFactory.Space) : element.OpenBraceToken)
+                .WithCloseBraceToken(element.CloseBraceToken.LeadingTrivia.Count + (element.Expressions.LastOrDefault()?.GetTrailingTrivia().Count ?? 0) == 0
+                    ? element.CloseBraceToken.WithLeadingTrivia(SyntaxFactory.Space) : element.CloseBraceToken));
             return rewritten.WithAdditionalAnnotations(new SyntaxAnnotation(Annotation, data));
         });
         var tree = CSharpSyntaxTree.Create(root, options);
