@@ -25,6 +25,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Reduce generator work and memory use for projects with many mappers or large
+  callbacks, while preserving generated code and mapping behavior.
 - Preserve extension-call chains and conditional access in generated callbacks
   when their original binding can be retained. Conflicting calls keep an
   explicit static form without changing mapping behavior.
