@@ -47,6 +47,9 @@ inside `Configure`.
 Inside declarative callbacks, use [`Auto`, `Ignore`, `Value`, `ByConvention`,
 `Map`, `Create`, and `Update`](declarative-expressions.md).
 
+Caller-information arguments retain the original source call site when callback
+code is transferred, including implicit `Add` calls in collection initializers.
+
 ## Compiler warnings
 
 Warnings in callbacks remain diagnostics in the user's source. Morphant avoids

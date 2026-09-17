@@ -78,4 +78,36 @@ internal sealed class ExtensionInvocationTests
     [Test]
     public void CollectionSurfaces_preserves_runtime_semantics() =>
         CSharp9.Scenarios.ExtensionInvocations.CollectionSurfaces.Scenario.Verify();
+
+    [Test]
+    public void CollectionEffects_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionEffects.Scenario.Verify();
+
+    [Test]
+    public void CollectionOutArgument_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionOutArgument.Scenario.Verify();
+
+    [Test]
+    public void CollectionRefLike_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionRefLike.Scenario.Verify();
+
+    [Test]
+    public void CollectionAsyncConditional_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionAsyncConditional.Scenario.Verify();
+
+    [Test]
+    public void CollectionTypedLocal_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionTypedLocal.Scenario.Verify();
+
+    [Test]
+    public void CollectionIndex_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionIndex.Scenario.Verify();
+
+    [Test]
+    public void CollectionKeyword_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionKeyword.Scenario.Verify();
+
+    [Test]
+    public void CollectionIndexExpression_preserves_runtime_semantics() =>
+        CSharp9.Scenarios.ExtensionInvocations.CollectionIndexExpression.Scenario.Verify();
 }

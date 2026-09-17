@@ -139,6 +139,22 @@ internal sealed partial class ExtensionInvocationTests
             ("CollectionQuery", CollectionQuerySource, CollectionQuery10Sources, LanguageVersion.CSharp10),
             ("CollectionSurfaces", CollectionSurfacesSource, CollectionSurfaces9Sources, LanguageVersion.CSharp9),
             ("CollectionSurfaces", CollectionSurfacesSource, CollectionSurfaces10Sources, LanguageVersion.CSharp10),
+            ("CollectionEffects", CollectionEffectsSource, CollectionEffects9Sources, LanguageVersion.CSharp9),
+            ("CollectionEffects", CollectionEffectsSource, CollectionEffects10Sources, LanguageVersion.CSharp10),
+            ("CollectionOutArgument", CollectionOutArgumentSource, CollectionOutArgument9Sources, LanguageVersion.CSharp9),
+            ("CollectionOutArgument", CollectionOutArgumentSource, CollectionOutArgument10Sources, LanguageVersion.CSharp10),
+            ("CollectionRefLike", CollectionRefLikeSource, CollectionRefLike9Sources, LanguageVersion.CSharp9),
+            ("CollectionRefLike", CollectionRefLikeSource, CollectionRefLike10Sources, LanguageVersion.CSharp10),
+            ("CollectionAsyncConditional", CollectionAsyncConditionalSource, CollectionAsyncConditional9Sources, LanguageVersion.CSharp9),
+            ("CollectionAsyncConditional", CollectionAsyncConditionalSource, CollectionAsyncConditional10Sources, LanguageVersion.CSharp10),
+            ("CollectionTypedLocal", CollectionTypedLocalSource, CollectionTypedLocal9Sources, LanguageVersion.CSharp9),
+            ("CollectionTypedLocal", CollectionTypedLocalSource, CollectionTypedLocal10Sources, LanguageVersion.CSharp10),
+            ("CollectionIndex", CollectionIndexSource, CollectionIndex9Sources, LanguageVersion.CSharp9),
+            ("CollectionIndex", CollectionIndexSource, CollectionIndex10Sources, LanguageVersion.CSharp10),
+            ("CollectionKeyword", CollectionKeywordSource, CollectionKeyword9Sources, LanguageVersion.CSharp9),
+            ("CollectionKeyword", CollectionKeywordSource, CollectionKeyword10Sources, LanguageVersion.CSharp10),
+            ("CollectionIndexExpression", CollectionIndexExpressionSource, CollectionIndexExpression9Sources, LanguageVersion.CSharp9),
+            ("CollectionIndexExpression", CollectionIndexExpressionSource, CollectionIndexExpression10Sources, LanguageVersion.CSharp10),
         };
         foreach (var item in cases)
         foreach (var (ending, edited, label) in new[] { ("\n", false, "LF"), ("\r\n", false, "CRLF"), ("\r\n", true, "IncrementalEdit") })

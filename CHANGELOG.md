@@ -65,6 +65,9 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Preserve source caller information and overload selection in collection
+  initializers across mapping callbacks, including nested expressions and
+  deferred execution.
 - Preserve nullable local declarations and comments in transferred callbacks,
   including conditional extension calls that retain their static form.
 - Reconsider generated extension calls after edits to competing extensions,
