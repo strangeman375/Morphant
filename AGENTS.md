@@ -41,6 +41,11 @@
 - Review the generated-code diff before accepting snapshot changes. Limit
   output changes to the requested behavior and justified readability fixes;
   snapshots must enforce this standard rather than bless incidental rewrites.
+- Review the generated output of every newly added or changed test for
+  generation defects before accepting it. Verify correctness, bindings,
+  necessary renaming, evaluation order, readability and formatting against
+  the user input and these rules. A passing test or mechanically captured
+  snapshot is not evidence that its expected output is correct.
 - Runtime reflection is not supported and must not be introduced. Diagnose
   polymorphic branch relationships that cannot be determined at generation
   time instead of deferring type comparison to runtime reflection.

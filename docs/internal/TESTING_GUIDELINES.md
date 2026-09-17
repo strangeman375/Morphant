@@ -14,6 +14,12 @@ expectations or verification policy. They are intentionally kept outside
   a compatibility test.
 - Treat the generator as a black box. Start from supported user scenarios, not
   branches in the implementation.
+- For every new or changed test, inspect its generated code against the input
+  and the generated-code rules in `AGENTS.md`. Check bindings, evaluation
+  order, unnecessary locals or renaming, readability and formatting, including
+  behavior outside the test's immediate assertion. Fix discovered generation
+  defects and add coverage; never accept an incorrect output as a snapshot
+  merely because the generator currently produces it.
 - Production pipelines may be referenced only by the minimal test generators
   that invoke the code under test. Expected values and assertions must use
   literal or test-owned data, never generator helpers, models, emitters or
