@@ -1816,9 +1816,12 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     {
         var rewritten = (ArgumentSyntax)base.VisitArgument(node)!;
 
-        return node.Parent is TupleExpressionSyntax &&
+        return node.Parent is TupleExpressionSyntax tuple &&
                node.NameColon is null &&
-               IsRenamedQueryVariable(node.Expression)
+               IsRenamedQueryVariable(node.Expression) &&
+               _semanticModel.GetTypeInfo(tuple).Type is INamedTypeSymbol type &&
+               type.TupleElements[tuple.Arguments.IndexOf(node)].Name ==
+                   ((IdentifierNameSyntax)node.Expression).Identifier.ValueText
             ? rewritten.WithNameColon(SyntaxFactory.NameColon(
                 ((IdentifierNameSyntax)node.Expression).WithoutTrivia()))
             : rewritten;

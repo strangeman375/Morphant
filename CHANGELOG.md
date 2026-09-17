@@ -62,6 +62,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Keep LINQ variable names readable and stable across source line-ending changes,
+  preserving escaped identifiers and inferred projection member names.
 - Preserve effects in member callback local initializers even when their
   values are not used by a member rule.
 - Suppress obsolete warnings from technical generated declarations while
