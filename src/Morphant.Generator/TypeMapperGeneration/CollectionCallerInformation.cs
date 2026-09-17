@@ -52,20 +52,23 @@ internal static class CollectionCallerInformation
                 placeholders.Insert(0, (method.Parameters[0].RefKind == RefKind.Ref ? "ref " : "") + Receiver);
             placeholders.AddRange(call.Arguments.Where(IsCaller).Select(argument =>
                 Escape(argument.Parameter!.Name) + ": " + Constant(argument, typeName)));
-            metadata.Add(MethodKey(method, typeName));
-            metadata.Add(target + "." + name + "(" + string.Join(", ", placeholders) + ")");
-
             var lastCaller = call.Arguments.Where(IsCaller).Select(argument => argument.Parameter!.Ordinal)
                 .DefaultIfEmpty(-1).Max();
-            foreach (var argument in call.Arguments.Where(argument => argument.ArgumentKind == ArgumentKind.DefaultValue &&
-                         argument.Parameter!.Ordinal <= lastCaller).OrderBy(argument => argument.Parameter!.Ordinal))
+            var defaults = call.Arguments.Where(argument => argument.ArgumentKind == ArgumentKind.DefaultValue &&
+                    argument.Parameter!.Ordinal <= lastCaller).OrderBy(argument => argument.Parameter!.Ordinal).ToArray();
+            // Metadata defaults such as DateTimeConstant are compiler operations,
+            // not source literals. An explicit Add can leave those arguments omitted.
+            metadata.Add((defaults.Any(argument => !HasConstant(argument.Value)) ? "!" : "") + MethodKey(method, typeName));
+            metadata.Add(target + "." + name + "(" + string.Join(", ", placeholders) + ")");
+            foreach (var argument in defaults)
                 arguments = arguments.Add(SyntaxFactory.ParseExpression(Constant(argument, typeName)));
 
             if (lastCaller >= 0)
             {
                 var updated = element is InitializerExpressionSyntax complex
                     ? complex.WithExpressions(arguments)
-                    : SyntaxFactory.InitializerExpression(SyntaxKind.ComplexElementInitializerExpression, arguments).WithTriviaFrom(element);
+                    : SyntaxFactory.InitializerExpression(SyntaxKind.ComplexElementInitializerExpression,
+                        arguments.Replace(arguments[0], arguments[0].WithoutTrivia())).WithTriviaFrom(element);
                 elements = elements.Replace(element, updated);
             }
         }
@@ -135,6 +138,9 @@ internal static class CollectionCallerInformation
     private static bool IsCaller(IArgumentOperation argument) =>
         argument.ArgumentKind == ArgumentKind.DefaultValue && argument.Parameter is { } parameter &&
         ConstructExpressionRewriter.HasCallerInfoAttribute(parameter);
+
+    private static bool HasConstant(IOperation value) => value is IConversionOperation conversion
+        ? HasConstant(conversion.Operand) : value.ConstantValue.HasValue || value is IDefaultValueOperation;
 
     private static string MethodKey(IMethodSymbol method, Func<ITypeSymbol, string> typeName)
     {

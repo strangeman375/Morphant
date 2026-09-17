@@ -36,7 +36,8 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             if (statement is LocalDeclarationStatementSyntax
                 { UsingKeyword.RawKind: 0, Declaration.Variables.Count: 1 } local &&
                 local.Declaration.Variables[0].Initializer?.Value is BaseObjectCreationExpressionSyntax creation &&
-                NeedsLowering(creation))
+                NeedsLowering(creation) && _semantic.GetDeclaredSymbol(local.Declaration.Variables[0], _cancellationToken) is ILocalSymbol variableSymbol &&
+                SymbolEqualityComparer.Default.Equals(variableSymbol.Type, _semantic.GetTypeInfo(creation, _cancellationToken).Type))
             {
                 var previous = _directCreation;
                 _directCreation = creation;
@@ -146,7 +147,11 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         var functionName = Allocate(scope, "Create" + type.Name);
         var receiverName = ReceiverName(original, type.Name);
         var indentation = Indentation(scope.Owner) + "    ";
-        var innerIndentation = indentation + "    ";
+        var overflow = original.Ancestors().TakeWhile(node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or MethodDeclarationSyntax))
+            .FirstOrDefault(node => node is CheckedExpressionSyntax or CheckedStatementSyntax);
+        var isAsync = original.DescendantNodes(node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+            .OfType<AwaitExpressionSyntax>().Any();
+        var innerIndentation = indentation + (overflow is null ? "    " : "        ");
         var receiver = SyntaxFactory.IdentifierName(receiverName);
         var (allocation, remaining) = Split(original, rewritten);
         allocation = ExplicitAllocation(allocation, typeName);
@@ -158,17 +163,30 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         statements.AddRange(Populate(receiver, remaining, innerIndentation));
         statements.Add(Line(SyntaxFactory.ReturnStatement(receiver), innerIndentation));
         var body = Block(statements, indentation);
+        if (overflow is not null)
+        {
+            var isChecked = overflow.IsKind(SyntaxKind.CheckedExpression) || overflow.IsKind(SyntaxKind.CheckedStatement);
+            var check = SyntaxFactory.CheckedStatement(isChecked ? SyntaxKind.CheckedStatement : SyntaxKind.UncheckedStatement,
+                Block(statements, indentation + "    "))
+                .WithKeyword(SyntaxFactory.Token(isChecked ? SyntaxKind.CheckedKeyword : SyntaxKind.UncheckedKeyword)
+                    .WithLeadingTrivia(SyntaxFactory.Whitespace(indentation + "    ")).WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed));
+            body = Block(new[] { check }, indentation);
+        }
         var (parameters, arguments) = ScopedVariables(original, scope);
-        var helper = SyntaxFactory.LocalFunctionStatement(SyntaxFactory.ParseTypeName(typeName), functionName)
+        var helper = SyntaxFactory.LocalFunctionStatement(SyntaxFactory.ParseTypeName(isAsync ? "global::System.Threading.Tasks.Task<" + typeName + ">" : typeName), functionName)
             .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)).NormalizeWhitespace()).WithBody(body);
+        if (isAsync) helper = helper.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.AsyncKeyword).WithTrailingTrivia(SyntaxFactory.Space)));
         // Format the signature alone. The body contains user expressions with
         // their original multiline layout and literal token contents.
         helper = helper.WithReturnType(helper.ReturnType.WithTrailingTrivia(SyntaxFactory.Space))
             .WithParameterList(helper.ParameterList.WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed))
             .WithLeadingTrivia(SyntaxFactory.CarriageReturnLineFeed, SyntaxFactory.Whitespace(indentation));
         scope.Helpers.Add(helper);
-        return SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName(functionName),
-            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)).NormalizeWhitespace()).WithTriviaFrom(original);
+        ExpressionSyntax invocation = SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName(functionName),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)).NormalizeWhitespace());
+        if (isAsync) invocation = SyntaxFactory.ParenthesizedExpression(SyntaxFactory.AwaitExpression(invocation)
+            .WithAwaitKeyword(SyntaxFactory.Token(SyntaxKind.AwaitKeyword).WithTrailingTrivia(SyntaxFactory.Space)));
+        return invocation.WithTriviaFrom(original);
     }
 
     private bool NeedsLowering(BaseObjectCreationExpressionSyntax creation) => creation.Initializer is { } initializer &&
@@ -248,7 +266,12 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                         name.Identifier.ValueText.StartsWith(CollectionCallerInformation.ArgumentPrefix, StringComparison.Ordinal)).ToArray();
                 call = call.ReplaceNodes(substitutions, (name, _) => name.Identifier.ValueText == CollectionCallerInformation.Receiver
                     ? receiver : arguments[int.Parse(name.Identifier.ValueText.Substring(CollectionCallerInformation.ArgumentPrefix.Length), CultureInfo.InvariantCulture)]);
-                yield return Line(SyntaxFactory.ExpressionStatement(call), indentation);
+                var leading = element.GetLeadingTrivia();
+                if (index == 0) leading = initializer.OpenBraceToken.TrailingTrivia.AddRange(leading);
+                var trailing = element.GetTrailingTrivia();
+                if (index < initializer.Expressions.SeparatorCount) trailing = trailing.AddRange(initializer.Expressions.GetSeparator(index).TrailingTrivia);
+                if (index == initializer.Expressions.Count - 1) trailing = trailing.AddRange(initializer.CloseBraceToken.LeadingTrivia);
+                yield return Line(SyntaxFactory.ExpressionStatement(call).WithLeadingTrivia(leading).WithTrailingTrivia(trailing), indentation);
             }
             yield break;
         }
@@ -375,8 +398,22 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
     {
         var original = statement.ReplaceNodes(statement.DescendantNodes().OfType<ExpressionSyntax>(),
             (source, rewritten) => (ExpressionSyntax)UserExpressionLayout.Preserve(source, rewritten));
-        return UserExpressionLayout.Restore(original, original.NormalizeWhitespace(indentation: "    ", eol: "\r\n"))
+        var formatted = UserExpressionLayout.Restore(original, original.NormalizeWhitespace(indentation: "    ", eol: "\r\n"))
             .WithLeadingTrivia(SyntaxFactory.Whitespace(indentation)).WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+        if (HasContent(statement.GetLeadingTrivia()))
+            formatted = formatted.WithLeadingTrivia(LayoutTrivia(statement.GetLeadingTrivia(), indentation, true));
+        if (HasContent(statement.GetTrailingTrivia()))
+            formatted = formatted.WithTrailingTrivia(LayoutTrivia(statement.GetTrailingTrivia(), indentation, false));
+        return formatted;
+    }
+
+    private static SyntaxTriviaList LayoutTrivia(SyntaxTriviaList trivia, string indentation, bool leading)
+    {
+        var lines = trivia.ToFullString().Trim().Replace("\r\n", "\n").Split('\n');
+        var text = string.Join("\r\n", lines.Select((line, index) =>
+            (index == 0 && !leading ? " " : indentation) + line.TrimStart())) + "\r\n";
+        if (leading) text += indentation;
+        return SyntaxFactory.ParseLeadingTrivia(text);
     }
 
     private static string Indentation(SyntaxNode node)
