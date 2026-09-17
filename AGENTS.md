@@ -190,6 +190,17 @@
 - Preserve the structure of user-written expressions, locals and branches.
   Change it only as necessary to implement the agreed mapping semantics.
   The user controls how their computations are organized and inspected.
+- Preserve user-written extension invocation syntax, including chained calls
+  and conditional access, across all supported callback surfaces. Keep explicit
+  static calls explicit. Import only the required extension classes with
+  file-local `using static` directives. Prove that binding, type arguments,
+  conversions, evaluation order, null behavior and caller information remain
+  unchanged, including other mappings and queries affected by those imports.
+  If equivalence cannot be established, retain the explicit static form at
+  the affected call or conditional chain without adding a diagnostic or
+  rejecting the mapping. Do not add locals or otherwise complicate expressions
+  solely to obtain extension syntax. Conflict handling must be deterministic
+  and must not prefer the first registered mapping. Approved on 2026-09-17.
 - Calls, arithmetic, conversions, conditional and switch expressions,
   multiline source and expression length are not reasons to introduce a
   local. This applies equally to arguments, member assignments, object
