@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/17/2026 - 12:40:20 |
-| Coverage date: | 09/17/2026 - 12:26:01 - 09/17/2026 - 12:40:14 |
+| Generated on: | 09/17/2026 - 14:49:59 |
+| Coverage date: | 09/17/2026 - 14:40:36 - 09/17/2026 - 14:49:55 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
-| Classes: | 394 |
-| Files: | 216 |
-| **Line coverage:** | 90.7% (40742 of 44880) |
-| Covered lines: | 40742 |
-| Uncovered lines: | 4138 |
-| Coverable lines: | 44880 |
-| Total lines: | 74996 |
-| **Branch coverage:** | 82% (16380 of 19957) |
-| Covered branches: | 16380 |
-| Total branches: | 19957 |
+| Classes: | 395 |
+| Files: | 217 |
+| **Line coverage:** | 90.7% (40818 of 44959) |
+| Covered lines: | 40818 |
+| Uncovered lines: | 4141 |
+| Coverable lines: | 44959 |
+| Total lines: | 75165 |
+| **Branch coverage:** | 82.1% (16442 of 20025) |
+| Covered branches: | 16442 |
+| Total branches: | 20025 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -68,11 +68,11 @@
 |Morphant.Build.Tasks.SnapshotException|100%||
 
 </details>
-<details><summary>Morphant.Generator - 90.6%</summary>
+<details><summary>Morphant.Generator - 90.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**90.6%**|**82%**|
+|**Morphant.Generator**|**90.7%**|**82%**|
 |Morphant.Generator.CodeWriter|100%|96.6%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -121,9 +121,10 @@
 |Morphant.Generator.Incrementality.DestinationPlanOwnerComparer|100%||
 |Morphant.Generator.Incrementality.DestinationPlanPipeline|90%|97.3%|
 |Morphant.Generator.Incrementality.DestinationPlanTarget|100%|100%|
+|Morphant.Generator.Incrementality.ExtensionLookupDependencies|100%|93.3%|
 |Morphant.Generator.Incrementality.FlatteningSemanticDependencyBuilder|98.8%|97.8%|
 |Morphant.Generator.Incrementality.MapperSemanticFingerprint|100%||
-|Morphant.Generator.Incrementality.MapperSemanticFingerprintBuilder|97.5%|92.8%|
+|Morphant.Generator.Incrementality.MapperSemanticFingerprintBuilder|97.5%|93.1%|
 |Morphant.Generator.Incrementality.MapperSemanticInput|100%||
 |Morphant.Generator.Incrementality.MapperSemanticInputComparer|64.2%|100%|
 |Morphant.Generator.Incrementality.TypeContractDependencies|94.5%|87.7%|
@@ -254,7 +255,7 @@
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticPipeline|75%|50%|
 |Morphant.Generator.TypeMapperGeneration.CallbackTransferFailureObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.CompletenessPlanningObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|80.9%|81.5%|
+|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|80.9%|81.6%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticAnalyzer|89.4%|80.7%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticDescriptors|100%||
@@ -318,7 +319,7 @@
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlan|100%||
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanne<br/>r|92.3%|75.4%|
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanni<br/>ngResult|100%||
-|Morphant.Generator.TypeMapperGeneration.ExtensionInvocationSimplifier|98.5%|89.7%|
+|Morphant.Generator.TypeMapperGeneration.ExtensionInvocationSimplifier|97.8%|89.5%|
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticAnalyzer|100%|90%|
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticDescriptors|100%||
@@ -440,4 +441,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #545](https://github.com/strangeman375/Morphant/actions/runs/35220420773).
+Full HTML report: download the **coverage** artifact from [CI run #560](https://github.com/strangeman375/Morphant/actions/runs/35234552738).
