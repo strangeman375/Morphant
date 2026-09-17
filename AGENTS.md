@@ -201,6 +201,14 @@
   rejecting the mapping. Do not add locals or otherwise complicate expressions
   solely to obtain extension syntax. Conflict handling must be deterministic
   and must not prefer the first registered mapping. Approved on 2026-09-17.
+- Preserve the original caller information in implicit collection-initializer
+  `Add` calls. Keep the initializer when explicitly supplying caller arguments
+  preserves the selected overload and conversions. Otherwise use explicit calls
+  to the originally selected `Add`, including its type arguments. Introduce
+  supporting locals or functions only as needed to preserve the initializer's
+  position, conditional execution, evaluation order and single evaluations.
+  Cover all callback surfaces with reviewed full-source snapshots and runtime
+  tests of caller values, overloads and effects. Approved on 2026-09-17.
 - Calls, arithmetic, conversions, conditional and switch expressions,
   multiline source and expression length are not reasons to introduce a
   local. This applies equally to arguments, member assignments, object
