@@ -14,8 +14,17 @@ internal sealed partial class ExtensionInvocationTests
         const string interfaceDeclaration = "    public interface ISubject {}";
         var mapper = InterfaceSource.Replace(interfaceDeclaration, "", StringComparison.Ordinal);
         Assert.That(mapper, Is.Not.EqualTo(InterfaceSource));
-        const string beforeInterface = "#nullable enable\n#pragma warning disable CS1591\nnamespace ExtensionCases { public interface ISubject {} }";
-        var afterInterface = beforeInterface.Replace("ISubject {}", "ISubject : IRequired {}", StringComparison.Ordinal);
+        const string beforeInterface = """
+#nullable enable
+#pragma warning disable CS1591
+namespace ExtensionCases
+{
+    public interface IChain<T> {}
+    public sealed class Recursive<T> : IChain<Recursive<Recursive<T>>> {}
+    public interface ISubject : IChain<Recursive<ISubject>> {}
+}
+""";
+        var afterInterface = beforeInterface.Replace("ISubject : IChain", "ISubject : IRequired, IChain", StringComparison.Ordinal);
         var initial = GeneratorTestDriver.Run("ExtensionInvocation", new[]
         {
             new GeneratorTestSourceFile("Mapper.cs", mapper),
