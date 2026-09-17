@@ -16,7 +16,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
     private readonly HashSet<InitializerExpressionSyntax> _rejected;
     private readonly CancellationToken _cancellationToken;
     private readonly Stack<Scope> _scopes = new();
-    private readonly List<(SyntaxNode Scope, string Name)> _names = new();
+    private readonly List<(Scope Scope, string Name)> _names = new();
     private SyntaxNode? _directCreation;
 
     public CollectionInitializerLowerer(SemanticModel semantic,
@@ -51,7 +51,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                 var (allocation, remaining) = Split(creation, rewrittenCreation);
                 statements.Add(rewritten.WithDeclaration(rewritten.Declaration.WithVariables(
                     SyntaxFactory.SingletonSeparatedList(variable.WithInitializer(variable.Initializer.WithValue(allocation))))));
-                statements.AddRange(Populate(receiver, remaining, Indentation(statement)));
+                statements.AddRange(Populate(receiver, remaining, scope, Indentation(statement)));
             }
             else if (statement is ReturnStatementSyntax { Expression: { } result } && LeadingCreation(result) is { } first)
             {
@@ -177,7 +177,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             Line(SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
                 .AddVariables(SyntaxFactory.VariableDeclarator(receiverName).WithInitializer(SyntaxFactory.EqualsValueClause(allocation)))), innerIndentation)
         };
-        statements.AddRange(Populate(receiver, remaining, innerIndentation));
+        statements.AddRange(Populate(receiver, remaining, new Scope(original, isolated: true), innerIndentation));
         statements.Add(Line(SyntaxFactory.ReturnStatement(receiver), innerIndentation));
         var body = Block(statements, indentation);
         if (overflow is not null)
@@ -284,7 +284,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         return (parameters, arguments, declarations);
     }
 
-    private IEnumerable<StatementSyntax> Populate(ExpressionSyntax receiver, InitializerExpressionSyntax initializer, string indentation)
+    private IEnumerable<StatementSyntax> Populate(ExpressionSyntax receiver, InitializerExpressionSyntax initializer, Scope scope, string indentation)
     {
         if (initializer.IsKind(SyntaxKind.CollectionInitializerExpression))
         {
@@ -321,7 +321,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                     for (var ordinal = 0; ordinal < arguments.Count; ordinal++)
                     {
                         var argument = arguments[ordinal];
-                        var name = Allocate(_scopes.Peek(), data[ordinal * 2 + 1]);
+                        var name = Allocate(scope, data[ordinal * 2 + 1]);
                         yield return Line(SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(data[ordinal * 2]))
                             .AddVariables(SyntaxFactory.VariableDeclarator(name).WithInitializer(SyntaxFactory.EqualsValueClause(argument.Expression)))), indentation);
                         arguments = arguments.Replace(argument, argument.WithExpression(SyntaxFactory.IdentifierName(name)));
@@ -332,7 +332,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             else member = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, (SimpleNameSyntax)assignment.Left);
             if (assignment.Right is InitializerExpressionSyntax nested)
             {
-                foreach (var statement in Populate(member, nested, indentation)) yield return statement;
+                foreach (var statement in Populate(member, nested, scope, indentation)) yield return statement;
             }
             else yield return Line(SyntaxFactory.ExpressionStatement(assignment.WithLeft(member)), indentation);
         }
@@ -358,12 +358,14 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         var used = new HashSet<string>(scope.Owner.DescendantTokens().Where(token => token.IsKind(SyntaxKind.IdentifierToken))
             .Select(token => token.ValueText), StringComparer.Ordinal);
         var function = FunctionScope(scope.Owner);
-        used.UnionWith(_semantic.LookupSymbols(ScopePosition(scope.Owner)).Where(symbol => symbol.DeclaringSyntaxReferences
-            .Any(reference => FunctionScope(reference.GetSyntax(_cancellationToken)) == function)).Select(symbol => symbol.Name));
-        used.UnionWith(_names.Where(item => FunctionScope(item.Scope) == function &&
-            (item.Scope.FullSpan.Contains(scope.Owner.FullSpan) || scope.Owner.FullSpan.Contains(item.Scope.FullSpan))).Select(item => item.Name));
+        if (!scope.Isolated)
+            used.UnionWith(_semantic.LookupSymbols(ScopePosition(scope.Owner)).Where(symbol => symbol.DeclaringSyntaxReferences
+                .Any(reference => FunctionScope(reference.GetSyntax(_cancellationToken)) == function)).Select(symbol => symbol.Name));
+        used.UnionWith(_names.Where(item => ReferenceEquals(item.Scope, scope) || !scope.Isolated && !item.Scope.Isolated &&
+            FunctionScope(item.Scope.Owner) == function && (item.Scope.Owner.FullSpan.Contains(scope.Owner.FullSpan) ||
+                scope.Owner.FullSpan.Contains(item.Scope.Owner.FullSpan))).Select(item => item.Name));
         var name = UserResultMappingPlanner.AllocateName(preferred, used);
-        _names.Add((scope.Owner, name));
+        _names.Add((scope, name));
         return Escape(name);
     }
 
@@ -390,7 +392,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             .AddVariables(SyntaxFactory.VariableDeclarator(name).WithInitializer(SyntaxFactory.EqualsValueClause(
                 ExplicitAllocation(allocation, TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)))))), indentation);
         yield return HasContent(statement.GetLeadingTrivia()) ? declaration.WithLeadingTrivia(statement.GetLeadingTrivia()) : declaration;
-        foreach (var addition in Populate(receiver, remaining, indentation)) yield return addition;
+        foreach (var addition in Populate(receiver, remaining, scope, indentation)) yield return addition;
         yield return Line(statement.ReplaceNode(rewritten, receiver.WithTriviaFrom(rewritten)).WithoutLeadingTrivia(), indentation);
     }
 
@@ -485,8 +487,9 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
 
     private sealed class Scope
     {
-        public Scope(SyntaxNode owner) => Owner = owner;
+        public Scope(SyntaxNode owner, bool isolated = false) { Owner = owner; Isolated = isolated; }
         public SyntaxNode Owner { get; }
+        public bool Isolated { get; }
         public List<LocalFunctionStatementSyntax> Helpers { get; } = new();
     }
 }
