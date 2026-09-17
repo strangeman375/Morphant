@@ -10,6 +10,7 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
 {
     private const string DirectCreation = "Morphant.DirectCollectionCreation";
+    private const string Declaration = "Morphant.CollectionVariableDeclaration";
     private readonly SemanticModel _semantic;
     private readonly HashSet<InitializerExpressionSyntax> _rejected;
     private readonly CancellationToken _cancellationToken;
@@ -137,6 +138,10 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
     public override SyntaxNode? VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
         RewriteCreation(node, (BaseObjectCreationExpressionSyntax)base.VisitImplicitObjectCreationExpression(node)!);
 
+    public override SyntaxNode? VisitDeclarationExpression(DeclarationExpressionSyntax node) =>
+        base.VisitDeclarationExpression(node)!.WithAdditionalAnnotations(new SyntaxAnnotation(Declaration,
+            node.SpanStart.ToString(CultureInfo.InvariantCulture)));
+
     private ExpressionSyntax RewriteCreation(BaseObjectCreationExpressionSyntax original, BaseObjectCreationExpressionSyntax rewritten)
     {
         if (original == _directCreation) return rewritten.WithAdditionalAnnotations(new SyntaxAnnotation(DirectCreation));
@@ -172,7 +177,10 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                     .WithLeadingTrivia(SyntaxFactory.Whitespace(indentation + "    ")).WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed));
             body = Block(new[] { check }, indentation);
         }
-        var (parameters, arguments) = ScopedVariables(original, scope);
+        var (parameters, arguments, declarations) = ScopedVariables(original, scope);
+        body = body.ReplaceNodes(body.GetAnnotatedNodes(Declaration).OfType<DeclarationExpressionSyntax>()
+            .Where(declaration => declarations.Contains(declaration.GetAnnotations(Declaration).Single().Data!)),
+            (declaration, _) => SyntaxFactory.IdentifierName(((SingleVariableDesignationSyntax)declaration.Designation).Identifier).WithTriviaFrom(declaration));
         var helper = SyntaxFactory.LocalFunctionStatement(SyntaxFactory.ParseTypeName(isAsync ? "global::System.Threading.Tasks.Task<" + typeName + ">" : typeName), functionName)
             .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)).NormalizeWhitespace()).WithBody(body);
         if (isAsync) helper = helper.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.AsyncKeyword).WithTrailingTrivia(SyntaxFactory.Space)));
@@ -216,7 +224,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         return (allocation, initializer.WithExpressions(SyntaxFactory.SeparatedList(initializer.Expressions.Skip(prefix))));
     }
 
-    private (List<ParameterSyntax> Parameters, List<ArgumentSyntax> Arguments) ScopedVariables(SyntaxNode creation, Scope scope)
+    private (List<ParameterSyntax> Parameters, List<ArgumentSyntax> Arguments, HashSet<string> Declarations) ScopedVariables(SyntaxNode creation, Scope scope)
     {
         var parameters = new List<ParameterSyntax>();
         var arguments = new List<ArgumentSyntax>();
@@ -226,15 +234,15 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         {
             var symbol = _semantic.GetSymbolInfo(name, _cancellationToken).Symbol;
             if (symbol is not (ILocalSymbol or IParameterSymbol or IRangeVariableSymbol) ||
-                !seen.Add(symbol) || symbol.DeclaringSyntaxReferences.Any(reference => creation.Span.Contains(reference.Span)) ||
-                (symbol is not IParameterSymbol { RefKind: not RefKind.None } && symbol is not ILocalSymbol { RefKind: not RefKind.None } &&
-                 _semantic.LookupSymbols(ScopePosition(scope.Owner), name: symbol.Name).Any(visible => SymbolEqualityComparer.Default.Equals(visible, symbol)))) continue;
+                !seen.Add(symbol) || symbol.DeclaringSyntaxReferences.Any(reference => creation.Span.Contains(reference.Span))) continue;
             var type = symbol switch
             {
                 IParameterSymbol parameterSymbol => parameterSymbol.Type,
                 ILocalSymbol local => local.Type,
                 _ => _semantic.GetTypeInfo(name, _cancellationToken).Type!
             };
+            if (!type.IsRefLikeType && symbol is not IParameterSymbol { RefKind: not RefKind.None } && symbol is not ILocalSymbol { RefKind: not RefKind.None } &&
+                _semantic.LookupSymbols(ScopePosition(scope.Owner), name: symbol.Name).Any(visible => SymbolEqualityComparer.Default.Equals(visible, symbol))) continue;
             var byRef = symbol is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { RefKind: RefKind.Ref } ||
                 flow?.WrittenInside.Contains(symbol, SymbolEqualityComparer.Default) == true;
             var parameter = SyntaxFactory.Parameter(name.Identifier).WithType(SyntaxFactory.ParseTypeName(
@@ -248,7 +256,20 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             parameters.Add(parameter);
             arguments.Add(argument);
         }
-        return (parameters, arguments);
+        var declarations = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var declaration in creation.DescendantNodes().OfType<DeclarationExpressionSyntax>())
+        {
+            if (declaration.Designation is not SingleVariableDesignationSyntax designation ||
+                _semantic.GetDeclaredSymbol(designation, _cancellationToken) is not ILocalSymbol local ||
+                flow?.ReadOutside.Contains(local, SymbolEqualityComparer.Default) != true) continue;
+            declarations.Add(declaration.SpanStart.ToString(CultureInfo.InvariantCulture));
+            parameters.Add(SyntaxFactory.Parameter(designation.Identifier).WithType(SyntaxFactory.ParseTypeName(
+                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(local.Type)))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.OutKeyword))));
+            arguments.Add(SyntaxFactory.Argument(SyntaxFactory.DeclarationExpression(SyntaxFactory.IdentifierName("var"), designation))
+                .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.OutKeyword)));
+        }
+        return (parameters, arguments, declarations);
     }
 
     private IEnumerable<StatementSyntax> Populate(ExpressionSyntax receiver, InitializerExpressionSyntax initializer, string indentation)

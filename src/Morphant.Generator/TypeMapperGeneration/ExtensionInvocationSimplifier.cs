@@ -319,7 +319,12 @@ internal static class ExtensionInvocationSimplifier
 
     private static string ConstantValue(IOperation value) => value is IConversionOperation conversion
         ? ConstantValue(conversion.Operand) : value.ConstantValue.HasValue
-            ? SymbolDisplay.FormatPrimitive(value.ConstantValue.Value, quoteStrings: true, useHexadecimalNumbers: false) : string.Empty;
+            ? value.ConstantValue.Value switch
+            {
+                null => "null",
+                DateTime date => "DateTime:" + date.Ticks.ToString(CultureInfo.InvariantCulture),
+                var constant => SymbolDisplay.FormatPrimitive(constant, quoteStrings: true, useHexadecimalNumbers: false)
+            } : string.Empty;
 
     private static string ValueConversions(IOperation value) => value is IConversionOperation conversion
         ? Conversion(conversion.Conversion) + ":" + conversion.IsChecked + ":" + conversion.IsTryCast + ":" +
