@@ -98,12 +98,12 @@ namespace QueryNames
             var result = new global::QueryNames.Destination(
                 value: string.Join(",",
                     from source1 in source.Values
-                    let context2 = source1 + 1
+                    let context = source1 + 1
                     let context1 = source1 + 2
-                    select source1 + context2 + context1));
+                    select source1 + context + context1));
 
-            result.Value = string.Join(",", from destination1 in source.Values
-                select destination1);
+            result.Value = string.Join(",", from destination in source.Values
+                select destination);
 
             return result;
         }

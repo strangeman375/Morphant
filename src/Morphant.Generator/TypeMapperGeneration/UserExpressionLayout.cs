@@ -11,7 +11,7 @@ internal static class UserExpressionLayout
     public static SyntaxNode Preserve(SyntaxNode source, SyntaxNode rewritten)
     {
         if (source is ExpressionSyntax &&
-            (source is SwitchExpressionSyntax ||
+            (source is SwitchExpressionSyntax or QueryExpressionSyntax ||
                 source.GetLocation().GetLineSpan() is var span &&
                 span.StartLinePosition.Line != span.EndLinePosition.Line))
         {
@@ -25,7 +25,7 @@ internal static class UserExpressionLayout
     public static ExpressionSyntax ParseExpression(string expression)
     {
         var syntax = SyntaxFactory.ParseExpression(expression);
-        return HasLineBreak(expression) || ContainsSwitchExpression(syntax)
+        return HasLineBreak(expression) || ContainsLayoutSensitiveExpression(syntax)
             ? syntax.WithAdditionalAnnotations(new SyntaxAnnotation(AnnotationKind, string.Empty))
             : syntax;
     }
@@ -81,7 +81,7 @@ internal static class UserExpressionLayout
             original.NormalizeWhitespace(indentation: "    ", eol: "\r\n"));
         var originalTokens = original.DescendantTokens().ToArray();
 
-        if (!ContainsSwitchExpression(original) && !originalTokens.Any(token =>
+        if (!ContainsLayoutSensitiveExpression(original) && !originalTokens.Any(token =>
                 HasLineBreak(token.LeadingTrivia.ToFullString()) ||
                 HasLineBreak(token.TrailingTrivia.ToFullString())))
         {
@@ -138,8 +138,8 @@ internal static class UserExpressionLayout
     public static bool HasLineBreak(string text) =>
         text.IndexOf('\r') >= 0 || text.IndexOf('\n') >= 0;
 
-    public static bool ContainsSwitchExpression(SyntaxNode syntax) =>
-        syntax.DescendantNodesAndSelf().Any(static node => node is SwitchExpressionSyntax);
+    public static bool ContainsLayoutSensitiveExpression(SyntaxNode syntax) =>
+        syntax.DescendantNodesAndSelf().Any(static node => node is SwitchExpressionSyntax or QueryExpressionSyntax);
 
     private static SyntaxTriviaList PreserveGap(
         string original,
@@ -162,6 +162,10 @@ internal static class UserExpressionLayout
         // Synthesized tokens still need their normal lexical separators, but
         // normalization must not insert new breaks into a user-written layout.
         var normalized = previous.TrailingTrivia.ToFullString() + current.LeadingTrivia.ToFullString();
+        if (previous.IsKind(SyntaxKind.OpenParenToken) || current.IsKind(SyntaxKind.CloseParenToken))
+            return default;
+        if (current.IsKind(SyntaxKind.IntoKeyword))
+            return SyntaxFactory.TriviaList(SyntaxFactory.Space);
         return normalized.Length == 0 && original.Length == 0
             ? default
             : SyntaxFactory.TriviaList(SyntaxFactory.Space);

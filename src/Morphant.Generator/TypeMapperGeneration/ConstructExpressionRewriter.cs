@@ -962,7 +962,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         var rewrittenMethodName =
             (SimpleNameSyntax)Visit(methodName)!;
         var receiverArgument =
-            SyntaxFactory.Argument(rewrittenReceiver);
+            SyntaxFactory.Argument(rewrittenReceiver.WithoutLeadingTrivia());
 
         if (extensionMethod.Parameters[0].RefKind == RefKind.Ref)
         {
@@ -1807,8 +1807,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 
         return node.NameEquals is null &&
                HasChangedInferredName(node.Expression, rewritten.Expression)
-            ? rewritten.WithNameEquals(SyntaxFactory.NameEquals(
-                ((IdentifierNameSyntax)node.Expression).WithoutTrivia()))
+            ? rewritten.WithNameEquals(TransferredProjectionNames.Mark(SyntaxFactory.NameEquals(
+                ((IdentifierNameSyntax)node.Expression).WithoutTrivia())))
             : rewritten;
     }
 
@@ -1823,8 +1823,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                    INamedTypeSymbol { IsTupleType: true } type &&
                type.TupleElements[tuple.Arguments.IndexOf(node)].Name ==
                    ((IdentifierNameSyntax)node.Expression).Identifier.ValueText
-            ? rewritten.WithNameColon(SyntaxFactory.NameColon(
-                ((IdentifierNameSyntax)node.Expression).WithoutTrivia()))
+            ? rewritten.WithNameColon(TransferredProjectionNames.Mark(SyntaxFactory.NameColon(
+                ((IdentifierNameSyntax)node.Expression).WithoutTrivia())))
             : rewritten;
     }
 

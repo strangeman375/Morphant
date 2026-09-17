@@ -656,7 +656,7 @@ internal static class GeneratedCodeReadabilityLowerer
         var syntax = SyntaxFactory.ParseExpression(expression);
         // Keep a user-written switch on its original line, including switches
         // nested inside calls and lambdas that normalization would otherwise expand.
-        if (UserExpressionLayout.ContainsSwitchExpression(syntax)) return false;
+        if (UserExpressionLayout.ContainsLayoutSensitiveExpression(syntax)) return false;
 
         var evaluatedNodes = syntax.DescendantNodesAndSelf(
             static node => node is not AnonymousFunctionExpressionSyntax).ToArray();

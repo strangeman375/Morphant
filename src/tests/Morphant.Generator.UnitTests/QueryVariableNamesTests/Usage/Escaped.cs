@@ -94,8 +94,8 @@ namespace QueryNames
         {
             return new global::QueryNames.Destination(
                 value: string.Join(",", from @class in source.Values
-                    let select1 = @class + 1
-                    select "class" + ":" + select1));
+                    let @select = @class + 1
+                    select "class" + ":" + @select));
         }
 
         private global::QueryNames.Destination __Update(

@@ -99,8 +99,7 @@ namespace QueryNames
                 return default!;
             }
 
-            result.Value = string.Join(",", from destination1 in source.Values
-                select destination1);
+            result.Value = string.Join(",", from destination in source.Values select destination);
 
             return result;
         }
@@ -116,8 +115,7 @@ namespace QueryNames
                 return default!;
             }
 
-            result.Value = string.Join(",", from destination1 in source.Values
-                select destination1);
+            result.Value = string.Join(",", from destination1 in source.Values select destination1);
 
             return result;
         }

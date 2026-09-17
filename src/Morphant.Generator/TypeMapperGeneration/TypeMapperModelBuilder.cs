@@ -60,11 +60,13 @@ internal static class TypeMapperModelBuilder
             return null;
         }
 
+        var localNames = new TransferredLocalNames(mapperType, cancellationToken);
         var mappings = BuildMappings(
             analysis,
             assemblySettings,
             compilation,
             mapperType,
+            localNames,
             cancellationToken);
 
         if (mappings.Models.IsDefaultOrEmpty)
@@ -142,8 +144,12 @@ internal static class TypeMapperModelBuilder
                 "TypeMapper",
                 HintNameHelper.ToHintNamePart(mapperType.Name),
                 GeneratedEntityIdentity.ForTypeDefinition(mapperType, compilation)),
-            TypeMapperEmitter.Emit(model, generatedSource => PrivateHelperParameters.RemoveUnused(generatedSource, compilation,
-                configureSyntax.SyntaxTree.Options as CSharpParseOptions, cancellationToken)).ToString(),
+            TypeMapperEmitter.Emit(model, generatedSource => TransferredProjectionNames.Restore(localNames.Restore(
+                PrivateHelperParameters.RemoveUnused(generatedSource, compilation,
+                    configureSyntax.SyntaxTree.Options as CSharpParseOptions, cancellationToken),
+                compilation, configureSyntax.SyntaxTree.Options as CSharpParseOptions,
+                cancellationToken), configureSyntax.SyntaxTree.Options as CSharpParseOptions,
+                cancellationToken)).ToString(),
             callbackDiagnostics,
             constructionDiagnostics,
             memberDiagnostics,
@@ -158,6 +164,7 @@ internal static class TypeMapperModelBuilder
         MappingSettings assemblySettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        TransferredLocalNames localNames,
         CancellationToken cancellationToken)
     {
         var configuration = analysis.Configuration;
@@ -220,6 +227,7 @@ internal static class TypeMapperModelBuilder
                 compilation,
                 mapperType,
                 usedGeneratedMethodNames,
+                localNames,
                 cancellationToken);
 
             mapping = NestedMappingRecoveryPlanner.Apply(
@@ -575,6 +583,7 @@ internal static class TypeMapperModelBuilder
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
+        TransferredLocalNames localNames,
         CancellationToken cancellationToken)
     {
         var pair = configuration.Pair;
@@ -600,6 +609,10 @@ internal static class TypeMapperModelBuilder
             DerivedMappings = BuildDerivedMappings(
                 configuration,
                 compilation)
+        };
+        mapping = mapping with
+        {
+            AnalysisContext = mapping.AnalysisContext with { LocalNames = localNames }
         };
 
         // The variants share only semantic preparation. Their lowering, helper

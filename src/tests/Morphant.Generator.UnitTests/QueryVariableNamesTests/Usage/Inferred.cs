@@ -97,8 +97,8 @@ namespace QueryNames
         {
             var result = new global::QueryNames.Destination(
                 value: string.Join(",",
-                    from context1 in source.Values
-                    select new { context = context1 } into row
+                    from context in source.Values
+                    select new { context } into row
                     select row.context));
 
             result.Value = string.Join(",", from source1 in source.Values

@@ -99,8 +99,7 @@ namespace QueryNames
                 return default!;
             }
 
-            result.Value = string.Join(",", from context1 in source.Values
-                select context1);
+            result.Value = string.Join(",", from context in source.Values select context);
 
             return result;
         }
@@ -109,8 +108,7 @@ namespace QueryNames
             global::QueryNames.Source source,
             global::QueryNames.Destination destination)
         {
-            destination.Value = string.Join(",", from context1 in source.Values
-                select context1);
+            destination.Value = string.Join(",", from context in source.Values select context);
 
             return destination;
         }

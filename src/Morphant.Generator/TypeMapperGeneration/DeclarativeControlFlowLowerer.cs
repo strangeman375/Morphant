@@ -74,8 +74,7 @@ internal static class DeclarativeControlFlowLowerer
             TypeMapperMemberControlFlowLeafModel> buildLeaf,
         MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
-        out TypeMapperMemberControlFlowNode root,
-        IEnumerable<string>? reservedLocalNames = null)
+        out TypeMapperMemberControlFlowNode root)
     {
         TypeMapperControlFlowNode BuildLeaf(
             DeclarativeLeafSyntaxNode leaf)
@@ -126,8 +125,7 @@ internal static class DeclarativeControlFlowLowerer
                 BuildLeaf,
                 paths,
                 cancellationToken,
-                out var lowered,
-                reservedLocalNames))
+                out var lowered))
         {
             root = null!;
             return false;
@@ -156,8 +154,7 @@ internal static class DeclarativeControlFlowLowerer
             buildLeaf,
         MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
-        out TypeMapperControlFlowNode root,
-        IEnumerable<string>? reservedLocalNames = null)
+        out TypeMapperControlFlowNode root)
     {
         return TryBuild(
             program,
@@ -178,8 +175,7 @@ internal static class DeclarativeControlFlowLowerer
             buildCondition: null,
             paths,
             cancellationToken,
-            out root,
-            reservedLocalNames);
+            out root);
     }
 
     public static bool TryBuild(
@@ -207,7 +203,6 @@ internal static class DeclarativeControlFlowLowerer
         MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
         out TypeMapperControlFlowNode root,
-        IEnumerable<string>? reservedLocalNames = null,
         Func<ExpressionSyntax, TypeMapperControlFlowNode?>?
             buildExpressionFailure = null,
         bool preserveRuntimeLocals = true,
@@ -860,11 +855,9 @@ internal static class DeclarativeControlFlowLowerer
 
         var pruned = PruneLocals(lowered, requiredLocals);
         var names = AllocateLocalNames(
-            pruned,
             program,
             requiredLocals,
-            mapperType,
-            reservedLocalNames);
+            mapping.AnalysisContext.LocalNames!);
 
         root = RenameControlFlow(pruned, names);
         return true;
@@ -1199,83 +1192,18 @@ internal static class DeclarativeControlFlowLowerer
     }
 
     private static IReadOnlyDictionary<string, string> AllocateLocalNames(
-        TypeMapperControlFlowNode root,
         DeclarativeControlFlowProgram program,
         HashSet<string> requiredLocals,
-        INamedTypeSymbol mapperType,
-        IEnumerable<string>? reservedLocalNames)
+        TransferredLocalNames localNames)
     {
-        var usedNames = UserResultMappingPlanner.BuildUsedLocalNames(
-            mapperType);
-        CollectDeclaredNames(root, usedNames);
-        if (reservedLocalNames is not null) usedNames.UnionWith(reservedLocalNames);
-
-        foreach (var expression in EnumerateExpressions(
-                     root,
-                     includeLocalInitializers: true))
-        {
-            foreach (var token in SyntaxFactory.ParseTokens(expression))
-            {
-                if (token.IsKind(SyntaxKind.IdentifierToken) &&
-                    !program.RuntimeLocals.Any(local =>
-                        StringComparer.Ordinal.Equals(
-                            local.PlaceholderName,
-                            token.ValueText)) &&
-                    !program.BoundLocals.Any(local =>
-                        StringComparer.Ordinal.Equals(
-                            local.PlaceholderName,
-                            token.ValueText)))
-                {
-                    usedNames.Add(token.ValueText);
-                }
-            }
-        }
-
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
-
         foreach (var local in program.RuntimeLocals)
-        {
-            if (!requiredLocals.Contains(local.PlaceholderName))
-            {
-                continue;
-            }
-
-            names.Add(
-                local.PlaceholderName,
-                UserResultMappingPlanner.AllocateName(
-                    local.PreferredName,
-                    usedNames));
-        }
-
+            if (requiredLocals.Contains(local.PlaceholderName))
+                names.Add(local.PlaceholderName, localNames.Allocate(local.Initializer, local.PreferredName));
         foreach (var local in program.BoundLocals)
-        {
-            if (usedNames.Add(local.PreferredName))
-            {
-                names.Add(local.PlaceholderName, local.PreferredName);
-            }
-        }
-
-        foreach (var local in program.BoundLocals)
-        {
-            if (names.ContainsKey(local.PlaceholderName))
-            {
-                continue;
-            }
-
-            names.Add(
-                local.PlaceholderName,
-                UserResultMappingPlanner.AllocateName(
-                    local.PreferredName,
-                    usedNames));
-        }
-
-        return names;
-    }
-
-    internal static IEnumerable<string> GetDeclaredNames(TypeMapperControlFlowNode node)
-    {
-        var names = new HashSet<string>(StringComparer.Ordinal);
-        CollectDeclaredNames(PreserveLocalNames(node), names);
+            names.Add(local.PlaceholderName, localNames.Allocate(
+                program.RuntimeLocalPlaceholders.First(pair => pair.Value == local.PlaceholderName).Key,
+                local.PreferredName));
         return names;
     }
 

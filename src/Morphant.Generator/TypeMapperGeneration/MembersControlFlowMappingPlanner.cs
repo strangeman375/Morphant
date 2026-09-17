@@ -600,10 +600,7 @@ internal static class MembersControlFlowMappingPlanner
                     },
                     paths,
                     currentCancellationToken,
-                    out root,
-                    reservedLocalNames: existingDestination ? null : flatMappings.Values.SelectMany(flat =>
-                        DeclarativeControlFlowLowerer.GetDeclaredNames(SelectRoot(flat, create: true))
-                            .Concat(DeclarativeControlFlowLowerer.GetDeclaredNames(SelectRoot(flat, create: false)))));
+                    out root);
         }
     }
 

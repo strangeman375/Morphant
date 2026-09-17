@@ -12,6 +12,8 @@ internal readonly record struct MappingAnalysisContext(
     MappingPairIdentity Identity,
     INamedTypeSymbol TargetMapper)
 {
+    public TransferredLocalNames? LocalNames { get; init; }
+
     public ITypeSymbol SourceType => Registration.SourceType;
 
     public ITypeSymbol DestinationType => Registration.DestinationType;

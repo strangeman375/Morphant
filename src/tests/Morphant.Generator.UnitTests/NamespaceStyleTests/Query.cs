@@ -396,8 +396,7 @@ namespace Example
             global::Example.Source source)
         {
             return new global::Example.Destination(
-                value: string.Join(",", from value in source.Values
-                    select value + 1));
+                value: string.Join(",", from value in source.Values select value + 1));
         }
 
         private global::Example.Destination __Update(
@@ -738,8 +737,7 @@ public partial class Mapper :
         global::Example.Source source)
     {
         return new global::Example.Destination(
-            value: string.Join(",", from value in source.Values
-                select value + 1));
+            value: string.Join(",", from value in source.Values select value + 1));
     }
 
     private global::Example.Destination __Update(

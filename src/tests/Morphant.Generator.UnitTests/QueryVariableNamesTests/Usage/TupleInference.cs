@@ -97,8 +97,8 @@ namespace QueryNames
         {
             var result = new global::QueryNames.Destination(
                 value: string.Join(",",
-                    from context1 in source.Values
-                    select (context1, context1) into pair
+                    from context in source.Values
+                    select (context, context) into pair
                     select pair.Item1 + pair.Item2));
 
             result.Value = string.Join(",", from Item1 in source.Values
