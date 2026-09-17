@@ -29,6 +29,7 @@ namespace ExtensionCases
     public static class Trace
     {
         public static readonly List<string> Events = new();
+        public static readonly System.Threading.AsyncLocal<int> State = new();
     }
     public sealed class Bag : IEnumerable
     {
@@ -61,7 +62,11 @@ namespace ExtensionCases
     {
         public string Value = "";
         public IEnumerator GetEnumerator() => Array.Empty<int>().GetEnumerator();
-        public void Add<T>(T value, [CallerMemberName] object? member = null) => Value = value + ":" + member;
+        public void Add<T>(T value, [CallerMemberName] object? member = null)
+        {
+            Trace.Events.Add(value + ":" + Trace.State.Value);
+            Value = value + ":" + member;
+        }
         public void Add(int value, object? member) => throw new InvalidOperationException("Wrong caller argument conversion.");
     }
     public sealed class Holder
@@ -76,7 +81,7 @@ namespace ExtensionCases
         protected override void Configure(MapperBuilder builder) => builder.Map<int, string>().Convert(source =>
         {
 #line 100 "CollectionCalls.cs"
-            Func<System.Threading.Tasks.Task<string>> read = async () => source > 0 ? new BoxedBag { await System.Threading.Tasks.Task.FromResult(source) }.Value : "skip";
+            Func<System.Threading.Tasks.Task<string>> read = async () => source > 0 ? new BoxedBag { (Trace.State.Value = source) + await System.Threading.Tasks.Task.FromResult(0), await System.Threading.Tasks.Task.FromResult(source + 1) }.Value + ":" + Trace.State.Value : "skip";
             return read().GetAwaiter().GetResult();
 #line default
         });
@@ -212,13 +217,12 @@ namespace ExtensionCases
         #line 100 "CollectionCalls.cs"
             global::System.Func<global::System.Threading.Tasks.Task<string>> read = async () =>
             {
-                return source > 0 ? (await CreateBoxedBag()).Value : "skip";
+                return source > 0 ? AddBoxedBagItem(AddBoxedBagItem(new global::ExtensionCases.BoxedBag(), (global::ExtensionCases.Trace.State.Value = source) + await global::System.Threading.Tasks.Task.FromResult(0)), await global::System.Threading.Tasks.Task.FromResult(source + 1)).Value + ":" + global::ExtensionCases.Trace.State.Value : "skip";
 
-                async global::System.Threading.Tasks.Task<global::ExtensionCases.BoxedBag> CreateBoxedBag()
+                static global::ExtensionCases.BoxedBag AddBoxedBagItem(global::ExtensionCases.BoxedBag collection, int value)
                 {
-                    var boxedBag = new global::ExtensionCases.BoxedBag();
-                    boxedBag.Add<int>(await global::System.Threading.Tasks.Task.FromResult(source), member: (object?)"Configure");
-                    return boxedBag;
+                    collection.Add<int>(value, member: (object?)"Configure");
+                    return collection;
                 }
             };
             return read().GetAwaiter().GetResult();
@@ -356,13 +360,12 @@ public partial class Mapper :
     #line 100 "CollectionCalls.cs"
         global::System.Func<global::System.Threading.Tasks.Task<string>> read = async () =>
         {
-            return source > 0 ? (await CreateBoxedBag()).Value : "skip";
+            return source > 0 ? AddBoxedBagItem(AddBoxedBagItem(new global::ExtensionCases.BoxedBag(), (global::ExtensionCases.Trace.State.Value = source) + await global::System.Threading.Tasks.Task.FromResult(0)), await global::System.Threading.Tasks.Task.FromResult(source + 1)).Value + ":" + global::ExtensionCases.Trace.State.Value : "skip";
 
-            async global::System.Threading.Tasks.Task<global::ExtensionCases.BoxedBag> CreateBoxedBag()
+            static global::ExtensionCases.BoxedBag AddBoxedBagItem(global::ExtensionCases.BoxedBag collection, int value)
             {
-                var boxedBag = new global::ExtensionCases.BoxedBag();
-                boxedBag.Add<int>(await global::System.Threading.Tasks.Task.FromResult(source), member: (object?)"Configure");
-                return boxedBag;
+                collection.Add<int>(value, member: (object?)"Configure");
+                return collection;
             }
         };
         return read().GetAwaiter().GetResult();
