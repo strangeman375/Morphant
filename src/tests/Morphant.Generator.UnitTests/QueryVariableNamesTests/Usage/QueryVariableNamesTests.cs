@@ -1,4 +1,6 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests.QueryVariableNamesTests.Usage;
@@ -23,8 +25,20 @@ internal sealed partial class QueryVariableNamesTests
             Assert.That(result.GeneratedSources.Select(item =>
                     (item.HintName, item.SourceText.ToString())),
                 Is.EquivalentTo(expected.Select(item =>
-                    (item.Item1, GeneratedSourceText.Normalize(item.Item2)))));
+                    (item.Item1, NormalizeExpected(item.Item2, lineEnding)))));
         });
+    }
+
+    private static string NormalizeExpected(string snapshot, string literalLineEnding)
+    {
+        var text = SourceText.From(GeneratedSourceText.Normalize(snapshot));
+        var root = CSharpSyntaxTree.ParseText(text, new CSharpParseOptions(LanguageVersion.CSharp11)).GetRoot();
+        // Only literal token text follows the input line endings. Generated
+        // trivia remains CRLF, and nested interpolations never overlap edits.
+        return text.WithChanges(root.DescendantTokens()
+            .Where(token => token.Text.Contains('\n'))
+            .Select(token => new TextChange(token.Span, token.Text.ReplaceLineEndings(literalLineEnding))))
+            .ToString();
     }
 
     private static IEnumerable<TestCaseData> Cases()
@@ -44,6 +58,8 @@ internal sealed partial class QueryVariableNamesTests
             ("Interpolation", InterpolationSource, InterpolationMapper),
             ("VerbatimInterpolation", VerbatimInterpolationSource, VerbatimInterpolationMapper),
             ("RawInterpolation", RawInterpolationSource, RawInterpolationMapper),
+            ("MultilineVerbatim", MultilineVerbatimSource, MultilineVerbatimMapper),
+            ("MultilineRaw", MultilineRawSource, MultilineRawMapper),
             ("LocalInterpolation", LocalInterpolationSource, LocalInterpolationMapper),
             ("AnonymousParameter", AnonymousParameterSource, AnonymousParameterMapper),
             ("TupleParameter", TupleParameterSource, TupleParameterMapper),
@@ -53,6 +69,7 @@ internal sealed partial class QueryVariableNamesTests
             ("TupleRange", TupleRangeSource, TupleRangeMapper),
             ("RepeatedInto", RepeatedIntoSource, RepeatedIntoMapper),
             ("SiblingQueries", SiblingQueriesSource, SiblingQueriesMapper),
+            ("ShadowedHelper", ShadowedHelperSource, ShadowedHelperMapper),
             ("ExistingSuffix", ExistingSuffixSource, ExistingSuffixMapper),
             ("UnusedSource", UnusedSourceSource, UnusedSourceMapper),
             ("MapperName", MapperNameSource, MapperNameMapper),
@@ -66,7 +83,7 @@ internal sealed partial class QueryVariableNamesTests
         };
         foreach (var item in cases)
         {
-            var version = item.Name == "RawInterpolation" ? LanguageVersion.CSharp11 : LanguageVersion.CSharp9;
+            var version = item.Name is "RawInterpolation" or "MultilineRaw" ? LanguageVersion.CSharp11 : LanguageVersion.CSharp9;
             yield return new TestCaseData(item.Source, item.Mapper, version, "\n", false)
                 .SetName(item.Name + "_LF");
             yield return new TestCaseData(item.Source, item.Mapper, version, "\r\n", false)

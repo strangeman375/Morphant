@@ -452,10 +452,10 @@ namespace TestCase
         private global::TestCase.Destination __Construct(
             global::TestCase.Source source)
         {
-            var id1 = source.Read();
+            var id = source.Read();
 
             return new global::TestCase.Destination(
-                id: id1);
+                id: id);
         }
     }
 }

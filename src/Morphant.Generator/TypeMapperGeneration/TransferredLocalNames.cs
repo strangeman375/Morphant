@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -10,7 +11,9 @@ internal sealed class TransferredLocalNames
 {
     private readonly Dictionary<string, string> _preferred = new(StringComparer.Ordinal);
     private readonly HashSet<string> _reserved = new(StringComparer.Ordinal);
-    private readonly Dictionary<object, string> _bindings = new();
+    private readonly Dictionary<ISymbol, string> _bindings = new(SymbolEqualityComparer.Default);
+    private readonly Dictionary<ExpressionSyntax, string> _initializers = new();
+    private readonly HashSet<string> _escaped = new(StringComparer.Ordinal);
     private int _ordinal;
 
     public TransferredLocalNames(INamedTypeSymbol mapper, CancellationToken cancellationToken)
@@ -21,14 +24,32 @@ internal sealed class TransferredLocalNames
                     if (token.IsKind(SyntaxKind.IdentifierToken)) _reserved.Add(token.ValueText);
     }
 
-    public string Allocate(object binding, string preferred)
+    public string Allocate(ISymbol binding, string preferred)
     {
         if (_bindings.TryGetValue(binding, out var existing)) return existing;
+        var declaration = binding.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax();
+        var name = Allocate(preferred, declaration is not null && DeclarationToken(declaration).Text.StartsWith("@", StringComparison.Ordinal));
+        _bindings.Add(binding, name);
+        return name;
+    }
+
+    public string Allocate(ExpressionSyntax initializer, string preferred)
+    {
+        if (_initializers.TryGetValue(initializer, out var existing)) return existing;
+        var declaration = initializer.Ancestors().OfType<VariableDeclaratorSyntax>()
+            .FirstOrDefault(variable => variable.Identifier.ValueText == preferred);
+        var name = Allocate(preferred, declaration?.Identifier.Text.StartsWith("@", StringComparison.Ordinal) == true);
+        _initializers.Add(initializer, name);
+        return name;
+    }
+
+    private string Allocate(string preferred, bool escaped)
+    {
         string name;
         do name = "__morphantLocal" + _ordinal++;
         while (!_reserved.Add(name));
         _preferred.Add(name, preferred);
-        _bindings.Add(binding, name);
+        if (escaped) _escaped.Add(name);
         return name;
     }
 
@@ -47,7 +68,8 @@ internal sealed class TransferredLocalNames
                 declarations[symbol] = token;
         }
 
-        var candidates = declarations.Keys.Where(symbol => _preferred.ContainsKey(symbol.Name)).ToArray();
+        var candidates = declarations.Where(pair => _preferred.ContainsKey(pair.Key.Name))
+            .OrderBy(pair => pair.Value.SpanStart).Select(pair => pair.Key).ToArray();
         var conflicts = candidates.ToDictionary(symbol => symbol,
             _ => new HashSet<ISymbol>(SymbolEqualityComparer.Default), SymbolEqualityComparer.Default);
         foreach (var pair in declarations)
@@ -61,6 +83,22 @@ internal sealed class TransferredLocalNames
                 if (conflicts.TryGetValue(pair.Key, out var own)) own.Add(visible);
                 if (conflicts.TryGetValue(visible, out var other)) other.Add(pair.Key);
             }
+        }
+
+        // A local can keep a member's name: qualify a captured member reference
+        // instead of needlessly renaming the user's declaration.
+        var memberReferences = new List<(SimpleNameSyntax Syntax, ISymbol Member, ISymbol[] Locals)>();
+        foreach (var identifier in root.DescendantNodes().OfType<SimpleNameSyntax>())
+        {
+            if (identifier.Parent is MemberAccessExpressionSyntax access && access.Name == identifier ||
+                identifier.Parent is MemberBindingExpressionSyntax or QualifiedNameSyntax or AliasQualifiedNameSyntax
+                    or NameEqualsSyntax or NameColonSyntax ||
+                identifier.Parent is AssignmentExpressionSyntax assignment && assignment.Left == identifier &&
+                    assignment.Parent is InitializerExpressionSyntax) continue;
+            var symbol = semantic.GetSymbolInfo(identifier, cancellationToken).Symbol;
+            if (symbol is not (IMethodSymbol { MethodKind: MethodKind.Ordinary } or IFieldSymbol or IPropertySymbol or IEventSymbol)) continue;
+            var visibleLocals = semantic.LookupSymbols(identifier.SpanStart).Where(conflicts.ContainsKey).ToArray();
+            if (visibleLocals.Length != 0) memberReferences.Add((identifier, symbol, visibleLocals));
         }
 
         var names = new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default);
@@ -84,19 +122,24 @@ internal sealed class TransferredLocalNames
         }
 
         var replacements = new Dictionary<SyntaxToken, string>();
-        foreach (var pair in names) replacements.Add(declarations[pair.Key], pair.Value);
+        string Spell(ISymbol symbol, string name) =>
+            SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None ||
+            _escaped.Contains(symbol.Name) && name == _preferred[symbol.Name] ? "@" + name : name;
+        foreach (var pair in names) replacements.Add(declarations[pair.Key], Spell(pair.Key, pair.Value));
         foreach (var identifier in root.DescendantNodes().OfType<IdentifierNameSyntax>())
             if (semantic.GetSymbolInfo(identifier, cancellationToken).Symbol is { } symbol &&
-                names.TryGetValue(symbol, out var name)) replacements[identifier.Identifier] = name;
+                names.TryGetValue(symbol, out var name)) replacements[identifier.Identifier] = Spell(symbol, name);
 
-        return root.ReplaceTokens(replacements.Keys, (token, _) =>
+        var changes = replacements.Select(pair => new TextChange(pair.Key.Span, pair.Value)).ToList();
+        foreach (var reference in memberReferences)
         {
-            var name = replacements[token];
-            var text = SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None ||
-                SyntaxFacts.GetContextualKeywordKind(name) != SyntaxKind.None ? "@" + name : name;
-            return SyntaxFactory.Identifier(token.LeadingTrivia, SyntaxKind.IdentifierToken,
-                text, name, token.TrailingTrivia);
-        }).ToFullString();
+            if (!reference.Locals.Any(local => names[local] == reference.Syntax.Identifier.ValueText)) continue;
+            var receiver = reference.Member.IsStatic
+                ? reference.Member.ContainingType.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable) + "."
+                : "this.";
+            changes.Add(new TextChange(new TextSpan(reference.Syntax.SpanStart, 0), receiver));
+        }
+        return tree.GetText(cancellationToken).WithChanges(changes).ToString();
     }
 
     private static bool SeparateJoinBindings(SyntaxNode? first, SyntaxNode? second) =>

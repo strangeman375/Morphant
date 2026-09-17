@@ -194,4 +194,14 @@ internal sealed class QueryVariableNamesTests
     {
         CSharp9.Scenarios.QueryVariableNames.ResolveReplacementInterpolation.Scenario.Verify();
     }
+    [Test]
+    public void MultilineVerbatim_preserves_values_and_literal_line_endings()
+    {
+        CSharp9.Scenarios.QueryVariableNames.MultilineVerbatim.Scenario.Verify();
+    }
+    [Test]
+    public void MultilineRaw_preserves_values_and_literal_line_endings()
+    {
+        CSharp11.Scenarios.QueryVariableNames.MultilineRaw.Scenario.Verify();
+    }
 }

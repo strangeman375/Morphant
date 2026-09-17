@@ -162,7 +162,8 @@ internal static class UserExpressionLayout
         // Synthesized tokens still need their normal lexical separators, but
         // normalization must not insert new breaks into a user-written layout.
         var normalized = previous.TrailingTrivia.ToFullString() + current.LeadingTrivia.ToFullString();
-        if (previous.IsKind(SyntaxKind.OpenParenToken) || current.IsKind(SyntaxKind.CloseParenToken))
+        if (original.Length == 0 &&
+            (previous.IsKind(SyntaxKind.OpenParenToken) || current.IsKind(SyntaxKind.CloseParenToken)))
             return default;
         if (current.IsKind(SyntaxKind.IntoKeyword))
             return SyntaxFactory.TriviaList(SyntaxFactory.Space);
