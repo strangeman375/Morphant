@@ -27,7 +27,7 @@ internal static class ExtensionInvocationSimplifier
     public static SyntaxToken MarkConditional(SyntaxToken token, ConditionalAccessExpressionSyntax source) =>
         Mark(token, Metadata(ConditionalMarker, Indentation(source),
             source.Expression.GetTrailingTrivia().ToFullString() + source.OperatorToken.LeadingTrivia,
-            source.OperatorToken.TrailingTrivia.ToFullString()));
+            source.OperatorToken.TrailingTrivia.ToFullString(), source.WhenNotNull.GetLeadingTrivia().ToFullString()));
 
     public static BlockSyntax MarkBody(BlockSyntax body, SyntaxNode function,
         SyntaxToken arrow, ExpressionSyntax expression)
@@ -43,8 +43,8 @@ internal static class ExtensionInvocationSimplifier
         marker.Substring(0, marker.Length - 2) + ":" +
         Convert.ToBase64String(Encoding.UTF8.GetBytes(string.Join("\0", layout))) + "*/";
 
-    private static SyntaxTriviaList LayoutTrivia(string[] layout, int index, SyntaxNode target) =>
-        SyntaxFactory.ParseLeadingTrivia(layout[index].Replace("\r\n", "\n").Replace("\r", "\n")
+    private static SyntaxTriviaList LayoutTrivia(string[] layout, int index, SyntaxNode target, string suffix = "") =>
+        SyntaxFactory.ParseLeadingTrivia((layout[index] + suffix).Replace("\r\n", "\n").Replace("\r", "\n")
             .Replace("\n" + layout[0], "\n" + Indentation(target)).Replace("\n", "\r\n"));
 
     private static SyntaxToken Mark(SyntaxToken token, string marker) =>
@@ -308,7 +308,8 @@ internal static class ExtensionInvocationSimplifier
             var designation = (SingleVariableDesignationSyntax)((RecursivePatternSyntax)node.Pattern).Designation!;
             var layout = designation.Identifier.GetAnnotations(ConditionalMarker).Single().Data!.Split('\0');
             return rewritten.WithExpression(rewritten.Expression.WithTrailingTrivia(Separated(LayoutTrivia(layout, 1, node))))
-                .WithIsKeyword(rewritten.IsKeyword.WithTrailingTrivia(Separated(LayoutTrivia(layout, 2, node))));
+                .WithIsKeyword(rewritten.IsKeyword.WithTrailingTrivia(Separated(
+                    LayoutTrivia(layout, 2, node, layout[3]))));
         }
 
         private static SyntaxTriviaList Separated(SyntaxTriviaList trivia) =>

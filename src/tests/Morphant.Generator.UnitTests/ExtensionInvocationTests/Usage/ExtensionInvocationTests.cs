@@ -94,6 +94,8 @@ internal sealed partial class ExtensionInvocationTests
             ("ImportIsolation", ImportIsolationSource, ImportIsolation10Sources, LanguageVersion.CSharp10),
             ("ConditionalFallback", ConditionalFallbackSource, ConditionalFallback9Sources, LanguageVersion.CSharp9),
             ("ConditionalFallback", ConditionalFallbackSource, ConditionalFallback10Sources, LanguageVersion.CSharp10),
+            ("ConditionalFallbackMembers", ConditionalFallbackMembersSource, ConditionalFallbackMembers9Sources, LanguageVersion.CSharp9),
+            ("ConditionalFallbackMembers", ConditionalFallbackMembersSource, ConditionalFallbackMembers10Sources, LanguageVersion.CSharp10),
             ("ObsoleteImport", ObsoleteImportSource, ObsoleteImport9Sources, LanguageVersion.CSharp9),
             ("ObsoleteImport", ObsoleteImportSource, ObsoleteImport10Sources, LanguageVersion.CSharp10),
             ("ImportIsolationReversed", ImportIsolationReversedSource, ImportIsolationReversed9Sources, LanguageVersion.CSharp9),

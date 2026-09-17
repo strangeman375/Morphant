@@ -28,6 +28,10 @@ internal sealed class ExtensionInvocationTests
         CSharp9.Scenarios.ExtensionInvocations.ConditionalFallback.Mappers.Scenario.Verify();
 
     [Test]
+    public void Conditional_fallback_preserves_member_indexer_method_and_void_calls() =>
+        CSharp9.Scenarios.ExtensionInvocations.ConditionalFallbackMembers.Mappers.Scenario.Verify();
+
+    [Test]
     public void ImportIsolation_preserves_runtime_semantics() =>
         CSharp9.Scenarios.ExtensionInvocations.ImportIsolation.Scenario.Verify();
 
