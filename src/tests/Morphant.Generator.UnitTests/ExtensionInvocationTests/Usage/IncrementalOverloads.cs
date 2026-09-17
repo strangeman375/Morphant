@@ -8,9 +8,16 @@ namespace Morphant.Generator.UnitTests.ExtensionInvocationTests.Usage;
 
 internal sealed partial class ExtensionInvocationTests
 {
-    [TestCase(LanguageVersion.CSharp9)]
-    [TestCase(LanguageVersion.CSharp10)]
-    public void External_overload_edits_reconsider_extension_calls_without_changing_the_mapper_or_language(LanguageVersion version)
+    [TestCase(LanguageVersion.CSharp9, "ExtensionCases", "")]
+    [TestCase(LanguageVersion.CSharp10, "ExtensionCases", "")]
+    [TestCase(LanguageVersion.CSharp9, "ExtensionCases.Mappers", "")]
+    [TestCase(LanguageVersion.CSharp10, "ExtensionCases.Mappers", "")]
+    [TestCase(LanguageVersion.CSharp9, "", "")]
+    [TestCase(LanguageVersion.CSharp10, "", "")]
+    [TestCase(LanguageVersion.CSharp10, "ImportedGlobally", "global using ImportedGlobally;")]
+    [TestCase(LanguageVersion.CSharp10, "ImportedGlobally", "global using static ImportedGlobally.CloserOperations;")]
+    public void External_overload_edits_reconsider_extension_calls_without_changing_the_mapper_or_language(
+        LanguageVersion version, string scope, string imports)
     {
         const string closer = """
     public static class CloserOperations
@@ -21,18 +28,23 @@ internal sealed partial class ExtensionInvocationTests
         var mapperSource = SourceScopeSource.Replace(closer, string.Empty, StringComparison.Ordinal);
         Assert.That(mapperSource, Is.Not.EqualTo(SourceScopeSource));
         var mapperFile = new GeneratorTestSourceFile("Mapper.cs", mapperSource);
-        var conflicting = "#nullable enable\n#pragma warning disable CS1591\nnamespace ExtensionCases\n{\n" + closer + "\n}";
+        var conflicting = "#nullable enable\n#pragma warning disable CS1591\n" + imports + "\n" +
+            (scope.Length == 0 ? closer : "namespace " + scope + "\n{\n" + closer + "\n}");
         var independent = conflicting.Replace("Describe(", "Other(", StringComparison.Ordinal);
+        var absent = conflicting.Replace(closer,
+            imports.Contains("using static", StringComparison.Ordinal) ? "public static class CloserOperations {}" : "",
+            StringComparison.Ordinal);
         var initial = GeneratorTestDriver.Run("ExtensionInvocation",
-            new[] { mapperFile, new GeneratorTestSourceFile("Overloads.cs", independent) }, version);
+            new[] { mapperFile, new GeneratorTestSourceFile("Overloads.cs", absent) }, version);
         var before = version == LanguageVersion.CSharp9 ? IncrementalOverloads9Sources : IncrementalOverloads10Sources;
         var after = version == LanguageVersion.CSharp9 ? SourceScope9Sources : SourceScope10Sources;
         var driver = initial.Driver;
         var compilation = initial.OutputCompilation.RemoveSyntaxTrees(driver.GetRunResult().GeneratedTrees);
         var mapperTree = compilation.SyntaxTrees.Single(tree => tree.FilePath == "Mapper.cs");
         var overloadTree = compilation.SyntaxTrees.Single(tree => tree.FilePath == "Overloads.cs");
-        Verify(driver, initial.OutputCompilation, before);
-        foreach (var (source, expected) in new[] { (conflicting, after), (independent, before) })
+        VerifyIncrementalExtensions(driver, initial.OutputCompilation, before);
+        var edits = new[] { (conflicting, after), (absent, before), (independent, before), (conflicting, after), (independent, before) };
+        foreach (var (source, expected) in edits)
         {
             var updatedTree = overloadTree.WithChangedText(SourceText.From(source, Encoding.UTF8));
             compilation = compilation.ReplaceSyntaxTree(overloadTree, updatedTree);
@@ -40,21 +52,42 @@ internal sealed partial class ExtensionInvocationTests
             Assert.That(compilation.SyntaxTrees.Single(tree => tree.FilePath == "Mapper.cs"), Is.SameAs(mapperTree));
             driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
             Assert.That(diagnostics, Is.Empty);
-            Verify(driver, output, expected);
+            VerifyIncrementalExtensions(driver, output, expected);
         }
 
-        static void Verify(GeneratorDriver driver, Compilation output, (string Hint, string Source)[] expected)
+        if (imports.Length != 0)
         {
-            var result = driver.GetRunResult().Results.Single();
-            Assert.Multiple(() =>
+            // Changing only a global import must also invalidate the generated
+            // lookup while the original namespace-local using still wins.
+            foreach (var (source, expected) in new[]
+                     {
+                         (conflicting.Replace(imports, "", StringComparison.Ordinal), before),
+                         (conflicting, after),
+                         (conflicting.Replace(imports, "", StringComparison.Ordinal), before)
+                     })
             {
-                Assert.That(result.Exception, Is.Null);
-                Assert.That(result.Diagnostics, Is.Empty);
-                Assert.That(output.GetDiagnostics().Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error), Is.Empty);
-                Assert.That(result.GeneratedSources.Select(item => (item.HintName, item.SourceText.ToString())),
-                    Is.EquivalentTo(expected.Select(item => (item.Hint, GeneratedSourceText.Normalize(item.Source)))));
-            });
+                var updatedTree = overloadTree.WithChangedText(SourceText.From(source, Encoding.UTF8));
+                compilation = compilation.ReplaceSyntaxTree(overloadTree, updatedTree);
+                overloadTree = updatedTree;
+                Assert.That(compilation.SyntaxTrees.Single(tree => tree.FilePath == "Mapper.cs"), Is.SameAs(mapperTree));
+                driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
+                Assert.That(diagnostics, Is.Empty);
+                VerifyIncrementalExtensions(driver, output, expected);
+            }
         }
+    }
+
+    private static void VerifyIncrementalExtensions(GeneratorDriver driver, Compilation output, (string Hint, string Source)[] expected)
+    {
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Exception, Is.Null);
+            Assert.That(result.Diagnostics, Is.Empty);
+            Assert.That(output.GetDiagnostics().Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error), Is.Empty);
+            Assert.That(result.GeneratedSources.Select(item => (item.HintName, item.SourceText.ToString())),
+                Is.EquivalentTo(expected.Select(item => (item.Hint, GeneratedSourceText.Normalize(item.Source)))));
+        });
     }
 
     private static readonly (string Hint, string Source)[] IncrementalOverloads9Sources =

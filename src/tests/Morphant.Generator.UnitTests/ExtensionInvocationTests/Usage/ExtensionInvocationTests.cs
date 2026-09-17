@@ -42,20 +42,17 @@ internal sealed partial class ExtensionInvocationTests
     public void Marker_like_comments_in_another_file_do_not_change_transferred_code()
     {
         var initial = GeneratorTestDriver.Run("ExtensionInvocation", CommentMarkersSource, LanguageVersion.CSharp10);
-        var updated = GeneratorTestDriver.Run("ExtensionInvocation",
-            new[]
-            {
-                new GeneratorTestSourceFile("TestCase.cs", CommentMarkersSource),
-                new GeneratorTestSourceFile("Comments.cs", "/*Morphant.Extension___Call*/")
-            }, LanguageVersion.CSharp10, driver: initial.Driver);
-        foreach (var result in new[] { initial, updated })
-            Assert.Multiple(() =>
-            {
-                Assert.That(result.EffectiveDiagnostics, Is.Empty);
-                Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
-                Assert.That(result.GeneratedSources.Select(item => (item.HintName, item.SourceText.ToString())),
-                    Is.EquivalentTo(CommentMarkers10Sources.Select(item => (item.Hint, GeneratedSourceText.Normalize(item.Source)))));
-            });
+        var driver = initial.Driver;
+        var compilation = initial.OutputCompilation.RemoveSyntaxTrees(driver.GetRunResult().GeneratedTrees);
+        var comments = CSharpSyntaxTree.ParseText("/*Morphant.Extension___Call*/",
+            (CSharpParseOptions)compilation.SyntaxTrees.Single().Options, "Comments.cs");
+        VerifyIncrementalExtensions(driver, initial.OutputCompilation, CommentMarkers10Sources);
+        foreach (var input in new[] { compilation.AddSyntaxTrees(comments), compilation })
+        {
+            driver = driver.RunGeneratorsAndUpdateCompilation(input, out var output, out var diagnostics);
+            Assert.That(diagnostics, Is.Empty);
+            VerifyIncrementalExtensions(driver, output, CommentMarkers10Sources);
+        }
     }
 
     [Test]
