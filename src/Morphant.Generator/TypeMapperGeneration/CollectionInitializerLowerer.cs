@@ -161,8 +161,6 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
         var scope = _scopes.Peek();
         var type = _semantic.GetTypeInfo(original, _cancellationToken).Type!;
         var typeName = TypeMapperMappingTypePolicy.GetGeneratedTypeName(type);
-        var functionName = Allocate(scope, "Create" + type.Name);
-        var receiverName = ReceiverName(original, type.Name);
         var indentation = Indentation(scope.Owner) + "    ";
         var overflow = original.Ancestors().TakeWhile(node => node is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or MethodDeclarationSyntax))
             .FirstOrDefault(node => node is CheckedExpressionSyntax or CheckedStatementSyntax);
@@ -170,6 +168,8 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
             .OfType<AwaitExpressionSyntax>().Any();
         if (isAsync && original.Initializer!.IsKind(SyntaxKind.CollectionInitializerExpression))
             return RewriteAwaitedCollection(original, rewritten, scope, typeName, indentation);
+        var functionName = Allocate(scope, "Create" + type.Name);
+        var receiverName = ReceiverName(original, type.Name);
         var innerIndentation = indentation + (overflow is null ? "    " : "        ");
         var receiver = SyntaxFactory.IdentifierName(receiverName);
         var (allocation, remaining) = Split(original, rewritten);
@@ -235,7 +235,7 @@ internal sealed class CollectionInitializerLowerer : CSharpSyntaxRewriter
                     values.Add(SyntaxFactory.IdentifierName(value));
                 }
                 var receiver = SyntaxFactory.IdentifierName("collection");
-                var body = Block(new[]
+                var body = Block(new StatementSyntax[]
                 {
                     Line(SyntaxFactory.ExpressionStatement(AddCall(template, receiver, values)), indentation + "    "),
                     Line(SyntaxFactory.ReturnStatement(receiver), indentation + "    ")
