@@ -20,7 +20,14 @@ internal sealed class DependencyTypeSet
         switch (type)
         {
             case INamedTypeSymbol namedType:
-                AddNamed(namedType);
+                AddDefinition(namedType);
+
+                // A nested type owns only its own arguments. Also visit the
+                // containing type with its original construction.
+                if (namedType.ContainingType is { } containingType)
+                {
+                    Add(containingType);
+                }
 
                 foreach (var typeArgument in namedType.TypeArguments)
                 {
@@ -59,9 +66,9 @@ internal sealed class DependencyTypeSet
         }
     }
 
-    public void AddNamed(INamedTypeSymbol? type)
+    private void AddDefinition(INamedTypeSymbol type)
     {
-        for (var current = type?.OriginalDefinition;
+        for (var current = type.OriginalDefinition;
              current is not null;
              current = current.ContainingType)
         {

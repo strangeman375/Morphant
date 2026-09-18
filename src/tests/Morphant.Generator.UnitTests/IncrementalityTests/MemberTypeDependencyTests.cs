@@ -122,6 +122,10 @@ namespace TestCase
     [TestCase("constructor", true)]
     [TestCase("array", false)]
     [TestCase("generic", false)]
+    [TestCase("nested", false)]
+    [TestCase("nested", true)]
+    [TestCase("nested constructor", false)]
+    [TestCase("nested constructor", true)]
     public void Actualizes_obsolete_member_types_at_both_cache_boundaries(string shape, bool refreshMapper)
     {
         var member = shape switch
@@ -129,15 +133,19 @@ namespace TestCase
             "constructor" => "public Destination(Item? value = null) { }",
             "array" => "public Item[]? Value { get; set; }",
             "generic" => "public System.Collections.Generic.List<Item>? Value { get; set; }",
+            "nested" => "public Outer<Item>.Inner? Value { get; set; }",
+            "nested constructor" => "public Destination(Outer<Item>.Inner? value = null) { }",
             _ => "public Item? Value { get; set; }"
         };
         var dto = EmptyDtos.Replace("__MEMBER__", member);
+        if (shape.StartsWith("nested", StringComparison.Ordinal))
+            dto = dto.Replace("public class Source", "public class Outer<T> { public class Inner { } }\n    public class Source");
         GeneratorIncrementalityStep Edit(string name, bool obsolete) => StepWithDiagnostics(
             name,
             [SourceFile("Mapper.cs", obsolete && refreshMapper ? Mapper.Replace("builder.Map", "/* refresh */ builder.Map") : Mapper),
                 SourceFile("Dtos.cs", dto),
                 SourceFile("Item.cs", Item.Replace("__ATTRIBUTE__", obsolete ? "[System.Obsolete(\"old\")]" : ""))],
-            shape == "constructor" ? [Generated[0], Generated[1], Generated[4]] : Generated,
+            shape.EndsWith("constructor", StringComparison.Ordinal) ? [Generated[0], Generated[1], Generated[4]] : Generated,
             !obsolete ? [] : shape is "property" or "constructor"
                 ? [CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 4),
                     CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 5)]
@@ -145,6 +153,80 @@ namespace TestCase
 
         RunAndAssert(LanguageVersion.CSharp9, static () => new MorphantGenerator(),
             Edit("ordinary type", false), Edit("obsolete type", true), Edit("ordinary type restored", false));
+    }
+
+    [TestCase("source", false)]
+    [TestCase("source", true)]
+    [TestCase("project", false)]
+    [TestCase("project", true)]
+    [TestCase("metadata", false)]
+    [TestCase("metadata", true)]
+    public void Actualizes_conversions_through_containing_type_arguments(string referenceKind, bool multipleLevels)
+    {
+        // lang=c#
+        const string types = """
+#nullable enable
+#pragma warning disable CS1591
+namespace TestCase
+{
+    public interface IValue { }
+    public class Item __BASE__ { }
+}
+""";
+        // lang=c#
+        const string dtos = """
+#nullable enable
+#pragma warning disable CS1591
+namespace TestCase
+{
+    public interface IWrapper<out T> { }
+    public class Outer<T> { public class Inner : IWrapper<T> { } }
+    public class Source { public Outer<Item>.Inner Value { get; set; } = new(); }
+    public class Destination { public IWrapper<IValue>? Value { get; set; } }
+}
+""";
+        // lang=c#
+        const string scenario = """
+#nullable enable
+#pragma warning disable CS1591
+namespace TestCase
+{
+    public static class Scenario
+    {
+        public static void Verify()
+        {
+            var mapper = (Morphant.ITypeMapper<Source, Destination>)new TestMapper();
+            var source = new Source();
+            if ((mapper.Create(source, default).Value != null) != __ASSIGNED__ ||
+                (mapper.Update(source, new Destination(), default).Value != null) != __ASSIGNED__)
+                throw new System.InvalidOperationException("Stale containing type argument.");
+        }
+    }
+}
+""";
+        var declarations = multipleLevels
+            ? dtos.Replace("public class Inner : IWrapper<T> { }", "public class Middle<U> { public class Inner<V> : IWrapper<T> { } }")
+                .Replace("Outer<Item>.Inner", "Outer<Item>.Middle<string>.Inner<int>")
+            : dtos;
+
+        GeneratorIncrementalityStep Edit(string name, bool implements)
+        {
+            var item = types.Replace("__BASE__", implements ? ": IValue" : "");
+            if (referenceKind == "source")
+                return ExecutableStep(name,
+                    [SourceFile("Mapper.cs", Mapper), SourceFile("Dtos.cs", declarations), SourceFile("Item.cs", item),
+                        SourceFile("Scenario.cs", scenario.Replace("__ASSIGNED__", implements ? "true" : "false"))],
+                    Generated, "TestCase.Scenario");
+
+            var reference = referenceKind == "project"
+                ? CreateCompilationReference("Items", item)
+                : CreateReference("Items", item);
+            return StepWithReferences(name, [SourceFile("Mapper.cs", Mapper), SourceFile("Dtos.cs", declarations)],
+                [reference], Generated);
+        }
+
+        RunAndAssert(LanguageVersion.CSharp9, static () => new MorphantGenerator(),
+            Edit("no conversion", false), Edit("interface added", true), Edit("interface removed", false));
     }
 
     // lang=c#

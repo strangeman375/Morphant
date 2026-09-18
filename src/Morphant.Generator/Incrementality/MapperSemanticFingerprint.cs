@@ -309,7 +309,10 @@ internal static class MapperSemanticFingerprintBuilder
         ISymbol symbol,
         DependencyTypeSet result)
     {
-        result.AddNamed(symbol.ContainingType);
+        if (symbol.ContainingType is { } containingType)
+        {
+            result.Add(containingType);
+        }
 
         if (symbol is IMethodSymbol method)
         {
