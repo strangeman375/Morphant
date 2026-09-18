@@ -15,13 +15,13 @@ internal static class FlatteningSemanticDependencyBuilder
         IOperation root,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
-        Action<ITypeSymbol> addDependency,
+        DependencyTypeSet dependencies,
         CancellationToken cancellationToken)
     {
         var walker = new FlatteningDependencyWalker(
             compilation,
             mapperType,
-            addDependency);
+            dependencies);
 
         foreach (var invocation in root.DescendantsAndSelf()
                      .OfType<IInvocationOperation>())
@@ -130,7 +130,7 @@ internal static class FlatteningSemanticDependencyBuilder
     {
         private readonly CSharpCompilation _compilation;
         private readonly INamedTypeSymbol _mapperType;
-        private readonly Action<ITypeSymbol> _addDependency;
+        private readonly DependencyTypeSet _dependencies;
         private readonly Dictionary<ITypeSymbol,
                 ImmutableArray<ConventionReadableMember>>
             _readableMembers = new(SymbolEqualityComparer.Default);
@@ -142,11 +142,11 @@ internal static class FlatteningSemanticDependencyBuilder
         public FlatteningDependencyWalker(
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
-            Action<ITypeSymbol> addDependency)
+            DependencyTypeSet dependencies)
         {
             _compilation = compilation;
             _mapperType = mapperType;
-            _addDependency = addDependency;
+            _dependencies = dependencies;
         }
 
         public void AddScope(
@@ -154,7 +154,8 @@ internal static class FlatteningSemanticDependencyBuilder
             ITypeSymbol destination,
             CancellationToken cancellationToken)
         {
-            _addDependency(source);
+            _dependencies.AddDeclarations(source, cancellationToken);
+            _dependencies.AddDeclarations(destination, cancellationToken);
 
             foreach (var targetName in GetTargetNames(destination))
             {
@@ -190,7 +191,7 @@ internal static class FlatteningSemanticDependencyBuilder
                          receiver,
                          cancellationToken))
             {
-                if (member.Name.Length >= remainingName.Length ||
+                if (member.Name.Length > remainingName.Length ||
                     !remainingName.StartsWith(
                         member.Name,
                         StringComparison.OrdinalIgnoreCase))
@@ -198,7 +199,8 @@ internal static class FlatteningSemanticDependencyBuilder
                     continue;
                 }
 
-                _addDependency(member.Type);
+                _dependencies.Add(member.Type);
+                if (member.Name.Length == remainingName.Length) continue;
                 AddPathDependencies(
                     member.Type,
                     remainingName.Substring(member.Name.Length),

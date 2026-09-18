@@ -276,7 +276,7 @@ internal static class MapperSemanticFingerprintBuilder
             root,
             compilation,
             mapperType,
-            dependencyTypes.Add,
+            dependencyTypes,
             cancellationToken);
     }
 
@@ -331,85 +331,6 @@ internal static class MapperSemanticFingerprintBuilder
             type.ToDisplayString(
                 SymbolDisplayFormats.FullyQualifiedNullable));
         dependencyTypes.Add(type);
-    }
-
-    private sealed class DependencyTypeSet
-    {
-        private readonly HashSet<ITypeSymbol> _visited = new(
-            SymbolEqualityComparer.Default);
-
-        public HashSet<INamedTypeSymbol> Types { get; } = new(
-            SymbolEqualityComparer.Default);
-
-        public void Add(ITypeSymbol type)
-        {
-            if (!_visited.Add(type))
-            {
-                return;
-            }
-
-            switch (type)
-            {
-                case INamedTypeSymbol namedType:
-                    AddNamed(namedType);
-
-                    foreach (var typeArgument in namedType.TypeArguments)
-                    {
-                        Add(typeArgument);
-                    }
-
-                    break;
-
-                case IArrayTypeSymbol arrayType:
-                    Add(arrayType.ElementType);
-                    break;
-
-                case IPointerTypeSymbol pointerType:
-                    Add(pointerType.PointedAtType);
-                    break;
-
-                case ITypeParameterSymbol typeParameter:
-                    foreach (var constraint in
-                             typeParameter.ConstraintTypes)
-                    {
-                        Add(constraint);
-                    }
-
-                    break;
-
-                case IFunctionPointerTypeSymbol functionPointer:
-                    Add(functionPointer.Signature.ReturnType);
-
-                    foreach (var parameter in
-                             functionPointer.Signature.Parameters)
-                    {
-                        Add(parameter.Type);
-                    }
-
-                    break;
-            }
-        }
-
-        public void AddNamed(INamedTypeSymbol? type)
-        {
-            for (var current = type?.OriginalDefinition;
-                 current is not null;
-                 current = current.ContainingType)
-            {
-                if (!Types.Add(current))
-                {
-                    continue;
-                }
-
-                // Interface edits can change extension applicability without
-                // changing the receiver declaration. Expand each definition
-                // only once: C<T> : I<C<C<T>>> otherwise grows indefinitely.
-                foreach (var implementedInterface in current.AllInterfaces)
-                {
-                    Add(implementedInterface);
-                }
-            }
-        }
     }
 
     private static string FormatConstant(Optional<object?> constant)

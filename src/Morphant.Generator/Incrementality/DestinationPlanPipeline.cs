@@ -109,6 +109,9 @@ internal static class DestinationPlanPipeline
             : TypeContractDependencies.ResolveType(compilation, target.AssemblyIdentity, target.MetadataName);
         if (destination is null) return null;
 
+        var dependencies = new DependencyTypeSet();
+        dependencies.AddDeclarations(destination, cancellationToken);
+
         return new DestinationPlanModelInput(
             target.AssemblyIdentity,
             target.MetadataName,
@@ -118,7 +121,7 @@ internal static class DestinationPlanPipeline
             target.IsTuple,
             target.PlanIdentity,
             compilation,
-            TypeContractDependencies.Build(destination, compilation, cancellationToken),
+            TypeContractDependencies.Build(dependencies.Types, compilation, cancellationToken),
             candidate.LanguageVersion,
             compilation.Assembly.Identity.ToString(),
             compilation.Options.NullableContextOptions,
