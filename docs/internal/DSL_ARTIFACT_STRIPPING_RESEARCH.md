@@ -12,6 +12,12 @@ checks и критерии готовности, чтобы при возвра�
 неизвестной связи. До изменения PE/metadata первым этапом должен быть
 audit-only prototype.
 
+Проверка актуальности 2026-09-18: инвентарь, измерения и пробы ниже относятся
+к состоянию на 2026-09-04. Имена generated types и область действия extension-
+методов с тех пор изменились; уточнения приведены в разделах 2 и 12.
+Перед возобновлением работы инвентарь и измерения нужно повторить. Статус
+отложенного исследования и выбранные тогда варианты не изменены.
+
 ## 1. Проблема и целевой инвариант
 
 Morphant генерирует две принципиально разные категории кода:
@@ -58,7 +64,7 @@ Feature не удаляет обычные DSL-типы из самой `Morphan
 compile/runtime contract. Удаляется раздувающая каждую consumer assembly
 специализированная generated поверхность и мёртвое тело её `Configure`.
 
-## 2. Текущий инвентарь generated output
+## 2. Инвентарь generated output на 2026-09-04
 
 | Источник | Основные сущности | Назначение | Решение |
 |---|---|---|---|
@@ -70,22 +76,21 @@ compile/runtime contract. Удаляется раздувающая каждую
 | C# compiler | lambda/local-function methods, closure types, delegate caches из `Configure` | Физическая реализация declarative C#-тела | Удалять только при доказанной exclusive ownership |
 | User source | override `Configure(MapperBuilder)` | Корень декларации, одновременно обязательный override abstract member-а | Заменить тело безопасным stub-ом, сам method сохранить |
 
-Plans для обычных destination располагаются под
-`Morphant.Generated.Types...Plans`; BCL tuple plans — под
-`Morphant.Generated.Tuples.V...` или
-`Morphant.Generated.Tuples.S...`. Удалять namespace по имени нельзя: namespace
-не является metadata ownership boundary, а будущие emitters и пользовательский
-код могут легально получить похожие имена.
+В измеренном состоянии plans обычных destination располагались под
+`Morphant.Generated.Types...Plans`, а BCL tuple plans — под
+`Morphant.Generated.Tuples.V...` и `Morphant.Generated.Tuples.S...`.
+Обычные surfaces использовали общий `MorphantGeneratedMappingExtensions`,
+а CRTP families — отдельные containers.
 
-Обычные surfaces собираются в общий `MorphantGeneratedMappingExtensions`.
-CRTP family-scoped surfaces с bare self-type собираются в отдельный стабильный
-container на mapper family: иначе методы разных family различались бы только
-generic constraints, которые не входят в C# signature, и получали бы
-`CS0111`. Каждый из этих metadata types всё равно состоит из многих partial
-declarations. Это важно для marker-а: атрибут нельзя бездумно ставить на каждую
-часть, а mapper partial вообще нельзя помечать compile-time-only — атрибут
-относится к объединённому mapper type и тем самым пометил бы runtime реализацию
-на удаление.
+На 2026-09-18 destination types используют `Morphant.Generated.N_<identity>`,
+а configuration extensions ограничены конкретным mapper или family.
+Актуальные правила имён описаны в [AGENTS.md](../../AGENTS.md).
+Исторические имена выше не являются текущим contract или перечнем для cleaner-а.
+
+Namespace не является metadata ownership boundary. Marker должен учитывать
+объединение partial declarations: нельзя ставить его на каждую часть без
+проверки кратности, а compile-time-only marker на partial mapper пометил бы
+на удаление также runtime-реализацию.
 
 ## 3. Измеренная стоимость на крупном consumer-е
 
@@ -631,13 +636,15 @@ Cleaner работает раньше этих этапов и уменьшае�
 
 ### `InternalsVisibleTo` и accidental dependencies
 
-Generated helpers имеют `internal` accessibility, но
-`InternalsVisibleTo` делает их частью lookup friend assembly. Компиляционная
-проба подтвердила, что metadata-only reference сохраняет эти internals: если
-friend assembly генерирует ту же shared pair surface, её `Convert`/`Members`
-и остальные методы становятся неоднозначны с импортированными overloads.
-Cleaner устраняет не только metadata-мусор, но и эту реальную cross-assembly
-коллизию, если очищает implementation, `ref` и `refint` согласованно.
+Generated helpers имеют `internal` accessibility, но `InternalsVisibleTo`
+делает их доступными friend assembly. Проба 2026-09-04 показала неоднозначность
+`Convert`/`Members` при повторной генерации прежней shared pair surface.
+Это исторический результат: текущие mapper/family-scoped extensions устраняют
+описанную коллизию без cleaner-а. Его нельзя использовать как обоснование
+необходимости очистки в текущей реализации.
+
+При возвращении к исследованию нужно заново проверить доступность generated
+internals и согласованность implementation, `ref` и `refint`.
 
 Прямые ссылки пользовательского кода на generated internals не являются
 поддерживаемым API: после очистки reference assembly такая compilation должна

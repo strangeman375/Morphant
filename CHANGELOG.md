@@ -10,138 +10,47 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Added
 
-- Diagnose unsupported `Construct` and `Resolve` results with `MORPH0062`,
-  directing factories and cached objects to the corresponding `...Using` method.
-- Add first-class `ValueTuple` and `System.Tuple` mappings, including named,
-  unnamed, long and nullable forms, Create and Update behavior, typed
-  composition of multiple inputs and outputs, call-specific state, and a
-  diagnostic for conflicting tuple presentations.
-- Report unexpected generator failures as `MORPH0057`, with a generated
-  report to attach when reporting the problem.
-- Report an invalid mapper self type as `MORPH0058` and an inaccessible mapper
-  declaration as `MORPH0059`.
-- Report a reusable mapper-family parameter that is absent from a declared
-  mapping pair as `MORPH0060`.
+- Support `ValueTuple` and `System.Tuple` mappings, including named, unnamed,
+  long and nullable tuples, multiple inputs and outputs, and call-specific data.
+- Report unexpected generator failures as `MORPH0057`, with a generated report
+  to attach when reporting the problem.
+- Diagnose invalid mapper declarations and unsupported polymorphic or
+  construction rules instead of producing invalid C#.
 
 ### Changed
 
-- Reduce generator work and memory use for projects with many mappers or large
-  callbacks, while preserving generated code and mapping behavior.
-- Preserve extension-call chains and conditional access in generated callbacks
-  when their original binding can be retained. Conflicting calls keep an
-  explicit static form without changing mapping behavior.
-- Use file-scoped namespaces in generated files for C# 10 and newer, while
+- Introduce the self-typed `TypeMapper<TMapper>` and
+  `MappingBuilder<TMapper, TSource, TDestination>` API. Independent mappers can
+  configure the same pair separately.
+- Return the existing destination directly from `Resolve` after checking its
+  availability. Use `ConstructUsing` or `ResolveUsing` for factories and
+  arbitrary destination objects; see the migration instructions below.
+- Let nested `Map` in `Members` update a child supplied by construction or a
+  factory, including during outer Create, and retain the nested result.
+- Reduce generator work and memory use for large projects. Keep generated code
+  compact and preserve the readability of user-written expressions.
+- Use file-scoped namespaces in generated files for C# 10 and newer while
   retaining C# 9 compatibility.
-- Simplify known `previous.TryGetValue` guards and omit unnecessary supporting
-  copies and private helper parameters while preserving evaluation order.
-- Use short readable labels and permanent stable IDs for generated filenames.
-  Similar names and long Unicode names remain distinct without renaming
-  existing files when registrations change. Generated namespaces are unchanged.
-- Let adaptive `Map` in `Members` update a child prepared by construction or a
-  factory, including during outer Create, and retain the nested mapping result.
-- Share common destination construction across Create, Update and repeated
-  selection branches while preserving evaluation order and local values.
-- Omit redundant `else` blocks and combine compatible nested guards while
-  preserving short-circuit evaluation and local scopes.
-- Convert from `Destination` to the generated construction type, instead of
-  `Option<Destination>`. In `Resolve`, return guarded `previous.Value` or the
-  value from `TryGetValue`; unchanged local aliases are supported.
-- Simplify null checks in generated mappings where conditional access preserves
-  the original behavior.
-- Preserve user-written expressions, locals and multiline expression layout in
-  generated mappings. Add supporting variables only where mapping semantics
-  require them.
-- Publish a Git snapshot for every successful compilation's target framework.
-  Remove `MorphantGitSnapshotTargetFrameworks`; use MSBuild conditions on
-  `MorphantGitSnapshot` to opt individual compilations in or out.
-- For existing Git snapshots, delete the old `.morphant` file once and rebuild
-  to update the snapshot format.
-- Use short, uniform namespaces for generated construction and member types,
-  while preserving readable type names. Update explicit imports and aliases
-  to the namespaces shown by the IDE.
-- Replace the non-generic `TypeMapper` and two-argument mapping builder with
-  the self-typed `TypeMapper<TMapper>` and
-  `MappingBuilder<TMapper, TSource, TDestination>` API.
-- Allow independent mappers to configure the same pair without competing
-  configuration methods, including different tuple names and nullability.
+- Use stable generated filenames and shorter namespaces for callback result
+  types. Publish Git snapshots for each enabled target framework.
 
 ### Fixed
 
-- Keep diagnostic locations current after edits to DTO method bodies and comments.
-- Refresh mappings and generated declarations after conversion, inheritance or
-  obsolete-attribute changes in member types, including containing generic
-  arguments and referenced projects.
-- Preserve independent generated output when filenames conflict, and retain
-  `MORPH0057` reports when exception details cannot be read.
-- Preserve source caller information and overload selection in collection
-  initializers across mapping callbacks, including nested expressions and
-  deferred execution. Unsupported initializer combinations report
-  [`MORPH0030`](docs/diagnostics/MORPH0030.md#collection-initializers).
-- Preserve nullable local declarations and comments in transferred callbacks,
-  including conditional extension calls that retain their static form.
-- Reconsider generated extension calls after edits to competing extensions,
-  global imports or inherited interfaces, even when the mapper is unchanged.
-- Keep LINQ variable names readable and stable across source line-ending changes,
-  renaming only for real scope conflicts. Preserve escaped identifiers,
-  query layout, interpolation bindings and inferred projection member names
-  when transferring callback parameters and locals.
-- Preserve effects in member callback local initializers even when their
-  values are not used by a member rule.
-- Suppress obsolete warnings from technical generated declarations while
-  retaining diagnostics for user API use and conventions. A conventional
-  obsolete constructor remains a compiler warning when `Members` is configured;
-  local warning suppression applies only to the corresponding transferred use.
-- Preserve warning ownership for local declarations, anonymous methods,
-  explicit construction, and `#warning`. Custom obsolete diagnostic IDs that
-  cannot be named in a pragma remain compiler warnings instead of `MORPH0030`.
-- Preserve multiline interpolated string values when formatting mappings and
-  applying local warning suppression, including verbatim and raw strings.
-- Preserve discarded `out var` inference and user-defined logical operators
-  in previous-value guards.
-- Correct synthesized nullable type spacing without changing user layout.
-- Preserve sequential member assignments when `Resolve` replaces the destination,
-  including setter effects on later adaptive mappings and source reads.
-- Reduce generated read-only nested and polymorphic Update code with shared
-  runtime helpers, preserving lazy source evaluation and destination checks.
-- Remove redundant operation checks from member branches when the mapping
-  operation is already known, preserving conditional evaluation.
-- Label generated BCL tuple constructor arguments, including nested
-  constructor arguments in long tuples.
-- Avoid unnecessary locals for untouched tuple literals when combining
-  constructor and member rules; format generated tuple elements on separate lines.
-- Keep user-written single-line switch expressions on one line in generated
-  mappings, including long expressions and transferred callbacks.
-- Correct `previous` availability checks through local guards and switches,
-  including reads in arguments and initializers before a guard.
-- Accept reuse of struct aliases after calls on separate copies or
-  reference-type members, while rejecting calls that can modify the alias.
-- Clarify documentation, shorten IntelliSense, and verify mapping examples.
-- Package the correct generator and build task assemblies with custom build
-  output paths.
-- Keep generated mappings current after IDE edits and project-reference
-  changes, including changes to `InternalsVisibleTo`.
+- Keep generated mappings, declarations and diagnostic locations current after
+  source edits and project-reference changes.
+- Preserve independent generated output after generator failures or filename
+  conflicts, and keep failure reports available.
+- Preserve callback behavior, including evaluation order, side effects,
+  nullability, overload selection, caller information and interpolated strings.
+- Keep relevant C# warnings visible without unnecessary generated duplicates.
+- Evaluate explicit constructor and member expressions independently; share
+  values only with automatic constructor arguments. Preserve reads of the
+  initial `result` and diagnose circular construction dependencies.
+- Correct tuple mapping and source-usage validation, inherited callbacks and
+  checks for existing-destination reuse.
 - Correct Git snapshot updates after renames and with custom output paths;
-  improve build messages and preserve existing compilation hooks.
-- Correct mapping and source-usage validation for long tuple elements.
-- Preserve inherited callback behavior, including tuple field reads after
-  generic substitution, conditional method calls, element names and nullability.
-- Preserve null propagation and operator precedence in callback expressions
-  that combine conditional access with extension methods, including deferred
-  lambdas and local functions. Accept explicit static extension-method calls.
-- Preserve arithmetic and overload selection when simplifying constant
-  conditions. Accept `context.Operation` inside constructor argument expressions.
-- Preserve independent explicit constructor and member evaluations, even for
-  identical expressions. Share member values only with automatic constructor
-  arguments, and diagnose circular dependencies on `result`.
-- Preserve reads of the initial `result` in member expressions. Avoid an
-  intermediate tuple when member rules do not need it.
-- Avoid generated-name conflicts across mappers, assemblies and nested types.
-  IntelliSense offers aliases for reserved destination-member names.
-- Accept `Resolve` branches guarded by `previous.TryGetValue`.
-- Report invalid callback overloads and inaccessible mapping types as Morphant
-  diagnostics instead of producing invalid C#.
-- Diagnose generic `ForDerived` branches whose ordering depends on unknown
-  type arguments with `MORPH0061`.
+  preserve compilation hooks and package the correct assemblies.
+- Clarify documentation, shorten IntelliSense and verify mapping examples.
 
 ### Migrating from 0.4.0
 
@@ -187,6 +96,15 @@ containing types must be accessible to generated code
 
 Application-side `IMapper.Map`, direct `Create`/`Update` calls and DI
 registration keep their existing form.
+
+For Git snapshots:
+
+- Replace `MorphantGitSnapshotTargetFrameworks` with MSBuild conditions on
+  `MorphantGitSnapshot`; see [snapshot configuration](docs/generated-code.md).
+- Delete the old `.morphant` file once and rebuild to update the snapshot
+  format.
+- A successful compilation replaces old snapshot filenames with the new ones.
+  Commit those renames together with your mapping changes.
 
 ## [0.4.0]
 

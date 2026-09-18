@@ -6,6 +6,11 @@
 мапперами и наиболее сильное рабочее направление, чтобы после v0 не повторять
 исследование с нуля.
 
+Проверка актуальности 2026-09-18: далее сохранены варианты и оценки на дату
+исследования. Формулировка «после v0» фиксирует первоначальную отсрочку, а не
+срок реализации. Предположение о неразличимости Create и Update с null
+устарело; актуальный контракт и последствия отмечены в разделах 5.1 и 12.
+
 ## 1. Что именно исследовалось
 
 Исходная потребность — не повторять условный `Ignore()` для каждого member-а
@@ -178,15 +183,14 @@ Update      -> Ignore
 - должно ли отсутствие previous выбирать `Create`-policy независимо от
   `MappingContext.Operation`.
 
-Обычный settings precedence Morphant должен сохраниться:
+При возобновлении исследования нужно учитывать актуальный
+[порядок наследования настроек](../settings/README.md#precedence), включая
+`IncludeBase` и подключённые базовые mapper-ы. Ранняя схема
+`map -> mapper root -> assembly -> library default` была неполной.
 
-```text
-map -> mapper root -> assembly -> library default
-```
-
-Внутри одного уровня mode-specific override логично считать точнее общего
-значения. Per-member override должен быть самым конкретным правилом. Однако
-полная precedence matrix остаётся post-v0 решением.
+Внутри одного уровня mode-specific override предлагалось считать точнее общего
+значения, а per-member override — самым конкретным правилом. Полная precedence
+matrix остаётся открытым вопросом исследования.
 
 ## 5. Рабочая runtime-семантика
 
@@ -233,17 +237,19 @@ lowering должны быть согласованы вместе с diagnostic
 | `Update`, `Resolve` / `ResolveUsing` выбрал replacement | Значение replacement-result |
 | No-previous ветка после нормализации `null` destination | Значение нового baseline |
 
-Последний случай требует отдельного решения. Ранее рабочим законом было:
+Последний случай требует отдельного решения. В раннем исследовании
+предполагалась эквивалентность:
 
 ```csharp
 Map(source, destination: null) == Map(source)
 ```
 
-Текущий target design уже делает эти вызовы неразличимыми внутри declarative
-DSL: оба передают `Option.None`. Поэтому наиболее согласованно использовать
-`Create`-oriented effective policy в обеих no-previous ветках. Но публичная
-операция второго вызова остаётся `Update`, и это нужно явно учесть при
-проектировании mode-specific API, а не получить случайно из implementation.
+Это не действующий контракт. На 2026-09-18 оба вызова дают `previous = None`,
+но declarative callbacks различают их через `context.Operation`: передача
+null destination остаётся Update. Операции могут иметь разные правила и
+разрешения. Поэтому применение Create-policy к обеим веткам без previous
+нельзя обосновывать их неразличимостью; это отдельное, пока не принятое решение
+для будущей policy. См. [Create и Update](../create-and-update.md).
 
 ### 5.2. Где policy действует
 
@@ -326,7 +332,7 @@ Whole-plan runtime no-op — отдельный вопрос. До отсроч�
 ```
 
 Ни один mapper не может восстановить presence после того, как serializer
-поместил оба первых nullable-состояния в одно значение `null`. Нужен
+представил отсутствие поля и явный null одним значением `null`. Нужен
 source-owned contract. Для него можно использовать общий `Option<T>` Morphant
 либо domain-specific wrapper:
 
@@ -685,8 +691,9 @@ candidate до destination conversion.
    позволяет `Create = Assign`, `Update = Ignore`.
 5. `Ignore` сохраняет member выбранного `result`, а не обязательно исходного
    previous.
-6. No-previous ветки `Map(source)` и `Map(source, null)` должны оставаться
-   эквивалентными.
+6. Выбор policy для `Map(source, null)` остаётся открытым. Раннее требование
+   эквивалентности с `Map(source)` устарело: текущий API различает операции
+   через `context.Operation` (см. раздел 5.1).
 7. Policy применяется ко всем generated member rules; manual mapping её
    обходит.
 8. Candidate вычисляется ровно один раз и проверяется до destination

@@ -5,6 +5,11 @@
 Он сохраняет уже выполненный анализ, чтобы при возвращении к feature не
 повторять его с нуля.
 
+Проверка актуальности 2026-09-18: это историческое предложение, а формулировка
+«после v0» не задаёт срок реализации. Runtime polymorphism с `ForDerived`
+уже поддерживается; keyed mappings и reference handling остаются отложенными.
+Уточнение для будущего cache key приведено в разделе 3.
+
 ## 1. Какие задачи решает reference handling
 
 У object graph есть две связанные, но разные проблемы:
@@ -65,16 +70,15 @@ Source сравнивается именно по reference identity, а не ч
 `Equals` или `GetHashCode`. Value-type source не имеет стабильной object
 identity и не участвует в built-in preservation.
 
-Одного destination type в ключе недостаточно. Application-wide registry
-допускает несколько registrations одной canonical pair, а после v0 может
-получить keyed variants и runtime-derived links. Две разные resolved
-registrations не должны случайно разделить result только потому, что возвращают
+Одного destination type в предлагаемом ключе недостаточно: разные выбранные
+registrations не должны случайно разделять result только потому, что возвращают
 одинаковый CLR type.
 
-Descriptor identity берётся после обычного deterministic lookup. Cache не
-участвует в выборе registration и не может устранять missing/ambiguous lookup.
-Будущий key или polymorphic dispatch сначала разрешает конкретный descriptor,
-и только затем выполняется cache lookup.
+На 2026-09-18 [runtime polymorphism](../runtime-polymorphism.md) с `ForDerived`
+уже выбирает конкретную пару. Будущий cache должен учитывать фактически
+выбранную mapping registration после обычного lookup и не устранять ошибки
+missing/ambiguous registration. Keyed variants остаются отдельной отложенной
+возможностью; их участие в ключе потребует нового решения.
 
 Upper-level destination type отдельно в ключ не нужен, если descriptor
 однозначно задаёт mapping pair и variant. Если implementation не может дать
