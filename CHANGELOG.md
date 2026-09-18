@@ -67,6 +67,7 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Keep diagnostic locations current after edits to DTO method bodies and comments.
 - Refresh mappings and generated declarations after conversion, inheritance or
   obsolete-attribute changes in member types, including containing generic
   arguments and referenced projects.

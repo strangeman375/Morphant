@@ -147,6 +147,26 @@ internal sealed class DiagnosticLocationActualizationTests
     }
 
     [Test]
+    public void Prefers_identical_text_when_syntax_trees_share_a_path()
+    {
+        const string source = "namespace Original { class Target { } }";
+        var previous = CSharpSyntaxTree.ParseText(source, path: "Shared.cs");
+        var other = CSharpSyntaxTree.ParseText(source.Replace("Original", "Other"), path: "Shared.cs");
+        var current = CSharpSyntaxTree.ParseText(source, path: "Shared.cs");
+        var target = previous.GetRoot().DescendantTokens().Single(token => token.ValueText == "Target");
+        var diagnostic = Diagnostic.Create(Descriptor, target.GetLocation(), "argument");
+
+        var actualized = DiagnosticLocationActualizer.Actualize([diagnostic],
+            CSharpCompilation.Create("Current", [other, current]), CancellationToken.None).Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(actualized.Location.SourceTree, Is.SameAs(current));
+            Assert.That(actualized.Location.SourceSpan, Is.EqualTo(target.Span));
+        });
+    }
+
+    [Test]
     public void Drops_a_source_location_that_cannot_be_rebound()
     {
         var previousTree = CSharpSyntaxTree.ParseText(

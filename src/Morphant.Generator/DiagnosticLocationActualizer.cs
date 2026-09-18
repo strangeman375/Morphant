@@ -19,6 +19,7 @@ internal static class DiagnosticLocationActualizer
 
         var result = ImmutableArray.CreateBuilder<Diagnostic>(
             diagnostics.Length);
+        var changes = new Dictionary<(SyntaxTree Previous, SyntaxTree Current), IList<TextChange>>();
 
         foreach (var diagnostic in diagnostics)
         {
@@ -27,11 +28,13 @@ internal static class DiagnosticLocationActualizer
             var location = Actualize(
                 diagnostic.Location,
                 compilation,
+                changes,
                 cancellationToken);
             var additionalLocations = diagnostic.AdditionalLocations
                 .Select(candidate => Actualize(
                     candidate,
                     compilation,
+                    changes,
                     cancellationToken))
                 .ToImmutableArray();
 
@@ -55,6 +58,7 @@ internal static class DiagnosticLocationActualizer
     private static Location Actualize(
         Location location,
         Compilation compilation,
+        Dictionary<(SyntaxTree Previous, SyntaxTree Current), IList<TextChange>> changes,
         CancellationToken cancellationToken)
     {
         if (!location.IsInSource ||
@@ -66,8 +70,7 @@ internal static class DiagnosticLocationActualizer
 
         var previousText = previousTree.GetText(cancellationToken);
         var span = location.SourceSpan;
-        SyntaxTree? matchingSpanTree = null;
-
+        Location? matchingSpanLocation = null;
         foreach (var currentTree in compilation.SyntaxTrees)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -86,22 +89,42 @@ internal static class DiagnosticLocationActualizer
                 return Location.Create(currentTree, span);
             }
 
-            if (span.End <= currentText.Length &&
-                TextMatchesAtSpan(previousText, currentText, span))
+            var key = (previousTree, currentTree);
+            if (!changes.TryGetValue(key, out var treeChanges))
             {
-                matchingSpanTree ??= currentTree;
+                treeChanges = currentTree.GetChanges(previousTree);
+                changes.Add(key, treeChanges);
             }
+
+            // A cached contract can retain locations across body/trivia edits.
+            // Translate only untouched spans; a matching word at the old offset
+            // may now belong to a different declaration or even a comment.
+            var offset = 0;
+            var overlaps = false;
+            foreach (var change in treeChanges)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (change.Span.End <= span.Start)
+                    offset += (change.NewText?.Length ?? 0) - change.Span.Length;
+                else if (change.Span.Start < span.End)
+                    overlaps = true;
+            }
+
+            if (overlaps || span.Start + offset < 0) continue;
+            var currentSpan = new TextSpan(span.Start + offset, span.Length);
+            if (currentSpan.End <= currentText.Length &&
+                TextMatchesAtSpan(previousText, currentText, span, currentSpan))
+                matchingSpanLocation ??= Location.Create(currentTree, currentSpan);
         }
 
-        return matchingSpanTree is null
-            ? Location.None
-            : Location.Create(matchingSpanTree, span);
+        return matchingSpanLocation ?? Location.None;
     }
 
     private static bool TextMatchesAtSpan(
         SourceText previous,
         SourceText current,
-        TextSpan span)
+        TextSpan span,
+        TextSpan currentSpan)
     {
         if (span.End > previous.Length)
         {
@@ -111,7 +134,7 @@ internal static class DiagnosticLocationActualizer
         for (var offset = 0; offset < span.Length; offset++)
         {
             if (previous[span.Start + offset] !=
-                current[span.Start + offset])
+                current[currentSpan.Start + offset])
             {
                 return false;
             }
