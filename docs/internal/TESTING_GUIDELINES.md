@@ -15,11 +15,11 @@ expectations or verification policy. They are intentionally kept outside
 - Treat the generator as a black box. Start from supported user scenarios, not
   branches in the implementation.
 - For every new or changed test, inspect its generated code against the input
-  and the generated-code rules in `AGENTS.md`. Check bindings, evaluation
+  and [generator contracts](GENERATOR_CONTRACTS.md). Check bindings, evaluation
   order, unnecessary locals or renaming, readability and formatting, including
-  behavior outside the test's immediate assertion. Fix discovered generation
-  defects and add coverage; never accept an incorrect output as a snapshot
-  merely because the generator currently produces it.
+  behavior outside the test's immediate assertion. Handle discovered defects
+  within the agreed scope and add coverage for fixes; never accept an incorrect
+  output merely because the generator currently produces it.
 - Production pipelines may be referenced only by the minimal test generators
   that invoke the code under test. Expected values and assertions must use
   literal or test-owned data, never generator helpers, models, emitters or
@@ -32,6 +32,11 @@ expectations or verification policy. They are intentionally kept outside
   with `previous`, include both reuse and replacement. Compiler-only and runtime
   checks do not replace full-source snapshots of evaluation order, binding or
   lifecycle behavior.
+- For transferred caller information, cover all applicable callback surfaces
+  with reviewed full-source snapshots and runtime checks of caller values,
+  overloads and effects. Construction/member changes need runtime coverage of
+  evaluation order and reuse; structured results also need valid and invalid
+  provenance, aliases and branches, including their diagnostics.
 - Create a category subdirectory only when it contains more than one test file.
 
 ## Generated-source unit tests
@@ -43,6 +48,11 @@ expectations or verification policy. They are intentionally kept outside
 - Compare the complete generation result: the exact hint-name set and complete
   content of every generated file. Do not use substring presence, absence,
   occurrence counts or relative positions as substitutes.
+- Generated-name tests must cover permanent IDs, stability across adjacent
+  edits, sanitization/case/overflow collisions, suffix preservation, Unicode
+  UTF-8 accounting, actual filesystem writes and GitSnapshot migration.
+- Expand repetitive snapshot changes mechanically, then review their readable
+  literals against the user input.
 - Keep expected generated sources visible as local, test-owned raw string
   literals. Large sources may be split into clearly named literal sections,
   but shared builders, emitters or parameterized helpers must not synthesize

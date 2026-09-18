@@ -84,7 +84,7 @@ compile/runtime contract. Удаляется раздувающая каждую
 
 На 2026-09-18 destination types используют `Morphant.Generated.N_<identity>`,
 а configuration extensions ограничены конкретным mapper или family.
-Актуальные правила имён описаны в [AGENTS.md](../../AGENTS.md).
+Актуальные правила имён описаны в [контрактах генератора](GENERATOR_CONTRACTS.md).
 Исторические имена выше не являются текущим contract или перечнем для cleaner-а.
 
 Namespace не является metadata ownership boundary. Marker должен учитывать
