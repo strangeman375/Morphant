@@ -67,6 +67,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Preserve independent generated output when filenames conflict, and retain
+  `MORPH0057` reports when exception details cannot be read.
 - Preserve source caller information and overload selection in collection
   initializers across mapping callbacks, including nested expressions and
   deferred execution. Unsupported initializer combinations report

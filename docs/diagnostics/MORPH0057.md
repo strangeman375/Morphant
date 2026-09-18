@@ -9,8 +9,12 @@ invalid mapping configuration.
 The diagnostic shown by the compiler and IDE includes the Morphant version,
 failed stage, exception type and exception message. Morphant also creates the
 named `Morphant.Generated.GeneratorFailure.*.g.cs` file under **Source
-Generators**. That file contains the complete exception and stack trace, so IDE
-logs are not required.
+Generators**. That file contains the exception and stack trace when available.
+If the exception cannot provide its text, the report identifies the missing
+details while retaining the information that could be read.
+
+Conflicting generated filenames also produce this diagnostic. Morphant omits
+the conflicting files and preserves independent output.
 
 ## Fix
 

@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-        <PackageReference Include="coverlet.collector" Version="6.0.4" />
+        <PackageReference Include="coverlet.collector" Version="6.0.4" GeneratePathProperty="true" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(MorphantRoslynVersion)" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
@@ -23,6 +23,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Reuse the pinned coverage collector's IL instrumentation library. -->
+        <Reference Include="Mono.Cecil">
+            <HintPath>$(Pkgcoverlet_collector)/build/netstandard2.0/Mono.Cecil.dll</HintPath>
+            <Private>true</Private>
+        </Reference>
         <Reference Include="Microsoft.Build.Framework">
             <HintPath>$(MSBuildBinPath)/Microsoft.Build.Framework.dll</HintPath>
             <Private>true</Private>

@@ -175,14 +175,18 @@ internal static class GeneratorStageGuard
                 .OrderBy(static name => name, StringComparer.Ordinal)
                 .ToImmutableArray())
             .WithComparer(OutputNamesComparer.Instance);
-        var unique = named.Combine(collisions)
-            .Select(static (value, _) => value.Right.Contains(value.Left.NormalizedIdentity!, StringComparer.OrdinalIgnoreCase)
-                ? (IdentifiedOutput<TSource>?)null : value.Left)
-            .Where(static value => value.HasValue)
-            .Select(static (value, _) => value!.Value);
+        // Keep each input's position even while its output is suppressed. A
+        // resolved collision must not invalidate unrelated output callbacks.
+        var coordinated = named.Combine(collisions)
+            .Select(static (value, _) => (Output: value.Left,
+                Conflicts: value.Right.Contains(value.Left.NormalizedIdentity!, StringComparer.OrdinalIgnoreCase)));
 
-        context.RegisterSourceOutput(unique, (productionContext, value) =>
-            ExecuteSourceOutput(productionContext, value.Value, stageName, _ => value.Identity!, action));
+        context.RegisterSourceOutput(coordinated, (productionContext, value) =>
+        {
+            if (!value.Conflicts)
+                ExecuteSourceOutput(productionContext, value.Output.Value, stageName,
+                    _ => value.Output.Identity!, action);
+        });
         context.RegisterSourceOutput(collisions, (productionContext, names) =>
         {
             foreach (var identity in names)
