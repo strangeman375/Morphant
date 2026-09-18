@@ -368,6 +368,9 @@
   a later stage, or the end of the task. After each publication, verify that the
   checkpoint is present on remote `main`. Only an explicit user instruction
   changes this rule; quality requirements do not suspend checkpoint publication.
+- Create commits only for actual file changes. Report validation and review
+  results in the conversation; never create empty commits to record them.
+  This also applies to checkpoint publication.
 - Persist agreed design decisions and completion criteria before a long
   implementation when the repository does not already contain them.
 - Split long work into coherent checkpoints and publish progress
