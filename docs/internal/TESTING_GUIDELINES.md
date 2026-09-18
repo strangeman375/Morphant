@@ -68,6 +68,13 @@ expectations or verification policy. They are intentionally kept outside
   driver. A test-owned actualization harness may emit and execute a step only
   to prove that newly generated semantics apply after an edit; it is not a
   substitute for integration coverage.
+- For pipeline and cache changes, compare incremental sources and diagnostics
+  with a clean production run after relevant edits and recovery. Verify current
+  diagnostic locations and reuse of unaffected work.
+- Failure-isolation tests must reach the affected production stage, preserve an
+  independent mapper and verify recovery after a failure and requested
+  cancellation. Tests of the guard through small synthetic generators alone
+  do not protect its production wiring.
 - Keep unit-test helpers limited to exact generated output and focused compiler
   or incrementality verification. Do not reintroduce general runtime user
   scenarios into the unit-test project.
@@ -116,9 +123,35 @@ expectations or verification policy. They are intentionally kept outside
 ## Running verification
 
 - Run focused tests for the affected category while iterating.
-- Run the full Release build and both test projects before a release or after
-  changes spanning multiple categories. Run a dedicated integration project
-  directly when only that slice is affected.
-- `MorphantRoslynVersion` defaults to the minimum supported Roslyn host and is
-  shared by the generator and unit-test host. For Roslyn-facing changes, run
-  affected categories with the default and newest validated Roslyn version.
+- Select verification by the effect of the change. File or category counts
+  alone do not require the full suite.
+
+| Change | Required verification |
+| --- | --- |
+| Instructions or prose without executable examples | Review the complete changed text, references and anchors; run `git diff --check`. |
+| Executable documentation examples | Run the affected documentation-example and link checks. |
+| XML documentation or mechanical snapshot updates | Review the full generated sources and run affected documentation/compiler unit tests. Runtime checks are needed when observable behavior changes. |
+| Mapping, generation or diagnostic behavior | Run affected unit tests and applicable MSBuild runtime scenarios. Run the full Release build and both test projects for broad behavioral changes or shared build/test-infrastructure changes. |
+| Packaging or MSBuild integration | Run affected ordinary consumer and package tests, including the minimum-SDK checks when that compatibility is affected. |
+
+- Before a release, run the full Release build and both test projects, then
+  inspect the final NuGet artifacts. Report which local and CI checks actually
+  completed and which remain pending.
+
+### Roslyn compatibility
+
+- For Roslyn-facing changes, verify affected scenarios on the minimum supported
+  host and the newer host validated by CI. The baseline is declared in
+  [Directory.Build.props](../../src/Directory.Build.props); the newer host and
+  executable procedure are in
+  [test-shipped-generator.sh](../../eng/test-shipped-generator.sh).
+- Build the generator against the minimum Roslyn version once. Keep that exact
+  binary while building the newer test host without its project references;
+  verify its checksum and the copy loaded by the tests before running them.
+  Rebuilding the generator for each host does not verify the shipped binary.
+- Use the script or the same sequence with a focused test filter. When shared
+  output directories were used, restore baseline dependencies and rebuild
+  affected outputs before resuming ordinary `--no-restore` / `--no-build` runs,
+  including after a failed compatibility check. Follow any workspace-specific
+  forced-restore procedure; a metadata-only restore cache cannot detect a
+  command-line Roslyn-version override.
