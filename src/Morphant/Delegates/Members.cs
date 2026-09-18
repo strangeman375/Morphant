@@ -1,7 +1,7 @@
 namespace Morphant.Delegates;
 
 /// <summary>
-/// Configures destination members and matching constructor arguments.
+/// Configures destination members and matching automatic constructor arguments.
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TMembers">The destination-member rules type.</typeparam>
@@ -11,7 +11,7 @@ namespace Morphant.Delegates;
 public delegate TMembers Members<in TSource, out TMembers>(TSource source);
 
 /// <summary>
-/// Configures destination members and matching constructor arguments.
+/// Configures destination members and matching automatic constructor arguments.
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TPrevious">The non-null destination type.</typeparam>
@@ -25,7 +25,7 @@ public delegate TMembers Members<in TSource, TPrevious, out TMembers>(
     Option<TPrevious> previous);
 
 /// <summary>
-/// Configures destination members and matching constructor arguments.
+/// Configures destination members and matching automatic constructor arguments.
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TPrevious">The non-null destination type.</typeparam>
@@ -46,7 +46,7 @@ public delegate TMembers Members<
     TResult result);
 
 /// <summary>
-/// Configures destination members and matching constructor arguments.
+/// Configures destination members and matching automatic constructor arguments.
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TPrevious">The non-null destination type.</typeparam>

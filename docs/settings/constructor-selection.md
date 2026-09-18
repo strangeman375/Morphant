@@ -56,12 +56,11 @@ For an automatic parameter, a corresponding
 construction supplies the argument value and is also considered when checking
 constructor applicability. Explicit parameter values remain independent.
 
-An explicitly named constructor is unaffected by the setting.
-`ConstructUsing`, `ResolveUsing` and `Convert` do not use constructor
-selection.
+An explicitly named constructor, `ConstructUsing` or `ResolveUsing` ignores
+this setting. For `Convert`, see [setting applicability](README.md#applicability).
 
-Tuple mappings ignore inherited constructor-selection settings. Setting
-`ConstructorSelection` explicitly on a tuple mapping produces
+Scalar and tuple destinations ignore inherited constructor-selection settings.
+Setting `ConstructorSelection` explicitly on these mappings produces
 [`MORPH0023`](../diagnostics/MORPH0023.md).
 
 Configure an assembly default with `MorphantConstructorSelection`. See the

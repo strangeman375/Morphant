@@ -46,9 +46,8 @@ builder.Map<OrderDto?, Order?>()
 The assembly properties are `MorphantNullSourceHandling` and
 `MorphantNullDestinationHandling`.
 
-Manual `Convert` mappings bypass both settings. They receive the original
-source and an `Option` containing the non-null destination value, if supplied.
-See [Manual mapping](../manual-mapping.md).
+[`Convert`](../api/convert.md) handles nulls itself. Both settings follow the
+[manual-mapping applicability rules](README.md#applicability).
 
 ## Result nullability
 

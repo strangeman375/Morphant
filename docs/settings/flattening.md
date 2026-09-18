@@ -26,7 +26,6 @@ the standard [precedence and inheritance rules](README.md). `Default`
 continues to the next level. A mapping-level `Auto` can therefore override an
 assembly or mapper default of `None`.
 
-`Flattening` affects constructor and destination-member conventions. It does
-not apply to a manual `Convert` mapping. See
-[Flatten nested source members](../flattening.md) for matching, precedence and
-nullable behavior.
+`Flattening` affects constructor and destination-member conventions. For
+`Convert`, see [setting applicability](README.md#applicability). See
+[Flatten nested source members](../flattening.md) for matching and null handling.

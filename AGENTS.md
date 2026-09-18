@@ -310,49 +310,53 @@
   test suites. This contract replaces the former member-overrides-constructor
   behavior.
 
-## User documentation
+## Documentation
 
-- Keep XML IntelliSense short and information-dense: purpose, decision-critical
-  conditions, and a link to the relevant Markdown guide. Put detailed rules
-  and examples in Markdown, with clear navigation and one canonical explanation.
-  Optimize both formats for the reader's limited attention, not completeness
-  through repetition.
-- Public documentation, including Markdown guides, XML IntelliSense comments,
-  diagnostic help and release or package text, is task- and contract-oriented.
-  Include only information users need to choose, configure, understand, test,
-  or troubleshoot observable behavior.
-- Keep planner, lowering, emitter, hashing, generated namespace/layout, and
-  other implementation details in `docs/internal` unless a detail is directly
-  actionable for consumers. `docs/generated-code.md` explains how to view,
-  snapshot, and review generated code; it is not an inventory of generator
-  internals.
-- Describe public behavior in API terms and examples. Avoid internal terms such
-  as plans, physical representations, dispatch tables, or canonical lowering
-  when a direct behavioral statement is sufficient.
-- Keep detailed behavior on one canonical page. Overview, API, settings, and
-  diagnostic pages should state only what is needed in their own context and
-  link to that page instead of duplicating feature-specific explanations.
-- Keep user guides focused on ordinary tasks. Omit implementation walkthroughs,
-  exhaustive edge-case lists, and CI/build scripts. Explain uncommon failures
-  through concise diagnostic help rather than expanding the main guide.
-- Keep evergreen documentation version-neutral. Use version numbers only for
-  historical changelog/release material or an actual version-specific
-  compatibility requirement.
-- For every user-visible change, review the documentation index, relevant API
-  and settings pages, diagnostics, limitations, and `CHANGELOG.md`. Remove stale
-  statements instead of layering new exceptions onto them.
-- Before publishing documentation, reread every changed page in full, search
-  all public docs for contradictory or obsolete wording, validate relative
-  links, and run `git diff --check`.
-
-## Settings documentation
-
-- Every settings implementation must update public XML documentation and
-  `docs/settings`.
-- Document defaults, inheritance and precedence, behavior at each supported
-  level, disabled or unsupported operations, and a minimal example.
-- Revise documented design when implementation reveals a clearer contract, but
-  review and document user-visible changes before applying them.
+- Public Markdown, XML IntelliSense, diagnostic help and release or package
+  text describe user tasks and observable contracts. Before adding text,
+  identify the reader's task and the minimum information needed to complete it.
+  An internal fix or new regression test does not by itself require public prose.
+- Keep implementation details in `docs/internal`: planner, lowering, emitter,
+  caching, hashing and generated namespace or layout decisions. Public docs
+  must not become an implementation log or a catalogue of past regressions.
+  `docs/generated-code.md` explains how to view and snapshot generated code.
+- Place information by audience and purpose:
+  - README and quick start: the shortest ordinary path to a working mapping.
+  - Guides: common tasks and the behavior needed to use them correctly.
+  - API and settings references: choices, defaults and essential conditions.
+  - Diagnostic help: the cause, a practical fix and relevant uncommon cases.
+  - Internal docs: architecture, development rules and research.
+- Give each detailed contract one canonical explanation. Link to it from
+  related pages instead of repeating it. Do not add a general-guide paragraph
+  for every edge case; update diagnostic help when troubleshooting needs it.
+- Keep XML IntelliSense short: purpose, decision-critical conditions and a
+  Markdown link. Describe behavior in public API terms, without internal terms
+  such as plans, lowering or physical representations.
+- Preserve facts users rely on, including nullability, reuse, evaluation and
+  side effects, settings precedence, and the difference between an ignored
+  setting and an invalid configuration. Check claims against implementation
+  and tests; do not generalize a diagnostic beyond the cases that produce it.
+- For settings changes, review public XML and `docs/settings`. Explain the
+  default, applicable operations, inheritance and a minimal example; keep the
+  shared precedence rules on the settings overview. Do not silently change the
+  agreed behavior to simplify its description.
+- Keep navigation task-oriented, with basic usage before composition and
+  specialized features. Remove superseded pages and repair incoming links.
+  Use version numbers only for actual compatibility requirements or history.
+- Changelog entries describe observable improvements, fixes and migrations.
+  Group related fixes, omit internal mechanisms and test inventories, and
+  preserve breaking-change instructions. Do not rewrite published releases.
+- Date internal research and mark assumptions superseded by current behavior.
+  Preserve historical measurements as historical evidence, not current promises;
+  unselected research remains a proposal, not a roadmap commitment.
+- For a user-visible change, review the relevant guides, API, settings,
+  diagnostics, limitations, index and changelog. Edit only the pages that need
+  it, removing stale statements instead of layering exceptions onto them.
+- Before publishing, reread changed pages in full, review the beginner route,
+  search for contradictory wording and repeated explanations, validate links
+  and anchors, and run `git diff --check`. For changed executable examples or
+  generated XML, run the relevant documentation-example tests and review full
+  generated-source snapshots under `docs/internal/TESTING_GUIDELINES.md`.
 
 ## Repository workflow
 

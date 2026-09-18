@@ -1,4 +1,4 @@
-# MORPH0043: Members returned no plan
+# MORPH0043: Members returned no rules
 
 ## Cause
 

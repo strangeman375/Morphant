@@ -3,7 +3,7 @@
 ## Cause
 
 `UnmappedMemberValidation` checks destination members, and the reported
-assignable property or field is not occupied by the final declarative mapping.
+assignable property or field is neither mapped nor explicitly ignored.
 This warning does not change generated behavior.
 
 ## Fix

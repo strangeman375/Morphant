@@ -2,21 +2,27 @@
 
 ## Cause
 
-An explicitly configured setting cannot affect the reported mapping. Common
-cases include:
+A setting is explicitly configured on a mapping that does not support it:
 
-- null handling, constructor selection, member selection, or unmapped-member
-  validation on a `Convert` mapping;
-- constructor selection where no automatic constructor selection can occur;
-- `NullDestinationHandling` when Update is disabled.
+- `NullSourceHandling`, `NullDestinationHandling`, `ConstructorSelection`,
+  `MemberSelection`, `Flattening` or `UnmappedMemberValidation` on a mapping
+  with a local `Convert` callback;
+- `ConstructorSelection` for a destination without ordinary constructor
+  selection, such as a scalar or tuple.
+
+An explicit `Default` is also diagnosed in these cases. Inherited defaults
+can be shared with other mappings and do not produce this diagnostic.
 
 ## Fix
 
-Remove the setting from that mapping, move it to a mapping where it applies, or
-change the mapping mode and rules so the described behavior is reachable. The
-diagnostic points to both the setting and the mapping condition that makes it
-inapplicable.
+Remove the setting from the reported mapping. Keep shared defaults at the
+mapper or assembly level, and configure the manual behavior inside `Convert`.
+The diagnostic points to the setting and the incompatible mapping declaration.
 
-See [Settings](../settings/README.md).
+An unused setting is not necessarily invalid: `NullDestinationHandling` is
+ignored when Update is disabled, and an explicitly chosen constructor does
+not use `ConstructorSelection`.
+
+See [Settings](../settings/README.md#applicability).
 
 [All diagnostics](../diagnostics.md)

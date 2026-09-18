@@ -275,7 +275,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         /// Configures the default operations for this mapper.
         /// </summary>
         /// <param name="mappingMode">
-        /// The compile-time constant operations to generate.
+        /// The supported mapping operations, as a compile-time constant.
         /// <see cref="Morphant.MappingMode.Default"/> inherits the setting;
         /// the fallback is
         /// <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
@@ -291,7 +291,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <typeparam name="TDestination">The destination type.</typeparam>
         /// <param name="mappingMode">
-        /// The compile-time constant operations to generate.
+        /// The supported mapping operations, as a compile-time constant.
         /// <see cref="Morphant.MappingMode.Default"/> continues through
         /// normal setting precedence; the fallback is
         /// <see cref="Morphant.MappingMode.CreateAndUpdate"/>.

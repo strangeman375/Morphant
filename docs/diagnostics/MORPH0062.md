@@ -18,8 +18,8 @@ of a mixed conditional expression, so C# does not infer an ordinary destination.
 
 Use [`ConstructUsing`](../api/construct-using.md) or
 [`ResolveUsing`](../api/resolve-using.md) for factories, cached objects,
-`new Order(...)`, or helper calls returning a destination. Morphant does not
-inspect helper implementations to prove that they return the existing object.
+`new Order(...)`, or helper calls returning a destination.
+
 For a value-type alias, instance methods and getters acting on the alias itself
 must be `readonly`. Methods receiving a separate copy, or acting on a
 reference-type member, do not change the struct value being returned.

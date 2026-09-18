@@ -8,25 +8,13 @@ generated mapper. This applies to `Construct`, `Resolve`, `Members`,
 expression violates the input or nullable contract where the mapping uses it,
 including a `Members` value passed to a constructor.
 
-Ordinary obsolete-use warnings from constructors or members selected by
-conventions remain compiler diagnostics. See
-[compiler warnings](../api/README.md#compiler-warnings) for warning ownership
-and local suppression.
-
 ### Collection initializers
 
-Collection initializers can also produce this diagnostic when preserving the
-original caller-information values and `Add` overload requires explicit method
-calls. Two combinations are unsupported:
-
-- an `init` assignment after a property collection initializer, such as
-  `new Holder { Items = { value }, After = value }` when `After` is init-only;
-- `await` inside a property collection initializer nested in an expression
-  where preserving execution would require moving the await to another
-  function, for example the creation branch of a conditional expression.
-
-These cases report `MORPH0030` with `CS8852` or `CS4032`, respectively. Ordinary
-initializers that can retain their original `Add` binding are unaffected.
+Some collection initializers whose `Add` method uses caller-information
+parameters are unsupported in callbacks. A later `init` assignment in the
+same object initializer can report `CS8852`; an `await` in a nested property
+collection initializer can report `CS4032`. The diagnostic includes the C#
+error that prevents using the expression.
 
 ## Fix
 

@@ -21,8 +21,8 @@ mapped produce [`MORPH0048`](../diagnostics/MORPH0048.md). Both are warnings
 and do not change the mapping.
 
 Explicit expressions, conventions, `Auto()`, constructor arguments and nested
-rules count according to their actual use. `Ignore()` deliberately occupies a
-destination member.
+rules count according to their actual use. `Ignore()` marks a destination
+member as intentionally unmapped.
 
 For [`IncludeMembers`](../include-members.md), the selected path counts as
 used and the readable members of the included object are checked.
@@ -47,8 +47,7 @@ refer to a direct source member, one nested member exposed by
 `IncludeMembers`, or an included source object to acknowledge its complete
 set of readable members. The getters on that path are not invoked.
 
-`Convert` is a manual algorithm, so unmapped-member validation does not apply
-to it.
+For `Convert`, see [setting applicability](README.md#applicability).
 
 Configure an assembly default with `MorphantUnmappedMemberValidation`. See the
 [settings overview](README.md) for levels and precedence, and

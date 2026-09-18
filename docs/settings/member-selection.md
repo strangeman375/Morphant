@@ -32,8 +32,8 @@ an explicit [`Map`, `Create` or `Update`](../nested-mapping.md).
 Members exposed through [`IncludeMembers`](../include-members.md) participate
 in the same lookup.
 
-`MemberSelection` applies only to declarative mappings. A manual `Convert`
-owns all member behavior itself.
+`MemberSelection` applies to declarative mappings. For `Convert`, see
+[setting applicability](README.md#applicability).
 
 Configure an assembly default with `MorphantMemberSelection`. See the
 [settings overview](README.md) for levels and precedence.

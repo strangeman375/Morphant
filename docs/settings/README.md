@@ -73,6 +73,15 @@ Each setting is resolved independently:
 included-mapping values participate only through
 [`base.Configure` and `IncludeBase`](../configuration-inheritance.md).
 
-Setting arguments must be compile-time constants. Invalid values or settings
-that do not apply to the mapping produce a compile-time diagnostic;
-suppressing the diagnostic does not make the configuration valid.
+## Applicability
+
+Use supported compile-time constants for settings. Morphant validates values
+when the mapping uses the setting; unused settings can be ignored. For
+example, `NullDestinationHandling` is ignored when Update is disabled, and
+`ConstructorSelection` does not affect an explicitly chosen constructor.
+
+`Convert` owns null handling, construction and member mapping. Inherited
+defaults for those behaviors are ignored. Setting them explicitly on the same
+mapping as `Convert` produces [`MORPH0023`](../diagnostics/MORPH0023.md), which
+lists the unsupported settings. `MappingMode` and `UnknownDerivedTypeHandling`
+still apply.

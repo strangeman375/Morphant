@@ -21,7 +21,7 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Configures destination members and matching constructor arguments.",
+            "Configures destination members and matching automatic constructor arguments.",
             "Inline lambda. Unspecified members follow MemberSelection.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
@@ -30,7 +30,7 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Configures destination members and matching constructor arguments.",
+            "Configures destination members and matching automatic constructor arguments.",
             "Inline lambda. Unspecified members follow MemberSelection.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
@@ -40,8 +40,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Configures destination members and matching constructor arguments.",
-            "Inline lambda; constructor inputs cannot read result before construction.",
+            "Configures destination members and matching automatic constructor arguments.",
+            "Inline lambda. Unspecified members follow MemberSelection.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -51,8 +51,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Configures destination members and matching constructor arguments.",
-            "Inline lambda; constructor inputs cannot read result before construction.",
+            "Configures destination members and matching automatic constructor arguments.",
+            "Inline lambda. Unspecified members follow MemberSelection.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
