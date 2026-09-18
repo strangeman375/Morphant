@@ -349,6 +349,24 @@ CommentTerminatorException: before * / after
     }
 
     [Test]
+    public void Coalesces_repeated_output_failures_when_their_identities_also_fail()
+    {
+        var run = Run("class BrokenOne { }\nclass BrokenTwo { }\nclass HealthyOutput { }",
+            new OutputFailureGenerator());
+        Assert.Multiple(() =>
+        {
+            Assert.That(run.Result.Exception, Is.Null);
+            Assert.That(run.Result.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0057" }));
+            Assert.That(run.Result.Diagnostics.Single().Properties["ExceptionDetails"], Is.EqualTo(ExceptionDetails));
+            Assert.That(SnapshotSources(run.Result), Is.EqualTo(new[]
+            {
+                new GeneratedSource("HealthyOutput.g.cs", NormalizeExpected(HealthyOutputOutput)),
+                new GeneratedSource(OutputFailureHintName, NormalizeExpected(OutputFailureReport))
+            }));
+        });
+    }
+
+    [Test]
     public void Reports_an_initialization_failure_and_emits_the_report()
     {
         var run = Run(

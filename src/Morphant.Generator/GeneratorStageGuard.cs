@@ -155,14 +155,80 @@ internal static class GeneratorStageGuard
         Func<TSource, string> identitySelector,
         Action<SourceProductionContext, TSource> action)
     {
-        context.RegisterSourceOutput(
-            source,
-            (productionContext, value) => ExecuteSourceOutput(
-                productionContext,
-                value,
-                stageName,
-                identitySelector,
-                action));
+        // File-producing stages own disjoint artifact kinds. Check names before
+        // Roslyn merges per-item contexts, outside the callback's catch. Only
+        // names are collected: unchanged requests retain their output cache.
+        var identified = source.Select((value, cancellationToken) =>
+        {
+            string? identity;
+            try { identity = identitySelector(value); }
+            catch (Exception exception) when (CanReport(exception, cancellationToken)) { identity = null; }
+            return new IdentifiedOutput<TSource>(value, identity, NormalizeOutputIdentity(identity));
+        });
+        var named = identified.Where(static value => value.Identity is not null);
+        var collisions = named.Select(static (value, _) => value.NormalizedIdentity!)
+            .Collect()
+            .Select(static (names, _) => names
+                .GroupBy(static name => name, StringComparer.OrdinalIgnoreCase)
+                .Where(static group => group.Count() > 1)
+                .Select(static group => group.OrderBy(static name => name, StringComparer.Ordinal).First())
+                .OrderBy(static name => name, StringComparer.Ordinal)
+                .ToImmutableArray())
+            .WithComparer(OutputNamesComparer.Instance);
+        var unique = named.Combine(collisions)
+            .Select(static (value, _) => value.Right.Contains(value.Left.NormalizedIdentity!, StringComparer.OrdinalIgnoreCase)
+                ? (IdentifiedOutput<TSource>?)null : value.Left)
+            .Where(static value => value.HasValue)
+            .Select(static (value, _) => value!.Value);
+
+        context.RegisterSourceOutput(unique, (productionContext, value) =>
+            ExecuteSourceOutput(productionContext, value.Value, stageName, _ => value.Identity!, action));
+        context.RegisterSourceOutput(collisions, (productionContext, names) =>
+        {
+            foreach (var identity in names)
+            {
+                productionContext.CancellationToken.ThrowIfCancellationRequested();
+                var exception = new InvalidOperationException(
+                    "Generated source hint name '" + identity + "' is not unique.");
+                var description = DescribeException(exception, productionContext.CancellationToken);
+                var failure = new GeneratorStageFailure(stageName, identity,
+                    description.Type, description.Message, description.Details, Location.None);
+                productionContext.ReportDiagnostic(failure.CreateDiagnostic());
+                failure.AddReportSource(productionContext);
+            }
+        });
+
+        // If an identity itself failed, the original action may still succeed.
+        // Keep these exceptional inputs together so identical failure reports
+        // are emitted once, without affecting the normal per-file output path.
+        context.RegisterSourceOutput(identified.Where(static value => value.Identity is null).Collect(),
+            (productionContext, values) =>
+            {
+                var reportedFailures = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var value in values)
+                {
+                    productionContext.CancellationToken.ThrowIfCancellationRequested();
+                    ExecuteSourceOutput(productionContext, value.Value, stageName,
+                        static _ => null!, action, reportedFailures);
+                }
+            });
+    }
+
+    private static string? NormalizeOutputIdentity(string? identity)
+    {
+        if (identity is null) return null;
+        var normalized = identity.Replace('\\', '/');
+        return normalized.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ? normalized : normalized + ".cs";
+    }
+
+    private readonly record struct IdentifiedOutput<T>(T Value, string? Identity, string? NormalizedIdentity);
+
+    private sealed class OutputNamesComparer : IEqualityComparer<ImmutableArray<string>>
+    {
+        public static OutputNamesComparer Instance { get; } = new();
+        public bool Equals(ImmutableArray<string> left, ImmutableArray<string> right) =>
+            left.SequenceEqual(right, StringComparer.Ordinal);
+        public int GetHashCode(ImmutableArray<string> value) => value.Length;
     }
 
     public static void RegisterSourceOutput<TSource>(
@@ -275,7 +341,8 @@ internal static class GeneratorStageGuard
         TSource value,
         string stageName,
         Func<TSource, string> identitySelector,
-        Action<SourceProductionContext, TSource> action)
+        Action<SourceProductionContext, TSource> action,
+        HashSet<string>? reportedFailures = null)
     {
         try
         {
@@ -308,6 +375,7 @@ internal static class GeneratorStageGuard
                 description.Details,
                 Location.None);
 
+            if (reportedFailures is not null && !reportedFailures.Add(failure.ReportHintName)) return;
             productionContext.ReportDiagnostic(
                 failure.CreateDiagnostic());
             failure.AddReportSource(productionContext);
