@@ -128,7 +128,7 @@ internal sealed class SyntaxIsolationTests
                     "BuildConstructionPlanModels",
                     Expected(
                         Construction,
-                        IncrementalStepRunReason.Unchanged)),
+                        IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildConstructionPlanRequests",
                     Expected(
@@ -136,7 +136,7 @@ internal sealed class SyntaxIsolationTests
                         IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberPlanModels",
-                    Expected(Member, IncrementalStepRunReason.Unchanged)),
+                    Expected(Member, IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberPlanRequests",
                     Expected(Member, IncrementalStepRunReason.Cached)),
@@ -163,7 +163,7 @@ internal sealed class SyntaxIsolationTests
                     "BuildConstructionPlanModels",
                     Expected(
                         Construction,
-                        IncrementalStepRunReason.Unchanged)),
+                        IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildConstructionPlanRequests",
                     Expected(
@@ -171,7 +171,7 @@ internal sealed class SyntaxIsolationTests
                         IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberPlanModels",
-                    Expected(Member, IncrementalStepRunReason.Unchanged)),
+                    Expected(Member, IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberPlanRequests",
                     Expected(Member, IncrementalStepRunReason.Cached)),

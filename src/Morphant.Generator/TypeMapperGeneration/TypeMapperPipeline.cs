@@ -40,10 +40,9 @@ internal static class TypeMapperPipeline
                         cancellationToken,
                         source.Right),
                 static source => source.Left.Left.Configuration.Declaration
-                    .AttributedDeclaration.Identifier.GetLocation())
-            .WhereHasValue()
-            .WithTrackingName(
-                MorphantGeneratorStageNames.BuildTypeMapperModels);
+                    .AttributedDeclaration.Identifier.GetLocation(),
+                trackExecution: true)
+            .WhereHasValue();
 
         RegisterDiagnostics(context, models);
         RegisterSources(context, models);

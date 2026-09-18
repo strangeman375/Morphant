@@ -121,7 +121,7 @@ internal static class DestinationPlanPipeline
             target.IsTuple,
             target.PlanIdentity,
             compilation,
-            TypeContractDependencies.Build(dependencies.Types, compilation, cancellationToken),
+            TypeContractDependencies.Build(dependencies.Types, compilation, cancellationToken, declarationsOnly: true),
             candidate.LanguageVersion,
             compilation.Assembly.Identity.ToString(),
             compilation.Options.NullableContextOptions,

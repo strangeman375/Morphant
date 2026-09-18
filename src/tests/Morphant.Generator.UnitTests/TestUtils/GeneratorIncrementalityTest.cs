@@ -808,6 +808,14 @@ internal static class GeneratorIncrementalityTest
         string stepName,
         string stageName)
     {
+        // Execution tracking observes the guarded result before its success
+        // value is unwrapped; output tracking observes that value directly.
+        if (value.GetType().GetProperty("HintName") is null &&
+            value.GetType().GetProperty("Value")?.GetValue(value) is { } unwrapped)
+        {
+            value = unwrapped;
+        }
+
         var property = value.GetType().GetProperty("HintName");
 
         Assert.That(

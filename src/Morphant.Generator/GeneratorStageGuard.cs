@@ -44,7 +44,8 @@ internal static class GeneratorStageGuard
         IncrementalValuesProvider<TSource> source,
         string stageName,
         Func<TSource, CancellationToken, TResult> selector,
-        Func<TSource, Location?> locationSelector)
+        Func<TSource, Location?> locationSelector,
+        bool trackExecution = false)
     {
         var results = source.Select(
             (value, cancellationToken) => Execute(
@@ -54,6 +55,9 @@ internal static class GeneratorStageGuard
                 locationSelector,
                 cancellationToken));
 
+        // Track the costly selector itself. Unwrapping an equal result can be
+        // cached even when the selector ran and returned an unchanged value.
+        if (trackExecution) results = results.WithTrackingName(stageName);
         return Unwrap(context, results);
     }
 

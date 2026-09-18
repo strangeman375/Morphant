@@ -127,7 +127,7 @@ internal sealed class DependencyIsolationTests
                     "BuildConstructionPlanModels",
                     Expected(
                         ConstructionA,
-                        IncrementalStepRunReason.Unchanged),
+                        IncrementalStepRunReason.Cached),
                     Expected(ConstructionB, IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildConstructionPlanRequests",
@@ -135,7 +135,7 @@ internal sealed class DependencyIsolationTests
                     Expected(ConstructionB, IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberPlanModels",
-                    Expected(MemberA, IncrementalStepRunReason.Unchanged),
+                    Expected(MemberA, IncrementalStepRunReason.Cached),
                     Expected(MemberB, IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberPlanRequests",
@@ -192,12 +192,33 @@ internal sealed class DependencyIsolationTests
                         IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildTypeMapperModels",
-                    Expected(MapperA, IncrementalStepRunReason.Cached),
+                    Expected(MapperA, IncrementalStepRunReason.Unchanged),
                     Expected(MapperB, IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildTypeMapperRequests",
                     Expected(MapperA, IncrementalStepRunReason.Cached),
                     Expected(MapperB, IncrementalStepRunReason.Cached))));
+    }
+
+    [Test]
+    public void Distinguishes_cached_execution_from_equal_recomputed_output()
+    {
+        var generated = new[] { ConstructionA, MappingExtensionA, MemberA, MemberExtensionA, MapperA };
+        GeneratorIncrementalityStep Edit(string name, string models, IncrementalStepRunReason reason) => Step(
+            name,
+            [SourceFile("Mapper.cs", MapperASource), SourceFile("Models.cs", models)],
+            generated,
+            Stage("BuildTypeMapperModels", Expected(MapperA, reason)),
+            Stage("BuildTypeMapperRequests", Expected(MapperA,
+                reason == IncrementalStepRunReason.New ? IncrementalStepRunReason.New : IncrementalStepRunReason.Cached)));
+        var initial = BuildDestinationsSource("int", 1, 1);
+        var renamed = initial.Replace("UnmappedMethod", "RenamedMethod");
+
+        RunAndAssert(LanguageVersion.CSharp9, static () => new MorphantGenerator(),
+            Edit("initial", initial, IncrementalStepRunReason.New),
+            Edit("unused signature changed", renamed, IncrementalStepRunReason.Unchanged),
+            Edit("only method implementation changed", renamed.Replace("=> 1;", "=> 12345;"), IncrementalStepRunReason.Cached),
+            Edit("signature restored", initial, IncrementalStepRunReason.Unchanged));
     }
 
     private static string BuildDestinationsSource(

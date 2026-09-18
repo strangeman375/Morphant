@@ -84,8 +84,11 @@ internal sealed class MemberTypeDependencyTests
             [SourceFile("Mapper.cs", obsolete && refreshMapper ? Mapper.Replace("builder.Map", "/* refresh */ builder.Map") : Mapper),
                 SourceFile("Dtos.cs", dto),
                 SourceFile("Item.cs", Item.Replace("__ATTRIBUTE__", obsolete ? "[System.Obsolete(\"old\")]" : ""))],
-            Generated,
-            obsolete ? [CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 4)] : []);
+            shape == "constructor" ? [Generated[0], Generated[1], Generated[4]] : Generated,
+            !obsolete ? [] : shape == "property"
+                ? [CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 4),
+                    CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 5)]
+                : [CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 4)]);
 
         RunAndAssert(LanguageVersion.CSharp9, static () => new MorphantGenerator(),
             Edit("ordinary type", false), Edit("obsolete type", true), Edit("ordinary type restored", false));

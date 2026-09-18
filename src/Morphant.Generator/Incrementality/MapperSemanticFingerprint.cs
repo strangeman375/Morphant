@@ -88,12 +88,16 @@ internal static class MapperSemanticFingerprintBuilder
             lookupTypes.Add,
             cancellationToken);
 
+        // Mapper declarations contain the user code we transfer. Other types
+        // contribute declaration contracts, not ordinary method bodies/trivia.
         var dependencies = TypeContractDependencies.Build(
-                dependencyTypes.Types,
+                mapperType,
                 compilation,
                 cancellationToken)
+            .Concat(TypeContractDependencies.Build(dependencyTypes.Types, compilation,
+                cancellationToken, declarationsOnly: true))
             .Concat(TypeContractDependencies.Build(lookupTypes.Types, compilation,
-                cancellationToken, lookupOnly: true))
+                cancellationToken, declarationsOnly: true))
             .GroupBy(
                 static dependency => dependency.Identity,
                 StringComparer.Ordinal)
