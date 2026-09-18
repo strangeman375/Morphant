@@ -187,12 +187,13 @@ internal static class GeneratorStageGuard
         string stageName,
         Exception exception)
     {
+        var description = DescribeException(exception, CancellationToken.None);
         var failure = new GeneratorStageFailure(
             stageName,
             stageName,
-            exception.GetType().FullName ?? exception.GetType().Name,
-            exception.Message,
-            exception.ToString(),
+            description.Type,
+            description.Message,
+            description.Details,
             Location.None);
 
         context.RegisterSourceOutput(
@@ -223,35 +224,39 @@ internal static class GeneratorStageGuard
         Func<TSource, Location?> locationSelector,
         CancellationToken cancellationToken)
     {
+        var description = DescribeException(exception, cancellationToken);
         Location location;
+        string identity;
 
         try
         {
             location = locationSelector(source) ?? Location.None;
+            identity = BuildFailureIdentity(location, description.Details);
         }
         catch (Exception locationException) when (CanReport(
                    locationException,
                    cancellationToken))
         {
             location = Location.None;
+            identity = description.Details;
         }
 
         return new GeneratorStageFailure(
             stageName,
-            BuildFailureIdentity(location, exception),
-            exception.GetType().FullName ?? exception.GetType().Name,
-            exception.Message,
-            exception.ToString(),
+            identity,
+            description.Type,
+            description.Message,
+            description.Details,
             location);
     }
 
     private static string BuildFailureIdentity(
         Location location,
-        Exception exception)
+        string exceptionDetails)
     {
         if (!location.IsInSource)
         {
-            return exception.ToString();
+            return exceptionDetails;
         }
 
         var lineSpan = location.GetLineSpan();
@@ -280,27 +285,27 @@ internal static class GeneratorStageGuard
                    exception,
                    productionContext.CancellationToken))
         {
+            var description = DescribeException(exception, productionContext.CancellationToken);
             string failureIdentity;
 
             try
             {
                 failureIdentity = identitySelector(value) ??
-                                  exception.ToString();
+                                  description.Details;
             }
             catch (Exception identityException) when (CanReport(
                        identityException,
                        productionContext.CancellationToken))
             {
-                failureIdentity = exception.ToString();
+                failureIdentity = description.Details;
             }
 
             var failure = new GeneratorStageFailure(
                 stageName,
                 failureIdentity,
-                exception.GetType().FullName ??
-                exception.GetType().Name,
-                exception.Message,
-                exception.ToString(),
+                description.Type,
+                description.Message,
+                description.Details,
                 Location.None);
 
             productionContext.ReportDiagnostic(
@@ -308,6 +313,53 @@ internal static class GeneratorStageGuard
             failure.AddReportSource(productionContext);
         }
     }
+
+    private static ExceptionDescription DescribeException(
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        var type = exception.GetType().FullName ?? exception.GetType().Name;
+        var message = ReadExceptionText(
+            () => exception.Message,
+            "[Exception message unavailable.]",
+            cancellationToken);
+        string? details;
+        try
+        {
+            details = exception.ToString();
+        }
+        catch (Exception formattingException) when (CanReport(formattingException, cancellationToken))
+        {
+            details = null;
+        }
+
+        if (details is null)
+        {
+            var stackTrace = ReadExceptionText(() => exception.StackTrace, string.Empty, cancellationToken);
+            details = type + ": " + message + "\r\n" +
+                      (stackTrace.Length == 0 ? string.Empty : stackTrace + "\r\n") +
+                      "[Full exception details unavailable.]";
+        }
+
+        return new ExceptionDescription(type, message, details);
+    }
+
+    private static string ReadExceptionText(
+        Func<string?> read,
+        string fallback,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return read() ?? fallback;
+        }
+        catch (Exception exception) when (CanReport(exception, cancellationToken))
+        {
+            return fallback;
+        }
+    }
+
+    private readonly record struct ExceptionDescription(string Type, string Message, string Details);
 
     private static void RegisterValueFailures<TResult>(
         IncrementalGeneratorInitializationContext context,
