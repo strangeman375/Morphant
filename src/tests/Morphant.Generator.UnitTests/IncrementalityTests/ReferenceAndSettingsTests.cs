@@ -335,7 +335,7 @@ internal sealed class ReferenceAndSettingsTests
                 "BuildTypeMapperModels",
                 Expected(
                     ExternalMapper,
-                    IncrementalStepRunReason.Cached),
+                    IncrementalStepRunReason.Unchanged),
                 Expected(
                     StableMapper,
                     IncrementalStepRunReason.Cached)),

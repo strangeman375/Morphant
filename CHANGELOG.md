@@ -67,6 +67,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
+- Refresh mappings and generated declarations after conversion, inheritance or
+  obsolete-attribute changes in member types, including referenced projects.
 - Preserve independent generated output when filenames conflict, and retain
   `MORPH0057` reports when exception details cannot be read.
 - Preserve source caller information and overload selection in collection

@@ -63,6 +63,59 @@ internal sealed class MemberTypeDependencyTests
             StepWithReferences("restored", files, [explicitReference], Generated));
     }
 
+    [Test]
+    public void Actualizes_reference_conversion_when_a_member_base_type_gains_an_interface()
+    {
+        // lang=c#
+        const string dtos = """
+#nullable enable
+#pragma warning disable CS1591
+namespace TestCase
+{
+    public interface IValue { }
+    public class Item : ItemBase { }
+    public class Source { public Item Value { get; set; } = new(); }
+    public class Destination { public IValue? Value { get; set; } }
+}
+""";
+        // lang=c#
+        const string baseType = """
+#nullable enable
+#pragma warning disable CS1591
+namespace TestCase
+{
+    public class ItemBase __INTERFACE__ { }
+}
+""";
+        // lang=c#
+        const string scenario = """
+#nullable enable
+#pragma warning disable CS1591
+namespace TestCase
+{
+    public static class Scenario
+    {
+        public static void Verify()
+        {
+            var mapper = (Morphant.ITypeMapper<Source, Destination>)new TestMapper();
+            var source = new Source();
+            if ((mapper.Create(source, default).Value != null) != __ASSIGNED__ ||
+                (mapper.Update(source, new Destination(), default).Value != null) != __ASSIGNED__)
+                throw new System.InvalidOperationException("Stale reference conversion.");
+        }
+    }
+}
+""";
+        GeneratorIncrementalityStep Edit(string name, bool implements) => ExecutableStep(name,
+            [SourceFile("Mapper.cs", Mapper), SourceFile("Dtos.cs", dtos),
+                SourceFile("Base.cs", baseType.Replace("__INTERFACE__", implements ? ": IValue" : "")),
+                SourceFile("Scenario.cs", scenario.Replace("__ASSIGNED__", implements ? "true" : "false"))],
+            Generated, "TestCase.Scenario");
+
+        RunAndAssert(LanguageVersion.CSharp9, static () => new MorphantGenerator(),
+            Edit("no conversion", false), Edit("base implements interface", true), Edit("interface removed", false));
+    }
+
     [TestCase("property", false)]
     [TestCase("property", true)]
     [TestCase("constructor", false)]
@@ -85,7 +138,7 @@ internal sealed class MemberTypeDependencyTests
                 SourceFile("Dtos.cs", dto),
                 SourceFile("Item.cs", Item.Replace("__ATTRIBUTE__", obsolete ? "[System.Obsolete(\"old\")]" : ""))],
             shape == "constructor" ? [Generated[0], Generated[1], Generated[4]] : Generated,
-            !obsolete ? [] : shape == "property"
+            !obsolete ? [] : shape is "property" or "constructor"
                 ? [CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 4),
                     CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 5)]
                 : [CompilerDiagnostic("CS0618", DiagnosticSeverity.Warning, "Dtos.cs", dto.IndexOf("Item", StringComparison.Ordinal), 4)]);
