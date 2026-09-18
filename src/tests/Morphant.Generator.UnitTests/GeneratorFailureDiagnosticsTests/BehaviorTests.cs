@@ -98,7 +98,7 @@ class HealthyMapper { }
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestTransform
 
 TestGeneratorException: deliberate failure
@@ -113,7 +113,7 @@ TestGeneratorException: deliberate failure
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestOutput
 
 TestGeneratorException: deliberate failure
@@ -128,7 +128,7 @@ TestGeneratorException: deliberate failure
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestInitialize
 
 TestGeneratorException: deliberate failure
@@ -143,7 +143,7 @@ TestGeneratorException: deliberate failure
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestLocationlessTransform
 
 TestGeneratorException: deliberate failure
@@ -158,7 +158,7 @@ TestGeneratorException: deliberate failure
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestValueTransform
 
 TestGeneratorException: deliberate failure
@@ -173,7 +173,7 @@ TestGeneratorException: deliberate failure
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestCommentTerminator
 
 CommentTerminatorException: before * / after
@@ -202,7 +202,7 @@ CommentTerminatorException: before * / after
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Morphant generator 0.4.0 failed unexpectedly in " +
+                    "Morphant generator 0.5.0 failed unexpectedly in " +
                     $"stage 'TestTransform': {exceptionType}: deliberate " +
                     "failure. Full exception details are available in " +
                     $"generated file '{TransformFailureHintName}'."));
@@ -225,7 +225,7 @@ CommentTerminatorException: before * / after
                         .Add("ExceptionDetails", ExceptionDetails)
                         .Add("ExceptionMessage", "deliberate failure")
                         .Add("ExceptionType", exceptionType)
-                        .Add("GeneratorVersion", "0.4.0")
+                        .Add("GeneratorVersion", "0.5.0")
                         .Add(
                             "ReportHintName",
                             TransformFailureHintName)

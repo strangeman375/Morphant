@@ -37,7 +37,7 @@ internal sealed class ExceptionFormattingTests
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestFormatting
 
 FormattingException: original details
@@ -48,7 +48,7 @@ FormattingException: original details
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestFormatting
 
 Morphant.Generator.UnitTests.GeneratorFailureDiagnosticsTests.ExceptionFormattingTests+FormattingException: original failure
@@ -61,7 +61,7 @@ Morphant.Generator.UnitTests.GeneratorFailureDiagnosticsTests.ExceptionFormattin
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestFormatting
 
 Morphant.Generator.UnitTests.GeneratorFailureDiagnosticsTests.ExceptionFormattingTests+FormattingException: [Exception message unavailable.]
@@ -83,11 +83,11 @@ Morphant.Generator.UnitTests.GeneratorFailureDiagnosticsTests.ExceptionFormattin
             Assert.That(diagnostic.Location, Is.EqualTo(Location.None));
             Assert.That(diagnostic.AdditionalLocations, Is.Empty);
             Assert.That(diagnostic.GetMessage(), Is.EqualTo(
-                "Morphant generator 0.4.0 failed unexpectedly in stage 'TestFormatting': " +
+                "Morphant generator 0.5.0 failed unexpectedly in stage 'TestFormatting': " +
                 exceptionType + ": " + message + ". Full exception details are available in generated file '" + reportName + "'."));
             Assert.That(diagnostic.Properties, Is.EqualTo(ImmutableDictionary<string, string?>.Empty
                 .Add("ExceptionType", exceptionType).Add("ExceptionMessage", message).Add("ExceptionDetails", details)
-                .Add("GeneratorVersion", "0.4.0").Add("StageName", "TestFormatting").Add("ReportHintName", reportName)));
+                .Add("GeneratorVersion", "0.5.0").Add("StageName", "TestFormatting").Add("ReportHintName", reportName)));
             Assert.That(result.GeneratedSources.Select(source => source.HintName).Order(StringComparer.Ordinal),
                 Is.EqualTo(new[] { "Healthy.g.cs", reportName }.Order(StringComparer.Ordinal)));
             Assert.That(result.GeneratedSources.Single(source => source.HintName == "Healthy.g.cs").SourceText.ToString(),

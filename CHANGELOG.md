@@ -8,6 +8,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ## [Unreleased]
 
+## [0.5.0]
+
 ### Added
 
 - Support `ValueTuple` and `System.Tuple` mappings, including named, unnamed,
@@ -165,7 +167,8 @@ Initial stable release.
 - Strong-named runtime and generator assemblies with public key token
   `ba27fb6be8f80649`.
 
-[Unreleased]: https://github.com/strangeman375/Morphant/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/strangeman375/Morphant/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/strangeman375/Morphant/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/strangeman375/Morphant/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/strangeman375/Morphant/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/strangeman375/Morphant/compare/v0.1.0...v0.2.0

@@ -17,7 +17,7 @@
 
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>mapper;mapping;object-mapper;object-mapping;source-generator;code-generation;compile-time;roslyn;csharp</PackageTags>
-        <PackageReleaseNotes>Adds explicit pair-local runtime polymorphism with ForDerived, most-specific class/interface dispatch, strict Update destination checks, value-type support, configurable unknown-derived handling, and dedicated diagnostics and runtime exceptions. Release notes: https://github.com/strangeman375/Morphant/blob/v0.4.0/CHANGELOG.md#040. Current limitations: https://github.com/strangeman375/Morphant/blob/v0.4.0/docs/limitations.md</PackageReleaseNotes>
+        <PackageReleaseNotes>Adds first-class tuple mappings and self-typed mapper configuration, with improved generator stability and incremental updates. Includes breaking API changes; see the migration instructions. Release notes: https://github.com/strangeman375/Morphant/blob/v0.5.0/CHANGELOG.md#050. Current limitations: https://github.com/strangeman375/Morphant/blob/v0.5.0/docs/limitations.md</PackageReleaseNotes>
 
         <PackageIcon>logo.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>

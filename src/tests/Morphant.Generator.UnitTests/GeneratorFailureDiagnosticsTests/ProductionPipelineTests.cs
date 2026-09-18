@@ -187,10 +187,10 @@ namespace Fixture
             else
                 Assert.That(diagnostic.Location.SourceTree!.FilePath, Is.EqualTo("Input.cs"));
             Assert.That(diagnostic.GetMessage(), Is.EqualTo(
-                "Morphant generator 0.4.0 failed unexpectedly in stage '" + stage + "': " +
+                "Morphant generator 0.5.0 failed unexpectedly in stage '" + stage + "': " +
                 exceptionType + ": deliberate production failure. Full exception details are available in generated file '" + reportName + "'."));
             Assert.That(diagnostic.Properties, Is.EqualTo(ImmutableDictionary<string, string?>.Empty
-                .Add("GeneratorVersion", "0.4.0").Add("StageName", stage)
+                .Add("GeneratorVersion", "0.5.0").Add("StageName", stage)
                 .Add("ExceptionType", exceptionType).Add("ExceptionMessage", "deliberate production failure")
                 .Add("ExceptionDetails", "InjectedFailure: deliberate production failure").Add("ReportHintName", reportName)));
         });
@@ -204,7 +204,7 @@ namespace Fixture
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: FindMorphantMapperDeclarations
 
 InjectedFailure: deliberate production failure
@@ -215,7 +215,7 @@ InjectedFailure: deliberate production failure
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: BuildTypeMapperModels
 
 InjectedFailure: deliberate production failure
@@ -226,7 +226,7 @@ InjectedFailure: deliberate production failure
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: AddTypeMapperSource
 
 InjectedFailure: deliberate production failure
@@ -237,7 +237,7 @@ InjectedFailure: deliberate production failure
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: Initialize
 
 InjectedFailure: deliberate production failure

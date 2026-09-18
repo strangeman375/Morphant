@@ -60,7 +60,7 @@ internal sealed class OutputCoordinationTests
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestOutputNames
 
 System.InvalidOperationException: Generated source hint name 'folder/Shared.g.cs' is not unique.
@@ -70,7 +70,7 @@ System.InvalidOperationException: Generated source hint name 'folder/Shared.g.cs
 #nullable enable
 
 /*
-MORPH0057: Morphant generator 0.4.0 failed unexpectedly.
+MORPH0057: Morphant generator 0.5.0 failed unexpectedly.
 Stage: TestOutputNames
 
 System.InvalidOperationException: Generated source hint name 'Shared.g.cs' is not unique.
@@ -85,10 +85,10 @@ System.InvalidOperationException: Generated source hint name 'Shared.g.cs' is no
             Assert.That(diagnostic.Severity, Is.EqualTo(DiagnosticSeverity.Error));
             Assert.That(diagnostic.AdditionalLocations, Is.Empty);
             Assert.That(diagnostic.GetMessage(), Is.EqualTo(
-                "Morphant generator 0.4.0 failed unexpectedly in stage 'TestOutputNames': " +
+                "Morphant generator 0.5.0 failed unexpectedly in stage 'TestOutputNames': " +
                 "System.InvalidOperationException: " + message + ". Full exception details are available in generated file '" + reportName + "'."));
             Assert.That(diagnostic.Properties, Is.EqualTo(ImmutableDictionary<string, string?>.Empty
-                .Add("GeneratorVersion", "0.4.0").Add("StageName", "TestOutputNames")
+                .Add("GeneratorVersion", "0.5.0").Add("StageName", "TestOutputNames")
                 .Add("ExceptionType", "System.InvalidOperationException").Add("ExceptionMessage", message)
                 .Add("ExceptionDetails", "System.InvalidOperationException: " + message).Add("ReportHintName", reportName)));
             AssertSources(result, [("Healthy.g.cs", HealthySource), (reportName, Normalize(report))]);

@@ -76,3 +76,17 @@ MORPH0052 | Morphant.Polymorphism | Error | Polymorphic mapping links to itself
 MORPH0053 | Morphant.Polymorphism | Error | Duplicate polymorphic source branch
 MORPH0054 | Morphant.Polymorphism | Error | Incompatible polymorphic branch type
 MORPH0055 | Morphant.Polymorphism | Error | Inaccessible polymorphic branch type
+
+## Release 0.5.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+MORPH0056 | Morphant.Registration | Error | Conflicting tuple presentation
+MORPH0057 | Morphant.Generator | Error | Unexpected generator failure
+MORPH0058 | Morphant.Declaration | Error | Mapper self type is invalid
+MORPH0059 | Morphant.Declaration | Error | Mapper type is inaccessible to generated code
+MORPH0060 | Morphant.Registration | Error | Mapper family parameter is absent from mapping
+MORPH0061 | Morphant.Polymorphism | Error | Polymorphic branch relationship is not known
+MORPH0062 | Morphant.Construction | Error | Structured construction result is invalid
