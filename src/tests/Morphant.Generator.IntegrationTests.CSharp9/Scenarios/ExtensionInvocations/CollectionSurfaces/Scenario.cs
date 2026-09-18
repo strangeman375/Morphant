@@ -108,7 +108,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
             for (var index = 0; index < mappers.Length; index++)
             {
                 var source = new Source();
-                var expected = "1:Configure:" + System.IO.Path.Combine(SourceDirectory(), "CollectionCallbacks.cs") + ":200:" + (index == 3 ? "source!.Next()" : "source.Next()");
+#line 200 "CollectionCallbacks.cs"
+                var file = SourceFile();
+#line default
+                var expected = "1:Configure:" + file + ":200:" + (index == 3 ? "source!.Next()" : "source.Next()");
                 var created = mappers[index].Create(source);
                 if (created.Value != expected || source.Count != 1)
                     throw new InvalidOperationException("Create must call the selected generic Add once with all original caller values: " + created.Value);
@@ -130,6 +133,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
             }
         }
 
-        private static string SourceDirectory([CallerFilePath] string file = "") => System.IO.Path.GetDirectoryName(file)!;
+        private static string SourceFile([CallerFilePath] string file = "") => file;
     }
 }
