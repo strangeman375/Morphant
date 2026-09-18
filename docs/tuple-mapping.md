@@ -97,10 +97,8 @@ builder.Map<Source, (int Id, string Name)>()
 ```
 
 Both explicit expressions are evaluated, including when they are identical.
-Morphant can compute the final element values before constructing one tuple.
-When `Members` reads `result`, it receives the initial tuple; `System.Tuple`
-may then require a second instance with the final values. Member expressions
-read the same initial result, before Morphant applies any element assignments.
+Member expressions that read `result` see the initial tuple, before element
+assignments.
 
 Automatic arguments follow the [constructor and member rules](api/members.md#constructor-parameters).
 
@@ -146,12 +144,6 @@ create the result whenever every required element has a final value. A factory
 is not required.
 
 Custom `ITuple` implementations follow ordinary object-mapping conventions.
-
-## Presentation conflicts
-
-Use consistent tuple names, nullable annotations and `dynamic`/`object` choices
-for each mapping pair within a mapper and its connected base configuration.
-For conflicting declarations, see [`MORPH0056`](diagnostics/MORPH0056.md).
 
 Related: [Conventions](conventions.md),
 [Create and Update](create-and-update.md), and

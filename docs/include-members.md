@@ -58,18 +58,6 @@ Mapping can throw if the object is null despite the assertion.
 [`IncludeBase`](api/include-base.md) inherits included objects.
 `IncludeMembers` cannot be combined with [`Convert`](api/convert.md).
 
-Source-side `UnmappedMemberValidation` checks readable members of included
-objects. A compile-time discard can acknowledge one member or the complete
-object:
-
-```csharp
-.Members(source =>
-{
-    _ = source.Customer.LegacyCode;
-    _ = source.Audit;
-
-    return new() { Name = Auto() };
-})
-```
-
-Discard statements are compile-time only and do not themselves call getters.
+[Source validation](settings/unmapped-member-validation.md) checks the readable
+members of included objects and explains how to acknowledge intentionally
+unused members.

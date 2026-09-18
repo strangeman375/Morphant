@@ -36,10 +36,24 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-The callback bypasses null handling, constructor selection, member conventions,
-and `Members`. `MappingMode` still controls whether Create and Update may be
-called. `Convert` cannot be combined with destination methods, `Members`, or
-`IncludeMembers`.
+The callback owns null handling, construction and member mapping. For the
+settings that still apply and restrictions on explicit settings, see
+[setting applicability](../settings/README.md#applicability). `Convert` cannot
+be combined with destination methods, `Members`, or `IncludeMembers`.
 
-Related: [manual mapping](../manual-mapping.md),
-[dependency injection and `IMapper`](../runtime-dispatch.md).
+## Nested calls
+
+Use the context-aware overload and `context.Mapper` to call another mapping:
+
+```csharp
+var address = previous.TryGetValue(out var destination)
+    ? context.Mapper.Map(source.Address, destination.Address)
+    : context.Mapper.Map<AddressDto, Address>(source.Address);
+```
+
+The body is ordinary C#; declarative helpers such as `Auto()`, `Ignore()` and
+nested `Map()` are not used here. See
+[dependency injection and `IMapper`](../runtime-dispatch.md) for registration
+and context lifetime, or the
+[collection recipe](../recipes.md#map-a-collection-with-custom-code) for mapping
+a collection with custom code.

@@ -85,26 +85,6 @@ builder.Map<OrderDto, Order>()
 Members not mentioned in `Members` follow the configured
 [`MemberSelection`](settings/member-selection.md).
 
-Use `Value<T>` when target typing is otherwise ambiguous, for example for
-boxing, nullable annotations, lambdas or overloaded constructors:
-
-```csharp
-.Members((source, _) => new()
-{
-    Payload = Value<object>(source.PayloadId),
-    Label = Value<string?>(source.Label)
-});
-```
-
-On C# 12 and newer, `Value<T>` also supplies the collection target type:
-
-```csharp
-.Members((source, _) => new()
-{
-    Values = Value<int[]>([.. source.Values])
-});
-```
-
 ## Existing destinations
 
 In `Resolve` and the overloads of `Members` that receive `previous`, the
@@ -136,10 +116,6 @@ Code passed to `Construct`, `Resolve` and `Members` follows these rules:
 
 Only the selected branch and applicable rules are evaluated. Separately
 written expressions remain separate evaluations; use a local to share a value.
-User-written expressions, locals and branches keep their computation structure;
-the generator changes it only as required by mapping semantics. Line breaks and
-relative indentation inside your expressions are preserved. Introduce a local
-yourself when you want to inspect an intermediate value during debugging.
 See [constructor and member composition](api/members.md#constructor-parameters)
 for automatic arguments and evaluation order. Use [`Convert`](api/convert.md)
 when loops, mutation, `try`, or another ordinary C# algorithm would be clearer.

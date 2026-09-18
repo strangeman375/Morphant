@@ -50,10 +50,8 @@ members keep their values.
 destination and `result` to read the destination selected for the current
 operation.
 
-For a `ValueTuple`, Update assigns applicable mutable fields on the by-value
-destination and returns the updated value. For `System.Tuple`, an existing
-instance is preserved; scalar element rules apply only while Morphant creates
-a new or replacement tuple. See [Tuple mapping](tuple-mapping.md).
+For differences between mutable value tuples and read-only `System.Tuple`,
+see [Tuple Update](tuple-mapping.md#update).
 
 ## Null values
 

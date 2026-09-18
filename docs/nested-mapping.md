@@ -50,10 +50,6 @@ a child prepared by the constructor or factory is passed to nested Update.
 For constructor arguments during Update with an existing outer destination,
 the corresponding readable member supplies the current value.
 
-If `Map` must run inside an object initializer to preserve evaluation order
-around an `init` or `required` member, it uses Create: the current member
-cannot yet be read from the constructed result.
-
 An available current value is passed to nested Update even when it is `null`.
 That mapping applies its own
 [`NullDestinationHandling`](settings/null-handling.md#null-update-destination),
@@ -65,16 +61,6 @@ to the writable member.
 
 Use explicit `Create` or `Update` when the operation must not be selected this
 way.
-
-```csharp
-builder.Map<Source, Tuple<ChildDestination, int>>()
-    .Construct(_ => new(new ChildDestination(), 7))
-    .Members(source => new() { Item1 = Map<ChildDestination>(source.Child) });
-```
-
-Here the nested mapping receives the constructed `ChildDestination` through
-Update, and its returned value becomes `Item1`. Use `Create<ChildDestination>`
-to request a separate child instead.
 
 ## Read-only members
 

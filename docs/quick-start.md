@@ -31,20 +31,14 @@ public sealed class CustomerDto
 public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
-        builder.Map<Customer, CustomerDto>()
-            .UnmappedMemberValidation(UnmappedMemberValidation.Destination);
+        builder.Map<Customer, CustomerDto>();
 }
 ```
 
 The generated `ApplicationMapper` implements
-`ITypeMapper<Customer, CustomerDto>`. Exact, case-sensitive member names are
-mapped when C# provides a warning-free implicit conversion.
-
-The example enables [destination validation](settings/unmapped-member-validation.md)
-to report destination members that cannot be mapped. This check is disabled
-by default.
-
-The mapper is its own `TypeMapper<TMapper>` argument.
+`ITypeMapper<Customer, CustomerDto>` and maps `Name` by
+[convention](conventions.md). The mapper is its own `TypeMapper<TMapper>`
+argument.
 
 ## Register it with DI
 
@@ -111,18 +105,5 @@ Continue with [Choose a configuration method](api/README.md),
 [Dependency injection and `IMapper`](runtime-dispatch.md). For reusable mapper
 bases, see [Configuration inheritance](configuration-inheritance.md).
 
-## Calling without DI
-
-Morphant also allows a generated mapper to be used through an exact
-`ITypeMapper<TSource, TDestination>` when application-wide lookup is not
-needed:
-
-```csharp
-ITypeMapper<Customer, CustomerDto> typeMapper = new ApplicationMapper();
-
-var created = typeMapper.Create(customer);
-var updated = typeMapper.Update(customer, existing);
-```
-
-This is an additional option; the main application setup uses DI and `IMapper`
-as shown above.
+To use a generated mapper directly, see
+[Calling without DI](runtime-dispatch.md#calling-without-di).

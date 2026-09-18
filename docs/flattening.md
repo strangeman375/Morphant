@@ -20,8 +20,8 @@ nested mapping.
 Morphant checks explicit rules, direct root members, direct
 [`IncludeMembers`](include-members.md) members, root flattened paths, and
 included flattened paths, in that order. A direct member takes precedence even
-when its type is incompatible. For a flattened tier, incompatible or
-nullable-unsafe paths are ignored before choosing a candidate.
+when its type is incompatible. A nested path is considered only when its value
+can be assigned to the target without conversion or nullability warnings.
 
 If several compatible paths have the same joined name, Morphant reports
 [`MORPH0051`](diagnostics/MORPH0051.md) instead of choosing by declaration
@@ -43,9 +43,7 @@ member. Constructor conventions still use flattening.
 If any intermediate object can be `null`, the flattened value is nullable.
 Thus `int` can map to `int?`, but not to `int`; a missing object produces
 `null`, never `0` or another fabricated value. The same rule applies to
-reference types and constructor arguments. Morphant follows the declared
-nullable annotation and the output-flow attributes `MaybeNull` and `NotNull`
-on intermediate properties and fields.
+reference types and constructor arguments.
 
 Use an explicit expression when your application has a stronger invariant or
 needs a fallback value.

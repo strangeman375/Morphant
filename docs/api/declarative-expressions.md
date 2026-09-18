@@ -24,6 +24,21 @@ For a tuple, the target is an element. Convention helpers use semantic element
 names and never infer unnamed `ItemN` elements by position. See
 [Tuple mapping](../tuple-mapping.md).
 
+## Exact value types
+
+Use `Value<T>` when an expression needs an explicit receiving type:
+
+```csharp
+.Members(source => new()
+{
+    Payload = Value<object>(source.PayloadId),
+    Label = Value<string?>(source.Label)
+});
+```
+
+For a collection expression in C# 12 or newer, supply its target type in the
+same way: `Values = Value<int[]>([.. source.Values])`.
+
 ## Nested mapping helpers
 
 | Call | Source | Destination | Operation |
@@ -42,7 +57,6 @@ names and never infer unnamed `ItemN` elements by position. See
 | `T` | Nested destination type when it cannot or should not be inferred |
 | `source` | Value passed to the nested mapping |
 | `destination` | Existing nested destination passed to Update; may be `null` |
-| `value` | Expression wrapped with the exact receiving type `T` |
 
 Nested mappings are always explicit and must be registered as exact mapping
 pairs. See [Nested mapping](../nested-mapping.md) for operation selection and

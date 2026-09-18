@@ -39,9 +39,6 @@ If `base.Configure(builder)` is not called, base configuration is not
 included.
 
 Keep the recursive `TMapper` constraint shown above on each reusable base.
-For other generic parameters, each declared mapping must use them in its
-source or destination type. See [`MORPH0058`](diagnostics/MORPH0058.md) and
-[`MORPH0060`](diagnostics/MORPH0060.md) for declaration errors.
 
 ## Include mapping rules
 

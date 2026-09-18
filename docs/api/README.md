@@ -47,35 +47,13 @@ inside `Configure`.
 Inside declarative callbacks, use [`Auto`, `Ignore`, `Value`, `ByConvention`,
 `Map`, `Create`, and `Update`](declarative-expressions.md).
 
-Caller-information arguments retain the original source call site when callback
-code is transferred, including implicit `Add` calls in collection initializers.
-For unsupported initializer combinations and their workaround, see
-[`MORPH0030`](../diagnostics/MORPH0030.md#collection-initializers).
-
-## Compiler warnings
-
-Warnings in callbacks remain diagnostics in the user's source. Morphant avoids
-reporting the same warning again for the transferred code. Local suppression
-applies to the corresponding use; it does not hide unrelated warnings from
-constructors or members selected by conventions. A `#warning` directive is
-reported only in its original file.
-
-`Obsolete` attributes on destination types, constructors, and members also
-apply when those APIs are selected explicitly in configuration. Technical
-references to an obsolete type do not add warnings. Errors are not hidden,
-including `Obsolete(..., true)` and warnings promoted to errors.
-
-If a custom `Obsolete.DiagnosticId` cannot be named in a C# warning pragma
-(for example, `OLD-001`), its warnings remain visible and can repeat in the
-generated code. The mapping still generates normally.
-
 ## Callback inputs
 
 | Input | Meaning |
 |---|---|
 | `source` | Non-null source after null handling. In `Convert`, the original source, including `null`. |
-| `previous` | An `Option` containing the supplied non-null destination value. `None` for Create or `Update(source, null)`; even a supplied value of `0` is present. |
-| `result` | The non-null destination selected for this operation. Available in `Members`; [constructor values need special care](members.md#reading-result). |
+| `previous` | An `Option` containing the supplied non-null destination value. `None` for Create or `Update(source, null)`. |
+| `result` | The non-null destination selected for this operation. Available in `Members`; [read it after construction](members.md#reading-result). |
 | `context` | In `Construct`, `Resolve`, and `Members`, only `Operation` is available. In runtime callbacks, `MappingContext` also exposes `Mapper` for nested calls. |
 
 `Operation` is determined by the call, not by destination availability:

@@ -14,6 +14,6 @@ Choose one approach:
 - remove `Convert` and describe construction and members with declarative
   rules.
 
-See [Manual mapping](../manual-mapping.md).
+See [Manual mapping](../api/convert.md).
 
 [All diagnostics](../diagnostics.md)

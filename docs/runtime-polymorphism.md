@@ -32,15 +32,9 @@ Registration order is not a priority. If several incomparable interface
 branches are equally specific, Morphant throws
 `AmbiguousPolymorphicMappingException`.
 
-Generic branches must have a consistent ordering for all type arguments.
-Unsupported combinations produce [MORPH0061](diagnostics/MORPH0061.md).
-
-The selected pair uses the same lookup rules as an explicit nested mapping. A
-pair declared by the same generated mapper is available without DI; a pair
-declared by another mapper must be registered with the application `IMapper`.
-Missing or duplicate derived-pair registrations produce the normal
-`MappingNotFoundException` or `AmbiguousMappingException`; there is no base
-fallback after a link matched.
+Register derived pairs using the ordinary
+[DI or standalone lookup rules](runtime-dispatch.md). Once a link matches,
+lookup failures do not fall back to the base mapping.
 
 ## Unknown runtime types
 
@@ -65,10 +59,9 @@ existing destination to the derived pair. A null destination is passed when
 the derived destination can represent null, so that pair applies its own
 `NullDestinationHandling`.
 
-An incompatible non-null destination, or null for a non-nullable value-type
-branch, throws `PolymorphicDestinationTypeMismatchException`. Morphant does
-not silently replace it or fall back to the base mapping. The selected
-derived Update may still return a replacement according to its normal rules.
+A destination incompatible with the selected pair throws
+`PolymorphicDestinationTypeMismatchException`. A successful derived Update
+may return a replacement according to its normal rules.
 
 Class, interface and compatible value-type branches are supported.
 Runtime polymorphism also applies to explicit nested mapping calls.

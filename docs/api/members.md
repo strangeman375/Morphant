@@ -49,29 +49,24 @@ builder.Map<Source, Destination>()
 
 Construction evaluates `FromConstruct`; member initialization evaluates
 `Normalize`. Identical expressions written in both places also run twice.
-Ordinary member initialization uses an object initializer. A constructor marked
-`SetsRequiredMembers` does not suppress an explicit member rule.
 
-Automatic constructor arguments can instead use the corresponding member
-rule: this applies to `Auto()`, unspecified `ByConvention()` arguments, and
-automatic constructor selection. The value is evaluated once and passed to the
-constructor; an ordinary setter is skipped. A necessary `required` initializer
-reuses that value. Names match exactly first, then by a unique case-insensitive
-match.
+| Constructor argument | Relationship to a matching member rule |
+|---|---|
+| Explicit value | The argument and explicit member rule are evaluated independently |
+| Automatic value (`Auto()`, `ByConvention()` or automatic constructor selection) | An applicable member rule supplies the value once; an ordinary setter is not called again |
+| Omitted optional argument | The parameter keeps its default value |
 
-An explicit `Auto()` member rule after an explicit constructor value remains a
-separate member operation. An unmentioned automatic member preserves its
-corresponding constructor value. `Ignore()` affects only the location where
-it is written; omitted optional constructor arguments keep their defaults.
+Automatic arguments match member names exactly first, then by a unique
+case-insensitive match. A rule supplying an argument must be usable before
+construction.
 
-Reuse skips construction and applies eligible writable member rules.
+An unmentioned member preserves its corresponding constructor value. An
+explicit member rule, including `Auto()`, still applies after an explicit
+constructor argument. `Ignore()` affects only the argument or member where
+it is written. Reuse skips construction and applies eligible writable rules.
 
-Ordinary local initializers in a selected callback path are evaluated even
-when the returned member rules do not use that local.
-
-Nested `Map` uses a current child prepared by construction or a factory, even
-during outer Create. Its returned value is retained. See
-[nested operation selection](../nested-mapping.md#how-map-chooses-an-operation).
+See [nested operation selection](../nested-mapping.md#how-map-chooses-an-operation)
+when a constructor or factory supplies a child used by a nested mapping.
 
 ## Reading `result`
 
@@ -83,16 +78,14 @@ builder.Map<Source, Destination>()
     .Members((_, _, result) => new() { Value = result.Value + 10 });
 ```
 
-An automatic constructor must obtain its arguments independently before a
-member value or condition can read `result`. A circular dependency, or an
-initializer that needs the not-yet-created result, produces
+`result` must exist before a rule reads it. A constructor argument or
+initializer that requires the not-yet-created destination produces
 [`MORPH0042`](../diagnostics/MORPH0042.md).
 
-When member values depend on `result`, Morphant preserves their reads before
-writable member assignments, so swapping two members works. Side effects inside
-user calls still apply. Source-only rules follow normal initializer or assignment
-order. If source and destination are the same object, later source reads can
-observe earlier assignments.
+Member expressions read the initial `result` before writable member
+assignments, so swapping two members works. Calls inside those expressions
+can still have side effects. Source-only rules follow normal assignment order,
+so later reads can observe earlier writes to the same object.
 
 An Update may also construct a destination, for example for a null input or
 a replacement selected by `Resolve`. `previous` always refers to the original
@@ -108,16 +101,9 @@ behavior for `ValueTuple` and `System.Tuple`.
 
 ## Member names
 
-Configuration properties normally keep the destination member's name.
-For reserved names, use the alias offered by IntelliSense.
-For example, a destination property `Clone` is configured as `Clone_`:
-
-```csharp
-.Members(source => new() { Clone_ = source.Clone });
-```
-
-The IntelliSense description identifies the original destination member.
-Conventions and `Auto()` use the original name.
+Configuration properties normally keep the destination member's name. For a
+reserved name, use the alias offered by IntelliSense; its description
+identifies the original member. Conventions and `Auto()` use the original name.
 
 Related: [declarative expressions](declarative-expressions.md),
 [nested mapping](../nested-mapping.md).
