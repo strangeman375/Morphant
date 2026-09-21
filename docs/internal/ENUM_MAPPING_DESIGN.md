@@ -1,8 +1,9 @@
 # First-class enum mapping: исследование и набросок дизайна
 
 Дата: 2026-09-21. Статус: дизайн для обсуждения, не обещание реализации.
-Редакция 5: flags распознаются по атрибуту, побитовые правила задаются
-через тот же Members. Отдельные Values и Flags не вводятся.
+Редакция 6: проверена необходимость нового API. Единственная предлагаемая
+новая настройка — EnumMappingStrategy; выбор правил и диагностика используют
+существующие настройки, обработка неизвестных значений задаётся в Members.
 Принятые замечания пользователя отделены от новых предложений ниже.
 Названия нового API предварительные.
 Исходная точка: Morphant 0.5.0, remote `main`
@@ -68,6 +69,10 @@
 можно распознать при генерации, разложить вход на биты и применить к ним
 правила `Members`. Отдельный метод `Flags` для этого не нужен.
 
+Требование к этой редакции: каждая новая настройка должна отвечать на вопрос,
+на который не отвечают существующие настройки. Наличие отдельной внутренней
+ветки алгоритма само по себе не обосновывает новый публичный переключатель.
+
 Ранее набросок ошибочно делал наличие `Auto()` переключателем
 автоматического mapping и объявлял switch без него полностью ручным.
 Отсюда появились лишние `Auto(fallback: ...)`, отдельная настройка покрытия
@@ -126,35 +131,59 @@ settings игнорируются, локальные несовместимые
 scalar enum-пар construction/factory методы не генерируются (раздел 5).
 Нельзя приписать обычному `Convert` новую семантику неявных enum-веток.
 
-### Какие новые настройки действительно нужны
+### Проверка необходимости новых настроек
 
-Предлагаются только политики, для которых нет действующего аналога:
+Для новой настройки нужны самостоятельный пользовательский вопрос и
+сценарий, который не покрыт действующими настройками. Затем следует проверить,
+не выражается ли нужное исключение обычным правилом `Members`. Возможность
+написать весь алгоритм через `Convert` сама по себе не отменяет полезность
+конвенций; новый переключатель должен управлять именно нужным общим выбором.
+Не перегружать старую настройку несвязанным смыслом ради меньшего их числа.
 
-- `EnumMappingStrategy`: `Default`, `ByName`, `ByValue`. Предлагаемый default
-  для разных enum — `ByName`, exact ordinal; для enum/integer — числовая
-  конвенция, для enum/string — имена. Применимость значения проверяется по
-  форме пары: `ByName` не превращает enum/integer в строковое преобразование.
-- `EnumValueValidation`: `Default`, `Defined`, `None`; относится к числовой
-  конвенции с enum destination. Предлагаемый default — `Defined`.
-  Это runtime-допустимость числа, а не compile-time-покрытие.
+После этой проверки остаётся одна новая настройка — `EnumMappingStrategy`.
+Её вопрос: как установить автоматическое соответствие двух enum — по имени
+или по числу? `MemberSelection` определяет, применять ли неявную конвенцию;
+`UnmappedMemberValidation` только диагностирует покрытие. Ни одна из них
+не выбирает критерий соответствия.
 
-Обе используют обычные pair/mapper/MSBuild уровни и общий resolver, без
+Значения: `Default`, `ByName`, `ByValue`. `Default` продолжает обычный поиск
+настройки. Предлагаемый default для разных enum — `ByName`, exact ordinal.
+Не добавлять сюда `Explicit`, `Flags`, fallback или варианты validation:
+это не альтернативные критерии соответствия.
+
+Стратегия нужна для enum-to-enum. Для enum/integer форма пары уже определяет
+числовой путь, для enum/string — имена; отдельного выбора стратегии там не
+требуется. Применимость same-type enum обсуждается вместе с identity ниже.
+
+Используются обычные pair/mapper/MSBuild уровни и общий resolver, без
 нового уровня named arguments на `Auto()`:
 
 ```csharp
 builder.Map<WireCode, StoredCode>()
-    .EnumMappingStrategy(EnumMappingStrategy.ByValue)
-    .EnumValueValidation(EnumValueValidation.None);
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue);
 ```
 
-Новые enum defaults на mapper/assembly могут сосуществовать с object и
-`Convert` mappings. Они там не используются; явную настройку на паре,
-к которой она принципиально неприменима, следует диагностировать по общему
-контракту `MORPH0023`. Отсутствие достижимого автоматического пути само по
-себе не делает корректно заданную стратегию ошибкой.
+Enum strategy defaults на mapper/assembly могут сосуществовать с object,
+enum/integer, enum/string и `Convert` mappings. Они там не используются;
+явную настройку на паре, к которой она принципиально неприменима, следует
+диагностировать по общему контракту `MORPH0023`. Отсутствие достижимого
+автоматического пути само по себе не делает корректно заданную стратегию ошибкой.
+
+`EnumValueValidation` снята с предлагаемого API. Она не является синонимом
+`UnmappedMemberValidation`: runtime-допустимость числа и compile-time-покрытие
+различаются. Однако отдельная настраиваемая runtime-политика пока не нужна:
+известные соответствия обрабатывает конвенция, поведение без соответствия
+задают выражения `Members` — fallback, throw или явное приведение числа.
+Предлагаемые границы числовой конвенции и пример приведены в разделе 7.
+Это сохраняет сценарии обработки неизвестных значений без второго setting.
+Общий переключатель для всех числовых пар потребовал бы отдельного
+обоснованного сценария; такой запрос пока не установлен.
 
 Отдельных `UnmappedEnumValueValidation`, `UnknownEnumValueHandling`,
 `FallbackValue`, нового enum-режима `Explicit` и `Auto(fallback: ...)` нет.
+Flags определяются по атрибуту; aliases, переименования и запреты задаются
+правилами. Для наследования используется `IncludeBase`, для полного ручного
+алгоритма — `Convert`; новые методы `Values`, `Flags`, `Inherited` не нужны.
 
 ## 5. Switch задаёт правила, Morphant дополняет их конвенцией
 
@@ -459,8 +488,8 @@ builder.Map<SourceAccess, TargetAccess>()
 `ByValue` задаёт числовое соответствие. Явные правила действуют в обеих
 стратегиях. Прежний вариант «ByValue обходит все побитовые overrides» снят:
 стратегия конвенции не должна отключать написанные `Members` rules. Для
-`ByValue` остаются вопросы диапазона и уровня value-validation, описанные
-ниже; этот раздел не объявляет их решёнными одним приведением типов.
+`ByValue` остаются вопросы диапазона и границы успешного соответствия,
+описанные ниже; этот раздел не объявляет их решёнными одним приведением типов.
 
 ### Вычисления, fallback и неизвестные биты
 
@@ -549,9 +578,10 @@ SourceAccess.Read | SourceAccess.Write => TargetAccess.Special
   overrides, checked range и переноса неназванных чисел должна быть явной.
 - Нельзя проверять каждый промежуточный destination-бит через
   `Enum.IsDefined`: при destination с одним `Pair = 3` итог `3` объявлен,
-  хотя `1` и `2` по отдельности — нет. Уровень `EnumValueValidation.Defined`
-  для ByValue, смеси explicit/automatic contributions и его отношение к
-  fallback остаются конкретным открытым решением. Сохранить возможность
+  хотя `1` и `2` по отдельности — нет. Успех конвенции ByValue для такой
+  комбинации, смеси explicit/automatic contributions и его отношение к
+  fallback остаются конкретным открытым решением. Это граница алгоритма,
+  а не основание вводить настраиваемую validation. Сохранить возможность
   допустимого declared composite и не вводить скрытую проверку явно
   написанных результатов.
 
@@ -596,22 +626,46 @@ flags/string parser/formatter пока за границей; ручной ко�
 ### Числовая конвенция
 
 Поддерживаемые целые типы: `sbyte`, `byte`, `short`, `ushort`, `int`, `uint`,
-`long`, `ulong`. `ByValue` сохраняет математическое число с проверкой
-диапазона destination underlying type независимо от checked options
-consumer. Overflow не считается отсутствием соответствия для fallback.
+`long`, `ulong`. Для enum-to-enum числовой путь выбирается через `ByValue`;
+для enum/integer он определяется типами пары. Предлагаемый контракт сохраняет
+математическое число с проверкой диапазона destination underlying type
+независимо от checked options consumer. Overflow не считается отсутствием
+соответствия для fallback. Эти детали ещё требуют согласования.
 
-`EnumValueValidation.Defined` проверяет destination, `None` допускает
-неназванное значение; в обоих случаях запрещено усечение. Source может
-быть неназванным, если число допустимо в destination. Enum-to-integer
-сохраняет и неназванные значения в пределах диапазона.
+В минимальном варианте конвенция с ordinary enum destination находит
+объявленное destination-значение с тем же числом. Source может быть
+неназванным, если в destination соответствие есть. Без соответствия работают
+обычные правила fallback/throw раздела 5; настройка для включения или
+отключения проверки не вводится. Enum-to-integer сохраняет и неназванные
+значения в пределах диапазона: у integer нет перечня объявленных вариантов.
 
-Для flags допустимы zero, точно объявленное значение и комбинации
-объявленных single-bit значений. Одно `Pair = 3` не разрешает `1` и `2`.
+Сохранение неизвестного числа выражается явным C#, например для ordinary enum:
+
+```csharp
+builder.Map<WireCode, StoredCode>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue)
+    .Members(code => code switch
+    {
+        WireCode.Legacy => StoredCode.Replacement,
+        _ => checked((StoredCode)code)
+    });
+```
+
+При предлагаемом приоритете раздела 5 конвенция обрабатывает оставшиеся
+известные соответствия, завершающая ветка — неизвестные. Явное приведение
+не получает скрытой enum validation; checked/unchecked в пользовательском
+выражении сохраняется. Для полного переноса исходной flags-маски остаётся
+`Convert`: нельзя объявлять cast каждого бита эквивалентом whole-mask cast
+при разных ширинах и знаковости underlying types.
+
+Прежний кандидат для допустимых flags-результатов — zero, точно объявленное
+значение и комбинации объявленных single-bit значений. Одно `Pair = 3` не
+разрешает `1` и `2`.
 [Enum.IsDefined](https://learn.microsoft.com/en-us/dotnet/api/system.enum.isdefined?view=net-10.0)
 не эквивалентен проверке произвольной допустимой flags-комбинации.
-Явные C# results/casts не получают скрытой enum validation.
-Взаимодействие этой политики с новой побитовой композицией ByValue пока
-открыто и разобрано выше; не считать per-bit validation готовым решением.
+Взаимодействие этого кандидата с побитовой композицией ByValue пока открыто
+и разобрано выше. Удаление настройки не решает алгоритмический вопрос;
+не считать per-bit validation готовым решением.
 
 ## 8. Lifecycle, inheritance и вложенное использование
 
@@ -644,7 +698,7 @@ builder.Map<DomainStatus?, ApiStatus?>()
 Для `E -> E` identity предлагается как автоматический путь, а не обход
 настроек: explicit overrides выполняются первыми, `Explicit` отключает
 неявный identity. Допустимость неназванных чисел на same-type automatic
-пути и связь с `EnumValueValidation` ещё требуют выбора; прежнее обещание
+пути ещё требует выбора как часть контракта конвенции; прежнее обещание
 безусловного identity до настроек снято.
 
 ### `IncludeBase`
@@ -800,18 +854,19 @@ incrementality, cancellation/recovery и ограничения generated surfac
 `Construct`, `Resolve`, `ConstructUsing` и `ResolveUsing`. Это выбранный
 дизайн, но ещё не изменение production API. Flags распознаются по атрибуту
 и используют правила `Members`; отдельный `.Flags(...)` не вводится.
+Обоснование минимального API приведено в разделе 4.
 
 Следующие предложения ещё не утверждены:
 
 1. Приоритет конвенции перед завершающим `_`/`var` и точная граница mapping
    switch. Контрольный пример — результат `Active` в таблице раздела 5.
 2. Zero/composite overrides в едином `Members`, per-bit fallback и точная
-   граница вычисляемых правил; flags ByValue/value-validation (раздел 7).
+   граница вычисляемых правил; успешное соответствие flags ByValue (раздел 7).
 3. Расширение `UnmappedMemberValidation` на enum с сохранением `None` и warning;
    conservative coverage для guards, dynamic results и flags.
 4. Частичное наследование enum rules через `IncludeBase`, без нового marker.
-5. Defaults новых strategy/value-validation, same-type identity и полный
-   перечень применимости этих двух настроек.
+5. Default и применимость единственной новой `EnumMappingStrategy`, same-type
+   identity и границы числовой конвенции без отдельной runtime-настройки.
 6. Узкая обработка compiler exhaustiveness warnings как часть DSL и её
    поведение в поддерживаемых toolchains.
 7. Context-aware overload `Members` без искусственного `result` (раздел 5).
@@ -830,7 +885,8 @@ reverse, flags text format, wire attributes, naming policies, коллекции
 | Precedence | Каждый уровень; included pair выше mapper; Default продолжает поиск; последняя запись; независимость порядка Configure |
 | Fallback | Именованный override; одноимённый автоматический case; неизвестное значение; computed fallback; пользовательский throw; failed explicit Auto; отсутствие повторного Auto |
 | Coverage | None/Source/Destination/Strict; warning severity; covered catch-all; guards; динамический result; aliases; finite/infinite sides |
-| Flags | Attribute detection; единый Members; Auto/Explicit; zero/composites; неизвестные биты и explicit numeric cases; per-bit fallback; high bit; aliases; порядок effects; ByValue/Defined |
+| Flags | Attribute detection; единый Members; Auto/Explicit; zero/composites; неизвестные биты и explicit numeric cases; per-bit fallback; high bit; aliases; порядок effects; успешное соответствие ByValue |
+| Numeric | Same-value correspondence; unnamed source; отсутствие destination-соответствия; explicit checked/unchecked casts; диапазоны и signed/unsigned; enum/integer без strategy setting |
 | Lifecycle | Все null policies; nullable exact pairs; Update без Create; same-type mapping; обычный explicit nested Map |
 | Composition | IncludeBase special cases/fallback; guards и locals из base; settings origin; конфликт с Convert; недопустимые inherited factories |
 | API surface | Единый enum Members, без Values/Flags; source/previous без result; отсутствие четырёх construction/factory методов; enum/string/integer/nullable; обычный API object/tuple destinations |
