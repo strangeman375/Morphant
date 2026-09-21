@@ -1,7 +1,8 @@
 # First-class enum mapping: исследование и набросок дизайна
 
 Дата: 2026-09-21. Статус: дизайн для обсуждения, не обещание реализации.
-Редакция 3: enum DSL согласуется с существующей системой настроек.
+Редакция 4: enum-правила задаются через Members; construction/factory API
+для поддержанных scalar enum-пар не генерируется.
 Принятые замечания пользователя отделены от новых предложений ниже.
 Названия нового API предварительные.
 Исходная точка: Morphant 0.5.0, remote `main`
@@ -60,8 +61,13 @@
 `Auto()` в пользовательском switch; отключает неявную конвенцию существующий
 `MemberSelection.Explicit`. Достаточно описать отличающиеся случаи.
 
-Предыдущая редакция ошибочно делала наличие `Auto()` переключателем
-автоматического mapping и объявляла switch без него полностью ручным.
+Последнее уточнение пользователя: использовать существующий `Members`
+вместо нового `Values`; для enum mapping не генерировать `Construct`,
+`Resolve` и их `Using`-формы. Отдельного этапа создания enum-результата
+перед выполнением его правил не требуется.
+
+Ранее набросок ошибочно делал наличие `Auto()` переключателем
+автоматического mapping и объявлял switch без него полностью ручным.
 Отсюда появились лишние `Auto(fallback: ...)`, отдельная настройка покрытия
 и собственные defaults. Они удалены из предлагаемого API.
 
@@ -114,7 +120,8 @@ Enum-поведение в правом столбце — предлагаем�
 `Convert` сохраняет полное владение алгоритмом: inherited declarative
 settings игнорируются, локальные несовместимые settings диагностируются.
 `MappingMode` и `UnknownDerivedTypeHandling` остаются применимыми.
-`Values`/`Flags` нельзя смешивать с локальным `Convert` или factory algorithm.
+`Members`/`Flags` нельзя смешивать с локальным `Convert`. Для поддержанных
+scalar enum-пар construction/factory методы не генерируются (раздел 5).
 Нельзя приписать обычному `Convert` новую семантику неявных enum-веток.
 
 ### Какие новые настройки действительно нужны
@@ -149,14 +156,17 @@ builder.Map<WireCode, StoredCode>()
 
 ## 5. Switch задаёт правила, Morphant дополняет их конвенцией
 
-Рабочее имя callback — `Values`. Он декларативный, как `Members`; его
-содержимое не вызывается как обычный runtime delegate из `Configure`.
+Используется существующий `Members`: он задаёт явные правила поверх
+конвенции. Для object/tuple это правила свойств, полей и элементов; для enum
+это правила значений. Форма callback определяется типами пары. Его
+содержимое остаётся декларативным DSL и не вызывается как обычный runtime
+delegate из `Configure`. Отдельный метод `Values` не вводится.
 
 Минимальный сценарий не требует `Auto()` или завершающей ветки:
 
 ```csharp
 builder.Map<DomainStatus, ApiStatus>()
-    .Values(status => status switch
+    .Members(status => status switch
     {
         DomainStatus.Cancelled => ApiStatus.Deleted,
         DomainStatus.Archived  => ApiStatus.Hidden
@@ -169,6 +179,69 @@ builder.Map<DomainStatus, ApiStatus>()
 «не присвоить member» и всё же получить результат Create. Не возвращать
 неявно ноль или previous. Для previous остаётся явное выражение callback.
 
+### Минимальный API для enum-пары
+
+Граница этого решения — поддержанные scalar пары enum/enum, enum/integer,
+enum/string в обоих направлениях, включая nullable. Наличие enum на одной
+стороне само по себе не отменяет object mapping: например, для enum-to-DTO
+создание объекта через constructor/factory по-прежнему может быть полезно.
+Состав API выбирается по виду mapping, а не только по наличию enum source.
+
+| Метод | Решение для scalar enum mapping |
+|---|---|
+| `Members` | Генерировать typed overloads для декларативных правил значений |
+| `Convert` | Сохранить обычный callback, владеющий полным алгоритмом и null handling |
+| `Construct`, `Resolve` | Не генерировать: нет отдельного конструирования или выбора экземпляра перед member mapping |
+| `ConstructUsing`, `ResolveUsing` | Не генерировать: вычисление enum-результата уже выражается в `Members` либо `Convert` |
+
+`Map`, применимые settings и `IncludeBase` сохраняются. Per-bit `Flags`
+остаётся отдельным предложением раздела 7, не утверждённым этим решением.
+
+Обычный helper, включая factory-like computation, можно вызвать в выражении
+`Members`. Сохранение предыдущего значения также не требует `Resolve`:
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .Members((status, previous) =>
+        previous.TryGetValue(out var existing)
+            ? existing
+            : CalculateStatus(status));
+```
+
+Это воспроизводит полезный для scalar типа сценарий `ConstructUsing`:
+вычислить при отсутствии destination, иначе сохранить переданное значение.
+При null source действуют обычные declarative null policies. Произвольный
+imperative callback, method group и полный runtime `MappingContext` остаются
+доступны через `Convert`; его владение null handling не меняется.
+
+Сейчас `Construct`/`Resolve` уже отсутствуют для enum destination, но
+[PairConfigurationEmitter](../../src/Morphant.Generator/ConstructionSurface/PairConfiguration/PairConfigurationEmitter.cs)
+выдаёт `ConstructUsing`/`ResolveUsing` безусловно. Их удаление при реализации
+будет изменением существующего generated API, а не только отказом от нового.
+Тогда нужно обновить API reference и migration/release notes для этих пар;
+не сохранять лишние методы как скрытый альтернативный enum DSL.
+
+### Входы `Members`
+
+Две существующие формы применимы непосредственно:
+
+- `source => rules`: non-null source после null policy.
+- `(source, previous) => rules`: тот же source и `Option` исходного non-null
+  destination; для Create и Update с null destination — `None`.
+
+Обычный `Members` также имеет формы с выбранным `result`. Для enum они не
+нужны: правило само определяет итоговое значение, а независимого уже
+созданного результата нет. Не подставлять вместо него ноль, previous или
+предварительно вычисленную конвенцию — последняя может бросить исключение
+ещё до явно обрабатывающей этот случай ветки.
+
+Для `context.Operation` предлагается enum overload
+`(source, previous, context) => rules`, без `result`. Это ещё не утверждённая
+деталь: у обычного `Members` третий параметр означает `result`, поэтому
+различие должно быть явным в IntelliSense и справочнике. Имеющиеся object/
+tuple overloads не меняются. Конкретный enum receiver позволяет генерировать
+только подходящие формы без конкурирующего overload с третьим `result`.
+
 ### Предлагаемый приоритет завершающей ветки
 
 1. Явные специальные ветки в написанном порядке.
@@ -178,7 +251,7 @@ builder.Map<DomainStatus, ApiStatus>()
 
 ```csharp
 builder.Map<DomainStatus, ApiStatus>()
-    .Values(status => status switch
+    .Members(status => status switch
     {
         DomainStatus.Cancelled => ApiStatus.Deleted,
         DomainStatus.Corrupt => throw new InvalidOperationException(),
@@ -217,7 +290,7 @@ catch-all. Эта модель тоже согласуется с автомат
 ```csharp
 builder.Map<DomainStatus, ApiStatus>()
     .MemberSelection(MemberSelection.Explicit)
-    .Values(status => status switch
+    .Members(status => status switch
     {
         DomainStatus.Active => Auto(),
         DomainStatus.Cancelled => ApiStatus.Deleted,
@@ -237,10 +310,10 @@ per-bit callbacks и их эффекты после уже полученной 
 ### Граница с обычным C#
 
 Дополняется только декларативный mapping switch над входным значением
-`Values`/`Flags`. Вложенный switch справа от `=>`, чужой метод и callback
+`Members`/`Flags`. Вложенный switch справа от `=>`, чужой метод и callback
 `Convert` сохраняют обычную C# семантику и не получают конвенционные ветки.
-`Values(_ => Auto())` — явная конвенция для всего входа; прямое выражение
-`Values(source => Compute(source))` — явный результат для всего входа.
+`Members(_ => Auto())` — явная конвенция для всего входа; прямое выражение
+`Members(source => Compute(source))` — явный результат для всего входа.
 
 Финальный `_ => expression` или `var remaining => expression` без guard
 предлагается трактовать как завершающее правило. Ветка с `when`, в том
@@ -278,7 +351,7 @@ Block lambda с подготовкой локальных значений и в
 builder.Map<DomainStatus, ApiStatus>()
     .MemberSelection(MemberSelection.Auto)
     .UnmappedMemberValidation(UnmappedMemberValidation.Source)
-    .Values(status => status switch
+    .Members(status => status switch
     {
         DomainStatus.Cancelled => ApiStatus.Deleted
     });
@@ -319,12 +392,12 @@ enum-числа относятся к runtime mapping, а не к объявле
 
 ### Flags: отдельно целое значение и каждый установленный бит
 
-`Values` обрабатывает целый вход. `Flags` — предварительное имя декларации
+`Members` обрабатывает целый вход. `Flags` — предварительное имя декларации
 перевода single-bit значений с объединением результатов через OR:
 
 ```csharp
 builder.Map<SourceAccess, TargetAccess>()
-    .Values(value => value switch
+    .Members(value => value switch
     {
         SourceAccess.All => TargetAccess.All,
         _ => TargetAccess.Unknown
@@ -352,12 +425,12 @@ fallback. Отдельный fallback в `Flags` относится к одно�
 маски, включая конвенцию для неописанных битов при `Explicit`, с учётом
 per-bit overrides. Это расширение областей действия требует
 отдельных сценариев перед реализацией; нельзя свести `Explicit` к проверке
-наличия `Values`.
+наличия `Members`.
 
 - Каждый установленный объявленный single-bit обрабатывается один раз в
   порядке возрастания номера бита, signed high bit — последним.
 - Нулевой вход при активном per-bit algorithm даёт ноль без вызова callback;
-  `Values` может задать другой результат. Если не выбрана ни конвенция,
+  `Members` может задать другой результат. Если не выбрана ни конвенция,
   ни explicit per-bit algorithm, zero не получает особой поблажки.
 - Неизвестные биты проверяются до per-bit callbacks. Не терять их молча.
   Неполный implicit per-bit mapping означает отсутствие результата всей
@@ -367,7 +440,7 @@ per-bit overrides. Это расширение областей действия
 - Уже выполненные вычисления для прежних битов не откатываются при неудаче
   более позднего implicit mapping. Не применять catch-all вокруг callback.
 - Composite names не являются атомарными битами и не переопределяют per-bit
-  правила. Особые composites описываются в `Values`. `All = -1` не делает
+  правила. Особые composites описываются в `Members`. `All = -1` не делает
   все неизвестные биты автоматически допустимыми.
 - При `ByValue` сохраняется число без перестановки битов. `Flags` как
   per-bit декларация к этому алгоритму неприменим; не игнорировать её молча.
@@ -395,13 +468,13 @@ Source aliases runtime-неразличимы. На автоматическом
 
 ```csharp
 builder.Map<ApiStatus, string>()
-    .Values(status => status switch
+    .Members(status => status switch
     {
         ApiStatus.Deleted => "removed"
     });
 
 builder.Map<string, ApiStatus>()
-    .Values(text => text switch
+    .Members(text => text switch
     {
         "removed" or "deleted" => ApiStatus.Deleted,
         "pending" or "queued" => ApiStatus.Pending,
@@ -435,7 +508,7 @@ consumer. Overflow не считается отсутствием соответ
 
 ## 8. Lifecycle, inheritance и вложенное использование
 
-`Values` получает non-null source после общей null policy. Nullable
+`Members` получает non-null source после общей null policy. Nullable
 registration остаётся точной: не искать автоматически underlying pair.
 `ReturnNull` при non-nullable enum destination по текущему контракту даёт
 `default`, даже если ноль не объявлен. Это путь null policy, не конвенции.
@@ -443,16 +516,17 @@ registration остаётся точной: не искать автоматич
 
 ```csharp
 builder.Map<DomainStatus?, ApiStatus?>()
-    .Values(status => status switch
+    .Members(status => status switch
     {
         DomainStatus.Missing => null,
         DomainStatus.Cancelled => ApiStatus.Deleted
     });
 ```
 
-`Create`/`Update` вычисляют scalar result после обычных guards. Возможны
-перегрузки с `previous` и `context` по существующей форме declarative
-callbacks; нельзя повторно менять operation при null destination.
+`Create`/`Update` вычисляют scalar result после обычных guards. `previous`
+содержит исходный non-null destination; возвращённое из правила значение
+является итогом операции. Контекст операции и формы callback описаны в
+разделе 5; null destination не превращает Update в Create.
 
 Для `E -> E` identity предлагается как автоматический путь, а не обход
 настроек: explicit overrides выполняются первыми, `Explicit` отключает
@@ -465,7 +539,7 @@ callbacks; нельзя повторно менять operation при null dest
 Настройки наследуются уже описанным способом. Для правил рекомендуется
 развить существующий принцип: local explicit cases приоритетнее included,
 непереопределённые included cases сохраняются. `Explicit` не отменяет
-наследованные explicit rules. Сам факт нового `Values` не должен стирать
+наследованные explicit rules. Сам факт нового `Members` не должен стирать
 весь набор inherited overrides.
 
 Для same-pair декларативных switches предлагается цепочка: local special
@@ -490,7 +564,7 @@ explicit правилом и может закрыть дальнейший по
 
 ```csharp
 builder.Map<DomainStatus, ApiStatus>()
-    .Values(status => status switch
+    .Members(status => status switch
     {
         DomainStatus.Cancelled => ApiStatus.Deleted
     });
@@ -503,8 +577,9 @@ builder.Map<Order, OrderDto>()
 ```
 
 Расширение `MemberSelection` внутри enum-пары не меняет контракт object
-mapping. `Members.Auto()` требует implicit C# conversion и не запускает
-вложенную пару. Same-enum property может копироваться как прежде; разные
+mapping. `Auto()` внутри object/tuple `Members` требует implicit C#
+conversion и не запускает вложенную пару. Same-enum property может
+копироваться как прежде; разные
 enum требуют `Map`/`Create`/`Update`. `IMapper`, DI и get-only value members
 не получают специальных обходных путей.
 
@@ -535,9 +610,10 @@ enum требуют `Map`/`Create`/`Update`. `IMapper`, DI и get-only value mem
 старого Roslyn с .NET 10 references; входные switch-проверки такого
 исключения не имели.
 
-При реализации suppressor должен узнавать настоящий DSL symbol и только
-switch, который planner действительно дополняет. Не подавлять warnings
-глобально, в `Convert`, `Construct`, `Members` или в произвольном nested
+При реализации suppressor должен узнавать настоящий enum DSL symbol,
+тип правил и только switch, который planner действительно дополняет.
+Одного имени метода `Members` недостаточно: не подавлять warnings глобально,
+в object/tuple `Members`, `Convert`, `Construct` или произвольном nested
 switch. Существующие Morphant switches сохраняют текущую диагностику и
 поведение непокрытого входа. Нужны проверки diagnostic family для guards,
 отключённых анализаторов и поддерживаемых IDE. В полностью сгенерированном
@@ -549,7 +625,9 @@ switch покрытие должно быть явным. Проверка об�
 Предыдущая isolated probe SDK 10.0.100/C# 9 подтвердила binding mixed
 switch results через generic compile-time marker с conversions от destination,
 `AutoMarker` и `AutoMarker<T>`: десять arms, `or`, guards, throw, вызовы справа,
-строки/числа и отдельные `Values`/`Flags`. Это не реализованный generator.
+строки/числа и прежние пробные callbacks `Values`/`Flags`. Их имя не является
+необходимой частью проверенной типизации. Интеграция с реальными `Members`
+delegates и выбором overload ещё не реализована и не проверялась этой пробой.
 
 Nullable reference result marker позволяет natural null/default, но
 генератор должен проверять их по настоящему destination type. Struct marker
@@ -564,9 +642,20 @@ nullable generic fallback. Полная nullable-типизация актуал
 
 ### Generated code
 
+Текущие `Members` delegates уже параметризованы типом результата правил;
+одна и две входные переменные не требуют отдельного имени метода.
+[MemberConfigurationEmitter](../../src/Morphant.Generator/MemberSurface/PairConfiguration/MemberConfigurationEmitter.cs)
+сегодня связывает их с object member-plan type. Для enum нужен scalar kind
+правил и соответствующая typed surface. Просто включить нынешний `Members`
+capability недостаточно: это не набор writable enum fields. Отдельно нужно
+выразить отсутствие factory API; существующий флаг structured construction
+его не отключает. Не менять ordinary object/tuple path ради enum-ветки.
+
 Enum shape содержит underlying type, constants/aliases, single-bit mask и
-locations. Не приводить `ulong` к `long`. Не создавать construction/member
-surfaces, runtime reflection, parsing через `Enum.Parse` или enum boxing.
+locations. Не приводить `ulong` к `long`. Генерировать типизированные
+`Members` extensions со scalar rule result; не создавать фиктивные
+construction/member records со свойством на каждый enum-элемент. Runtime
+reflection, parsing через `Enum.Parse` и enum boxing не нужны.
 Open `T : Enum` без известных полей требует ручного алгоритма либо diagnostic.
 
 Для обычного примера краткая форма после дополнения может быть такой:
@@ -592,14 +681,17 @@ incrementality, cancellation/recovery и ограничения generated surfac
 
 ## 10. Что остаётся согласовать перед реализацией
 
-Принятое направление: C#-подобные декларации; конвенция по умолчанию;
-отключение неявного подбора через существующий `MemberSelection.Explicit`.
+Принятое направление: C#-подобные декларации через существующий `Members`;
+конвенция по умолчанию и отключение неявного подбора через существующий
+`MemberSelection.Explicit`. Для поддержанных scalar enum-пар не генерировать
+`Construct`, `Resolve`, `ConstructUsing` и `ResolveUsing`. Это выбранный
+дизайн, но ещё не изменение production API.
 
 Следующие предложения ещё не утверждены:
 
 1. Приоритет конвенции перед завершающим `_`/`var` и точная граница mapping
    switch. Контрольный пример — результат `Active` в таблице раздела 5.
-2. Имя `Values`, форма per-bit декларации `Flags` и композиция обоих уровней
+2. Форма per-bit декларации `Flags` и композиция обоих уровней
    при `Explicit` и явном `Auto()`.
 3. Расширение `UnmappedMemberValidation` на enum с сохранением `None` и warning;
    conservative coverage для guards, dynamic results и flags.
@@ -608,6 +700,7 @@ incrementality, cancellation/recovery и ограничения generated surfac
    перечень применимости этих двух настроек.
 6. Узкая обработка compiler exhaustiveness warnings как часть DSL и её
    поведение в поддерживаемых toolchains.
+7. Context-aware overload `Members` без искусственного `result` (раздел 5).
 
 Объём feature сохраняется: enum-to-enum, aliases, flags, nullable,
 enum/integer, ordinary enum/string, неизвестные значения, запреты,
@@ -625,7 +718,8 @@ reverse, flags text format, wire attributes, naming policies, коллекции
 | Coverage | None/Source/Destination/Strict; warning severity; covered catch-all; guards; динамический result; aliases; finite/infinite sides |
 | Flags | Whole/per-bit; Explicit на обоих уровнях; zero; удаление бита; composites; неизвестные биты; high bit; порядок effects; неудача позднего бита |
 | Lifecycle | Все null policies; nullable exact pairs; Update без Create; same-type mapping; обычный explicit nested Map |
-| Composition | IncludeBase special cases/fallback; guards и locals из base; settings origin; conflicts с Convert/factories |
+| Composition | IncludeBase special cases/fallback; guards и locals из base; settings origin; конфликт с Convert; недопустимые inherited factories |
+| API surface | Enum Members с source/previous; отсутствие result и четырёх construction/factory методов; enum/string/integer/nullable; сохранение обычного API у object/tuple destinations |
 | Compiler/generator | C# 9; точечные suppressions и warnings-as-errors; nested switch; wrong types; obsolete; edit settings/enum/callback; cancellation/recovery |
 
 Изменён только внутренний дизайн. Production API, generator и постоянные
