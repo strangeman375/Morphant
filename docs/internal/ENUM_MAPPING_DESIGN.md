@@ -1,9 +1,9 @@
 # First-class enum mapping: исследование и набросок дизайна
 
 Дата: 2026-09-21. Статус: дизайн для обсуждения, не обещание реализации.
-Редакция 6: проверена необходимость нового API. Единственная предлагаемая
-новая настройка — EnumMappingStrategy; выбор правил и диагностика используют
-существующие настройки, обработка неизвестных значений задаётся в Members.
+Редакция 7: EnumMappingStrategy распространяется на enum-to-string:
+ByName выбирает имя, ByValue — числовое представление. Это по-прежнему
+единственная новая настройка; правила и диагностика используют прежний API.
 Принятые замечания пользователя отделены от новых предложений ниже.
 Названия нового API предварительные.
 Исходная точка: Morphant 0.5.0, remote `main`
@@ -141,19 +141,23 @@ scalar enum-пар construction/factory методы не генерируютс
 Не перегружать старую настройку несвязанным смыслом ради меньшего их числа.
 
 После этой проверки остаётся одна новая настройка — `EnumMappingStrategy`.
-Её вопрос: как установить автоматическое соответствие двух enum — по имени
-или по числу? `MemberSelection` определяет, применять ли неявную конвенцию;
+Её вопрос: что использовать в конвенции — имя или число enum? Это относится
+и к соответствию двух enum, и к представлению enum в строке.
+`MemberSelection` определяет, применять ли неявную конвенцию;
 `UnmappedMemberValidation` только диагностирует покрытие. Ни одна из них
 не выбирает критерий соответствия.
 
 Значения: `Default`, `ByName`, `ByValue`. `Default` продолжает обычный поиск
-настройки. Предлагаемый default для разных enum — `ByName`, exact ordinal.
+настройки. Предлагаемый default для разных enum и enum-to-string — `ByName`;
+сопоставление имён использует exact ordinal.
 Не добавлять сюда `Explicit`, `Flags`, fallback или варианты validation:
 это не альтернативные критерии соответствия.
 
-Стратегия нужна для enum-to-enum. Для enum/integer форма пары уже определяет
-числовой путь, для enum/string — имена; отдельного выбора стратегии там не
-требуется. Применимость same-type enum обсуждается вместе с identity ниже.
+Стратегия применяется к enum-to-enum и enum-to-string. Для enum/integer
+форма пары уже определяет числовой путь. Обратный string-to-enum пока
+сохраняет конвенцию имён; расширение на числовой parsing — отдельное
+предложение, не следствие поддержки numeric output. Применимость same-type
+enum обсуждается вместе с identity ниже.
 
 Используются обычные pair/mapper/MSBuild уровни и общий resolver, без
 нового уровня named arguments на `Auto()`:
@@ -164,7 +168,7 @@ builder.Map<WireCode, StoredCode>()
 ```
 
 Enum strategy defaults на mapper/assembly могут сосуществовать с object,
-enum/integer, enum/string и `Convert` mappings. Они там не используются;
+enum/integer, string-to-enum и `Convert` mappings. Они там не используются;
 явную настройку на паре, к которой она принципиально неприменима, следует
 диагностировать по общему контракту `MORPH0023`. Отсутствие достижимого
 автоматического пути само по себе не делает корректно заданную стратегию ошибкой.
@@ -351,8 +355,8 @@ per-bit callbacks и их эффекты после уже полученной 
 прямое выражение
 `Members(source => Compute(source))` — явный результат для текущего
 обрабатываемого значения. В обычном enum mapping это весь вход, в
-побитовом flags mapping — текущий бит. Полный ручной алгоритм над маской
-остаётся у `Convert`.
+побитовом flags-to-flags mapping — текущий бит. В этом побитовом режиме
+полный ручной алгоритм над маской остаётся у `Convert`.
 
 Финальный `_ => expression` или `var remaining => expression` без guard
 предлагается трактовать как завершающее правило. Ветка с `when`, в том
@@ -425,8 +429,9 @@ Guard не доказывает покрытие целого значения: 
 
 Для string/integer проверяется только конечная enum-сторона. Неназванные
 enum-числа относятся к runtime mapping, а не к объявленному source coverage.
-Для flags проверка опирается на атомарные правила. Объявленные composites
-не требуют отдельной ветки, если они выводятся из отображения своих битов.
+Для побитового flags-to-flags mapping проверка опирается на атомарные
+правила. Объявленные composites не требуют отдельной ветки, если они
+выводятся из отображения своих битов.
 Явные whole-value исключения требуют правил раздела 7; не перечислять все
 комбинации маски ради анализа покрытия.
 
@@ -570,9 +575,10 @@ SourceAccess.Read | SourceAccess.Write => TargetAccess.Special
   enum тоже является маской; прежняя граница ByName остаётся: явное полное
   соответствие, осознанный числовой путь либо `Convert`. Детали mixed pair
   applicability нужно согласовать до реализации.
-- Enum/integer сохраняет числовую семантику; flags/string не получает
-  автоматический formatter/parser в первой версии. Сам атрибут source не
-  разрешает OR строк или object results.
+- Enum/integer сохраняет числовую семантику. Flags-to-string с `ByValue`
+  форматирует число всей маски, как описано ниже. Автоматическое текстовое
+  представление flags через список имён и его parsing остаются за границей.
+  Сам атрибут source не разрешает OR строк или object results.
 - Для `ByValue` нельзя считать unsigned bit pattern математическим числом
   signed-типа. Например, sbyte high bit — это значение -128. Связь per-bit
   overrides, checked range и переноса неназванных чисел должна быть явной.
@@ -592,12 +598,12 @@ enum SourceState { Ready = 1, Active = 1 }
 enum TargetState { Ready = 10, Active = 20 }
 ```
 
-Source aliases runtime-неразличимы. На автоматическом пути этот пример
+Source aliases runtime-неразличимы. На автоматическом пути ByName этот пример
 неоднозначен; нужна диагностика. Явная ветка для числа `1` решает конфликт
 для обоих имён. Не обходить обычные C# ошибки повторных/недостижимых веток.
 
-Для enum-to-string canonical output задаётся явно при нескольких именах
-одного числа; порядок объявления не выражает намерение.
+Для enum-to-string с ByName canonical output задаётся явно при нескольких
+именах одного числа; порядок объявления не выражает намерение.
 [Enum.GetName](https://learn.microsoft.com/en-us/dotnet/api/system.enum.getname?view=net-10.0)
 не гарантирует выбор конкретного alias.
 
@@ -617,20 +623,66 @@ builder.Map<string, ApiStatus>()
     });
 ```
 
-Остальные CLR-имена сопоставляются автоматически при `Auto`; направления
-независимы. Ignore-case, wire attributes и naming policies не вводятся в
-первую версию. Можно использовать обычные guards/expressions. Пустая,
-числовая строка и пробелы не получают особого смысла. Автоматический
-flags/string parser/formatter пока за границей; ручной код остаётся возможен.
+При ByName остальные CLR-имена сопоставляются автоматически при `Auto`;
+направления независимы. Ignore-case, wire attributes и naming policies не
+вводятся в первую версию. Можно использовать обычные guards/expressions.
+В string-to-enum пустая, числовая строка и пробелы не получают особого смысла.
+Автоматическое форматирование и parsing списка flags-имён пока за границей;
+ручной код остаётся возможен.
+
+### Enum-to-string: имя или число
+
+Одна `EnumMappingStrategy` выбирает представление. Для `Active = 2`:
+
+| Стратегия | Результат конвенции |
+|---|---|
+| `ByName` | `"Active"` |
+| `ByValue` | `"2"` |
+
+```csharp
+builder.Map<ApiStatus, string>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue)
+    .Members(status => status switch
+    {
+        ApiStatus.Deleted => "removed"
+    });
+```
+
+Явное правило сохраняет приоритет; остальные значения получают числовую
+строку при `MemberSelection.Auto`. При `Explicit` неявного форматирования
+нет; явный `Auto()` запрашивает выбранную конвенцию. Null проходит обычные
+guards. Стратегия использует общие уровни наследования и `Default`.
+
+Для ByValue предлагается десятичная запись underlying integer в
+`InvariantCulture`, без разделителей групп. Сохраняются его точная ширина
+и знаковость: signed `-1` даёт `"-1"`, `ulong` не сужается до `long`.
+Неназванное значение также имеет числовое представление: `(ApiStatus)123`
+даёт `"123"`. Алиасы одного числа дают одну строку и не требуют выбора имени.
+У ByName неназванное значение остаётся без соответствия и следует обычному
+fallback/throw; не подменять эту конвенцию вызовом `Enum.ToString()` с
+неявным переходом к числу.
+
+Для flags с ByValue форматируется вся маска: при `Read = 1`, `Write = 2`
+вход `Read | Write` даёт `"3"`. `Members` получает полную маску один раз;
+побитовой обработки и объединения строк нет. Неизвестные биты сохраняются
+в её числовом представлении. Это не расширяет отложенный formatter имён.
+
+Отдельные format/culture/unknown-value настройки не добавляются. Специальный
+формат можно задать обычным выражением `Members` или алгоритмом `Convert`.
+Симметричный `string -> enum` с ByValue также можно обсудить в рамках той же
+настройки, но до расширения требуется выбрать грамматику parsing, overflow
+и поведение неназванного destination-числа; сейчас это не принятый контракт.
 
 ### Числовая конвенция
 
 Поддерживаемые целые типы: `sbyte`, `byte`, `short`, `ushort`, `int`, `uint`,
 `long`, `ulong`. Для enum-to-enum числовой путь выбирается через `ByValue`;
-для enum/integer он определяется типами пары. Предлагаемый контракт сохраняет
-математическое число с проверкой диапазона destination underlying type
-независимо от checked options consumer. Overflow не считается отсутствием
-соответствия для fallback. Эти детали ещё требуют согласования.
+для enum/integer он определяется типами пары. Этот раздел описывает числовые
+преобразования с enum/integer destination; форматирование в string рассмотрено
+выше. Предлагаемый контракт сохраняет математическое число с проверкой
+диапазона destination underlying type независимо от checked options consumer.
+Overflow не считается отсутствием соответствия для fallback. Эти детали
+ещё требуют согласования.
 
 В минимальном варианте конвенция с ordinary enum destination находит
 объявленное destination-значение с тем же числом. Source может быть
@@ -684,12 +736,13 @@ builder.Map<DomainStatus?, ApiStatus?>()
     });
 ```
 
-В flags-алгоритме вход правил определяется текущим битом, как описано в
-разделе 7; исходная маска проходит null guards один раз.
+В побитовом enum-to-enum алгоритме вход правил определяется текущим битом,
+как описано в разделе 7; исходная маска проходит null guards один раз.
 
 `Create`/`Update` вычисляют scalar result после обычных guards. `previous`
-содержит исходный non-null destination. Для обычного enum правило возвращает
-итог операции; для flags результаты побитовых правил объединяются.
+содержит исходный non-null destination. Для обычного enum и enum-to-string
+правило возвращает итог операции; при flags-to-flags результаты побитовых
+правил объединяются.
 Смысл nullable результата отдельного бита ещё нужно определить: `null`
 не является нулевой маской и не может молча участвовать в OR.
 Контекст операции и формы callback описаны в
@@ -870,12 +923,14 @@ incrementality, cancellation/recovery и ограничения generated surfac
 6. Узкая обработка compiler exhaustiveness warnings как часть DSL и её
    поведение в поддерживаемых toolchains.
 7. Context-aware overload `Members` без искусственного `result` (раздел 5).
+8. Точная запись enum-to-string ByValue (предложена invariant decimal);
+   возможное обратное string-to-enum ByValue пока не входит в выбранный объём.
 
-Объём feature сохраняется: enum-to-enum, aliases, flags, nullable,
-enum/integer, ordinary enum/string, неизвестные значения, запреты,
-вычисляемые результаты, coverage, inheritance и Create/Update. Автоматический
-reverse, flags text format, wire attributes, naming policies, коллекции и
-проекции не входят в этот набросок.
+Объём feature в этой редакции: enum-to-enum, aliases, flags, nullable,
+enum/integer, ordinary enum/string и числовая строка flags, неизвестные
+значения, запреты, вычисляемые результаты, coverage, inheritance и
+Create/Update. Автоматический reverse, формат списка flags-имён, wire
+attributes, naming policies, коллекции и проекции не входят в этот набросок.
 
 Будущие проверки должны защищать поведение, а не только форму API:
 
@@ -887,6 +942,7 @@ reverse, flags text format, wire attributes, naming policies, коллекции
 | Coverage | None/Source/Destination/Strict; warning severity; covered catch-all; guards; динамический result; aliases; finite/infinite sides |
 | Flags | Attribute detection; единый Members; Auto/Explicit; zero/composites; неизвестные биты и explicit numeric cases; per-bit fallback; high bit; aliases; порядок effects; успешное соответствие ByValue |
 | Numeric | Same-value correspondence; unnamed source; отсутствие destination-соответствия; explicit checked/unchecked casts; диапазоны и signed/unsigned; enum/integer без strategy setting |
+| Enum-to-string | ByName/ByValue; Members overrides; Auto/Explicit и явный Auto; неизвестные числа; aliases; signed/ulong; invariant culture; flags whole-mask output; nullable |
 | Lifecycle | Все null policies; nullable exact pairs; Update без Create; same-type mapping; обычный explicit nested Map |
 | Composition | IncludeBase special cases/fallback; guards и locals из base; settings origin; конфликт с Convert; недопустимые inherited factories |
 | API surface | Единый enum Members, без Values/Flags; source/previous без result; отсутствие четырёх construction/factory методов; enum/string/integer/nullable; обычный API object/tuple destinations |
