@@ -3,15 +3,15 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/22/2026 - 07:05:39 |
-| Coverage date: | 09/22/2026 - 06:55:00 - 09/22/2026 - 07:05:35 |
+| Generated on: | 09/22/2026 - 08:24:13 |
+| Coverage date: | 09/22/2026 - 08:13:50 - 09/22/2026 - 08:24:09 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 399 |
 | Files: | 221 |
-| **Line coverage:** | 90.9% (41594 of 45728) |
-| Covered lines: | 41594 |
-| Uncovered lines: | 4134 |
+| **Line coverage:** | 90.9% (41593 of 45728) |
+| Covered lines: | 41593 |
+| Uncovered lines: | 4135 |
 | Coverable lines: | 45728 |
 | Total lines: | 76309 |
 | **Branch coverage:** | 82.3% (17034 of 20689) |
@@ -53,14 +53,14 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 93%</summary>
+<details><summary>Morphant.Build.Tasks - 92.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**93%**|**85.4%**|
+|**Morphant.Build.Tasks**|**92.8%**|**85.4%**|
 |Morphant.Build.Tasks.GitSnapshotContext|95.5%|91.6%|
 |Morphant.Build.Tasks.GitSnapshotLifecycle|93%|94.1%|
-|Morphant.Build.Tasks.GitSnapshotStorage|100%|100%|
+|Morphant.Build.Tasks.GitSnapshotStorage|98.3%|100%|
 |Morphant.Build.Tasks.ManageMorphantGitSnapshot|100%|90%|
 |Morphant.Build.Tasks.MorphantBuildTask|97.7%|50%|
 |Morphant.Build.Tasks.PhysicalDirectory|78.3%|64.5%|
@@ -445,4 +445,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #627](https://github.com/strangeman375/Morphant/actions/runs/35696541413).
+Full HTML report: download the **coverage** artifact from [CI run #628](https://github.com/strangeman375/Morphant/actions/runs/35703125972).
