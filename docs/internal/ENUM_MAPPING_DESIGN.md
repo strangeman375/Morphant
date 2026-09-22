@@ -162,7 +162,9 @@ settings игнорируются, локальные несовместимые
 
 Значения: `Default`, `ByName`, `ByValue`. `Default` продолжает обычный поиск
 настройки. Предлагаемый default для разных enum и enum-to-string — `ByName`;
-выбор library default остаётся спорным. Для самой стратегии `ByName`
+выбор library default остаётся спорным. [Исследование default](ENUM_MAPPING_DEFAULT_RESEARCH.md)
+сопоставляет документацию, пользовательские issues и риски обеих стратегий;
+рекомендация `ByName` ещё требует выбора пользователя. Для самой стратегии `ByName`
 пользователь выбрал порядок, аналогичный сопоставлению
 [параметров конструктора](../api/members.md#constructor-parameters):
 
