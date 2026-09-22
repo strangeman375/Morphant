@@ -1,11 +1,11 @@
 # First-class enum mapping: исследование и набросок дизайна
 
 Дата: 2026-09-22. Статус: дизайн для обсуждения, не обещание реализации.
-Редакция 18: пользователь утвердил ByValueAllowUndefined, проверку строгого
-ByValue по объявленным destination-значениям, управление переполнением через
-Members, одинаковое применение стратегии к E → E и числовое строковое
-представление обоих режимов. Применимость режимов к integer-to-enum и
-композиция IncludeBase остаются открытыми. Flags отложены отдельно.
+Редакция 19: пользователь утвердил числовые стратегии для integer-to-enum
+со строгим default ByValue. Явный ByName на такой паре диагностируется;
+выигравший общий ByName оставляет числовой default без повторного поиска
+по нижним уровням. Enum-to-integer сохраняет числовой путь без стратегии.
+Для обычных enum открыта композиция IncludeBase. Flags отложены отдельно.
 ConstructUsing и ResolveUsing можно сочетать с Members; сохраняются его
 существующие формы с result и context. Construct и Resolve не генерируются.
 Принятые замечания пользователя отделены от новых предложений ниже.
@@ -84,6 +84,7 @@ mapping не генерируются `Construct` и `Resolve`: отдельно
 этапа, конвенция перед завершающей веткой, её привязка к source текущей пары,
 числовое строковое представление, строгий ByValue и ByValueAllowUndefined,
 сохранение числа, выбор реакции на переполнение через Members, same-type,
+применимость числовых режимов и default для integer-to-enum,
 контракт coverage, доступность `result`, применимость settings с Using и
 границы обработки compiler warnings. Их канонические описания находятся
 ниже; раздел 10 отделяет закрытые решения от оставшихся спорных вопросов.
@@ -170,6 +171,7 @@ settings игнорируются, локальные несовместимые
 неназванное число в пределах диапазона destination.
 `Default` продолжает обычный поиск настройки. Library default для
 enum-to-enum, включая одинаковые типы, и enum-to-string — `ByName`.
+Для integer-to-enum library default — строгий `ByValue`.
 Числовой режим выбирается для пары, mapper или через MSBuild по общим
 правилам precedence.
 [Исследование default](ENUM_MAPPING_DEFAULT_RESEARCH.md) содержит обоснование
@@ -189,14 +191,28 @@ object/tuple members не меняется. Отдельная настройк�
 Не добавлять сюда `Explicit`, `Flags`, fallback или режимы проверки покрытия:
 эти вопросы уже имеют свои правила и не выбирают успешные соответствия.
 
-Стратегия применяется к enum-to-enum и enum-to-string. Для enum/integer
-форма пары уже определяет числовой путь. Обратный string-to-enum пока
+Стратегия применяется к enum-to-enum, enum-to-string и integer-to-enum.
+В последнем направлении форма пары выбирает число, а стратегия — строгость.
+Обратный enum-to-integer сохраняет числовой путь без этой настройки:
+у integer destination нет набора объявленных значений. String-to-enum пока
 сохраняет конвенцию имён; расширение на числовой parsing — отдельное
 предложение, не следствие поддержки numeric output. Same-type enum
-подчиняется той же стратегии (раздел 8). Применимость числовых режимов
-к integer-to-enum требует отдельного согласования: прежнее исключение
-enum/integer из стратегии не отменяется молча. Для enum-to-string оба
-числовых режима форматируют число без проверки source-имени (раздел 7).
+подчиняется той же стратегии (раздел 8). Для enum-to-string оба числовых
+режима форматируют число без проверки source-имени (раздел 7).
+
+Для integer-to-enum применимы `ByValue` и `ByValueAllowUndefined`, включая
+наследование с общих уровней. У source нет имени, поэтому `ByName`, явно
+заданный на такой паре, даёт diagnostic о неприменимой настройке по общему
+контракту `MORPH0023`. Выигравший `ByName` с общего уровня mapper, base mapper
+или MSBuild не мешает числовой паре: для неё используется строгий `ByValue`.
+
+Порядок разрешения настройки не меняется: сначала общий resolver выбирает
+значение, затем определяется его применимость. Если выиграл общий `ByName`,
+поиск не продолжается по нижним уровням ради другой числовой стратегии.
+Например, mapper-level `ByName` поверх MSBuild `ByValueAllowUndefined`
+оставляет integer-to-enum строгим. `Default` по-прежнему продолжает поиск;
+чтобы переопределить унаследованный `ByValueAllowUndefined` строгим режимом,
+пара задаёт `ByValue`, а не `Default`.
 
 Используются обычные pair/mapper/MSBuild уровни и общий resolver, без
 нового уровня named arguments на `Auto()`:
@@ -207,10 +223,10 @@ builder.Map<WireCode, StoredCode>()
 ```
 
 Enum strategy defaults на mapper/assembly могут сосуществовать с object,
-enum/integer, string-to-enum и `Convert`; на этих mappings они не используются.
+enum-to-integer, string-to-enum и `Convert`; на этих mappings они не используются.
 Явную настройку на паре, к которой она принципиально неприменима, диагностировать
-по общему контракту `MORPH0023`. Для enum-to-enum/enum-to-string наличие Using
-не меняет применимость стратегии и не приравнивает mapping к `Convert`.
+по общему контракту `MORPH0023`. Для enum-to-enum, enum-to-string и integer-to-enum
+наличие Using не меняет применимость стратегии и не приравнивает mapping к `Convert`.
 С `Members` она управляет конвенцией этих правил; без `Members` выбранное
 фабрикой значение окончательно и стратегия его не преобразует.
 
@@ -918,15 +934,16 @@ fallback/throw; не подменять эту конвенцию вызовом
 
 Поддерживаемые целые типы: `sbyte`, `byte`, `short`, `ushort`, `int`, `uint`,
 `long`, `ulong`. Для enum-to-enum числовой путь выбирается через строгий
-`ByValue` или `ByValueAllowUndefined`;
-для enum/integer он определяется типами пары. Этот раздел описывает числовые
+`ByValue` или `ByValueAllowUndefined`. Integer-to-enum использует те же
+числовые режимы со строгим default; enum-to-integer переносит число без
+выбора стратегии. Этот раздел описывает числовые
 преобразования с enum/integer destination; форматирование в string рассмотрено
 выше. Зафиксировано сохранение математического числа с учётом диапазона
 destination underlying type независимо от checked options consumer.
 Не усекать автоматически старшие биты и не менять знак через промежуточное
 приведение: `ulong` не сужается до `long`, а `256` не превращается в byte `0`.
 
-Принято два режима для обычных enum:
+Для enum-to-enum по числу и integer-to-enum приняты два режима:
 
 - `ByValue` — строгое соответствие объявленному destination-значению с тем же числом.
 - `ByValueAllowUndefined` — сохранение числа, даже если для него нет
@@ -941,6 +958,19 @@ destination underlying type независимо от checked options consumer.
 требования к source. Неназванное source-число, уже объявленное в destination,
 имеет соответствие. Enum-to-integer сохраняет и неназванные значения в
 пределах диапазона: у integer нет перечня объявленных вариантов.
+
+Для integer-to-enum это даёт тот же результат без проверки source-имени.
+Например, destination основан на `byte` и содержит только `Unknown = 0`
+и `Active = 1`; в декларативном switch задано `_ => Unknown`:
+
+| Числовой source | `ByValue` (default) | `ByValueAllowUndefined` |
+|---|---|---|
+| `1` | `Active` | `Active` |
+| `42` | `Unknown` через fallback | Неназванное destination-значение `42` |
+| `300` или `-1` | `Unknown` через fallback | `Unknown` через fallback |
+
+Без завершающей ветки на месте fallback будет исключение. Явные правила,
+`MemberSelection.Explicit`, `Auto()` и null handling сохраняют общие контракты.
 
 Непредставимое число означает отсутствие конвенционного соответствия.
 На неявном пути действие выбирают существующие правила `Members`:
@@ -1199,9 +1229,9 @@ null handling и могут сочетаться с `Members`, включая и
 Обоснование минимального API приведено в разделе 4.
 
 Числовые режимы, их имена, границы строгости, same-type и способ управления
-переполнением утверждены пользователем. Открыта применимость режимов к
-integer-to-enum; выбранная форма пары определяет число, но сама по себе
-не выбирает строгость. Слияние правил через `IncludeBase` также остаётся
+переполнением утверждены пользователем. Применимость к integer-to-enum,
+строгий default и поведение общего `ByName` также согласованы.
+Для обычных enum слияние правил через `IncludeBase` остаётся
 предложением, а не утверждённым контрактом.
 
 ### Категория 1: решения зафиксированы
@@ -1212,7 +1242,8 @@ integer-to-enum; выбранная форма пары определяет ч�
 
 | Вопрос | Зафиксированное решение | Основание и раздел |
 |---|---|---|
-| Library default стратегии | `ByName` для enum-to-enum, включая одинаковые типы, и enum-to-string; числовые режимы выбираются через обычные уровни настройки | Утверждено пользователем; разделы 4 и 8 |
+| Library default стратегии | `ByName` для enum-to-enum, включая одинаковые типы, и enum-to-string; строгий `ByValue` для integer-to-enum | Утверждено пользователем; разделы 4 и 8 |
+| Стратегия integer-to-enum | Оба числовых режима применимы; явный pair-level `ByName` диагностируется, выигравший общий `ByName` оставляет строгий default; повторного поиска по нижним уровням нет | Утверждено пользователем; обычный precedence и смысл `Default` сохраняются; раздел 4 |
 | Сравнение имён `ByName` | Сначала `Ordinal`, при отсутствии точного совпадения — `OrdinalIgnoreCase`; оба этапа независимы от culture | Как подбор параметров конструктора, по уточнению пользователя; разделы 4 и 7 |
 | Приоритет завершающей ветки | Явные специальные ветки, затем неявная конвенция, затем fallback; `MemberSelection.Explicit` отключает этап неявной конвенции | Выбрано пользователем; раздел 5. Порядок слияния правил через `IncludeBase` остаётся отдельным вопросом |
 | Вход конвенции и `Auto()` | Всегда source текущей пары; выражение перед switch выбирает явную ветку, включая `result`, кортеж и `Normalize(source)` | Утверждено пользователем; раздел 5. Не подменять пару, не вычислять `result` конвенцией заранее |
@@ -1233,17 +1264,11 @@ integer-to-enum; выбранная форма пары определяет ч�
 
 ### Категория 2: требуется обсуждение
 
-1. **Применимость числовых режимов к integer-to-enum.** Прежний набросок
-   исключал enum/integer из стратегии, поскольку форма пары уже выбирает
-   число. Теперь нужно отдельно определить управление строгостью в этом
-   направлении. Согласование enum-to-enum и enum-to-string не расширяет
-   применимость автоматически. Имена режимов, destination-only строгость,
-   same-type и выбор реакции на переполнение заново не обсуждаются.
-2. **Композиция switches через `IncludeBase`.** Сохраняет ли локальный fallback
-   базовые специальные случаи, как продолжается поиск после false guard и
-   как выполняются locals разных уровней. Предложенная цепочка раздела 8
-   ещё не утверждена. Наследование settings и разрешённое Using + Members
-   уже определены и заново не обсуждаются.
+**Композиция switches через `IncludeBase`.** Сохраняет ли локальный fallback
+базовые специальные случаи, как продолжается поиск после false guard и
+как выполняются locals разных уровней. Предложенная цепочка раздела 8
+ещё не утверждена. Наследование settings и разрешённое Using + Members
+уже определены и заново не обсуждаются.
 
 ### Отложено: flags
 
@@ -1276,7 +1301,8 @@ attributes, naming policies, коллекции и проекции не вхо�
 | Fallback | Именованный override; одноимённый автоматический case; неизвестное значение; computed fallback; пользовательский throw; failed explicit Auto; отсутствие повторного Auto |
 | Coverage | None/Source/Destination/Strict; warning severity; covered catch-all; guards; динамический result и граница анализа; aliases; finite/infinite sides |
 | Flags | Attribute detection; единый Members; Auto/Explicit; zero/composites; неизвестные биты и explicit numeric cases; per-bit fallback; high bit; aliases; порядок effects; успешное соответствие ByValue |
-| Numeric | Строгий ByValue и ослабленный режим; unnamed source при declared destination; неизвестное destination-число; explicit checked/unchecked casts; отсутствие усечения и изменения знака в обоих режимах; fallback/throw при overflow и смешанный guard; применимость integer-to-enum; same-type с учётом стратегии |
+| Numeric | Строгий ByValue и ослабленный режим; unnamed source при declared destination; неизвестное destination-число; explicit checked/unchecked casts; отсутствие усечения и изменения знака в обоих режимах; fallback/throw при overflow и смешанный guard; same-type с учётом стратегии |
+| Integer-to-enum | Default ByValue; оба числовых режима; объявленное/неназванное число и выход из диапазона; pair-level ByName diagnostic; общий ByName и отсутствие повторного поиска, включая нижний ByValueAllowUndefined; inherited numeric mode и явный ByValue вместо Default; Members/Auto/Explicit/null guards; enum-to-integer без стратегии |
 | Enum-to-string | ByName/ByValue/ByValueAllowUndefined; одинаковый числовой output двух режимов, включая неизвестные числа; Members overrides; Auto/Explicit и явный Auto; aliases; signed/ulong; invariant culture; flags whole-mask output; nullable |
 | Lifecycle | Все null policies; nullable exact pairs; Update без Create; same-type mapping; обычный explicit nested Map |
 | Runtime callbacks | Using null guards; ConstructUsing без/с previous, включая enum zero; ResolveUsing на обеих операциях; terminal null пропускает Members; whole-mask flags; method groups/delegates/context; без Members выбранное значение окончательно, корректная применимая strategy setting допустима |
