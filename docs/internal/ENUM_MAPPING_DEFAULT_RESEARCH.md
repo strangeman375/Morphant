@@ -168,9 +168,9 @@ switch по enum-константам без `ToString`/parsing. Позднее 
 `MemberSelection.Explicit`. Сам выбор default не определял числовую
 допустимость: два числовых режима, destination-only строгость, same-type
 и управление переполнением согласованы отдельно. Применимость числовых режимов
-к integer-to-enum со строгим default также утверждена. Слияние `IncludeBase`
-ещё обсуждается;
-zero/composite flags отложены вместе с остальной flags-семантикой.
+к integer-to-enum со строгим default также утверждена. Композиция правил
+через `IncludeBase` согласована в [основном дизайне](ENUM_MAPPING_DESIGN.md#includebase).
+Zero/composite flags отложены вместе с остальной flags-семантикой.
 Обратный числовой parsing string-to-enum остаётся вне текущего предложения.
 
 Будущие проверки должны различать перестановку чисел при одинаковых именах,
