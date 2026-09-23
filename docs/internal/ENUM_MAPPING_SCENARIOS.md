@@ -34,6 +34,9 @@
 - [Обычные enum и строки](#обычные-enum-и-строки)
 - [Числа и диапазоны](#числа-и-диапазоны)
 - [Nullable, Create, Update и фабрики](#nullable-create-update-и-фабрики)
+- [Наследование и настройки](#наследование-и-настройки)
+- [Flags между enum](#flags-между-enum)
+- [Flags и числовые стратегии](#flags-и-числовые-стратегии)
 
 ## Обычные enum
 
@@ -942,3 +945,573 @@ builder.Map<DomainStatus?, ApiStatus?>()
 
 Members и Using нельзя добавлять к локальному Convert. Его тело — обычный C#,
 поэтому там нет автоматического дополнения switch и DSL Auto/Ignore.
+
+## Наследование и настройки
+
+### 45. Общие правила плюс локальные переопределения
+
+```csharp
+public abstract class StatusMapperBase<TMapper> : TypeMapper<TMapper>
+    where TMapper : StatusMapperBase<TMapper>
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<DomainStatus, ApiStatus>()
+            .Members(status => status switch
+            {
+                DomainStatus.Cancelled => ApiStatus.Deleted,
+                DomainStatus.Suspended => ApiStatus.Disabled,
+                _ => ApiStatus.Unknown
+            });
+}
+
+[MorphantMapper]
+public partial class ApplicationMapper : StatusMapperBase<ApplicationMapper>
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        base.Configure(builder);
+        builder.Map<DomainStatus, ApiStatus>()
+            .IncludeBase<DomainStatus, ApiStatus>()
+            .Members(status => status switch
+            {
+                DomainStatus.Cancelled => ApiStatus.Archived,
+                _ => ApiStatus.Unrecognized
+            });
+    }
+}
+```
+
+| Вход | Результат |
+|---|---|
+| Cancelled | Archived из локального правила |
+| Suspended | Disabled из базы |
+| Active | Active по общей конвенции |
+| Legacy | Unrecognized из локального fallback |
+
+Удаление локального fallback вернёт Unknown для Legacy. Локальный Members не
+стирает Suspended из базы. Enum-наследования типов здесь нет: включается та же
+пара из базового mapper.
+
+### 46. Guard и явный Auto перекрывают базовое правило по-разному
+
+В примере 45 заменить локальный Members на:
+
+```csharp
+.Members(status => status switch
+{
+    _ when IsBlocked() => ApiStatus.Archived,
+    _ => Auto()
+})
+```
+
+| Вход | IsBlocked | Результат |
+|---|---|---|
+| Suspended | true | Archived: локальный guard раньше базового case |
+| Suspended | false | Disabled из базы |
+| Active | false | Active |
+| Legacy | false | Исключение: локальный `_ => Auto()` заменил базовый fallback |
+
+Если вместо guard написать `DomainStatus.Cancelled => Auto()`, Cancelled бросит
+исключение: явный Auto не возвращается к базовому `Cancelled => Deleted`.
+
+### 47. Locals базы вычисляются только при достижении базы
+
+Для той же конструкции наследования тела Members задаются так:
+
+```csharp
+// База; GetBaseFallback возвращает Unknown и считает вызовы.
+.Members(status =>
+{
+    var fallback = GetBaseFallback(status);
+    return status switch
+    {
+        DomainStatus.Suspended => ApiStatus.Disabled,
+        _ => fallback
+    };
+})
+
+// Локальная пара; GetLocalFallback возвращает Unrecognized и считает вызовы.
+.Members(status =>
+{
+    var fallback = GetLocalFallback(status);
+    return status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Archived,
+        _ => fallback
+    };
+})
+```
+
+| Вход | Результат | Local / Base вызовы |
+|---|---|---|
+| Cancelled | Archived | 1 / 0 |
+| Suspended | Disabled | 1 / 1 |
+| Active | Active | 1 / 1 |
+| Legacy | Unrecognized | 1 / 1; local не вычисляется повторно ради fallback |
+
+### 48. Настройка пары базы выше настройки текущего mapper
+
+В базовой паре из примера 45 явно задано
+`.MemberSelection(MemberSelection.Auto)`. Текущая конфигурация:
+
+```csharp
+base.Configure(builder);
+builder.MemberSelection(MemberSelection.Explicit);
+builder.Map<DomainStatus, ApiStatus>()
+    .IncludeBase<DomainStatus, ApiStatus>();
+```
+
+| Локальное дополнение к паре | Effective selection | Active | Legacy |
+|---|---|---|---|
+| Нет | Auto из included pair | Active | Unknown |
+| `.MemberSelection(Explicit)` | Explicit | Unknown | Unknown |
+| `.MemberSelection(Explicit).MemberSelection(Default)` | Auto из included pair | Active | Unknown |
+
+В таблице имена значений сокращены; в C# используются
+`MemberSelection.Explicit` и `MemberSelection.Default`. Последняя запись уровня
+побеждает, Default продолжает поиск. Положение mapper-level вызова до/после Map
+не должно менять результаты.
+
+### 49. Default не сбрасывает унаследованную числовую стратегию
+
+```csharp
+builder.EnumMappingStrategy(EnumMappingStrategy.ByValueAllowUndefined);
+builder.Map<int, StoredCode>()
+    .EnumMappingStrategy(EnumMappingStrategy.Default);
+```
+
+42 даёт неназванное 42. Чтобы получить строгий режим, нужно явно поставить
+`EnumMappingStrategy.ByValue`; тогда 42 без fallback бросает.
+
+Отдельная конфигурация: в MSBuild задано
+`MorphantEnumMappingStrategy=ByValueAllowUndefined`, а в mapper — ByName.
+
+```csharp
+builder.EnumMappingStrategy(EnumMappingStrategy.ByName);
+builder.Map<int, StoredCode>();
+```
+
+Общий ByName для integer → enum приводит к строгому default ByValue:
+1 даёт Pending, 42 бросает. Нижний MSBuild AllowUndefined повторно не ищется.
+
+### 50. Несколько уровней используют одну конвенцию и один result
+
+Для цепочки `Base → Middle → Application` каждый уровень вызывает
+`base.Configure(builder)` и включает точную пару через IncludeBase.
+
+| Уровень | Members |
+|---|---|
+| Base | `Cancelled => Deleted`, `Suspended => Disabled`, `_ => Unknown` |
+| Middle | `Cancelled => Archived` |
+| Application | `Corrupt => Unrecognized` |
+
+Это те же формы switch, что в примере 45, с квалифицированными именами enum.
+
+| Вход | Результат |
+|---|---|
+| Cancelled | Archived: ближайший специальный case |
+| Suspended | Disabled |
+| Corrupt | Unrecognized |
+| Active | Active: одна конвенция после всех специальных правил |
+| Legacy | Unknown: ближайший имеющийся fallback |
+
+Если Base задаёт ResolveUsing, он выбирает начальный result один раз; все уровни
+видят этот result. Выбранное Deleted не передаётся в Middle как новый source.
+
+## Flags между enum
+
+Общие типы этого раздела:
+
+```csharp
+[Flags]
+enum SourceAccess
+{
+    None = 0, Read = 1, Write = 2, Delete = 4, Audit = 8,
+    ReadWrite = Read | Write
+}
+
+[Flags]
+enum TargetAccess
+{
+    None = 0, View = 16, Edit = 32, Audit = 64, Unknown = 128
+}
+```
+
+### 51. Переименование флагов действует на любую комбинацию
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => flag switch
+    {
+        SourceAccess.Read => TargetAccess.View,
+        SourceAccess.Write => TargetAccess.Edit,
+        SourceAccess.Delete => TargetAccess.None,
+        _ => TargetAccess.Unknown
+    });
+```
+
+| Вход | Результат default ByBit + ByName |
+|---|---|
+| Read | View = 16 |
+| ReadWrite = 3 | View \| Edit = 48 |
+| Read \| Audit = 9 | View \| Audit = 80 |
+| Read \| Delete = 5 | View = 16 |
+| Read \| Write \| Audit = 11 | View \| Edit \| Audit = 112 |
+| None | None = 0 |
+
+### 52. Один бит может дать несколько флагов или совпадающие вклады
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => flag switch
+    {
+        SourceAccess.Read => TargetAccess.View | TargetAccess.Audit,
+        SourceAccess.Write => TargetAccess.View,
+        SourceAccess.Delete => default,
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| Read | View \| Audit = 80 |
+| Read \| Write | View \| Audit = 80: повторный View не ошибка |
+| Delete | 0 |
+| Delete \| Audit | Audit = 64 |
+
+Для явного enum-нуля также подходят `TargetAccess.None` и `(TargetAccess)0`.
+Голое `=> 0` — ограничение типизации scalar marker, а не другой runtime-контракт.
+
+### 53. Неизвестный бит проходит обычные правила
+
+Используется конфигурация 51.
+
+| Вход | С fallback Unknown | Если удалить fallback |
+|---|---|---|
+| `(SourceAccess)16` | Unknown = 128 | Исключение |
+| Read \| (SourceAccess)16 | View \| Unknown = 144 | Исключение всей операции |
+| (SourceAccess)16 \| (SourceAccess)32 | Unknown = 128 | Исключение |
+
+Явная ветка `(SourceAccess)16 => TargetAccess.Edit` позволяет обработать этот
+бит до конвенции; тогда Read \| 16 даст View \| Edit = 48. Совпадение исходного
+числа 16 с TargetAccess.View само по себе не создаёт ByName-соответствие.
+
+### 54. Composite case требует ByMask
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => flag switch
+    {
+        SourceAccess.ReadWrite => TargetAccess.View | TargetAccess.Edit,
+        _ => TargetAccess.Unknown
+    });
+```
+
+| Режим | Вход ReadWrite | Диагностика |
+|---|---|---|
+| ByBit | Unknown: Read и Write отдельно дошли до fallback | Warning о доказанно недостижимом composite case |
+| `.FlagsMappingMode(FlagsMappingMode.ByMask)` | View \| Edit = 48 | Composite case достижим |
+
+Для ByMask вход Read всё ещё даёт Unknown: правило ReadWrite не является
+правилом для каждого входящего бита.
+
+### 55. ByMask + ByName сопоставляет целое имя
+
+```csharp
+[Flags] enum NamedSource { Read = 1, Write = 2, ReadWrite = 3, Audit = 4 }
+[Flags] enum NamedTarget { Read = 8, Write = 16, ReadWrite = 128, Audit = 32 }
+
+builder.Map<NamedSource, NamedTarget>();
+```
+
+| Вход | ByBit | ByMask |
+|---|---|---|
+| Read | Read = 8 | Read = 8 |
+| ReadWrite = 3 | Read \| Write = 24 | ReadWrite = 128 |
+| Read \| Audit = 5, отдельного имени нет | Read \| Audit = 40 | Исключение |
+| 0, None не объявлен | 0 | 0 |
+
+Добавление/удаление имени ReadWrite не меняет побитовый результат 24. ByMask не
+пытается собрать неназванную пятёрку по отдельным именам.
+
+### 56. Только составное объявление без отдельных имён битов
+
+```csharp
+[Flags] enum PairSource { Pair = 3 }
+[Flags] enum PairTarget { Pair = 12 }
+
+builder.Map<PairSource, PairTarget>();
+```
+
+| Режим | Вход Pair = 3 | Вход 0 |
+|---|---|---|
+| ByBit + ByName | Исключение: у source-битов 1 и 2 нет имён | 0 |
+| ByMask + ByName | Pair = 12 | 0 |
+
+В ByBit можно задать явные `(PairSource)1 => (PairTarget)4` и
+`(PairSource)2 => (PairTarget)8`; тогда итогом станет 12. Наличие Pair = 3 само
+по себе не создаёт такие правила.
+
+### 57. Нулевая маска проходит правила один раз
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => flag switch
+    {
+        SourceAccess.None => TargetAccess.Unknown,
+        SourceAccess.Read => TargetAccess.View,
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| None = 0 | Unknown = 128 |
+| Read = 1 | View = 16; правило None не добавляет Unknown |
+| Read \| Audit = 9 | View \| Audit = 80 |
+
+Без явного None ноль по конвенции даёт 0, даже если ни одна сторона не объявляет
+имя нуля. Это действует в ByBit и ByMask для любой применимой enum-стратегии.
+
+### 58. Explicit отключает конвенцию, сохраняя разбиение
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .MemberSelection(MemberSelection.Explicit)
+    .Members(flag => flag switch
+    {
+        SourceAccess.Read => TargetAccess.View,
+        SourceAccess.Audit => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| Read \| Audit | View \| Audit = 80 |
+| Write | Исключение |
+| 0 | Исключение: специальная конвенция нуля тоже отключена |
+| 0, добавить `SourceAccess.None => Auto()` | 0 |
+
+### 59. Эффекты выполняются по физическим битам, не по объявлениям
+
+`Record` добавляет вход в список и возвращает TargetAccess.None.
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => Record(flag));
+```
+
+| Вход | Список Record | Результат |
+|---|---|---|
+| Read \| Delete \| Audit = 13 | Read, Delete, Audit | 0 |
+| ReadWrite = 3 | Read, Write | 0 |
+| 0 | 0 один раз | 0 |
+
+Alias `View = Read` в source не добавил бы вызова. Если Record бросает на Delete,
+Read уже обработан, Audit не обрабатывается; частичный результат не возвращается,
+а запись Read в список сохраняется.
+
+### 60. Null из одного бита завершает nullable mapping
+
+```csharp
+builder.Map<SourceAccess, TargetAccess?>()
+    .Members(flag => flag switch
+    {
+        SourceAccess.Read => TargetAccess.View,
+        SourceAccess.Write => null,
+        SourceAccess.Delete => RecordDelete(),
+        _ => Auto()
+    });
+```
+
+`RecordDelete` считает вызовы и возвращает TargetAccess.None.
+
+| Вход | Результат | RecordDelete |
+|---|---|---|
+| Read | View | Не вызывается |
+| Read \| Write \| Delete | null | Не вызывается |
+| Delete | 0 | Один вызов |
+
+Для удаления Write с сохранением остальных битов нужно вернуть 0 вместо null.
+
+### 61. Фабрика работает один раз, result не является накопителем
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .ResolveUsing((mask, previous) => TargetAccess.Audit)
+    .Members((flag, previous, result) => flag switch
+    {
+        SourceAccess.Read => TargetAccess.View,
+        SourceAccess.Write => result,
+        SourceAccess.Delete => Ignore(),
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| Read | View = 16: Audit из фабрики не добавляется автоматически |
+| Read \| Write | View \| Audit = 80 |
+| Read \| Delete | View \| Audit = 80: Ignore даёт полную начальную маску |
+| Write \| Delete | Audit = 64 |
+
+Фабрика получает полную source-маску и вызывается один раз. Каждый бит видит
+result = Audit, даже после вклада View. Для пропуска Delete нужен None/default,
+а не Ignore. Previous по-прежнему означает полную исходную destination-маску.
+
+### 62. Composite pattern над result может быть достижим
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .ResolveUsing((mask, previous) => TargetAccess.View | TargetAccess.Edit)
+    .Members((flag, previous, result) => result switch
+    {
+        (TargetAccess.View | TargetAccess.Edit) => TargetAccess.Audit,
+        _ => Auto()
+    });
+```
+
+Для Read \| Write оба прохода видят полный result = 48 и возвращают Audit;
+итог Audit = 64. Это достижимый case, поэтому warning «composite недостижим
+в ByBit» здесь неверен. Аналогично нельзя объявлять недостижимым composite,
+получаемый через пользовательский `Normalize(flag)`.
+
+## Flags и числовые стратегии
+
+### 63. Строгий integer → flags проверяет OR целых объявлений
+
+```csharp
+[Flags] enum PairAudit { Pair = 3, Audit = 4 }
+
+builder.Map<int, PairAudit>();
+```
+
+| Вход | Default ByValue | ByValueAllowUndefined |
+|---|---|---|
+| 0 | 0, пустая комбинация | 0 |
+| 3 | Pair | Pair |
+| 4 | Audit | Audit |
+| 7 | Pair \| Audit, хотя 7 отдельно не объявлено | То же |
+| 1, 2, 5, 6 | Исключение | Соответствующее неназванное число |
+
+В строгом режиме нельзя взять только часть Pair. FlagsMappingMode здесь не нужен:
+integer → flags обрабатывает целое число.
+
+### 64. All = -1 не разрешает любое число
+
+```csharp
+[Flags] enum AllOnly : sbyte { All = -1 }
+
+builder.Map<int, AllOnly>();
+```
+
+| Вход | ByValue | ByValueAllowUndefined |
+|---|---|---|
+| -1 | All | All |
+| 0 | 0 | 0 |
+| 1, 127, -128 | Исключение | Соответствующее число |
+| 128, -129, 255 | Исключение | Исключение диапазона; 255 не превращается в -1 |
+
+### 65. Обычный enum → flags использует допустимость destination
+
+```csharp
+enum WireAccess { ReadWrite = 3 }
+[Flags] enum Bits { Read = 1, Write = 2 }
+
+builder.Map<WireAccess, Bits>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue);
+```
+
+| Вход | Результат |
+|---|---|
+| ReadWrite = 3 | Bits.Read \| Bits.Write = 3 |
+| `(WireAccess)0` | 0 |
+| `(WireAccess)1` | Bits.Read |
+| `(WireAccess)4` | Исключение |
+
+Это целое значение: flags только на одной стороне. При ByName ReadWrite не
+сопоставляется автоматически отдельным Read и Write. Если убрать `[Flags]`
+у Bits, строгий ByValue для числа 3 тоже бросит: обычному enum нужно точное объявление.
+
+### 66. ByBit и ByMask дают разные результаты строгой проверки
+
+```csharp
+[Flags] enum SourceBits { Read = 1, Write = 2 }
+[Flags] enum DestinationPair { Pair = 3 }
+
+builder.Map<SourceBits, DestinationPair>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue);
+```
+
+| Вход | ByBit | ByMask |
+|---|---|---|
+| Read \| Write = 3 | Исключение: 1 отдельно не допустимо | Pair = 3 |
+| Read = 1 | Исключение | Исключение |
+| 0 | 0 | 0 |
+
+ByValueAllowUndefined даёт 3 в обоих режимах, но число вызовов правил остаётся
+разным. В ByBit явные `Read => (DestinationPair)1` и `Write => (DestinationPair)2`
+также дают 3: дополнительная строгая проверка поверх явных вкладов не выполняется.
+
+### 67. Проверка диапазона зависит от единицы обработки
+
+```csharp
+[Flags] enum WideMask : int { All = -1 }
+[Flags] enum NarrowMask : sbyte { All = -1 }
+
+builder.Map<WideMask, NarrowMask>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValueAllowUndefined);
+```
+
+| Режим / вход | Результат |
+|---|---|
+| ByMask, All = -1 | NarrowMask.All = -1: целое число помещается |
+| ByBit, All = -1 | Исключение: уже отдельный положительный бит 128 не помещается в sbyte |
+| ByBit, `(WideMask)64` | Неназванное 64 |
+
+Побитовый обход не делает narrowing cast всей маски заранее.
+
+### 68. Знаковый старший бит сохраняет математическое значение
+
+```csharp
+[Flags] enum SignedBits : sbyte { Low = 1, High = -128 }
+[Flags] enum LargerBits : short { Low = 1, High = -128 }
+[Flags] enum UnsignedBits : byte { Low = 1, High = 128 }
+
+builder.Map<SignedBits, LargerBits>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValueAllowUndefined);
+builder.Map<SignedBits, UnsignedBits>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValueAllowUndefined);
+```
+
+| Пара / вход | Результат |
+|---|---|
+| SignedBits → LargerBits, High | -128 |
+| SignedBits → LargerBits, Low \| High | -127: вклады 1, затем -128 |
+| SignedBits → UnsignedBits, High | Исключение: -128 не равно 128 |
+
+При ByName последняя пара может дать High = 128 по имени. В sbyte обходится
+ровно восемь физических битов; дополнительного расширения до 32/64 проходов нет.
+Для ulong-флага `1UL << 63` сохраняется положительное 9223372036854775808,
+поэтому числовое сопоставление в long не помещается.
+
+### 69. IncludeBase не создаёт смешанного прохода маски и битов
+
+Для точной пары SourceAccess → TargetAccess база задаёт ByMask и
+`ReadWrite => View | Edit`, `_ => Unknown`. Локальная пара включает её:
+
+```csharp
+base.Configure(builder);
+builder.Map<SourceAccess, TargetAccess>()
+    .IncludeBase<SourceAccess, TargetAccess>()
+    .FlagsMappingMode(FlagsMappingMode.ByBit)
+    .Members(flag => flag switch { SourceAccess.Read => TargetAccess.View });
+```
+
+| Effective mode | Вход ReadWrite | Что происходит |
+|---|---|---|
+| Локальный ByBit | View \| Unknown = 144 | Read — local; Write — inherited fallback; базовый composite недостижим и предупреждается |
+| Вместо ByBit указать Default | View \| Edit = 48 | Наследуется ByMask; базовый composite совпал |
+
+Ни в одном варианте сначала не применяется whole-mask правило, а затем те же
+Members ещё раз к отдельным битам.
