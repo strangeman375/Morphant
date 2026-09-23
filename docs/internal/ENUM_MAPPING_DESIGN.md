@@ -1,7 +1,7 @@
 # Enum mapping: согласованный дизайн
 
 2026-09-23. Основной контракт согласован; **feature ещё не реализована**.
-Уточнения после review и оставшиеся вопросы перечислены в конце документа.
+Отложенные возможности и проверки реализации перечислены в конце документа.
 Примеры ниже описывают будущий DSL. Этот документ — канонический контракт;
 обоснования и источники: [стратегия по умолчанию](ENUM_MAPPING_DEFAULT_RESEARCH.md),
 [числа](ENUM_MAPPING_NUMERIC_RESEARCH.md), [flags](ENUM_MAPPING_FLAGS_RESEARCH.md).
@@ -13,8 +13,8 @@ nullable, Create/Update и IncludeBase. Целые типы: `sbyte`, `byte`, `s
 `ushort`, `int`, `uint`, `long`, `ulong`.
 
 Вне объёма: автоматический reverse, общий числовой string-to-enum parsing,
-wire attributes, naming policies, коллекции и проекции. Ввод строковых списков
-flags согласован, включая `"0"` для пустой маски; обратное форматирование обсуждается.
+wire attributes, naming policies, коллекции и проекции. Строковые списки flags
+поддерживаются в обоих направлениях; настройка разделителей отложена.
 
 | API scalar enum-пары | Контракт |
 |---|---|
@@ -49,7 +49,7 @@ builder.Map<DomainStatus, ApiStatus>()
 | Настройка | Вопрос | Значения и library default |
 |---|---|---|
 | `EnumMappingStrategy` | Что считать соответствием? | `Default`, **`ByName`**, `ByValue`, `ByValueAllowUndefined`; для integer-to-enum default — строгий `ByValue` |
-| `FlagsMappingMode` | Обрабатывать единицу или полную маску? | `Default`, **`ByBit`**, `ByMask`; flags-to-flags и string-to-flags; единица — бит или строковый токен |
+| `FlagsMappingMode` | Обрабатывать единицу или полную маску? | `Default`, **`ByBit`**, `ByMask`; flags-to-flags, string-to-flags и flags-to-string под ByName; единица — бит или строковый токен |
 
 ```csharp
 builder.Map<WireCode, StoredCode>()
@@ -91,7 +91,7 @@ builder.Map<WireCode, StoredCode>()
 | Направление | `EnumMappingStrategy` | `FlagsMappingMode` |
 |---|---|---|
 | Enum → enum | Все стратегии; при `[Flags]` только с одной стороны — правила целого значения | Только когда оба enum имеют `[Flags]`, включая nullable underlying types |
-| Enum → string | Все стратегии; числовые режимы дают одинаковое представление | В числовых режимах неприменима: целая маска; ByName для flags обсуждается |
+| Enum → string | Все стратегии; числовые режимы дают одинаковое представление | Применима только для flags source под ByName; числовые режимы обрабатывают целую маску |
 | Integer → enum | `ByValue` / `ByValueAllowUndefined`; default `ByValue` | Неприменима; целое число, для flags destination — допустимость маски |
 | Enum → integer | Неприменима; перенос числа с проверкой диапазона | Неприменима |
 | String → enum | Неприменима; конвенция CLR-имён | Для flags destination: ByBit — токены, ByMask — исходная строка; иначе неприменима |
@@ -129,8 +129,8 @@ switch справа от `=>`, пользовательские методы и 
 | `(source, previous, result) => rules` | Дополнительно реально выбранный начальный non-null destination |
 | `(source, previous, result, context) => rules` | Дополнительно существующий DSL context с `Operation`, без полного runtime `MappingContext` |
 
-В flags-to-flags единица source — бит при ByBit и маска при ByMask;
-в string-to-flags — токен и полная строка соответственно.
+В flags-to-flags и flags-to-string под ByName единица source — бит при ByBit
+и маска при ByMask; в string-to-flags — токен и полная строка соответственно.
 `previous` и `result` остаются полными destination-значениями.
 
 Для каждой единицы правила выполняются в порядке:
@@ -298,14 +298,15 @@ Ready = 10, Active = 20 в destination неоднозначны. Нужна ди
 
 | Направление | Конвенция |
 |---|---|
-| Enum → string, ByName | CLR-имя с исходным регистром; aliases требуют явного canonical output, даже если различаются только регистром |
+| Enum → string, ByName | CLR-имя с исходным регистром; aliases требуют явного canonical output, даже если различаются только регистром; flags и их ноль — по правилам ниже |
 | Enum → string, обе числовые стратегии | Underlying integer в десятичной записи с InvariantCulture без группировки; включая неназванное число, с точной шириной и знаком |
 | String → enum | CLR-имя с exact-first/ignore-case; явные строковые patterns сохраняют обычную C# семантику |
 
 Active = 2 даёт `"Active"` по имени, `"2"` по числу; неизвестное 123 — `"123"`
 в обеих числовых стратегиях. Signed -1 даёт `"-1"`, ulong не сужается до long.
-При ByName неназванный enum не имеет соответствия; скрытого numeric fallback
-через ToString нет. [Enum.GetName](https://learn.microsoft.com/en-us/dotnet/api/system.enum.getname?view=net-10.0)
+При ByName неназванная единица обработки не имеет соответствия, кроме пустой
+flags-маски ниже; скрытого numeric fallback через ToString нет.
+[Enum.GetName](https://learn.microsoft.com/en-us/dotnet/api/system.enum.getname?view=net-10.0)
 не гарантирует canonical alias.
 
 ```csharp
@@ -329,7 +330,7 @@ builder.Map<string, ApiStatus>()
 
 ### Строковый ввод flags
 
-Используется существующий FlagsMappingMode, без отдельной настройки разделителей.
+Используется FlagsMappingMode; отдельная настройка разделителей отложена.
 Разделители — `,`, `|` и `;`, в том числе смешанные; разбор обрезает whitespace
 вокруг токенов, сохраняя его внутри имени. Пробел, tab и перенос строки сами
 по себе не разделяют значения: `"Full control"` может быть явным именем.
@@ -344,13 +345,16 @@ builder.Map<string, ApiStatus>()
 удалять повторы до Members нельзя из-за effects. `"ReadWrite"` может обозначать
 объявленный composite: его значение берётся целиком, без повторного вызова Members
 для Read и Write. Aliases и неоднозначность имён следуют общему контракту.
-Токен `"0"` по конвенции даёт пустую маску даже без None; другой числовой текст,
-hex и qualified names автоматически не разбираются, но доступны явным правилам.
+Токены `"0"` и `""` по конвенции дают пустую маску даже без None; другой числовой
+текст, hex и qualified names автоматически не разбираются, но доступны явным правилам.
 
-Пустая строка, `"Read,,Write"` и завершающий разделитель сохраняют пустые токены:
-в ByBit каждый проходит правила, затем fallback/исключение; пустота не означает 0.
-В ByMask нераспознанный, неоднозначный или пустой токен означает неуспех конвенции
-всей строки. Explicit отключает её; явный Auto при неуспехе сразу бросает.
+Пустые токены сохраняются, в том числе после trim: `""` и `"   "` дают 0,
+`"Read,,Write;"` — Read | Write. В ByBit каждый токен сначала проходит Members,
+поэтому `"" => throw ...` может запретить пустоту, а `"" => Access.Unknown` — заменить её.
+В ByMask конвенция разбирает список с тем же нулевым вкладом пустых токенов;
+нераспознанный или неоднозначный токен означает неуспех для всей строки.
+Explicit отключает конвенцию, включая трактовку пустоты и `"0"`; явный Auto
+при неуспехе сразу бросает.
 
 Например, при `"view" => Access.Read` и `_ => Access.Unknown`:
 ByBit переводит `"view; Write"` в Read | Write, `"view|Missing"` — в Read | Unknown.
@@ -359,8 +363,35 @@ ByMask для обеих строк даёт Unknown: whole-string rule не с�
 
 Using получает исходную строку один раз по общему lifecycle; previous/result —
 полные маски, не накопитель. Null из правила завершает nullable mapping целиком.
-Для обратного списка согласован разделитель `", "`; остальные правила
-flags-to-string ByName перечислены среди открытых вопросов.
+
+### Строковый вывод flags
+
+Под ByName FlagsMappingMode определяет единицу Members, Auto и fallback.
+ByBit (default) обрабатывает физические биты от младшего к старшему и соединяет
+непустые строковые вклады через `", "`. Составное объявление не меняет разбиение;
+повторы сохраняются: два вклада `"access"` дают `"access, access"`.
+ByMask обрабатывает целую маску и по конвенции возвращает имя **целого объявленного
+значения**, без сборки неназванной комбинации по именам битов.
+
+| Вход при Read = 1, Write = 2, ReadWrite = 3, Audit = 4 | ByBit + ByName | ByMask + ByName |
+|---|---|---|
+| Read \| Write | `"Read, Write"` | `"ReadWrite"` |
+| Read \| Audit | `"Read, Audit"` | Fallback / исключение |
+| 0, объявлено None = 0 | `"None"` | `"None"` |
+| 0 без объявления | `"0"` | `"0"` |
+
+Нулевой вход проходит правила один раз; затем конвенция даёт объявленное имя нуля,
+а без объявления — `"0"`. Нулевые aliases требуют явного canonical output, как
+остальные aliases. Явное `None => "none"` или `None => ""` имеет приоритет.
+Это не общий numeric fallback: неизвестный ненулевой бит/маска попадает в fallback
+своей единицы либо вызывает исключение всей операции. Explicit отключает
+конвенцию и для нуля; явный Auto по-прежнему доступен.
+
+`""` из Members — пустой вклад; результат из одних пустых вкладов остаётся `""`,
+без замены на `"0"`. Null из правила при nullable destination завершает всю
+операцию с null. Using получает полную source-маску один раз по lifecycle;
+previous/result — полные исходные/начальные строки, не накопитель вкладов.
+Числовые стратегии сохраняют форматирование **всей** маски одной строкой.
 
 ## Числовая конвенция
 
@@ -410,7 +441,8 @@ Identity допустимо только как реализация тех же
 
 `System.FlagsAttribute` распознаётся при генерации, включая metadata и nullable
 underlying enum; числа 1, 2, 4 без атрибута не делают enum flags. Ниже — правила
-flags-to-flags; [строковый ввод](#строковый-ввод-flags) описан отдельно.
+flags-to-flags; [строковый ввод](#строковый-ввод-flags) и
+[вывод](#строковый-вывод-flags) описаны отдельно.
 Другие направления следуют таблице [применимости](#наследование-и-применимость).
 Runtime reflection не нужен.
 
@@ -615,7 +647,7 @@ Update возвращает scalar result, не изменяет передан�
 `Ignore()` / `Ignore<T>()` сохраняет выбранный начальный result. Без него —
 диагностика доступности, как при чтении result; ноль не изобретается. В ByBit
 это вклад **полного** начального result, не пропуск бита: для пропуска возвращают
-нулевое значение destination (`default` или `(Target)0`).
+нулевую destination-маску (`default` или `(Target)0`) либо `""` при строковом выводе.
 Ignore подтверждает обработку source-случая, но сам не перечисляет destination.
 
 ## Реализация и проверенные предпосылки
@@ -697,14 +729,12 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; ленивые locals/scopes; один initial result; Convert/destination-method conflicts; фабрика после наследования |
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, Ignore с доступным/недоступным result и scalar nested helpers |
 | Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
-| Строковый ввод flags | Три разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null |
+| Строковые flags | Три входных разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null; вывод ByBit/ByMask, порядок/повторы, ноль с именем/aliases и без объявления, пустые вклады и пустой итог |
 | Toolchain | Реальная nullable marker/delegate типизация и доступность result; C# 9, minimum Roslyn, MSBuild и IDE; suppressor diagnostic families, guards, отключённые анализаторы и warnings-as-errors; nested switch/wrong types/obsolete; edit settings/enum/callback, recovery и cancellation |
 
-## Оставшиеся вопросы после review
+## Отложенное и проверки реализации
 
-- Flags → string под ByName: применимость ByBit/ByMask и единица правил,
-  composite names, формат нуля, неизвестные биты, пустые/повторяющиеся вклады
-  и порядок их объединения. Разделитель вывода `", "` уже выбран; числовые
-  стратегии сохраняют форматирование всей маски.
+- Настройка разделителей отложена: вход принимает `,`, `|`, `;`, вывод использует
+  `", "`. Пробел и `+` автоматически не разделяют имена.
 - Техническая проверка: Rider и production-интеграция. Compiler/MSBuild прототип
   выполнен; ограничения bare 0 и var со смешанным bare Auto приняты.

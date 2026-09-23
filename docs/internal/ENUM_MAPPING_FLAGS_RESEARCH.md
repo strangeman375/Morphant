@@ -1,6 +1,6 @@
 # Flags enum: сравнение подходов
 
-2026-09-23. Режимы и ввод строковых списков согласованы; обратный вывод обсуждается.
+2026-09-23. Режимы, ввод и вывод строковых списков согласованы.
 Реализация впереди. Канонический контракт и примеры —
 [Flags в основном дизайне](ENUM_MAPPING_DESIGN.md#flags); здесь источники и причины выбора.
 
@@ -80,7 +80,7 @@ AutoMapper использует стандартные [Enum.ToString](https://l
 выбирает ByMask. Это самостоятельный вопрос: EnumMappingStrategy определяет
 соответствие, MemberSelection — включение конвенции, coverage — диагностику.
 
-Режим един для Members, Auto, fallback и всех уровней IncludeBase. Он устраняет
+В flags-to-flags режим един для Members, Auto, fallback и всех уровней IncludeBase. Он устраняет
 неоднозначность «override маски или вклад бита» без смешанного двойного прохода
 с повторными guards/locals. Числовая стратегия не меняет единицу обработки.
 Using остаётся обычной фабрикой полной маски; отдельный callback Flags не нужен.
@@ -121,15 +121,15 @@ whole-mask overrides не сочетаются с автоматическим �
 |---|---|
 | Zero проходит правила один раз, затем конвенция даёт 0 | Пустая маска не требует объявления, но None можно переопределить; Explicit сохраняет свой смысл |
 | Null из битового правила сразу завершает nullable mapping | Отличает отсутствие результата от удаления бита нулём; эффекты следующих битов не выполняются |
-| FlagsMappingMode для flags-to-flags и string-to-flags | Вклад бита или токена объединяется OR в flags destination; обычный enum и integer не делятся автоматически |
+| FlagsMappingMode для flags-to-flags, string-to-flags и flags-to-string под ByName | Вклады объединяются OR либо строковым разделителем; числовой строковый вывод сохраняет всю маску |
 | Порядок битов от младшего к старшему, в ширине source | Определённый порядок effects, независимый от aliases и объявлений; signed high bit последний |
 | Warning только о доказанно недостижимом composite case | Обнаруживает ошибку режима, сохраняя возможность наследовать правила для ByMask; patterns над result/вычисленным выражением не запрещаются |
 
 Подробности не дублируются: [flags-контракт](ENUM_MAPPING_DESIGN.md#flags),
 [coverage](ENUM_MAPPING_DESIGN.md#проверка-покрытия),
 [проверки реализации](ENUM_MAPPING_DESIGN.md#generated-code-и-критерии-готовности).
-После review согласован [ввод строковых списков](ENUM_MAPPING_DESIGN.md#строковый-ввод-flags).
-Обратный вывод остаётся среди [открытых вопросов](ENUM_MAPPING_DESIGN.md#оставшиеся-вопросы-после-review).
+Строковые направления описаны отдельно: [ввод](ENUM_MAPPING_DESIGN.md#строковый-ввод-flags),
+[вывод](ENUM_MAPPING_DESIGN.md#строковый-вывод-flags).
 
 ## Строковые flags
 
@@ -140,6 +140,10 @@ whole-mask overrides не сочетаются с автоматическим �
 | [.NET Enum.TryParse](https://learn.microsoft.com/en-us/dotnet/api/system.enum.tryparse?view=net-10.0) | Имена через запятую, пробелы вокруг элементов; числовая строка целиком |
 | [Mapster Enum.Parse](https://github.com/MapsterMapper/Mapster/blob/cbc1e5f04e6e003744b04f83d4705670a85e459b/src/Mapster.Core/Utils/Enum.cs) | Split по запятой, Trim элементов, OR; numeric parsing отдельного элемента тоже возможен; пустая строка даёт 0 |
 | [Rust bitflags parser](https://docs.rs/bitflags/latest/bitflags/parser/index.html) | Имена и hex-токены через `\|`, с пробелами или без; case-sensitive |
+| [Qt QMetaEnum](https://doc.qt.io/qt-6.8/qmetaenum.html#keysToValue) | Имена через `\|` |
+| [.NET DataContractSerializer](https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/enumeration-types-in-data-contracts#flag-enumerations) | XML-список имён через пробел; неназванный ноль — пустой список |
+| [FFmpeg disposition flags](https://ffmpeg.org/ffmpeg-all.html#Main-options) | `original+comment`; `+` добавляет флаг, `-` снимает, а не просто разделяет |
+| [Enums.NET FormatFlags](https://github.com/TylerBrinkley/Enums.NET/blob/master/Src/Enums.NET/FlagEnums.cs) | Пользовательский строковый delimiter |
 
 Дополнительно выполнены 25 проверок Enum.TryParse на .NET 10 с ignoreCase=true: `Read,Write`,
 ` Read , Write `, duplicates, composite name и `None,Read` принимаются;
@@ -148,8 +152,9 @@ whole-mask overrides не сочетаются с автоматическим �
 Последние два результата не следует выводить из обобщённой формулировки remarks
 в документации: здесь проверено реальное исполнение.
 
-Morphant принимает `,`, `|` и `;`: явные разделители сохраняют имена с пробелами
-и не требуют новой настройки. ByBit позволяет переименовать один токен во всех
-списках; ByMask сохраняет whole-string overrides. Пустые токены в ByBit проходят
-явные правила/fallback, а не теряются; numeric parsing не наследуется от чужого parser.
-Подробный контракт находится только в основном дизайне по ссылке выше.
+Настройка разделителей отложена. Morphant пока принимает `,`, `|`, `;` и сохраняет
+имена с пробелами. В ByBit пустой токен сначала проходит Members, затем по конвенции
+даёт 0; общий numeric parsing не наследуется от чужого parser. Нулевую маску конвенция
+выводит объявленным именем либо как `"0"` без объявления; aliases требуют явного
+выбора имени. Явный пустой строковый итог сохраняется.
+Подробный контракт находится только в основном дизайне.
