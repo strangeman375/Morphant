@@ -29,16 +29,18 @@
 
 Навигация:
 
-- [Обычные enum](#обычные-enum)
-- [Выражения и управление выполнением](#выражения-и-управление-выполнением)
-- [Обычные enum и строки](#обычные-enum-и-строки)
-- [Числа и диапазоны](#числа-и-диапазоны)
-- [Nullable, Create, Update и фабрики](#nullable-create-update-и-фабрики)
-- [Наследование и настройки](#наследование-и-настройки)
-- [Flags между enum](#flags-между-enum)
-- [Flags и числовые стратегии](#flags-и-числовые-стратегии)
-- [Строка в flags](#строка-в-flags)
-- [Flags в строку](#flags-в-строку)
+- [Обычные enum](#обычные-enum) — 01–10
+- [Выражения и управление выполнением](#выражения-и-управление-выполнением) — 11–17
+- [Обычные enum и строки](#обычные-enum-и-строки) — 18–23
+- [Числа и диапазоны](#числа-и-диапазоны) — 24–32
+- [Nullable, Create, Update и фабрики](#nullable-create-update-и-фабрики) — 33–44
+- [Наследование и настройки](#наследование-и-настройки) — 45–50
+- [Flags между enum](#flags-между-enum) — 51–62
+- [Flags и числовые стратегии](#flags-и-числовые-стратегии) — 63–69
+- [Строка в flags](#строка-в-flags) — 70–84
+- [Flags в строку](#flags-в-строку) — 85–95
+- [Coverage и намеренные исключения](#coverage-и-намеренные-исключения) — 96–107
+- [Вложенные пары и границы API](#вложенные-пары-и-границы-api) — 108–118
 
 ## Обычные enum
 
@@ -2070,3 +2072,486 @@ ReadWrite → `"view, edit"` → ReadWrite. Если не задать обра�
 ReadWrite → `"edit"` → Write: явное удаление вклада намеренно теряет информацию.
 Числовая выходная строка `"3"` также не создаёт автоматический numeric parser
 в обратной паре.
+
+## Coverage и намеренные исключения
+
+### 96. Runtime-допустимость при flags в тот же enum
+
+```csharp
+builder.Map<Access, Access>();
+```
+
+| Вход | ByBit + ByName | ByMask + ByName | ByMask + ByValue |
+|---|---|---|---|
+| ReadWrite = 3 | 3 | 3, объявленное имя | 3 |
+| Read \| Audit = 5 | 5, имена отдельных битов есть | Исключение: целого имени нет | 5, OR объявлений |
+| `(Access)16` | Исключение | Исключение | Исключение |
+| 0 | 0 | 0 | 0 |
+
+ByValueAllowUndefined допускает 16. Никакая из этих стратегий не должна
+заменяться безусловным identity-копированием. Включение/выключение coverage
+не меняет эти runtime-результаты.
+
+Общие типы следующих примеров:
+
+```csharp
+enum CoverageSource { Active = 1, Cancelled = 2, New = 3 }
+enum CoverageTarget { Active = 10, Deleted = 20, Internal = 30 }
+```
+
+### 97. Source coverage замечает новое необработанное значение
+
+```csharp
+builder.Map<CoverageSource, CoverageTarget>()
+    .UnmappedMemberValidation(UnmappedMemberValidation.Source)
+    .Members(value => value switch
+    {
+        CoverageSource.Cancelled => CoverageTarget.Deleted
+    });
+```
+
+| Вход | Runtime | Coverage |
+|---|---|---|
+| Active | Active по конвенции | Покрыт |
+| Cancelled | Deleted | Покрыт |
+| New | Исключение | Warning: объявленное source-значение не обработано |
+
+При UnmappedMemberValidation.None warning исчезнет, но New всё ещё бросит.
+Warning можно повысить до error обычными средствами; новая runtime-стратегия
+для этого не требуется.
+
+### 98. Явный запрет закрывает source coverage, Auto — не обязательно
+
+В конфигурации 97 добавить одну из веток:
+
+| Добавление | Вход New | Source coverage New |
+|---|---|---|
+| `CoverageSource.New => throw new InvalidOperationException()` | Пользовательское исключение | Закрыт: намеренный запрет |
+| `CoverageSource.New => CoverageTarget.Deleted` | Deleted | Закрыт |
+| `CoverageSource.New => Auto()` | Исключение маппинга | Не закрыт: конвенционного соответствия нет |
+| `_ => CoverageTarget.Internal` | Internal | Закрыт для всех оставшихся source-значений |
+| `_ => throw new InvalidOperationException()` | Пользовательское исключение | Закрыт для всех оставшихся source-значений |
+
+Общий fallback удобен для forward compatibility, но coverage уже не предупредит
+о появлении следующего source-значения, которое попадёт в этот fallback.
+
+### 99. Destination coverage и many-to-one
+
+```csharp
+builder.Map<CoverageSource, CoverageTarget>()
+    .UnmappedMemberValidation(UnmappedMemberValidation.Destination)
+    .Members(value => value switch
+    {
+        CoverageSource.Cancelled or CoverageSource.New => CoverageTarget.Deleted
+    });
+```
+
+Active → Active; Cancelled и New → Deleted. Destination Active и Deleted покрыты;
+Internal даёт warning. Два source-значения для Deleted допустимы: обратимость
+или взаимно однозначная таблица не требуется.
+
+### 100. Discard исключает destination из coverage, сохраняя алгоритм
+
+```csharp
+builder.Map<CoverageSource, CoverageTarget>()
+    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .Members(value =>
+    {
+        _ = CoverageTarget.Internal;
+        return value switch
+        {
+            CoverageSource.Cancelled or CoverageSource.New => CoverageTarget.Deleted
+        };
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| Active | Active |
+| Cancelled, New | Deleted |
+| `(CoverageSource)123` | Исключение |
+
+Coverage этой таблицы закрыт: Internal намеренно исключён. Discard не добавляет
+ветку, fallback или присваивание результата. Если позднее в destination появится
+другое несопоставленное значение, Strict снова даст warning.
+
+### 101. При E → E discard подтверждает только destination
+
+```csharp
+enum ReviewStatus { Active = 1, Hidden = 2 }
+
+builder.Map<ReviewStatus, ReviewStatus>(MappingMode.Update)
+    .MemberSelection(MemberSelection.Explicit)
+    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .Members(status =>
+    {
+        _ = ReviewStatus.Hidden;
+        return status switch { ReviewStatus.Active => ReviewStatus.Active };
+    });
+```
+
+| Вариант | Update Hidden, previous = Active | Coverage |
+|---|---|---|
+| Код выше | Исключение | Hidden исключён только со стороны destination; source warning остаётся |
+| Добавить `ReviewStatus.Hidden => Ignore()` | Active | Source Hidden обработан; coverage закрыт |
+| Вместо Explicit выбрать Auto | Hidden | Конвенция сохранила Hidden; discard её не выключил |
+
+Если в варианте с Ignore previous = Hidden, результат тоже Hidden. Ignore
+подтверждает source-случай, но не означает «возвратить ноль».
+
+### 102. Неназванный runtime-source не закрывает destination coverage
+
+```csharp
+enum DeclaredSource { Active = 1 }
+enum DeclaredTarget { Active = 1, Archived = 2 }
+
+builder.Map<DeclaredSource, DeclaredTarget>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue)
+    .UnmappedMemberValidation(UnmappedMemberValidation.Destination);
+```
+
+`Active → Active`, `(DeclaredSource)2 → Archived`. При этом Archived даёт
+coverage warning: объявленного source-соответствия или явного правила для него
+нет. Добавление `(DeclaredSource)2 => DeclaredTarget.Archived` в Members
+явно описывает соответствие и закрывает этот пробел.
+
+### 103. Coverage flags проверяет участие битов, а ноль — отдельно
+
+```csharp
+[Flags] enum CoverageFlags { None = 0, Read = 1, Write = 2, ReadWrite = 3 }
+[Flags] enum CoverageFlagsDto
+{
+    None = 0, View = 16, Edit = 32, ViewEdit = 48, Audit = 64
+}
+
+builder.Map<CoverageFlags, CoverageFlagsDto>()
+    .MemberSelection(MemberSelection.Explicit)
+    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .Members(flag =>
+    {
+        _ = CoverageFlagsDto.Audit;
+        return flag switch
+        {
+            CoverageFlags.None => CoverageFlagsDto.None,
+            CoverageFlags.Read => CoverageFlagsDto.View | CoverageFlagsDto.Edit,
+            CoverageFlags.Write => CoverageFlagsDto.View
+        };
+    });
+```
+
+| Вход | Результат | Coverage |
+|---|---|---|
+| None | None | Ноль покрыт отдельно |
+| Read | View \| Edit = 48 | Вклад покрывает View, Edit и ViewEdit |
+| Write | View = 16 | Обычное явное правило |
+| ReadWrite | View \| Edit = 48 | Source composite покрыт через Read и Write |
+
+Warnings нет. Не нужно отдельно доказывать возможность вернуть только Edit.
+Если убрать ветку None, появится непокрытый ноль с обеих сторон; Audit по-прежнему
+исключён discard. Если выбрать ByMask, ReadWrite потребует собственного
+соответствия: правила Read и Write не обрабатывают целую тройку. Destination Edit
+в ByMask также не покрыт: целое значение 32 ни одним из этих правил не возвращается.
+
+### 104. Неизвестный guard не доказывает полное покрытие
+
+```csharp
+builder.Map<CoverageSource, CoverageTarget>()
+    .UnmappedMemberValidation(UnmappedMemberValidation.Source)
+    .Members(value => value switch
+    {
+        CoverageSource.Cancelled => CoverageTarget.Deleted,
+        CoverageSource.New when IsEnabled() => CoverageTarget.Deleted
+    });
+```
+
+| Вход | IsEnabled | Результат |
+|---|---|---|
+| New | true | Deleted |
+| New | false | Исключение: конвенции для New нет |
+| Active | Не вызывается | Active |
+
+Source coverage должен учитывать false-путь и предупреждать о New. Самого
+присутствия именованного case с произвольным guard недостаточно.
+
+### 105. Динамический результат отличается от доказанно непокрытого значения
+
+`ComputeTarget` в пользовательском коде для Active возвращает Active, для других
+значений — Deleted.
+
+```csharp
+builder.Map<CoverageSource, CoverageTarget>()
+    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .Members(value => ComputeTarget(value));
+```
+
+Active даёт Active, New даёт Deleted. Source обработан прямым результатом;
+генератор не анализирует тело метода, чтобы доказать все destination-результаты.
+Ожидается warning о границе destination-анализа, а не утверждение, что конкретное
+значение заведомо недостижимо.
+
+Аналогично `_ => result` с фабрикой не перечисляет destination-значения.
+Наличие Using само по себе не доказывает полноту правил Members.
+
+### 106. Aliases в coverage — одна физическая группа
+
+```csharp
+enum CoveredAlias { Ready = 1, Active = 1 }
+enum CoveredAliasDto { Ready = 10, Available = 10 }
+
+builder.Map<CoveredAlias, CoveredAliasDto>()
+    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .Members(value => value switch { CoveredAlias.Ready => CoveredAliasDto.Ready });
+```
+
+Оба source-имени дают число 10. Отдельных warnings для Active и Available нет:
+каждая сторона имеет одну физическую группу. Discard одного destination alias
+тоже относится ко всей группе, а не создаёт runtime-различие её имён.
+
+### 107. Для integer/string проверяется конечная enum-сторона
+
+```csharp
+builder.Map<int, StoredCode>()
+    .UnmappedMemberValidation(UnmappedMemberValidation.Destination);
+builder.Map<DomainStatus, string>()
+    .UnmappedMemberValidation(UnmappedMemberValidation.Source);
+```
+
+В первой паре 0, 1 и 2 соответствуют всем объявленным StoredCode; destination
+coverage закрыт. 42 всё равно бросает. Во второй паре каждый объявленный
+DomainStatus имеет строковое имя, source coverage закрыт; `(DomainStatus)123`
+при ByName всё равно бросает. Все возможные integers и строки не перечисляются
+ради compile-time coverage.
+
+## Вложенные пары и границы API
+
+### 108. Enum-пара внутри обычного объекта
+
+```csharp
+class Order { public DomainStatus Status { get; set; } }
+class OrderDto { public ApiStatus Status { get; set; } }
+
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => status switch { DomainStatus.Cancelled => ApiStatus.Deleted });
+builder.Map<Order, OrderDto>()
+    .Members(source => new() { Status = Map(source.Status) });
+```
+
+| Order.Status | OrderDto.Status |
+|---|---|
+| Active | Active |
+| Cancelled | Deleted |
+| Legacy | Исключение вложенного mapping |
+
+Обе точные пары должны быть доступны mapper. Замена Map на Auto не запускает
+enum-пару: между разными enum нет implicit C# conversion. Для свойства того же
+enum обычное копирование значения остаётся доступным. Get-only enum-свойство
+нельзя изменить «по месту» через nested Update: scalar возвращает новое значение,
+которое нужно куда-то присвоить.
+
+### 109. Enum-пара внутри именованного tuple
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => status switch { DomainStatus.Cancelled => ApiStatus.Deleted });
+builder.Map<DomainStatus, (ApiStatus Status, string Label)>()
+    .Members(status => new()
+    {
+        Status = Map<ApiStatus>(status),
+        Label = "status"
+    });
+```
+
+Active даёт `(Status: ApiStatus.Active, Label: "status")`, Cancelled —
+`(Status: ApiStatus.Deleted, Label: "status")`. Tuple остаётся обычной структурной
+парой; scalar-правила находятся в отдельном вложенном enum mapping.
+
+### 110. Nested Map, Create и Update внутри scalar Members
+
+Для наглядности вложенная пара намеренно возвращает результат по операции:
+
+```csharp
+builder.Map<string, ApiStatus>()
+    .Members((text, previous, result, context) =>
+        context.Operation == MappingOperation.Create
+            ? ApiStatus.Pending
+            : ApiStatus.Archived);
+
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => Map<ApiStatus>("wire"));
+```
+
+| Внешняя конфигурация / операция с source Active | Результат |
+|---|---|
+| Код выше, Create | Pending: nested Create, начального result нет |
+| Код выше, Update с Disabled | Archived: nested Update с Disabled |
+| Добавить ConstructUsing, возвращающий Disabled; внешний Create | Archived: фабрика уже дала destination для nested Update |
+| Вместо Map написать `Create<ApiStatus>("wire")` | Pending при внешнем Create и Update |
+| Вместо Map написать `Update<ApiStatus>("wire", ApiStatus.Disabled)` | Archived при обеих внешних операциях |
+
+Nested helper получает явный source. Голое `Map()` в scalar Members не может
+вывести его по имени принимающего свойства, поскольку такого свойства здесь нет.
+
+### 111. Value и generic helpers сохраняют тип результата
+
+```csharp
+builder.Map<DomainStatus, ApiStatus?>()
+    .Members(status => status switch
+    {
+        DomainStatus.Cancelled => Value<ApiStatus?>(null),
+        DomainStatus.Suspended => Value<ApiStatus?>(ApiStatus.Disabled),
+        _ => Auto<ApiStatus?>()
+    });
+```
+
+Cancelled → null; Suspended → Disabled; Active → Active; Legacy → исключение.
+Value задаёт явный результат и не запускает скрытую проверку объявленности.
+Typed Auto решает target-typing задачу, сохраняя обычный контракт конвенции.
+
+### 112. Enum-источник не лишает DTO структурного создания
+
+```csharp
+class StatusDto
+{
+    public StatusDto(int code) { Code = code; }
+    public int Code { get; }
+    public string Label { get; set; } = "";
+}
+
+builder.Map<DomainStatus, StatusDto>()
+    .Construct(status => new((int)status))
+    .Members(status => new() { Label = "status" });
+```
+
+Active даёт DTO с Code = 2 и Label = `"status"`. Это object mapping, поэтому
+Construct применим. Для scalar enum → enum, enum ↔ string и enum ↔ integer
+нет структурного конструктора: там используются Members, Using либо Convert.
+
+### 113. Неприменимые настройки диагностируются
+
+Каждая строка — отдельное добавление к корректной регистрации соответствующей пары.
+
+| Пара | Явная pair-настройка | Ожидаемый результат конфигурации |
+|---|---|---|
+| `int → StoredCode` | `.EnumMappingStrategy(EnumMappingStrategy.ByName)` | MORPH0023 |
+| `DomainStatus → int` | `.EnumMappingStrategy(EnumMappingStrategy.ByValue)` | MORPH0023 |
+| `string → DomainStatus` | `.EnumMappingStrategy(EnumMappingStrategy.ByName)` | MORPH0023 |
+| `DomainStatus → ApiStatus`, оба без Flags | `.FlagsMappingMode(FlagsMappingMode.ByBit)` | MORPH0023 |
+| `int → Access` | `.FlagsMappingMode(FlagsMappingMode.ByMask)` | MORPH0023 |
+| `Access → string` с ByValue | `.FlagsMappingMode(FlagsMappingMode.ByBit)` | MORPH0023 |
+| `DomainStatus → ApiStatus` | `.ConstructorSelection(ConstructorSelection.Default)` | MORPH0023 даже при значении Default |
+
+Общий mapper-level default на неприменимой паре игнорируется, а не превращает
+любую регистрацию в ошибку. Некорректные значения enum-настроек всё равно
+диагностируются по обычному контракту настроек. Using без Members не делает
+применимую настройку запрещённой: она просто не преобразует готовый результат фабрики.
+
+### 114. Ошибки типов и ограничения маркеров не скрываются
+
+| Фрагмент | Ожидание |
+|---|---|
+| Ветка enum-result `=> ApiStatus.Unknown` | Корректный явно типизированный ноль |
+| Ветка enum-result `=> (ApiStatus)0` или `=> default` | Поддерживается для non-nullable enum-результата |
+| Ветка enum-result `=> 0` | Не поддерживается проверенной формой scalar marker; нужен typed zero |
+| `var mapped = ... switch` со смесью enum и Auto | При нехватке target type нужен `Auto<ApiStatus>()`, как в сценарии 12 |
+| Ветка non-nullable enum-result `=> null` | Ошибка типа/конфигурации, не скрытый default |
+| Enum Members возвращает число другого типа без допустимого преобразования | Ошибка типа, не автоматический cast |
+| Дублирующие cases aliases одного числа | Обычная диагностика C# недостижимой ветки |
+| Неполный switch внутри выбранного результата или Using/Convert | Обычное предупреждение C# сохраняется |
+| Обычная лямбда с именем метода Members в чужом API | Её диагностика не подавляется как Morphant DSL |
+
+### 115. Неверный discard не становится подтверждением coverage
+
+Вместо правильного верхнеуровневого `_ = CoverageTarget.Internal;` из сценария 100:
+
+```csharp
+.Members(value =>
+{
+    var _ = CoverageTarget.Active;
+    _ = CoverageTarget.Internal;
+    return value switch
+    {
+        CoverageSource.Cancelled or CoverageSource.New => CoverageTarget.Deleted
+    };
+})
+```
+
+Здесь `_` — настоящая переменная: присваивание не исключает Internal из coverage.
+Ожидаемые runtime-результаты остаются Active/Deleted, а destination warning для
+Internal сохраняется. Настоящий discard должен быть отдельным statement верхнего
+уровня тела Members; подтверждение не прячется в условном или вложенном блоке.
+
+### 116. Отложенные возможности не появляются из сходства имён
+
+```csharp
+enum ProtocolStatus { STATUS_PENDING_APPROVAL = 1 }
+enum BusinessStatus { PendingApproval = 10 }
+
+builder.Map<ProtocolStatus, BusinessStatus>()
+    .Members(status => status switch
+    {
+        ProtocolStatus.STATUS_PENDING_APPROVAL => BusinessStatus.PendingApproval
+    });
+```
+
+Вход STATUS_PENDING_APPROVAL даёт PendingApproval по явному правилу.
+Без Members — отсутствие ByName-соответствия: регистронезависимое сравнение
+не удаляет префикс/подчёркивания. `EnumMember`, `Description` и подобные атрибуты
+также не подменяют CLR-имена конвенции. Автоматическое построение обратной пары, общий numeric parsing,
+проекции, автоматическое отображение коллекций и настройка разделителя остаются
+за текущей границей feature.
+
+### 117. Result можно читать только на пути, где он существует
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .Members((status, previous, result, context) =>
+    {
+        if (context.Operation == MappingOperation.Update)
+            return result;
+
+        return ApiStatus.Pending;
+    });
+```
+
+| Операция | Результат |
+|---|---|
+| Create Active | Pending; отсутствующий result не читается |
+| Update Active, Archived | Archived |
+| Update Active, Unknown = 0 | Unknown: ноль является доступным result |
+
+Destination здесь non-nullable. При замене его на ApiStatus? одного условия
+Operation == Update уже недостаточно: Update может получить null destination.
+Без фабрики такой путь не даёт result и требует диагностики. Безусловное чтение
+result на Create также недопустимо; для него сначала нужен Using.
+
+### 118. Вычисляемый fallback выполняется только после неуспеха конвенции
+
+`LogFallback` считает вызовы и возвращает ApiStatus.Unrecognized.
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted,
+        var remaining => LogFallback(remaining)
+    });
+```
+
+| Вход | Результат | LogFallback |
+|---|---|---|
+| Cancelled | Deleted | Не вызывается |
+| Active | Active по конвенции | Не вызывается |
+| Legacy | Unrecognized | Один вызов с Legacy |
+| `(DomainStatus)123` | Unrecognized | Один вызов с числом 123 |
+
+`var remaining` без guard является завершающей веткой, как `_`. При Explicit
+Active тоже даст Unrecognized с одним вызовом. Если же пользователь сам заранее
+вычислит `var fallback = LogFallback(status);` перед switch, этот local сохранит
+написанное место и вычислится при входе в блок, как в сценарии 47.
+
+## Статус проверки каталога
+
+Примеры сверены с согласованным дизайном; нумерация нужна для обсуждения конкретных
+случаев и последующего переноса в тесты. Они не заменяют проверки production
+генератора, реальной типизации Members, generated code и Rider. Новые ID/severity
+enum-диагностик и точные имена enum-specific exceptions каталог не назначает.
