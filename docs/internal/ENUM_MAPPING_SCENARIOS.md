@@ -37,6 +37,8 @@
 - [Наследование и настройки](#наследование-и-настройки)
 - [Flags между enum](#flags-между-enum)
 - [Flags и числовые стратегии](#flags-и-числовые-стратегии)
+- [Строка в flags](#строка-в-flags)
+- [Flags в строку](#flags-в-строку)
 
 ## Обычные enum
 
@@ -1515,3 +1517,556 @@ builder.Map<SourceAccess, TargetAccess>()
 
 Ни в одном варианте сначала не применяется whole-mask правило, а затем те же
 Members ещё раз к отдельным битам.
+
+## Строка в flags
+
+Общий enum для обоих строковых направлений:
+
+```csharp
+[Flags]
+enum Access
+{
+    None = 0, Read = 1, Write = 2, ReadWrite = Read | Write,
+    Audit = 4, Unknown = 8
+}
+```
+
+### 70. Три разделителя, их смеси и пробелы вокруг элементов
+
+```csharp
+builder.Map<string, Access>();
+```
+
+| Вход | Результат |
+|---|---|
+| `"Read,Write"`, `"Read, Write"` | Read \| Write = 3 |
+| `"Read\|Write"`, `"Read \| Write"` | 3 |
+| `"Read;Write"`, `"Read ; Write"` | 3 |
+| `" Read ; Write\|Audit,Read "` | Read \| Write \| Audit = 7 |
+| `"read,WRITE"` | 3 |
+| `"\tRead\r\n, Write\t"` | 3: whitespace вокруг токенов обрезается |
+| `"Read Write"`, `"Read\tWrite"`, `"Read\nWrite"` | Исключение: whitespace внутри не разделяет имена |
+| `"Read+Write"` | Исключение: плюс не разделитель |
+
+Строки в таблице записаны как C# literals: `\t`, `\r`, `\n` обозначают реальные
+пробельные символы на входе, а `\|` — обычный символ `|`, экранированный для Markdown.
+
+### 71. Пустая строка, нулевой текст и пустые элементы списка
+
+Та же регистрация без Members.
+
+| Вход | Токены ByBit после trim | Результат |
+|---|---|---|
+| `""`, `"   "` | Один пустой токен | 0 |
+| `"0"`, `" 0 "` | `"0"` | 0 |
+| `"None"` | `"None"` | 0 по объявленному имени |
+| `",;\|"` | Четыре пустых токена | 0 |
+| `"Read,,Write;"` | `"Read"`, `""`, `"Write"`, `""` | 3 |
+| `"Read,  ,Write"` | `"Read"`, `""`, `"Write"` | 3 |
+| `"Read,0,None"` | Три токена | Read = 1 |
+
+Если удалить None из enum, `""` и `"0"` сохраняют результат 0, а `"None"`
+перестаёт быть конвенционным именем. В ByMask нулевые вклады конвенции те же,
+но Members получает всю строку один раз.
+
+### 72. Пользовательские aliases применяются к каждому токену
+
+```csharp
+builder.Map<string, Access>()
+    .Members(part => part switch
+    {
+        "view" => Access.Read,
+        "edit" => Access.Write,
+        "Full control" => Access.ReadWrite,
+        _ => Access.Unknown
+    });
+```
+
+| Вход | Результат ByBit |
+|---|---|
+| `"view; Write"` | Read \| Write = 3 |
+| `" view \| edit "` | 3: правила получают обрезанные токены |
+| `"Full control;Audit"` | Read \| Write \| Audit = 7 |
+| `"view,Missing"` | Read \| Unknown = 9 |
+| `"VIEW"` | Unknown: string pattern регистрозависим, CLR-имени VIEW нет |
+| `"READ"` | Read по регистронезависимому этапу конвенции |
+
+### 73. Свой регистронезависимый alias через guard
+
+```csharp
+builder.Map<string, Access>()
+    .Members(part => part switch
+    {
+        _ when string.Equals(part, "view", StringComparison.OrdinalIgnoreCase)
+            => Access.Read,
+        _ => Auto()
+    });
+```
+
+`"VIEW;Write" → 3`, `" view " → 1`, `"missing" → исключение`.
+Ложный guard не мешает обычному `"Write" → Access.Write`.
+
+### 74. Пользователь может запретить пустые токены
+
+```csharp
+builder.Map<string, Access>()
+    .Members(part => part switch
+    {
+        "" => throw new FormatException("Empty flag"),
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| `""`, `"  "`, `"Read,,Write"`, `"Read,"` | FormatException |
+| `"Read,Write"` | 3 |
+| `"0"` | 0: нулевой текст не является пустым токеном |
+
+При ошибке после Read итоговая частичная маска не возвращается. Если нужно
+запретить и нулевой текст, можно написать `"" or "0" => throw ...`.
+
+### 75. Пустой токен можно заменить собственным вкладом
+
+```csharp
+builder.Map<string, Access>()
+    .Members(part => part switch
+    {
+        "" => Access.Unknown,
+        "0" => Access.Audit,
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| `""`, `" "` | Unknown = 8 |
+| `"Read,,Write;"` | Read \| Write \| Unknown = 11 |
+| `"0"` | Audit = 4 |
+| `"None"` | 0: объявленное имя не стало строкой `"0"` |
+| `"Read,0"` | Read \| Audit = 5 |
+
+Явные правила имеют приоритет и над специальной конвенцией пустоты/нуля.
+
+### 76. Explicit сохраняет токенизацию, но выключает все неявные соответствия
+
+```csharp
+builder.Map<string, Access>()
+    .MemberSelection(MemberSelection.Explicit)
+    .Members(part => part switch
+    {
+        "view" => Access.Read,
+        "Write" => Auto(),
+        _ => Access.Unknown
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| `"view;Write"` | 3 |
+| `"Read"`, `"write"` | Unknown = 8 |
+| `""`, `"0"` | Unknown = 8, конвенция нуля отключена |
+| `"view,,Write"` | Read \| Write \| Unknown = 11 |
+
+Если заменить fallback на `_ => Auto()`, CLR-имена, пустота и `"0"` снова
+обрабатываются по явному запросу конвенции; неизвестный токен бросает.
+
+### 77. ByMask получает исходную строку до trim и разбиения
+
+```csharp
+builder.Map<string, Access>()
+    .FlagsMappingMode(FlagsMappingMode.ByMask)
+    .Members(text => text switch
+    {
+        "Read,Write" => Access.Audit,
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| `"Read,Write"` | Audit = 4, точное правило всей строки |
+| `"Read, Write"` | Read \| Write = 3 по конвенции |
+| `" Read,Write "` | 3: целая строка не совпала с pattern |
+| `"Read;Write"`, `"Read\|Write"` | 3 |
+| `"Read,,Write;"` | 3 |
+
+Напротив, ByBit всегда сначала делит строку: whole-string pattern с запятой
+не является правилом для отдельного токена.
+
+### 78. Пользовательский alias не становится частью ByMask-parser
+
+Конфигурация 72 с `.FlagsMappingMode(FlagsMappingMode.ByMask)`.
+
+| Вход | ByBit | ByMask |
+|---|---|---|
+| `"view"` | Read = 1 | Read = 1, совпала целая строка |
+| `"view,Write"` | Read \| Write = 3 | Unknown = 8 |
+| `"Read,Missing"` | Read \| Unknown = 9 | Unknown = 8, неуспех всей конвенции |
+| `"Read,Write"` | 3 | 3 |
+| `" view "` | Read = 1 | Unknown = 8: pattern всей строки не совпал, CLR-имени view нет |
+
+Без fallback неуспех конвенции ByMask приводит к исключению. Явная ветка
+`"view,Write" => Access.ReadWrite` может задать whole-string исключение.
+
+### 79. Составное имя токена не запускает повторные правила по битам
+
+```csharp
+builder.Map<string, Access>()
+    .Members(part => part switch
+    {
+        "Read" => Access.None,
+        _ => Auto()
+    });
+```
+
+| Вход | Результат ByBit |
+|---|---|
+| `"Read,Write"` | Write = 2: Read явно удалён |
+| `"ReadWrite"` | ReadWrite = 3: одно объявленное имя |
+| `"ReadWrite,Read"` | 3 |
+
+В string → flags единица — токен, даже если он обозначает composite. Это не
+рекурсивный flags → flags вызов.
+
+### 80. Повторы и порядок токенов сохраняют эффекты
+
+`Record` записывает строку в список и возвращает её без изменений.
+
+```csharp
+builder.Map<string, Access>()
+    .Members(part =>
+    {
+        var recorded = Record(part);
+        return recorded switch { _ => Auto() };
+    });
+```
+
+| Вход | Вызовы Record по порядку | Результат |
+|---|---|---|
+| `"Write,Read,Read"` | `"Write"`, `"Read"`, `"Read"` | 3 |
+| `"Read,,Read;"` | `"Read"`, `""`, `"Read"`, `""` | 1 |
+| `"Read,Missing,Write"` | `"Read"`, `"Missing"` | Исключение; Write не достигнут |
+
+В ByMask Record получил бы исходную строку один раз, а ошибка конвенции
+относилась бы ко всему списку.
+
+### 81. Using видит полную строку, Ignore — полную начальную маску
+
+`InitialMask` получает вход, считает вызовы и возвращает Access.Audit.
+
+```csharp
+builder.Map<string, Access>()
+    .ResolveUsing((text, previous) => InitialMask(text))
+    .Members(part => part switch
+    {
+        "keep" => Ignore(),
+        _ => Auto()
+    });
+```
+
+| Вход | Результат | InitialMask |
+|---|---|---|
+| `"Read"` | Read = 1 | Один вызов с `"Read"`; Audit не добавляется |
+| `"Read;keep"` | Read \| Audit = 5 | Один вызов с `"Read;keep"` |
+| `"keep;keep"` | Audit = 4 | Один вызов; оба Ignore дают ту же маску |
+
+Замена Ignore на Access.None превратила бы keep в пустой вклад. Если начальная
+фабрика nullable destination вернула null, токенизация/правила не продолжаются.
+
+### 82. Null токена останавливает весь строковый ввод
+
+```csharp
+builder.Map<string?, Access?>()
+    .Members(part => part switch
+    {
+        "stop" => null,
+        "boom" => throw new InvalidOperationException(),
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| null | null по source policy, Members не выполняется |
+| `""` | Non-null нулевая маска |
+| `"Read;stop;boom"` | null; boom не достигается |
+| `"Read;boom;stop"` | InvalidOperationException |
+
+### 83. IncludeBase применяется отдельно для каждого токена
+
+В базовом mapper точная пара string → Access содержит
+`"view" => Access.Read`, `_ => Access.Unknown`. В текущем mapper:
+
+```csharp
+base.Configure(builder);
+builder.Map<string, Access>()
+    .IncludeBase<string, Access>()
+    .Members(part => part switch { "edit" => Access.Write });
+```
+
+| Вход | Результат |
+|---|---|
+| `"view;edit;Audit"` | Read \| Write \| Audit = 7 |
+| `"view;Missing"` | Read \| Unknown = 9 |
+| `"edit;"` | Write = 2: пустой токен успешно дал 0 до inherited fallback |
+
+Добавление локального `_ => Auto()` сохраняет базовый alias view, но заменяет
+базовый fallback: `"view;Missing"` тогда бросает.
+
+### 84. Числовой текст и имена с разделителем
+
+```csharp
+builder.Map<string, Access>()
+    .Members(part => part switch
+    {
+        "3" => Access.ReadWrite,
+        _ => Access.Unknown
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| `"3"`, `" 3 "` | 3 по явному правилу |
+| `"0"` | 0 по специальной конвенции |
+| `"03"`, `"00"`, `"+0"`, `"-0"`, `"0x3"` | Unknown: общего numeric parsing нет |
+| `"Read,3"` | 3 |
+| `"Access.Read"` | Unknown |
+
+Настройка разделителя отложена. Если внешнее имя само содержит `;`, можно
+обработать его целиком в ByMask:
+
+```csharp
+builder.Map<string, Access>()
+    .FlagsMappingMode(FlagsMappingMode.ByMask)
+    .Members(text => text switch { "Full;control" => Access.ReadWrite });
+```
+
+`"Full;control"` даст 3. В ByBit эта строка состоит из двух токенов и такой
+whole-string pattern не сработает. Автоматического quote/escape-протокола нет.
+
+## Flags в строку
+
+### 85. Побитовый вывод и имя целой маски
+
+```csharp
+builder.Map<Access, string>();
+```
+
+| Вход | ByBit + ByName | ByMask + ByName |
+|---|---|---|
+| Read | `"Read"` | `"Read"` |
+| ReadWrite = 3 | `"Read, Write"` | `"ReadWrite"` |
+| Read \| Audit = 5 | `"Read, Audit"` | Исключение: имя всей маски не объявлено |
+| ReadWrite \| Audit = 7 | `"Read, Write, Audit"` | Исключение |
+| None = 0 | `"None"` | `"None"` |
+
+ByMask не вызывает конвенцию для отдельных битов после неудачи целого имени.
+
+### 86. Ноль с именем, без имени и с aliases
+
+```csharp
+[Flags] enum NoZeroName { Read = 1, Write = 2 }
+[Flags] enum ZeroAliases { None = 0, Empty = 0, Read = 1 }
+
+builder.Map<NoZeroName, string>();
+builder.Map<ZeroAliases, string>()
+    .Members(flag => flag switch { ZeroAliases.None => "none" });
+```
+
+| Тип и вход | Результат ByBit и ByMask |
+|---|---|
+| Access.None = 0 из регистрации 85 | `"None"`: объявленное имя приоритетно |
+| `(NoZeroName)0` | `"0"` |
+| ZeroAliases.None или Empty | `"none"` из явного правила |
+
+Без явного canonical output у ZeroAliases требуется диагностика неоднозначного
+имени. Пустая строка на **входе** всё равно означает ноль; это не требование
+выводить любую нулевую маску как пустую строку.
+
+### 87. Явный пустой вклад и полностью пустой результат
+
+```csharp
+builder.Map<Access, string>()
+    .Members(flag => flag switch
+    {
+        Access.None => "",
+        Access.Read => "",
+        Access.Write => "",
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| None | `""`, явное правило выше конвенционного имени |
+| Read | `""` |
+| ReadWrite | `""`, не `"0"` и не `", "` |
+| Read \| Audit | `"Audit"`, без начального разделителя |
+| Write \| Audit | `"Audit"` |
+
+Пустой итог не нормализуется обратно в имя None или `"0"`.
+
+### 88. Неизвестный бит при ByName не становится числом
+
+```csharp
+builder.Map<Access, string>()
+    .Members(flag => flag switch { _ => "unknown" });
+```
+
+| Вход | ByBit | ByMask |
+|---|---|---|
+| Read | `"Read"` | `"Read"` |
+| `(Access)16` | `"unknown"` | `"unknown"` |
+| Read \| (Access)16 | `"Read, unknown"` | `"unknown"` |
+| `(Access)16 \| (Access)32` | `"unknown, unknown"` | `"unknown"` |
+
+Без fallback неизвестный бит/маска бросает. С явным `(Access)16 => Auto()`
+число 16 бросает даже при наличии завершающего `"unknown"`.
+
+### 89. Порядок строковых вкладов и повторы
+
+```csharp
+builder.Map<Access, string>()
+    .Members(flag => flag switch
+    {
+        Access.Read => "access",
+        Access.Write => "access",
+        Access.Audit => "audit"
+    });
+```
+
+ReadWrite даёт `"access, access"`, ReadWrite \| Audit —
+`"access, access, audit"`. Вызовы следуют битам 1, 2, 4 независимо от порядка
+объявлений и записи выражения `Audit | Write | Read`. Совпадающие строки не
+удаляются; строковые вклады соединяются через `", "`.
+
+### 90. Null строкового вклада завершает операцию
+
+```csharp
+builder.Map<Access, string?>()
+    .Members(flag => flag switch
+    {
+        Access.Read => "read",
+        Access.Write => null,
+        Access.Audit => throw new InvalidOperationException(),
+        _ => Auto()
+    });
+```
+
+| Вход | Результат |
+|---|---|
+| Read | `"read"` |
+| Read \| Write \| Audit | null; Audit не достигается |
+| Read \| Audit | InvalidOperationException |
+
+Null не является ещё одним пустым вкладом. Для исключения Write из строки с
+продолжением обработки нужен `""`.
+
+### 91. Числовой вывод форматирует целую маску
+
+```csharp
+builder.Map<Access, string>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue)
+    .Members(mask => mask switch { Access.ReadWrite => "rw" });
+```
+
+| Вход | Результат |
+|---|---|
+| Read | `"1"` |
+| ReadWrite = 3 | `"rw"`, case целой маски |
+| Read \| Audit = 5 | `"5"` |
+| Read \| (Access)16 = 17 | `"17"` |
+| None = 0 | `"0"`, стратегия числовая |
+
+ByValueAllowUndefined даёт то же. Без Members ReadWrite даёт `"3"`.
+Здесь нет строк `"1, 2"`, а pair-настройка FlagsMappingMode неприменима.
+
+### 92. Фабричная строка не является аккумулятором
+
+```csharp
+builder.Map<Access, string>()
+    .ResolveUsing((mask, previous) => "cached")
+    .Members((flag, previous, result) => flag switch
+    {
+        Access.Read => "read",
+        Access.Write => Ignore(),
+        Access.Audit => result,
+        _ => Auto()
+    });
+```
+
+| Вход | Результат ByBit |
+|---|---|
+| Read | `"read"`, без автоматического добавления cached |
+| ReadWrite | `"read, cached"` |
+| Write \| Audit | `"cached, cached"` |
+
+ResolveUsing получает всю маску один раз. Все result/Ignore читают одну начальную
+строку cached; previous остаётся исходной строкой Update. Без Members фабрика
+вернула бы один `"cached"` для любой маски.
+
+### 93. Explicit относится и к выводу нулевой маски
+
+```csharp
+builder.Map<Access, string>()
+    .MemberSelection(MemberSelection.Explicit)
+    .Members(flag => flag switch
+    {
+        Access.Read => "r",
+        Access.Write => Auto(),
+        _ => "?"
+    });
+```
+
+| Вход | Результат ByBit |
+|---|---|
+| ReadWrite | `"r, Write"` |
+| Audit | `"?"` |
+| None = 0 | `"?"`, конвенционное None отключено |
+| None, добавить `Access.None => Auto()` | `"None"` |
+
+Для NoZeroName такая явная нулевая ветка с Auto вернула бы `"0"`.
+
+### 94. Чтение и запись нормализуют представление, а не сохраняют исходный текст
+
+```csharp
+builder.Map<string, Access>();
+builder.Map<Access, string>();
+```
+
+| Строка → Access → строка | Промежуточное значение | Итог |
+|---|---|---|
+| `"Write;Read"` | 3 | `"Read, Write"` |
+| `"ReadWrite"` | 3 | `"Read, Write"` |
+| `"read\|Read"` | 1 | `"Read"` |
+| `"Read,,Write;"` | 3 | `"Read, Write"` |
+| `""`, `"0"`, `",;"` | 0 | `"None"` |
+
+Для enum без объявления нуля последние входы дали бы `"0"`. В обратном порядке
+Access → строка → Access эти обычные значения сохраняются, если обе пары
+используют совместимые правила. Сохранения пробелов, разделителей и повторов
+исходного текста этот контракт не обещает.
+
+### 95. Свои строковые имена задаются в обоих направлениях
+
+```csharp
+builder.Map<Access, string>()
+    .Members(flag => flag switch
+    {
+        Access.Read => "view",
+        Access.Write => "edit"
+    });
+builder.Map<string, Access>()
+    .Members(part => part switch
+    {
+        "view" => Access.Read,
+        "edit" => Access.Write
+    });
+```
+
+ReadWrite → `"view, edit"` → ReadWrite. Если не задать обратные aliases,
+второе преобразование бросит. Если выходной Read возвращает `""`, то
+ReadWrite → `"edit"` → Write: явное удаление вклада намеренно теряет информацию.
+Числовая выходная строка `"3"` также не создаёт автоматический numeric parser
+в обратной паре.
