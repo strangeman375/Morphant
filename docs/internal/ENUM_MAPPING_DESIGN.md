@@ -285,10 +285,10 @@ ByName сравнивает имена сначала через `Ordinal`, за
 
 Source aliases одного числа неразличимы в runtime. Достаточно одного найденного
 соответствия, если остальные найденные соответствия дают то же число; отсутствие
-имени для другого alias не отменяет успех. Ready = Active = 1 в source против Ready = 10, Active = 20
-в destination неоднозначны. Нужна диагностика автоматического пути либо явная
-ветка для числа 1. Порядок объявлений не разрешает конфликт; обычные C# ошибки
-дублирующих/недостижимых веток сохраняются.
+имени для другого alias не отменяет успех. Ready = Active = 1 в source против
+Ready = 10, Active = 20 в destination неоднозначны. Нужна диагностика
+автоматического пути либо явная ветка для числа 1. Порядок объявлений не разрешает
+конфликт; обычные C# ошибки дублирующих/недостижимых веток сохраняются.
 
 Для string-входа неоднозначность ignore-case этапа — неуспех конвенции для
 этой строки: используется fallback либо исключение, включая немедленный throw
@@ -594,17 +594,32 @@ IMapper/ITypeMapper и MappingContext подходят без нового runti
 Неполный switch предупреждает уже **в Configure**: полный generated switch этого
 не устраняет, а обязательное `_ => Auto()` противоречит краткому Members.
 
-Исторические isolated probes (не проверка интеграции feature):
+Интеграционный прототип 2026-09-23 заменяет ранние isolated probes. Использованы
+настоящие TypeMapper/MappingBuilder, четыре Members delegates, Option, context
+и Auto markers из Morphant.dll; отдельный тестовый SG добавляет scalar marker,
+pair extensions и suppressor. Production enum planner ещё отсутствует.
 
-| Probe | Подтверждено | Не подтверждено / ограничение |
-|---|---|---|
-| Roslyn 4.4.0, C# 9, nullable, warnings-as-errors | Неполнота даёт CS8509/CS8524, guard — CS8846; узкий DiagnosticSuppressor подавляет их и после повышения severity; ordinary/nested switch warnings, CS8510 и wrong result types остаются | Интеграция с реальным DSL, MSBuild и IDE; harness потребовал исключения CS1701 для старого Roslyn с .NET 10 references, сами входные switch-проверки — нет |
-| SDK 10.0.100, C# 9, generic marker с conversions от destination, `AutoMarker` и `AutoMarker<T>` | Binding смешанных результатов, 10 arms, or, guards, throw, вызовы, строки/числа, ранние пробные callback forms | Не реальный Members overload resolution; имя старых Values/Flags не было условием типизации |
+| Проверка | Результат |
+|---|---|
+| MSBuild, SDK 10.0.100, C# 9, nullable, warnings-as-errors | Все четыре Members формы; enum/string/integer/nullable, or/guards/throw, if, switch statement, conditional expression и возвращаемый local alias собираются без предупреждений |
+| Roslyn 4.4.0, C# 9, .NET Standard 2.0 references | Те же формы проходят без исключения CS1701; suppressor убирает CS8509/CS8524/CS8846 только у mapping switches |
+| Отрицательные контроли | Ordinary/nested switch, Using и чужой Members сохраняют предупреждения; wrong type, obsolete, unreachable arm и отсутствующий return остаются ошибками при warnings-as-errors |
+| Generated Create/Update одной пары из исходного Members | Явное правило и добавленная ByName-конвенция дают четыре ожидаемых результата; два неизвестных входа бросают typed mapping exception |
+| Дополнительные MSBuild-контроли | Nested switch продолжает давать CS8509; RunAnalyzersDuringBuild=false в проверенном SDK не отключил suppressor |
+
+Rider в этой среде недоступен: редакторные inspections ещё не проверены.
+Прототип подтверждает compiler/MSBuild feasibility, не полную production-интеграцию,
+IncludeBase, flags, dataflow result или общую корректность классификации switch.
 
 Nullable reference marker поддерживает natural null/default; генератор проверяет
-их по настоящему destination type. Struct marker ломает natural null. Промежуточному
+их по настоящему destination type. Для default рядом с Auto параметры conversions
+от AutoMarker/AutoMarker<T> должны допускать null, иначе возникает CS8604.
+Struct marker ломает natural null. Промежуточному
 `var x = ... switch` со смесью enum и bare Auto может не хватить target type;
-помогает существующий `Auto<T>()`. Не использовать object/dynamic как обход типизации.
+помогает существующий `Auto<T>()`. Голое `=> 0` не конвертируется в generic scalar
+marker: работают `Target.None`, `default` и `(Target)0`. Это ограничение прототипа,
+не согласованное расширение implicit numeric conversions. Не использовать
+object/dynamic как обход типизации.
 
 [Suppressor](https://learn.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis.diagnostics.diagnosticsuppressor?view=roslyn-dotnet-4.4.0)
 должен распознавать настоящий DSL symbol, enum rule kind и только switch, который
@@ -625,7 +640,7 @@ Guards, IncludeBase и другой switch input могут требовать �
 incrementality, cancellation/recovery; ordinary object/tuple path не менять.
 
 Реализация проверяет все контракты выше по [testing guidelines](TESTING_GUIDELINES.md).
-Особенно важны сочетания, которые isolated probes не покрывают:
+Проверки production-реализации, которые прототип не заменяет:
 
 | Область | Проверки |
 |---|---|
@@ -644,5 +659,6 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
   destination composites; без анализа всех возможных runtime-результатов.
 - Scalar-применимость существующих Value/Map/Create/Update/Ignore; не изобретать
   значение для Ignore при отсутствии выбранного result.
-- Интеграционный прототип настоящих delegate/marker форм, generated extensions
-  и suppressor; отдельная проверка IDE. Исторические isolated probes не заменяют её.
+- Принять либо доработать ограничения типизации: bare 0 и var со смешанным bare
+  Auto; проверить Rider и затем production-интеграцию. Compiler/MSBuild прототип
+  с настоящими delegate/marker формами уже выполнен.
