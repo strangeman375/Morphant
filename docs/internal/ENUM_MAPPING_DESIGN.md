@@ -1,6 +1,7 @@
 # Enum mapping: согласованный дизайн
 
-2026-09-23. Все обсуждавшиеся решения приняты; **feature ещё не реализована**.
+2026-09-23. Основной контракт согласован; **feature ещё не реализована**.
+Уточнения после review и оставшиеся вопросы перечислены в конце документа.
 Примеры ниже описывают будущий DSL. Этот документ — канонический контракт;
 обоснования и источники: [стратегия по умолчанию](ENUM_MAPPING_DEFAULT_RESEARCH.md),
 [числа](ENUM_MAPPING_NUMERIC_RESEARCH.md), [flags](ENUM_MAPPING_FLAGS_RESEARCH.md).
@@ -11,8 +12,9 @@
 nullable, Create/Update и IncludeBase. Целые типы: `sbyte`, `byte`, `short`,
 `ushort`, `int`, `uint`, `long`, `ulong`.
 
-Вне объёма: автоматический reverse, числовой string-to-enum parsing, списки
-flags-имён, wire attributes, naming policies, коллекции и проекции.
+Вне объёма: автоматический reverse, числовой string-to-enum parsing,
+wire attributes, naming policies, коллекции и проекции. Строковые списки flags
+возвращены на обсуждение; их контракт пока не принят.
 
 | API scalar enum-пары | Контракт |
 |---|---|
@@ -172,9 +174,14 @@ Bare завершающий Auto и неявное дополнение обра
 
 `Members(_ => Auto())` явно запрашивает конвенцию. Прямое
 `Members(source => Compute(source))` задаёт результат для всей текущей единицы
-и может завершить поиск до inherited rules и конвенции. Block lambda с locals
-и возвращаемым mapping switch соблюдает действующие declarative statement
-boundaries; method group и полный imperative algorithm задаются Using/Convert.
+и может завершить поиск до inherited rules и конвенции. Поддерживаются основные
+декларативные управляющие конструкции остальных типов: блоки, locals и их aliases,
+if/else, switch statements, условные expressions, логические условия и guards.
+Сохраняются их scopes, short-circuit и действующие statement boundaries.
+Перенос возвращаемого mapping switch в неизменяемый local alias не отключает
+конвенцию. Вложенный switch внутри выбранного результата остаётся обычным C#.
+Требования C# к завершённости return-путей сохраняются; method group и полный
+imperative algorithm задаются Using/Convert.
 
 Выражение перед switch вычисляется один раз на своём месте. Сохраняются scopes,
 locals, комментарии, независимые вычисления, условность guards и результатов.
@@ -276,11 +283,17 @@ ByName сравнивает имена сначала через `Ordinal`, за
 | Те же | ready | Неоднозначность второго этапа |
 | Ready = 10, READY = 10 | ready | Однозначное число 10 |
 
-Source aliases одного числа неразличимы в runtime. Их сопоставления должны
-согласовываться: Ready = Active = 1 в source против Ready = 10, Active = 20
+Source aliases одного числа неразличимы в runtime. Достаточно одного найденного
+соответствия, если остальные найденные соответствия дают то же число; отсутствие
+имени для другого alias не отменяет успех. Ready = Active = 1 в source против Ready = 10, Active = 20
 в destination неоднозначны. Нужна диагностика автоматического пути либо явная
 ветка для числа 1. Порядок объявлений не разрешает конфликт; обычные C# ошибки
 дублирующих/недостижимых веток сохраняются.
+
+Для string-входа неоднозначность ignore-case этапа — неуспех конвенции для
+этой строки: используется fallback либо исключение, включая немедленный throw
+явного Auto. Точные Ready и READY по-прежнему допустимы; первый найденный элемент
+не выбирается. Статически известные конфликты дополнительно диагностируются.
 
 | Направление | Конвенция |
 |---|---|
@@ -461,9 +474,11 @@ previous. Result не является OR-накопителем и не доб�
 
 ### Строгая числовая маска
 
-В ByMask и integer → flags enum строгий ByValue допускает **OR целых объявленных
-destination-значений**, включая пустую комбинацию 0. Сначала проверяется диапазон
-underlying type; объявленность source не требуется.
+При обработке целого значения строгая допустимость определяется destination:
+обычный enum требует точного объявления, flags enum — **OR целых объявленных
+destination-значений**, включая пустую комбинацию 0. Это действует для ByMask,
+integer → flags и обычного enum → flags; источник не меняет критерий. Сначала
+проверяется диапазон underlying type; объявленность source не требуется.
 
 | Destination | Допустимо | Недопустимо |
 |---|---|---|
@@ -505,12 +520,16 @@ result или Normalize(flag) может быть достижимым. Анал
 
 Используется UnmappedMemberValidation с default None и warnings; severity
 можно повышать обычными средствами. Coverage проверяет итоговую композицию
-правил, конвенции и fallback, не меняя runtime-допустимость и порядок.
+правил, конвенции и fallback, не меняя runtime-допустимость и порядок. Проверяются
+связи между объявлениями и явными правилами, не множество всех возможных
+результатов исполнения. Для enum → enum неназванный source не закрывает
+destination coverage: Source { Active = 1 } → Target { Active = 1, Archived = 2 }
+под ByValue предупреждает об Archived, хотя runtime-вход (Source)2 допустим.
 
 | Режим / случай | Проверка |
 |---|---|
 | Source | Объявленные физические source-значения обработаны результатом, явным запретом или успешной конвенцией; aliases одного числа — одна группа |
-| Destination | Объявленные destination-значения участвуют в результате; many-to-one допустим |
+| Destination | Объявленные destination-значения участвуют в соответствиях объявлений или явных правилах; many-to-one допустим |
 | Strict / None | Обе стороны / без coverage; проверки некорректной конфигурации и диапазона сохраняются |
 | Завершающее значение или throw | Закрывает source coverage; может скрыть добавление новых enum values |
 | Auto | Не доказывает покрытие значения без соответствия |
@@ -527,6 +546,15 @@ runtime-вопрос. При None непокрытый runtime-вход всё �
 Zero — отдельный вход, не доказательство покрытия ненулевых. Не перечислять все
 маски и не превращать анализ в интерпретатор C#; отличать доказанную неполноту
 от невозможности завершить запрошенную проверку.
+
+Намеренное исключение отдельного значения задаётся существующей формой discard:
+`_ = TargetEnum.SomeMember;` в теле Members. Аналогично можно указать объявление
+source enum. Это compile-time acknowledgement для coverage, не runtime-правило:
+оно не отключает конвенцию, не удаляет бит и не меняет результат. Сторона
+определяется типом константы; aliases относятся к одной физической группе.
+Как у обычных members, нужен настоящий discard отдельным statement верхнего
+уровня тела lambda, а не присваивание переменной по имени `_`. Для E → E,
+где тип не различает стороны, точный охват acknowledgement ещё обсуждается.
 
 ## Вложенное использование
 
@@ -607,3 +635,14 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results и finite/infinite sides |
 | Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
 | Toolchain | Реальная nullable marker/delegate типизация и доступность result; C# 9, minimum Roslyn, MSBuild и IDE; suppressor diagnostic families, guards, отключённые анализаторы и warnings-as-errors; nested switch/wrong types/obsolete; edit settings/enum/callback, recovery и cancellation |
+
+## Оставшиеся вопросы после review
+
+- Строковые flags: применимость ByBit/ByMask к string-парам, форматы и разделители,
+  единица Members/Auto/fallback, ноль, composite names и неизвестный токен/бит.
+- Coverage: acknowledgement при E → E и точный декларативный критерий для
+  destination composites; без анализа всех возможных runtime-результатов.
+- Scalar-применимость существующих Value/Map/Create/Update/Ignore; не изобретать
+  значение для Ignore при отсутствии выбранного result.
+- Интеграционный прототип настоящих delegate/marker форм, generated extensions
+  и suppressor; отдельная проверка IDE. Исторические isolated probes не заменяют её.
