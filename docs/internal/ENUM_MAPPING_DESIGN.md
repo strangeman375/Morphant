@@ -5,6 +5,8 @@
 Примеры ниже описывают будущий DSL. Этот документ — канонический контракт;
 обоснования и источники: [стратегия по умолчанию](ENUM_MAPPING_DEFAULT_RESEARCH.md),
 [числа](ENUM_MAPPING_NUMERIC_RESEARCH.md), [flags](ENUM_MAPPING_FLAGS_RESEARCH.md).
+Конкретные конфигурации, входы и ожидаемые результаты собраны в отдельном
+[каталоге пользовательских сценариев](ENUM_MAPPING_SCENARIOS.md).
 
 ## Объём и API
 
