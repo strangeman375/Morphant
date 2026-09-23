@@ -41,6 +41,7 @@
 - [Flags в строку](#flags-в-строку) — 85–95
 - [Coverage и намеренные исключения](#coverage-и-намеренные-исключения) — 96–107
 - [Вложенные пары и границы API](#вложенные-пары-и-границы-api) — 108–118
+- [Обычные типы и кортежи из enum и в enum](#обычные-типы-и-кортежи-из-enum-и-в-enum) — 119–132
 
 ## Обычные enum
 
@@ -2365,6 +2366,10 @@ Active даёт `(Status: ApiStatus.Active, Label: "status")`, Cancelled —
 `(Status: ApiStatus.Deleted, Label: "status")`. Tuple остаётся обычной структурной
 парой; scalar-правила находятся в отдельном вложенном enum mapping.
 
+При Update Cancelled с destination `(Status: ApiStatus.Active, Label: "old")`
+возвращается `(Status: ApiStatus.Deleted, Label: "status")`. Исходная переменная
+с ValueTuple не меняется без присваивания возвращённого значения.
+
 ### 110. Nested Map, Create и Update внутри scalar Members
 
 Для наглядности вложенная пара намеренно возвращает результат по операции:
@@ -2548,6 +2553,402 @@ builder.Map<DomainStatus, ApiStatus>()
 Active тоже даст Unrecognized с одним вызовом. Если же пользователь сам заранее
 вычислит `var fallback = LogFallback(status);` перед switch, этот local сохранит
 написанное место и вычислится при входе в блок, как в сценарии 47.
+
+## Обычные типы и кортежи из enum и в enum
+
+Здесь рассмотрены корневые пары: enum является целым source либо destination.
+Маппинг enum-свойства между двумя DTO отдельно показан в сценарии 108.
+
+| Направление | Сценарии |
+|---|---|
+| Enum → класс | 112 — конструктор DTO; 123 — flags в отдельные bool-свойства; 129 — nullable-обёртка |
+| Класс → enum | 119 — выбор enum-свойства; 120 — вложенная enum-пара; 123 — сборка flags; 129 и 131 — null и lifecycle |
+| Структура → enum / enum → структура | 121 / 122 |
+| Enum → ValueTuple | 109, включая Create и Update |
+| ValueTuple → enum | 124 — именованный; 125 — несколько объектов; 126 — ItemN; 130 и 132 — nullable |
+| Enum → System.Tuple / System.Tuple → enum | 128 / 127 |
+
+Для обычного объекта или кортежа на входе выражение пользователя определяет,
+какие поля участвуют в результате. Примеры ниже используют существующие
+[ResolveUsing](../api/resolve-using.md), [ConstructUsing](../api/construct-using.md)
+и [Convert](../api/convert.md). Их тела — обычный C#: switch не дополняется
+enum-конвенцией, а DSL Auto/Map внутри callback не используется.
+
+Примеры с вложенным преобразованием дополнительно используют эти регистрации:
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted
+    });
+builder.Map<DomainStatus, string>();
+```
+
+В Using/Convert вложенная пара вызывается через `context.Mapper`; обе пары
+должны быть доступны mapper. Результат такого вызова подчиняется настройкам
+вложенной пары. Готовое enum-значение, возвращённое самим callback, не получает
+скрытой проверки имён или объявленности. Автоматический выбор свойства DTO,
+элемента кортежа либо scalar Members для произвольного object/tuple source
+этими примерами не вводится: отдельного такого контракта в дизайне пока нет.
+
+### 119. Класс → enum: явно выбрать свойство
+
+```csharp
+class StatusCarrier
+{
+    public DomainStatus Status { get; set; }
+    public string Comment { get; set; } = "";
+}
+
+builder.Map<StatusCarrier, DomainStatus>()
+    .ResolveUsing((source, previous) => source.Status);
+```
+
+| Вход / операция | Результат |
+|---|---|
+| Create, Status = Active | Active |
+| Create, Status = Cancelled, Comment = `"ignored"` | Cancelled |
+| Update, Status = Active, previous = Suspended | Active |
+| Create, Status = `(DomainStatus)123` | Неназванное 123: callback явно вернул готовое значение |
+
+Поле Comment не участвует в вычислении. ResolveUsing повторно выбирает enum и
+на Update; содержимое source не сопоставляется destination по названию Status.
+
+### 120. Класс → другой enum через зарегистрированную пару
+
+Используется StatusCarrier из сценария 119 и общая enum-пара выше.
+
+```csharp
+builder.Map<StatusCarrier, ApiStatus>()
+    .ResolveUsing((source, previous, context) =>
+        previous.TryGetValue(out var old)
+            ? context.Mapper.Map<DomainStatus, ApiStatus>(source.Status, old)
+            : context.Mapper.Map<DomainStatus, ApiStatus>(source.Status));
+```
+
+| Вход / операция | Вложенная операция | Результат |
+|---|---|---|
+| Create, Status = Active | Create | ApiStatus.Active |
+| Create, Status = Cancelled | Create | ApiStatus.Deleted |
+| Update, Status = Cancelled, previous = Archived | Update с Archived | Deleted: в общей enum-паре нет правила сохранения previous |
+| Create или Update, Status = Legacy | Соответствующая операция | Исключение вложенного mapping |
+
+Так передаётся previous во вложенный Update. Если вложенная пара позднее
+получит правило сохранения Archived, оно начнёт действовать и здесь.
+Один вызов `context.Mapper.Map<DomainStatus, ApiStatus>(source.Status)` без
+destination всегда запросил бы вложенный Create, даже при внешнем Update.
+
+### 121. Обычная структура → enum по нескольким признакам
+
+```csharp
+struct ApprovalFacts
+{
+    public bool IsPaid;
+    public bool IsBlocked;
+}
+
+builder.Map<ApprovalFacts, ApiStatus>()
+    .ResolveUsing((source, previous) => source switch
+    {
+        { IsBlocked: true } => ApiStatus.Disabled,
+        { IsPaid: true } => ApiStatus.Active,
+        _ => ApiStatus.Pending
+    });
+```
+
+| IsPaid | IsBlocked | Результат Create и Update |
+|---|---|---|
+| false | false | Pending, в том числе для default(ApprovalFacts) |
+| true | false | Active |
+| false | true | Disabled |
+| true | true | Disabled: первое правило имеет приоритет |
+
+Это полное пользовательское решение по двум полям; конвенция enum-имён между
+ветками обычного switch не добавляется.
+
+### 122. Enum → обычная структура с вычисляемыми полями
+
+```csharp
+struct StatusFacts
+{
+    public bool IsActive;
+    public bool IsCancelled;
+}
+
+builder.Map<DomainStatus, StatusFacts>()
+    .Members(status => new()
+    {
+        IsActive = status == DomainStatus.Active,
+        IsCancelled = status == DomainStatus.Cancelled
+    });
+```
+
+| Source | Поля возвращённой структуры: IsActive / IsCancelled |
+|---|---|
+| Active | true / false |
+| Cancelled | false / true |
+| Pending | false / false |
+| `(DomainStatus)123` | false / false по написанным C# сравнениям |
+
+При Update оба поля получают новые значения. Как и для ValueTuple, вызывающий
+код сохраняет результат: `facts = mapper.Map(status, facts)`.
+
+### 123. Flags ↔ DTO с отдельными bool-свойствами
+
+Используется Access из сценария 70: Read = 1, Write = 2, Audit = 4.
+
+```csharp
+class PermissionDto
+{
+    public bool CanRead { get; set; }
+    public bool CanWrite { get; set; }
+}
+
+builder.Map<Access, PermissionDto>()
+    .Members(mask => new()
+    {
+        CanRead = (mask & Access.Read) != 0,
+        CanWrite = (mask & Access.Write) != 0
+    });
+
+builder.Map<PermissionDto, Access>()
+    .ResolveUsing((source, previous) =>
+        (source.CanRead ? Access.Read : Access.None) |
+        (source.CanWrite ? Access.Write : Access.None));
+```
+
+| Направление и вход | Результат |
+|---|---|
+| ReadWrite = 3 → DTO | CanRead = true, CanWrite = true |
+| None = 0 → DTO | false / false |
+| Read \| Audit = 5 → DTO | true / false: для Audit поля нет |
+| DTO true / false → Access | Read = 1 |
+| DTO true / true → Access | ReadWrite = 3 |
+| Update Access, DTO false / false, previous = ReadWrite | None = 0 |
+
+В обеих корневых парах пользовательские выражения работают с целым объектом или
+маской. Здесь не запускается проход Members для каждого отдельного бита.
+Roundtrip Read \| Audit → DTO → Access даёт только Read: потеря Audit следует
+из явно выбранных полей DTO.
+
+### 124. Именованный ValueTuple → enum с дополнительным условием
+
+Используется общая DomainStatus → ApiStatus регистрация из начала раздела.
+
+```csharp
+builder.Map<(DomainStatus Status, bool IsArchived), ApiStatus>()
+    .ResolveUsing((source, previous, context) => source.IsArchived
+        ? ApiStatus.Archived
+        : context.Mapper.Map<DomainStatus, ApiStatus>(source.Status));
+```
+
+| Входной tuple | Результат Create и Update |
+|---|---|
+| `(Status: Active, IsArchived: false)` | Active |
+| `(Status: Cancelled, IsArchived: false)` | Deleted |
+| `(Status: Legacy, IsArchived: false)` | Исключение вложенного mapping |
+| `(Status: Legacy, IsArchived: true)` | Archived; вложенная пара не вызывается |
+
+Status выбран явно. Из того, что tuple содержит enum-элемент, автоматический
+выбор этого элемента для корневой enum-конвенции не следует.
+
+### 125. Tuple из нескольких объектов → один enum
+
+Order со свойством DomainStatus Status объявлен в сценарии 108.
+
+```csharp
+class AccountState
+{
+    public bool IsSuspended { get; set; }
+}
+
+builder.Map<(Order? Order, AccountState? Account), ApiStatus>()
+    .ResolveUsing((source, previous, context) =>
+    {
+        if (source.Order is null || source.Account is null)
+            throw new ArgumentException("Both inputs are required.");
+
+        if (source.Account.IsSuspended)
+            return ApiStatus.Disabled;
+
+        return context.Mapper.Map<DomainStatus, ApiStatus>(source.Order.Status);
+    });
+```
+
+| Order.Status / Account.IsSuspended | Результат |
+|---|---|
+| Active / false | Active |
+| Cancelled / false | Deleted |
+| Legacy / true | Disabled, до вложенного mapping |
+| Order = null или Account = null | Пользовательский ArgumentException |
+
+Сам ValueTuple не равен null. Null его элементов не является null корневого
+source и обрабатывается написанными проверками. Та же схема позволяет передать
+вместе с моделью пользовательскую политику выбора enum.
+
+### 126. Безымянный ValueTuple → enum через ItemN
+
+```csharp
+builder.Map<(DomainStatus, bool), ApiStatus>()
+    .ResolveUsing((source, previous, context) => source.Item2
+        ? ApiStatus.Archived
+        : context.Mapper.Map<DomainStatus, ApiStatus>(source.Item1));
+```
+
+| Вход | Результат |
+|---|---|
+| `(Active, false)` | Active |
+| `(Cancelled, false)` | Deleted |
+| `(Legacy, true)` | Archived |
+| `(Legacy, false)` | Исключение вложенного mapping |
+
+Это явные обращения к Item1/Item2, а не позиционная конвенция. Для tuple
+`(bool, DomainStatus)` выражения нужно поменять: source.Item1 станет условием,
+а source.Item2 — входом вложенной enum-пары.
+
+### 127. System.Tuple → enum и null ссылочного tuple
+
+```csharp
+builder.Map<Tuple<DomainStatus, bool>?, ApiStatus?>()
+    .ResolveUsing((source, previous, context) => source.Item2
+        ? ApiStatus.Archived
+        : context.Mapper.Map<DomainStatus, ApiStatus>(source.Item1));
+```
+
+| Вход / операция | Результат |
+|---|---|
+| Create, Tuple.Create(Active, false) | Active |
+| Create, Tuple.Create(Cancelled, false) | Deleted |
+| Update, Tuple.Create(Legacy, true), previous = Pending | Archived |
+| Create null | null; ResolveUsing не вызывается |
+| Update null, previous = Archived | null по default ReturnNull |
+
+После null policy callback получает non-null System.Tuple. Его read-only
+элементы можно читать; создавать изменённый tuple для этого не требуется.
+
+### 128. Enum → System.Tuple: создание, сохранение и явная замена
+
+Нужны обе вложенные пары из начала раздела: DomainStatus → ApiStatus и
+DomainStatus → string.
+
+```csharp
+builder.Map<DomainStatus, Tuple<ApiStatus, string>>()
+    .Construct(status => new(
+        Create<ApiStatus>(status),
+        Create<string>(status)));
+```
+
+| Операция | Результат |
+|---|---|
+| Create Active | Новый Tuple с Item1 = Active, Item2 = `"Active"` |
+| Create Cancelled | Новый Tuple с Item1 = Deleted, Item2 = `"Cancelled"` |
+| Update Cancelled, previous = Tuple.Create(ApiStatus.Active, `"old"`) | Тот же previous: Item1 = Active, Item2 = `"old"` |
+| Update Cancelled, destination = null, policy Create | Новый Tuple: Deleted / `"Cancelled"`; операция остаётся Update |
+
+System.Tuple read-only; обычный Update не пересоздаёт его ради scalar-элементов.
+Если нужен новый tuple и на Update, вместо Construct явно выбрать Resolve:
+
+```csharp
+builder.Map<DomainStatus, Tuple<ApiStatus, string>>()
+    .Resolve((status, previous) => new(
+        Create<ApiStatus>(status),
+        Create<string>(status)));
+```
+
+Теперь Update Cancelled с тем же previous возвращает **другой** Tuple:
+Deleted / `"Cancelled"`. Явные Create для элементов запрашивают вложенный Create
+в обеих внешних операциях. Отличие от mutable ValueTuple видно в сценарии 109.
+
+### 129. Nullable enum ↔ nullable объект-обёртка
+
+```csharp
+class NullableStatusCarrier
+{
+    public DomainStatus? Status { get; set; }
+}
+
+builder.Map<NullableStatusCarrier?, DomainStatus?>()
+    .ResolveUsing((source, previous) => source.Status);
+
+builder.Map<DomainStatus?, NullableStatusCarrier?>()
+    .Members(status => new() { Status = status });
+```
+
+| Направление и вход | Результат |
+|---|---|
+| null объект → enum | null по source policy, callback пропущен |
+| Объект с Status = null → enum | null из callback |
+| Объект с Status = Active → enum | Active |
+| null enum → объект | null, не объект с пустым Status |
+| Unknown = 0 → объект | Non-null объект со Status = Unknown |
+| Active → объект | Объект со Status = Active |
+
+Если для первой пары выбрать NullSourceHandling.ReturnDestination, null объект
+на Update сохранит previous. Объект со Status = null всё равно вернёт null:
+это результат callback, который завершает операцию без повторной null policy.
+
+### 130. Nullable ValueTuple → enum с сохранением previous
+
+```csharp
+builder.Map<(DomainStatus Status, bool PreservePrevious)?, ApiStatus?>()
+    .ResolveUsing((source, previous, context) =>
+        source.PreservePrevious && previous.TryGetValue(out var old)
+            ? old
+            : context.Mapper.Map<DomainStatus, ApiStatus>(source.Status));
+```
+
+| Операция / вход | Результат |
+|---|---|
+| Create null | null; callback пропущен |
+| Create `(Active, true)` | Active: previous отсутствует |
+| Update `(Legacy, true)`, previous = Archived | Archived; вложенная пара не вызывается |
+| Update `(Legacy, true)`, destination = null | Исключение вложенного mapping: сохранять нечего |
+| Create non-null tuple `(Unknown, false)` | Non-null ApiStatus.Unknown = 0 |
+
+Callback получает распакованный ValueTuple после null policy. Отсутствующий
+tuple и tuple с нулевым enum-элементом различаются.
+
+### 131. ConstructUsing при объект → enum не заменяет существующий enum
+
+```csharp
+builder.Map<StatusCarrier, DomainStatus>()
+    .ConstructUsing(source => source.Status);
+```
+
+| Операция | Результат |
+|---|---|
+| Create, source.Status = Active | Active |
+| Update, source.Status = Active, previous = Suspended | Suspended: фабрика пропущена |
+| Update, source.Status = Active, previous = Unknown = 0 | Unknown: ноль — существующий destination |
+
+Для выбора нового enum и на Update подходит ResolveUsing из сценария 119.
+В варианте с nullable destination `DomainStatus?` и policy Create Update с null
+destination вызвал бы ConstructUsing и вернул Active.
+
+### 132. Convert задаёт собственную обработку nullable tuple
+
+```csharp
+builder.Map<(bool IsReady, bool IsBlocked)?, DomainStatus?>()
+    .Convert(source => source is null
+        ? DomainStatus.Unknown
+        : source.Value.IsBlocked
+            ? DomainStatus.Suspended
+            : source.Value.IsReady
+                ? DomainStatus.Active
+                : DomainStatus.Pending);
+```
+
+| Вход | Результат Create и Update |
+|---|---|
+| null | Non-null Unknown = 0, выбранный самим callback |
+| `(false, false)` | Pending |
+| `(true, false)` | Active |
+| `(false, true)`, `(true, true)` | Suspended |
+
+Convert получает исходный nullable tuple и владеет алгоритмом целиком, включая
+null source. Использование source.Value защищено написанной проверкой; null
+не завершается до callback, как было бы при стандартной policy у ResolveUsing.
 
 ## Статус проверки каталога
 
