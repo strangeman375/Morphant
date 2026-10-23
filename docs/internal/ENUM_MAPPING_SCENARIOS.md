@@ -1,6 +1,6 @@
 # Enum mapping: пользовательские сценарии
 
-2026-09-23. Каталог для проверки **будущего поведения** до реализации feature.
+Обновлено 2026-10-23. Каталог для проверки **будущего поведения** до реализации feature.
 Примеры не являются отчётом о прошедших runtime-тестах. Канонические правила —
 в [согласованном дизайне](ENUM_MAPPING_DESIGN.md); здесь они показаны на задачах,
 коде конфигурации, конкретных входах и ожидаемых результатах.
@@ -42,6 +42,7 @@
 - [Coverage и намеренные исключения](#coverage-и-намеренные-исключения) — 96–107
 - [Вложенные пары и границы API](#вложенные-пары-и-границы-api) — 108–118
 - [Обычные типы и кортежи из enum и в enum](#обычные-типы-и-кортежи-из-enum-и-в-enum) — 119–132
+- [Выбор входа конвенции](#выбор-входа-конвенции) — 133–135
 
 ## Обычные enum
 
@@ -361,7 +362,7 @@ builder.Map<DomainStatus, ApiStatus>()
 
 Условие вычисляется один раз; невыбранный путь не выполняется.
 
-### 16. Switch над вычисленным значением не меняет source конвенции
+### 16. Switch над вычисленным значением передаёт его конвенции
 
 `Normalize` всегда возвращает `DomainStatus.Pending` и считает вызовы.
 
@@ -376,11 +377,30 @@ builder.Map<DomainStatus, ApiStatus>()
 
 | Исходный вход | Результат | Normalize |
 |---|---|---|
-| `Active` | `Active`, не Pending | Один вызов |
-| `Legacy` | Исключение маппинга, хотя Normalize вернул Pending | Один вызов |
+| `Active` | `ApiStatus.Pending` | Один вызов |
+| `Legacy` | `ApiStatus.Pending` | Один вызов |
 
 Если Normalize вернёт Cancelled, явная ветка даст Deleted для любого исходного
-входа. Если Normalize бросит, исключение не становится fallback.
+входа. Если Normalize бросит, исключение не становится fallback. При результате
+Normalize = Legacy явный Auto бросает: исходный Active не используется повторно.
+
+Замена `_ => Auto()` на `_ => ApiStatus.Unknown` сохраняет Pending при default
+Auto, а для нормализованного Legacy даёт Unknown. При MemberSelection.Explicit
+этот fallback даёт Unknown и для Pending; явный Auto работает и при Explicit.
+
+Вынос входа в local сохраняет поведение и один вызов Normalize:
+
+```csharp
+.Members(status =>
+{
+    var normalized = Normalize(status);
+    return normalized switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted,
+        _ => Auto()
+    };
+})
+```
 
 ### 17. Изменённая переменная source и вложенный обычный switch
 
@@ -397,8 +417,26 @@ builder.Map<DomainStatus, ApiStatus>()
     });
 ```
 
-Исходный `Active` даёт `Active`: Auto использует исходный source единицы,
-а явные patterns видят присвоенный Pending.
+Исходный `Active` даёт `ApiStatus.Pending`: switch захватывает уже присвоенный
+Pending, и Auto использует это же значение. Если после присваивания вместо
+switch написать `return Auto();`, результат также Pending: вне mapping switch
+Auto получает текущее source в точке вызова.
+
+Изменение source **внутри guard** не меняет уже вычисленный вход switch:
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => status switch
+    {
+        DomainStatus.Active when (status = DomainStatus.Pending) == DomainStatus.Active
+            => ApiStatus.Disabled,
+        _ => Auto()
+    });
+```
+
+Для исходного Active guard присваивает status = Pending и возвращает false.
+Auto всё равно получает захваченное Active и возвращает ApiStatus.Active.
+Обычное выражение с переменной status после guard видело бы уже Pending.
 
 Отдельный вариант:
 
@@ -460,8 +498,22 @@ builder.Map<string, DomainStatus>()
 | `"DomainStatus.Active"` | `Unknown` через fallback |
 | `"Active,Pending"` | `Unknown` через fallback |
 
-Если нужен trim для обычного enum, его задаёт пользовательский алгоритм;
-одного `text.Trim() switch { _ => Auto() }` недостаточно: Auto берёт исходный text.
+Trim можно задать самим входом mapping switch:
+
+```csharp
+builder.Map<string, DomainStatus>()
+    .Members(text => text.Trim() switch { _ => DomainStatus.Unknown });
+```
+
+| Вход | Результат после явного Trim |
+|---|---|
+| `" Active "`, `" active "` | Active |
+| `" Pending "` | Pending |
+| `"   "`, `" 2 "`, `" Missing "` | Unknown |
+
+Trim вычисляется один раз. Замена fallback на `_ => Auto()` сохраняет успешные
+соответствия и даёт исключение для трёх последних строк. Это пользовательская
+нормализация; регистрация без Trim по-прежнему не убирает пробелы.
 
 ### 20. Неоднозначность регистра для конкретной входной строки
 
@@ -844,30 +896,59 @@ builder.Map<DomainStatus, ApiStatus>()
 ResolveUsing вызывается один раз во всех трёх случаях. Без чтения previous
 из result нельзя восстановить старый destination.
 
-### 40. Switch над result и кортежем всё равно использует исходный source в Auto
+### 40. Switch над result корректирует результат фабрики
+
+`ChooseInitial` возвращает значение из столбца «Начальный result» и вызывается
+один раз на Create и Update.
 
 ```csharp
 builder.Map<DomainStatus, ApiStatus>()
-    .ResolveUsing((status, previous) => ApiStatus.Pending)
+    .ResolveUsing((status, previous) => ChooseInitial(status))
     .Members((status, previous, result) => result switch
     {
         ApiStatus.Disabled => ApiStatus.Archived,
-        _ => Auto()
+        _ => result
     });
 ```
 
 | Исходный вход | Начальный result | Результат |
 |---|---|---|
-| Active | Pending | Active |
-| Legacy | Pending | Исключение маппинга |
+| Active | Pending | Pending |
+| Legacy | Pending | Pending |
+| Active, Legacy | Disabled | Archived |
+| Legacy | Active | Active |
+| Active, Legacy | `(ApiStatus)123` | 123 через fallback |
 
-То же относится к завершающему Auto у `(status, result) switch` и
-`(result, status) switch`: порядок элементов меняет только явные patterns.
-Например, `(DomainStatus.Cancelled, ApiStatus.Pending) => ApiStatus.Deleted`
-даёт Deleted до конвенции.
+Explicit для такой корректировки не нужен. Вход конвенции — result, исходный
+status его не заменяет. При `_ => Auto()` объявленные результаты остаются теми
+же, а неназванное 123 вызывает исключение: строгая E → E конвенция не является
+безусловным identity. При Explicit явный Auto сохраняет этот контракт.
 
-Вариант `_ => result` при Auto даст Active для исходного Active и Pending для
-Legacy. При Explicit оба дадут Pending.
+При `_ => ApiStatus.Unknown` известный Pending всё ещё даёт Pending по конвенции;
+123 даёт Unknown через fallback. Для безусловного Unknown подходит прямое
+`Members(status => ApiStatus.Unknown)` либо MemberSelection.Explicit.
+
+Выбор `status switch` намеренно возвращает конвенцию к source:
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .ResolveUsing((status, previous) => ApiStatus.Pending)
+    .Members((status, previous, result) => status switch
+    {
+        DomainStatus.Cancelled when result == ApiStatus.Pending
+            => ApiStatus.Deleted,
+        _ => result
+    });
+```
+
+| Вход | Auto (default) | Explicit |
+|---|---|---|
+| Active | Active по конвенции source → destination | Pending |
+| Cancelled | Deleted | Deleted |
+| Legacy | Pending через fallback | Pending |
+
+Наличие фабрики не меняет смысл Members: вход выбирается выражением перед switch.
+Вариант с tuple и отказ от неявного выбора его элемента показаны в сценарии 133.
 
 ### 41. Ignore сохраняет начальный result
 
@@ -1110,7 +1191,8 @@ builder.Map<int, StoredCode>();
 | Middle | `Cancelled => Archived` |
 | Application | `Corrupt => Unrecognized` |
 
-Это те же формы switch, что в примере 45, с квалифицированными именами enum.
+Это те же формы switch над неизменённым status, что в примере 45, с
+квалифицированными именами enum. Вычисляемые входы разных уровней здесь не смешиваются.
 
 | Вход | Результат |
 |---|---|
@@ -1380,6 +1462,10 @@ builder.Map<SourceAccess, TargetAccess>()
 итог Audit = 64. Это достижимый case, поэтому warning «composite недостижим
 в ByBit» здесь неверен. Аналогично нельзя объявлять недостижимым composite,
 получаемый через пользовательский `Normalize(flag)`.
+
+Если фабрика вернёт TargetAccess.View, специальная ветка не совпадёт: Auto
+получит View и вернёт View. Для входа Read \| Write оба вклада равны View,
+итог View = 16. Исходные Read и Write входом этого Auto не становятся.
 
 ## Flags и числовые стратегии
 
@@ -2950,9 +3036,108 @@ Convert получает исходный nullable tuple и владеет ал�
 null source. Использование source.Value защищено написанной проверкой; null
 не завершается до callback, как было бы при стандартной policy у ResolveUsing.
 
+## Выбор входа конвенции
+
+### 133. Tuple switch не выбирает компонент для конвенции
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .ResolveUsing((status, previous) => ApiStatus.Pending)
+    .Members((status, previous, result) => (status, result) switch
+    {
+        (DomainStatus.Cancelled, ApiStatus.Pending) => ApiStatus.Deleted,
+        _ => result
+    });
+```
+
+| Вход | Результат при Auto и Explicit |
+|---|---|
+| Cancelled | Deleted |
+| Active | Pending |
+| Legacy | Pending |
+
+Для tuple → ApiStatus конвенции нет, поэтому неявный автоматический шаг
+отсутствует. Ни первый элемент, ни элемент enum-типа не выбирается за пользователя.
+Перестановка в `(result, status)` с соответствующей перестановкой pattern не
+меняет результат. Замена fallback на `_ => Auto()` в обоих вариантах требует
+диагностики: у текущего tuple-входа нет поддерживаемой конвенции.
+
+Если нужна конвенция source → destination, тот же специальный случай выражается
+через source switch и guard, без новой формы Auto:
+
+```csharp
+.Members((status, previous, result) => status switch
+{
+    DomainStatus.Cancelled when result == ApiStatus.Pending
+        => ApiStatus.Deleted,
+    _ => Auto()
+})
+```
+
+Здесь Cancelled даёт Deleted, Active — Active, Legacy — исключение маппинга.
+Чтобы сохранять result при неуспехе конвенции, используется `_ => result`, как
+в сценарии 40. Если входом конвенции должен быть result, выбирается `result switch`,
+а status остаётся доступен в guard.
+
+### 134. Object-вход switch не означает автоматический поиск enum-поля
+
+`GetDetails` возвращает объект с полями, указанными в таблице:
+
+```csharp
+sealed class StatusDetails
+{
+    public DomainStatus Status { get; init; }
+    public bool IsBlocked { get; init; }
+}
+
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => GetDetails(status) switch
+    {
+        { IsBlocked: true } => ApiStatus.Disabled,
+        _ => ApiStatus.Unknown
+    });
+```
+
+| Source | GetDetails: Status / IsBlocked | Результат |
+|---|---|---|
+| Active | Active / false | Unknown |
+| Legacy | Active / false | Unknown |
+| Active | Active / true | Disabled |
+
+GetDetails вызывается один раз. Object → ApiStatus не имеет конвенции:
+ни исходный status, ни свойство Status не подставляются вместо object-входа.
+Явный Auto здесь требует диагностики. Это switch внутри уже поддерживаемой
+enum-пары, а не новый scalar Members API для регистрации object → enum.
+
+### 135. Нормализация бита меняет вход конвенции, сохраняя проходы Members
+
+Используются SourceAccess и TargetAccess из раздела flags между enum.
+`NormalizeFlag` записывает переданный бит в список и всегда возвращает
+SourceAccess.Audit. Конфигурация сохраняет default ByBit и ByName:
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => NormalizeFlag(flag) switch { _ => Auto() });
+```
+
+| Вход | Вызовы NormalizeFlag | Результат |
+|---|---|---|
+| Read | Read | TargetAccess.Audit = 64 |
+| Read \| Write | Read, затем Write | Audit = 64: OR двух одинаковых вкладов |
+| `(SourceAccess)16` | 16 | Audit = 64 |
+| None = 0 | 0 один раз | Audit = 64 |
+
+Auto получает вычисленное Audit в каждом проходе. Он не возвращается к исходному
+Read, Write, неизвестному биту или нулю и не вызывает NormalizeFlag повторно.
+Сценарий использует одиночный нормализованный бит; обработка составного
+вычисленного входа в ByBit остаётся отдельным открытым вопросом дизайна.
+
 ## Статус проверки каталога
 
 Примеры сверены с согласованным дизайном; нумерация нужна для обсуждения конкретных
 случаев и последующего переноса в тесты. Они не заменяют проверки production
 генератора, реальной типизации Members, generated code и Rider. Новые ID/severity
 enum-диагностик и точные имена enum-specific exceptions каталог не назначает.
+Открытые сочетания нового правила входа перечислены в
+[дизайне](ENUM_MAPPING_DESIGN.md#открытые-стыки-нового-правила-входа);
+для них здесь не закрепляются несогласованные ожидаемые результаты.

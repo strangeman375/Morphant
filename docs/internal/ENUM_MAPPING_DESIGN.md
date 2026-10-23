@@ -1,7 +1,7 @@
 # Enum mapping: согласованный дизайн
 
-2026-09-23. Основной контракт согласован; **feature ещё не реализована**.
-Отложенные возможности и проверки реализации перечислены в конце документа.
+Обновлено 2026-10-23. **Feature ещё не реализована**. Согласованные правила,
+открытые стыки, отложенные возможности и проверки реализации описаны ниже.
 Примеры ниже описывают будущий DSL. Этот документ — канонический контракт;
 обоснования и источники: [стратегия по умолчанию](ENUM_MAPPING_DEFAULT_RESEARCH.md),
 [числа](ENUM_MAPPING_NUMERIC_RESEARCH.md), [flags](ENUM_MAPPING_FLAGS_RESEARCH.md).
@@ -74,8 +74,8 @@ builder.Map<WireCode, StoredCode>()
 | `UnknownDerivedTypeHandling` | Не относится к неизвестному enum-числу; scalar-пары не получают derived dispatch |
 
 Дополнительные настройки fallback, overflow, runtime validation, ignore-case
-и enum coverage не вводятся; нет `Auto(fallback: ...)`. Числовую допустимость
-выбирает стратегия, реакцию на отсутствие соответствия — `Members`.
+и enum coverage не вводятся; нет `Auto(fallback: ...)` или `Auto(value)`.
+Числовую допустимость выбирает стратегия, реакцию на отсутствие соответствия — `Members`.
 
 ### Наследование и применимость
 
@@ -120,6 +120,22 @@ Members — декларативный DSL, не runtime delegate из Configure
 дополняется только switch, непосредственно задающий enum-правила. Вложенные
 switch справа от `=>`, пользовательские методы и Using/Convert остаются C#.
 
+### Где применяется конвенция
+
+| Форма | Автоматическое поведение |
+|---|---|
+| Регистрация без Members и Using | Конвенция для source после null handling; без соответствия — mapping exception |
+| Using без Members | Готовый результат фабрики; конвенция поверх него не запускается |
+| Прямое обычное выражение Members | Готовый результат текущей единицы; нет конвенции до или после него |
+| Mapping switch при `MemberSelection.Auto` | Специальные правила, затем конвенция для входа switch, затем fallback |
+| Mapping switch при `MemberSelection.Explicit` | Только явные правила и fallback; явный Auto остаётся доступен |
+| Явный `Auto()` / `Auto<T>()` | Запрос конвенции; неуспех немедленно бросает, без перехода к другим правилам |
+
+Конвенция преобразует выбранный вход в destination текущей пары. Она не ищет
+зарегистрированный пользовательский mapping; для него служит `Map`.
+Явный результат выбранной ветки также окончателен: конвенция не преобразует
+и не проверяет его повторно.
+
 ### Входы и приоритет
 
 Сохраняются четыре формы callback:
@@ -139,22 +155,37 @@ switch справа от `=>`, пользовательские методы и 
 
 1. Локальные специальные ветки в написанном порядке.
 2. Специальные ветки IncludeBase, от ближайшего уровня к дальнему.
-3. Одна конвенция с effective settings, если selection — Auto.
+3. Одна неявная конвенция с effective settings, если selection — Auto и для
+   входа switch поддерживается конвенционное преобразование в destination.
 4. Ближайшая завершающая ветка; при отсутствии — mapping exception.
 
-`Explicit` пропускает только шаг 3. Конвенция всегда берёт **исходный source
-этой единицы**, независимо от выражения перед switch:
+`Explicit` пропускает только шаг 3. **Вход конвенции — значение выражения перед
+mapping switch**. Оно вычисляется один раз на своём месте; patterns, неявная
+конвенция и явный Auto этого switch используют одно полученное значение.
 
-| Switch | Явные patterns проверяют | Конвенция и Auto() получают |
-|---|---|---|
-| `source` | Значение source | Исходный source |
-| `result` | Начальный destination | Тот же source, без destination-to-destination mapping |
-| `(source, result)` / `(result, source)` | Кортеж в указанном порядке | Тот же source, без выбора элемента кортежа |
-| `Normalize(source)` | Вычисленное значение | Тот же source, без нормализации |
+| Выражение перед switch | Вход patterns и конвенции |
+|---|---|
+| `source` | Текущее значение source при входе в switch |
+| `source.Trim()` / `Normalize(source)` | Результат вычисления, включая trim или нормализацию |
+| `normalized` | Значение пользовательского local при входе в switch |
+| `result` | Начальный destination; конвенция работает с destination → destination |
+| `(source, result)` / `(result, source)` или произвольный объект | Patterns проверяют целое значение; без поддерживаемой конвенции неявный шаг отсутствует, явный Auto диагностируется |
 
-Например, source = Active, фабрика вернула Pending, ByName даёт Active:
-если специальные ветки не сработали, `_ => Auto()` возвращает Active.
-`_ => result` при Auto тоже даёт Active, при Explicit — Pending.
+Вне mapping switch явный Auto использует **текущее source в точке вызова**.
+Сохранённого первоначального source для обхода пользовательских изменений нет.
+Типизированный Auto меняет только target typing, а не выбор входа.
+Новой формы `Auto(value)` нет: вход задаётся выражением перед switch.
+
+У tuple/object не выбирается первый, enum-типизированный или названный source
+компонент. Если условию нужны другие значения, они доступны в `when`, а перед
+switch остаётся значение для конвенции. Явные результаты tuple/object switch
+допустимы; это не расширяет scalar Members на произвольные object-to-enum пары.
+
+Например, при source = Active и фабричном result = Pending:
+`result switch { _ => Auto() }` даёт Pending, как и `_ => result`.
+`source switch { _ => result }` при Auto даёт Active, при Explicit — Pending.
+Для неназванного result = 123 строгая E → E конвенция неуспешна:
+`result switch { _ => result }` сохраняет 123 через fallback, а `_ => Auto()` бросает.
 Конвенция не создаёт начальный result и не вычисляется заранее ради него.
 
 ### Ветки, Auto и вычисления
@@ -171,9 +202,9 @@ switch справа от `=>`, пользовательские методы и 
 Завершающий `_ => expression` или `var remaining => expression` без guard —
 fallback. `or` объединяет случаи; patterns и guards не переупорядочиваются.
 Даже после false guard для Active конвенция может сопоставить Active.
-Bare завершающий Auto и неявное дополнение образуют **один** автоматический путь:
-не повторять конвенцию после неудачи и не возвращаться к другим веткам после
-неуспешного явного Auto.
+Bare завершающий Auto и неявное дополнение одного switch образуют **один**
+автоматический путь: не повторять конвенцию после неудачи и не возвращаться
+к другим веткам после неуспешного явного Auto.
 
 `Members(_ => Auto())` явно запрашивает конвенцию. Прямое
 `Members(source => Compute(source))` задаёт результат для всей текущей единицы
@@ -188,9 +219,11 @@ imperative algorithm задаются Using/Convert.
 
 Выражение перед switch вычисляется один раз на своём месте. Сохраняются scopes,
 locals, комментарии, независимые вычисления, условность guards и результатов.
-Если пользователь меняет переменную source, явные выражения видят изменение,
-но конвенция и Auto используют исходный source этих правил. Exceptions
-пользователя не перехватываются для fallback. Дополнение перед `_` — осознанная
+Изменение source до switch меняет его вход. Изменение переменной в guard не
+меняет уже вычисленное значение switch: patterns и Auto сохраняют этот вход,
+а обычные выражения видят текущее состояние переменных. Вне switch Auto видит
+изменённое source. Exceptions пользователя не перехватываются для fallback.
+Дополнение перед `_` — осознанная
 DSL-семантика: [обычный C# switch](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/switch-expression)
 сам конвенцию не добавляет.
 
@@ -215,7 +248,9 @@ Locals уровня вычисляются один раз при входе, д
 лениво. Возврат к локальному fallback использует уже полученные locals:
 `var policy = GetPolicy(source)` не вызывается повторно ради `_ => policy.Unknown`.
 Результат выбранной ветки не передаётся следующему уровню как новый вход.
-Все уровни используют одну конвенцию и один начальный result.
+Все уровни видят один начальный result. Когда switch всех уровней используют
+одно неизменённое source, после специальных правил остаётся одна конвенция.
+Композиция различных входов уровней выделена в [открытые стыки](#открытые-стыки-нового-правила-входа).
 
 Using наследуется для точной пары и сочетается с Members; inherited Convert
 или фабрика не превращаются в enum rules. После композиции сохраняются проверки
@@ -261,9 +296,24 @@ builder.Map<DomainStatus?, ApiStatus?>()
 `status` здесь non-null DomainStatus. Default null source возвращает null,
 не вызывая LegacyConvert. Явный null из правила также допустим для nullable
 destination. На Update previous остаётся исходным destination, result —
-выбранным фабрикой. Без Explicit завершающее `_ => result` сохраняет фабричное
-значение только после неуспеха конвенции. Прямое `Members(... => Normalize(result))`
-уже является полным явным правилом. Порядок fluent-вызовов не меняет lifecycle.
+выбранным фабрикой. В этом **source switch** без Explicit завершающее `_ => result`
+сохраняет фабричное значение только после неуспеха конвенции source → destination.
+Для корректировки результата фабрики можно выбрать `result switch`:
+
+```csharp
+.Members((status, previous, result) => result switch
+{
+    ApiStatus.Disabled => ApiStatus.Archived,
+    _ => result
+})
+```
+
+При default ByName Disabled станет Archived; Pending, Active и неназванное 123
+сохранятся независимо от status. Explicit для такой корректировки не нужен.
+При `_ => ApiStatus.Unknown` известный Pending всё ещё проходит конвенцию раньше
+fallback. Чтобы всегда вернуть Unknown, подходят прямое выражение либо Explicit.
+Прямое `Members(... => Normalize(result))` уже является полным явным правилом.
+Наличие Using и порядок fluent-вызовов не меняют смысл Members.
 
 Замена результата через Members ограничена scalar mapping.
 Result доступен только по пути, где начальное значение реально выбрано:
@@ -337,7 +387,7 @@ builder.Map<string, ApiStatus>()
 вокруг токенов, сохраняя его внутри имени. Пробел, tab и перенос строки сами
 по себе не разделяют значения: `"Full control"` может быть явным именем.
 
-| Режим | Members / Auto / fallback | Конвенция |
+| Режим | Source callback | Конвенция при switch над этим source |
 |---|---|---|
 | ByBit (default) | Текущий обрезанный токен | CLR-имя с exact-first/ignore-case; результаты токенов объединяются OR |
 | ByMask | Полная исходная строка, один проход правил | Разбор всего списка CLR-имён и OR; пользовательские правила не применяются к отдельным токенам |
@@ -368,7 +418,7 @@ Using получает исходную строку один раз по общ
 
 ### Строковый вывод flags
 
-Под ByName FlagsMappingMode определяет единицу Members, Auto и fallback.
+Под ByName FlagsMappingMode определяет единицу source перед Members.
 ByBit (default) обрабатывает физические биты от младшего к старшему и соединяет
 непустые строковые вклады через `", "`. Составное объявление не меняет разбиение;
 повторы сохраняются: два вклада `"access"` дают `"access, access"`.
@@ -452,7 +502,7 @@ Runtime reflection не нужен.
 
 | Свойство | ByBit (default) | ByMask |
 |---|---|---|
-| Source правил, конвенции и Auto | Текущий установленный бит source enum | Полная исходная маска |
+| Source callback | Текущий установленный бит source enum | Полная исходная маска |
 | Members, locals и guards | Для каждого бита и достигнутого уровня IncludeBase | Один проход уровней над маской |
 | Fallback | Результат непереведённого бита | Итог всей операции |
 | Результат | OR результатов битов | Выбранное значение целиком |
@@ -461,6 +511,8 @@ Runtime reflection не нужен.
 EnumMappingStrategy не меняет единицу или число проходов Members. Один effective
 FlagsMappingMode действует на все локальные и inherited rules; смешанного
 прохода «сначала маска, затем те же Members на битах» нет.
+Выражение перед mapping switch выбирает вход конвенции внутри такого прохода
+по [общему правилу](#входы-и-приоритет); оно не подменяется исходным битом или маской.
 
 ```csharp
 [Flags]
@@ -504,8 +556,9 @@ builder.Map<SourceAccess, TargetAccess>()
 ByBit посещает физические биты от младшего к старшему в точной ширине source;
 signed high bit — последним. Порядок объявлений не влияет; знаковые биты не
 расширяются за исходную ширину. Только Pair = 3 не даёт ByName имён для 1 и 2.
-Explicit отключает неявную конвенцию, сохраняя разбиение и OR; Auto запрашивает
-конвенцию текущего бита. Числовая стратегия не обходит явные правила cast-ом.
+Explicit отключает неявную конвенцию, сохраняя разбиение и OR. В `flag switch`
+Auto запрашивает конвенцию текущего бита; в `Normalize(flag) switch` —
+вычисленного значения. Числовая стратегия не обходит явные правила cast-ом.
 
 ```csharp
 builder.Map<SourceAccess, TargetAccess>()
@@ -528,8 +581,9 @@ Read = 8, Write = 16 дают для неназванного 3 результа
 ### Ноль, null и начальное значение
 
 Нулевой вход в **обоих** режимах проходит правила один раз с source = 0:
-явное None → Unknown может его изменить. Затем неявная конвенция возвращает 0
-даже без объявления None, независимо от имён и стратегии, включая ByMask + ByName.
+явное None → Unknown может его изменить. Если вход самой конвенции равен нулю,
+она возвращает 0 даже без объявления None, независимо от имён и стратегии,
+включая ByMask + ByName.
 При Explicit нужны явное правило, Auto или fallback; иначе исключение.
 Нулевое правило не добавляется к ненулевой маске и не вызывается для её битов.
 
@@ -715,7 +769,8 @@ switch покрытие должно быть явным; enum coverage оста
 Простой случай должен оставаться простым switch: explicit arms → синтезированные
 соответствия → fallback. Не добавлять недостижимые arms после явных patterns.
 Guards, IncludeBase и другой switch input могут требовать вложенного продолжения:
-сохранить единичные вычисления, исходный source конвенции и условность результатов.
+сохранить единичное вычисление входа каждого switch, его использование конвенцией
+и условность результатов.
 Нет local на каждый case, ранней конвенции ради result или catch вокруг user code.
 Соблюдать [generator contracts](GENERATOR_CONTRACTS.md): читаемость, scopes,
 форматирование, failure stubs, settings diagnostics, compatibility manifest,
@@ -727,12 +782,29 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 | Область | Проверки |
 |---|---|
 | API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; Create/Update, включая Update без Create; все null policies; доступное/недоступное чтение result и неиспользуемый параметр; прежний object/tuple API |
-| Правила и эффекты | Partial switch; Auto/Explicit; source/result/оба порядка tuple/Normalize; mutation source; false guards; computed fallback/throw; один автоматический путь; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
+| Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; ленивые locals/scopes; один initial result; Convert/destination-method conflicts; фабрика после наследования |
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, Ignore с доступным/недоступным result и scalar nested helpers |
 | Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
 | Строковые flags | Три входных разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null; вывод ByBit/ByMask, порядок/повторы, ноль с именем/aliases и без объявления, пустые вклады и пустой итог |
 | Toolchain | Реальная nullable marker/delegate типизация и доступность result; C# 9, minimum Roslyn, MSBuild и IDE; suppressor diagnostic families, guards, отключённые анализаторы и warnings-as-errors; nested switch/wrong types/obsolete; edit settings/enum/callback, recovery и cancellation |
+
+## Открытые стыки нового правила входа
+
+Следующие сочетания требуют отдельного решения до реализации; результаты для них
+не выводятся из отменённого правила «конвенция всегда использует исходный source»:
+
+- **IncludeBase с разными входами switch.** Например, локальный `Normalize(source)`
+  и базовый `source`: чей вход получает общая неявная конвенция и как с ней
+  сочетается унаследованный fallback Auto. Приоритет специальных правил и ленивые
+  вычисления уровней сохраняются; выбор входа общей конвенции ещё не согласован.
+- **Смена направления преобразования внутри switch.** Например, у enum → enum
+  с явным ByValue вычисляемый вход стал строкой: нужна согласованная применимость
+  настройки к новому направлению, без молчаливого игнорирования явного выбора.
+- **Составное вычисленное значение внутри ByBit.** Входом конвенции будет именно
+  это значение, но обработка его частей при `result switch` или `Normalize(flag)`
+  требует отдельного уточнения. Изменение входа само по себе не задаёт нового
+  режима обхода или повторного выполнения Members.
 
 ## Отложенное и проверки реализации
 
