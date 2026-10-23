@@ -26,7 +26,8 @@ wire attributes, naming policies, коллекции и проекции. Стр
 | [Convert](../api/convert.md) | Обычный callback, владеющий всем алгоритмом, включая null handling |
 | `Map`, settings, `IncludeBase` | Существующие контракты с уточнениями ниже |
 
-Без особых правил достаточно регистрации `Map<TSource, TDestination>()`.
+При default `MemberSelection.Auto` регистрация `Map<TSource, TDestination>()`
+уже сопоставляет значения по конвенции, без вызова `Members`.
 Граница определяется видом mapping: enum-to-DTO не теряет object construction
 из-за enum source. Отдельных `Values`, `Flags`, `MapValue`, `Inherited` не нужно.
 
@@ -116,16 +117,16 @@ settings сохраняют обычные проверки значений и 
 
 ## Members: правила и конвенция
 
-Members — декларативный DSL, не runtime delegate из Configure. Конвенцией
-дополняется только switch, непосредственно задающий enum-правила. Вложенные
-switch справа от `=>`, пользовательские методы и Using/Convert остаются C#.
+Members — декларативный DSL, не runtime delegate из Configure. Внутри Members
+конвенцией дополняется только switch, непосредственно задающий enum-правила.
+Вложенные switch справа от `=>`, пользовательские методы и Using/Convert остаются C#.
 
 ### Где применяется конвенция
 
 | Форма | Автоматическое поведение |
 |---|---|
-| Регистрация без Members и Using | Конвенция для source после null handling; без соответствия — mapping exception |
-| Using без Members | Готовый результат фабрики; конвенция поверх него не запускается |
+| Регистрация без Members и Using при `MemberSelection.Auto` | Конвенция для source после null handling; без соответствия — mapping exception |
+| `ConstructUsing` / `ResolveUsing` без Members | Выбранное по lifecycle значение окончательно; конвенция не перезаписывает его преобразованием source и не проверяет повторно |
 | Прямое обычное выражение Members | Готовый результат текущей единицы; нет конвенции до или после него |
 | Mapping switch при `MemberSelection.Auto` | Специальные правила, затем конвенция для входа switch, затем fallback |
 | Mapping switch при `MemberSelection.Explicit` | Только явные правила и fallback; явный Auto остаётся доступен |
@@ -167,7 +168,7 @@ mapping switch**. Оно вычисляется один раз на своём 
 |---|---|
 | `source` | Текущее значение source при входе в switch |
 | `source.Trim()` / `Normalize(source)` | Результат вычисления, включая trim или нормализацию |
-| `normalized` | Значение пользовательского local при входе в switch |
+| `normalized` | Значение пользовательского local при входе в switch; неявная конвенция при Auto сохраняется |
 | `result` | Начальный destination; конвенция работает с destination → destination |
 | `(source, result)` / `(result, source)` или произвольный объект | Patterns проверяют целое значение; без поддерживаемой конвенции неявный шаг отсутствует, явный Auto диагностируется |
 
@@ -275,9 +276,10 @@ Nullable registration точная: автоматически искать unde
 destination, а не отсутствие previous. Using принимает inline lambda, method
 group или delegate; контекстная форма получает полный MappingContext с Mapper.
 
-Без Members выбранное значение окончательно: нет конвенции и проверки
-объявленности поверх него; coverage не анализирует тело фабрики. Null фабрики
-завершает операцию до Members, без повторных null policies. Вызов сохраняется,
+При `ConstructUsing` или `ResolveUsing` без Members выбранное по lifecycle
+значение окончательно: нет конвенции и проверки объявленности поверх него;
+coverage не анализирует тело фабрики. Null фабрики завершает операцию до Members,
+без повторных null policies. Вызов сохраняется,
 даже если Members не читает result или всегда возвращает другое значение:
 важны эффекты, исключения и terminal null.
 

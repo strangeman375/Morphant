@@ -68,6 +68,8 @@ enum ApiStatus
 builder.Map<DomainStatus, ApiStatus>();
 ```
 
+При default MemberSelection.Auto конвенция работает без вызова Members.
+
 | Вход | Результат |
 |---|---|
 | `Pending = 1` | `ApiStatus.Pending = 10` |
@@ -384,11 +386,8 @@ builder.Map<DomainStatus, ApiStatus>()
 входа. Если Normalize бросит, исключение не становится fallback. При результате
 Normalize = Legacy явный Auto бросает: исходный Active не используется повторно.
 
-Замена `_ => Auto()` на `_ => ApiStatus.Unknown` сохраняет Pending при default
-Auto, а для нормализованного Legacy даёт Unknown. При MemberSelection.Explicit
-этот fallback даёт Unknown и для Pending; явный Auto работает и при Explicit.
-
-Вынос входа в local сохраняет поведение и один вызов Normalize:
+Вынос входа в local сохраняет применение конвенции. Следующий вариант показывает
+**неявную конвенцию с fallback Unknown, без явного Auto()**:
 
 ```csharp
 .Members(status =>
@@ -397,10 +396,20 @@ Auto, а для нормализованного Legacy даёт Unknown. При
     return normalized switch
     {
         DomainStatus.Cancelled => ApiStatus.Deleted,
-        _ => Auto()
+        _ => ApiStatus.Unknown
     };
 })
 ```
+
+| Normalize вернул | MemberSelection.Auto (default) | MemberSelection.Explicit |
+|---|---|---|
+| Pending | ApiStatus.Pending по неявной конвенции | ApiStatus.Unknown через fallback |
+| Cancelled | ApiStatus.Deleted по явному правилу | ApiStatus.Deleted по явному правилу |
+| Legacy | ApiStatus.Unknown через fallback | ApiStatus.Unknown через fallback |
+
+Normalize вызывается один раз; patterns и конвенция используют normalized.
+При замене fallback на `_ => Auto()` Pending сопоставляется и при Explicit,
+а Legacy вызывает исключение. Наличие local не включает и не отключает конвенцию.
 
 ### 17. Изменённая переменная source и вложенный обычный switch
 
