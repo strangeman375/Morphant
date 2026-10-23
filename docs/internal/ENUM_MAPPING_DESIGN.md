@@ -93,15 +93,16 @@ builder.Map<WireCode, StoredCode>()
 
 | Направление | `EnumMappingStrategy` | `FlagsMappingMode` |
 |---|---|---|
-| Enum → enum | Все стратегии; при `[Flags]` только с одной стороны — правила целого значения | Только когда оба enum имеют `[Flags]`, включая nullable underlying types |
-| Enum → string | Все стратегии; числовые режимы дают одинаковое представление | Применима только для flags source под ByName; числовые режимы обрабатывают целую маску |
+| Enum → enum | Все стратегии; default `ByName`; при `[Flags]` только с одной стороны — правила целого значения | Только когда оба enum имеют `[Flags]`, включая nullable underlying types |
+| Enum → string | Все стратегии; default `ByName`; числовые режимы дают одинаковое представление | Применима только для flags source под ByName; числовые режимы обрабатывают целую маску |
 | Integer → enum | `ByValue` / `ByValueAllowUndefined`; default `ByValue` | Неприменима; целое число, для flags destination — допустимость маски |
 | Enum → integer | Неприменима; перенос числа с проверкой диапазона | Неприменима |
 | String → enum | Неприменима; конвенция CLR-имён | Для flags destination: ByBit — токены, ByMask — исходная строка; иначе неприменима |
 
-Явную неприменимую pair-настройку диагностировать по общему контракту
-`MORPH0023`; общий default на неприменимой паре игнорируется. Для integer-to-enum
-явный `ByName` ошибочен; выигравший общий `ByName` оставляет строгий default.
+Явную неприменимую pair-настройку, включая унаследованную через IncludeBase,
+диагностировать по общему контракту `MORPH0023`; неприменимый общий default
+игнорируется. Для integer-to-enum явный `ByName` ошибочен; выигравший общий
+`ByName` оставляет строгий default.
 Resolver **не ищет заново** нижнюю числовую настройку: mapper-level `ByName`
 поверх MSBuild `ByValueAllowUndefined` всё равно даёт строгий `ByValue`.
 
@@ -114,6 +115,53 @@ settings сохраняют обычные проверки значений и 
 игнорируются, локальные несовместимые настройки диагностируются. `MappingMode`
 и `UnknownDerivedTypeHandling` остаются применимыми. Members с локальным Convert
 несовместим; обычный Convert не получает enum-конвенцию.
+
+### Стратегия для входа конвенции
+
+**Применимость EnumMappingStrategy и её library default определяются по
+статическому типу фактического входа конвенции и destination текущей пары.**
+В mapping switch это тип выражения перед switch, вне него — тип source.
+Тип не выводится из совпавшего pattern или runtime-значения внутри object.
+Регистрация пары и выбранный destination при этом не меняются; другие
+зарегистрированные mappings автоматически не вызываются. Используется столбец
+EnumMappingStrategy в таблице выше; `result switch` с enum-результатом относится
+к enum → enum.
+
+Сначала обычный precedence выбирает настройку, сохраняя отличие явного выбора
+пары от общего default. Затем она проверяется для каждого автоматического пути:
+
+- Применимое конкретное значение сохраняется, включая выбор из IncludeBase.
+  Смена типа входа не сбрасывает `ByValue` или `ByValueAllowUndefined` в `ByName`.
+- Несовместимый явный выбор пары даёт `MORPH0023`, а не другую стратегию или
+  fallback. Диагностика указывает стратегию, типы входа и destination и
+  соответствующий switch/Auto; для наследования также источник настройки.
+- Общие mapper/MSBuild defaults сохраняют правила применимости выше: несовместимый
+  общий default игнорируется без повторного поиска нижней настройки.
+- Если применимая настройка не получена, library default выбирается здесь, а не
+  заранее по исходной регистрации. `Default` по-прежнему продолжает наследование.
+
+Правило одинаково для неявной конвенции, `Auto()` и `Auto<T>()`, включая
+унаследованные Auto. Поэтому при разных типах входов library defaults могут
+различаться; явно выбранная стратегия остаётся одной для текущей пары и должна
+подходить всем её автоматическим путям после композиции. Настройки и defaults
+уровня объявления Auto отдельно не сохраняются.
+
+Проверяется конфигурация, а не только путь конкретного runtime-вызова:
+fallback и guard не скрывают несовместимость существующего автоматического пути.
+При `MemberSelection.Explicit` неявного пути нет, но явный Auto проверяется.
+Прямые результаты не получают конвенцию и проверку её стратегии. Если
+автоматических путей вообще нет, применимость настройки проверяется по
+зарегистрированной паре, как для Using без Members; их отсутствие само по себе
+не запрещает применимую настройку.
+
+Отсутствие поддерживаемого преобразования и несовместимость настройки — разные
+случаи. Например, для string → string или integer → string enum-конвенции нет:
+неявный шаг пропускается, явный Auto диагностируется. Нового общего преобразования
+строк, чисел или object здесь нет. Единицу обработки FlagsMappingMode это правило
+не переопределяет; составной вычисленный вход ByBit остаётся
+[открытым вопросом](#открытые-стыки-нового-правила-входа).
+Примеры смены типа, настроек и наследования —
+[сценарии 143–149](ENUM_MAPPING_SCENARIOS.md#стратегия-и-тип-входа-конвенции).
 
 ## Members: правила и конвенция
 
@@ -261,7 +309,9 @@ Members. Прямое явное значение или Auto сохраняет
 **Унаследованный Auto также использует вход своего switch**, как в специальной
 ветке, так и в fallback. Неуспех выбранного явного Auto сразу бросает; перехода
 к другой конвенции или более дальнему fallback нет. Настройки остаются effective
-settings текущей пары, а не отдельными настройками уровня объявления Auto.
+settings текущей пары, а не отдельными настройками уровня объявления Auto;
+применимость стратегии и её default определяются
+[типом входа этого Auto](#стратегия-для-входа-конвенции).
 
 Поэтому одна неявная попытка может сопровождаться явной попыткой для другого
 входа. Например, source = Pending, локальный Normalize вернул Legacy,
@@ -823,18 +873,16 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 | Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, Ignore с доступным/недоступным result и scalar nested helpers |
+| Стратегия и тип входа | Library default для фактического входа; смена enum/string/integer и result → result; разные типы в путях Members и IncludeBase; явная совместимая/несовместимая стратегия, унаследованный выбор и Default; общие defaults без повторного поиска; неявная конвенция и Auto/Auto<T>, Explicit и отсутствие автоматических путей; диагностика конфигурации до runtime; неподдерживаемое преобразование без расширения API |
 | Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
 | Строковые flags | Три входных разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null; вывод ByBit/ByMask, порядок/повторы, ноль с именем/aliases и без объявления, пустые вклады и пустой итог |
 | Toolchain | Реальная nullable marker/delegate типизация и доступность result; C# 9, minimum Roslyn, MSBuild и IDE; suppressor diagnostic families, guards, отключённые анализаторы и warnings-as-errors; nested switch/wrong types/obsolete; edit settings/enum/callback, recovery и cancellation |
 
 ## Открытые стыки нового правила входа
 
-Следующие сочетания требуют отдельного решения до реализации; результаты для них
+Следующее сочетание требует отдельного решения до реализации; результаты для него
 не выводятся из отменённого правила «конвенция всегда использует исходный source»:
 
-- **Смена направления преобразования внутри switch.** Например, у enum → enum
-  с явным ByValue вычисляемый вход стал строкой: нужна согласованная применимость
-  настройки к новому направлению, без молчаливого игнорирования явного выбора.
 - **Составное вычисленное значение внутри ByBit.** Входом конвенции будет именно
   это значение, но обработка его частей при `result switch` или `Normalize(flag)`
   требует отдельного уточнения. Изменение входа само по себе не задаёт нового

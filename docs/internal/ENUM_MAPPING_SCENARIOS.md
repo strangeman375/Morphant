@@ -44,6 +44,7 @@
 - [Обычные типы и кортежи из enum и в enum](#обычные-типы-и-кортежи-из-enum-и-в-enum) — 119–132
 - [Выбор входа конвенции](#выбор-входа-конвенции) — 133–135
 - [IncludeBase и разные входы switch](#includebase-и-разные-входы-switch) — 136–142
+- [Стратегия и тип входа конвенции](#стратегия-и-тип-входа-конвенции) — 143–149
 
 ## Обычные enum
 
@@ -682,8 +683,8 @@ builder.Map<WireCode, byte>();
 | `(WireCode)255` | byte 255 |
 | `Large = 300` | Исключение маппинга |
 
-У byte нет списка объявлений. EnumMappingStrategy для этой пары неприменима;
-задавать её явно не нужно.
+У byte нет списка объявлений. EnumMappingStrategy для этого преобразования
+неприменима; задавать её явно не нужно.
 
 ### 28. Знак и широкий ulong не теряются
 
@@ -2529,7 +2530,8 @@ Construct применим. Для scalar enum → enum, enum ↔ string и enum
 
 ### 113. Неприменимые настройки диагностируются
 
-Каждая строка — отдельное добавление к корректной регистрации соответствующей пары.
+Каждая строка — отдельное добавление к корректной регистрации соответствующей пары
+без изменения типа входа конвенции. Вычисляемые входы рассмотрены в сценариях 143–149.
 
 | Пара | Явная pair-настройка | Ожидаемый результат конфигурации |
 |---|---|---|
@@ -3352,12 +3354,216 @@ builder.Map<DomainStatus, ApiStatus>()
 заменяя базовый fallback Auto. Using вызывается один раз по lifecycle; все уровни
 видят один начальный result, он не становится результатом предыдущей ветки.
 
+## Стратегия и тип входа конвенции
+
+Используются обычные enum DomainStatus/ApiStatus из начала каталога и
+WireCode/StoredCode из раздела «Числа и диапазоны», без Flags. Правило выбора стратегии — в
+[дизайне](ENUM_MAPPING_DESIGN.md#стратегия-для-входа-конвенции).
+
+### 143. Default выбирается после определения типа входа
+
+```csharp
+builder.Map<WireCode, StoredCode>()
+    .Members(code => ((int)code) switch { _ => StoredCode.Unknown });
+```
+
+| Исходный code | Вход конвенции | Результат |
+|---|---|---|
+| Active = 1 | int 1 | Pending = 1 |
+| Pending = 2 | int 2 | Active = 2 |
+| `(WireCode)42` | int 42 | Unknown через fallback |
+| Large = 300 | int 300 | Unknown через fallback; число не помещается в byte |
+
+Default здесь — строгий ByValue для int → StoredCode. Он не фиксируется как
+ByName при регистрации WireCode → StoredCode. Вариант с `code switch` использует
+ByName и даёт Active → Active, Pending → Pending. Явное значение настройки
+`EnumMappingStrategy.Default` без настроек на других уровнях не меняет результаты.
+
+Обратное изменение типа также меняет library default:
+
+```csharp
+builder.Map<int, StoredCode>()
+    .Members(code => ((WireCode)code) switch { _ => StoredCode.Unknown });
+```
+
+Для входа 1 конвенция получает WireCode.Active и возвращает StoredCode.Active = 2
+по имени; для 2 — StoredCode.Pending = 1. Cast написан пользователем и сохраняет
+обычную семантику C#. Регистрация WireCode → StoredCode для этого не нужна.
+
+### 144. Строковый вход получает конвенцию имён
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => NormalizeText(status) switch { _ => ApiStatus.Unknown });
+```
+
+NormalizeText возвращает string и вызывается один раз. Исходный status = Active;
+строки таблицы задают отдельные варианты результата метода.
+
+| NormalizeText вернул | Результат |
+|---|---|
+| `"Pending"` | Pending |
+| `"active"` | Active |
+| `"20"` | Unknown; числовой текст не разбирается |
+| `" Active "` | Unknown; скрытого Trim нет |
+| `"Missing"` | Unknown |
+
+При замене fallback на `_ => Auto()` последние три строки бросают. Существующий
+`Auto<ApiStatus>()` выбирает тот же вход и ту же конвенцию.
+
+Добавление к паре любой конкретной EnumMappingStrategy — ByName, ByValue или
+ByValueAllowUndefined — даёт MORPH0023: для string → enum этот выбор неприменим.
+В частности, ByValue не заменяется на поиск имени и не включает numeric parsing.
+Fallback не скрывает ошибку настройки; это диагностика конфигурации до runtime.
+
+### 145. Совместимая явная стратегия сохраняется при смене типа
+
+Recode возвращает StoredCode.Active = 2:
+
+```csharp
+builder.Map<WireCode, string>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue)
+    .Members(code => Recode(code) switch { _ => Auto() });
+```
+
+Для исходного WireCode.Active = 1 результат — `"2"`, число вычисленного входа.
+ByValueAllowUndefined даёт ту же строку; ByName и отсутствие настроенной стратегии
+дают `"Active"`. Это StoredCode → string, а не повторная обработка исходного WireCode.
+
+Другие отдельные конфигурации используют ту же форму
+`Input(source) switch { _ => Auto() }`; Input возвращает значение указанного типа:
+
+| Зарегистрированная пара | Тип и результат Input | Явная стратегия пары | Результат |
+|---|---|---|---|
+| WireCode → StoredCode | int 42 | ByValue | Исключение маппинга: число не объявлено |
+| WireCode → StoredCode | int 42 | ByValueAllowUndefined | Неназванное 42 |
+| WireCode → StoredCode | int 300 | ByValueAllowUndefined | Исключение: диапазон byte не расширяется |
+| WireCode → StoredCode | int 1 | ByName | MORPH0023 |
+| string → StoredCode | int 1 | ByValue | Pending = 1 |
+| int → StoredCode | WireCode.Active = 1 | ByName | Active = 2 |
+| WireCode → byte | StoredCode.Active = 2 | Не задана | byte 2 |
+| WireCode → byte | StoredCode.Active = 2 | ByValue | MORPH0023: enum → integer не выбирает стратегию |
+
+Выбор может быть применим только после пользовательского преобразования входа:
+string → StoredCode с вычисленным int допускает ByValue. Исходные типы регистрации
+не запрещают настройку, подходящую фактическому автоматическому пути.
+Поведение одинаково у Auto и неявной конвенции; при обычном fallback неуспех
+допустимой конвенции возвращает fallback, несовместимая настройка остаётся ошибкой.
+
+### 146. Разные пути Members могут иметь разные library defaults
+
+```csharp
+builder.Map<WireCode, StoredCode>()
+    .Members(code =>
+    {
+        if (UseNumericInput())
+            return ((int)code) switch { _ => StoredCode.Unknown };
+
+        return code switch { _ => StoredCode.Unknown };
+    });
+```
+
+| Настройка пары | Active = 1, условие true | Active = 1, условие false |
+|---|---|---|
+| Не задана | Pending = 1, int → enum по ByValue | Active = 2, enum → enum по ByName |
+| ByValue | Pending = 1 | Pending = 1 |
+| ByValueAllowUndefined | Pending = 1 | Pending = 1 |
+| ByName | MORPH0023 для числового пути; конфигурация ошибочна независимо от результата UseNumericInput | Та же диагностика |
+
+С `MemberSelection.Explicit` и без Auto обе ветви возвращают Unknown:
+неявных автоматических путей нет, ByName применима к зарегистрированной enum-паре.
+Если числовой fallback заменить на `_ => Auto()` или `_ => Auto<StoredCode>()`,
+ByName снова несовместима. Direct Auto вне switch использует WireCode source
+и допускает ByName; менять его вход на последний вычисленный int нельзя.
+
+Прямое `Members(code => StoredCode.Unknown)` или Using без Members не получает
+конвенцию поверх результата. Для них применимая к регистрации ByName допустима,
+как и раньше; дополнительная диагностика за отсутствие автоматического пути не нужна.
+
+### 147. Общий default отличается от явной настройки пары
+
+Для числового switch из сценария 143 исходный code = `(WireCode)42`.
+Каждая строка — отдельная конфигурация; имена значений EnumMappingStrategy сокращены.
+
+| MSBuild | Текущий mapper | Текущая пара | Результат |
+|---|---|---|---|
+| Не задано | Не задано | Не задано | Unknown: строгий library default |
+| Не задано | ByValueAllowUndefined | Default | Неназванное 42 |
+| ByValueAllowUndefined | ByName | Default | Unknown: общий ByName неприменим к int → enum; нижний AllowUndefined повторно не ищется |
+| Не задано | ByValueAllowUndefined | ByValue | Unknown: явный строгий выбор пары |
+| Не задано | ByValueAllowUndefined | ByName | MORPH0023; явный выбор пары не игнорируется |
+
+Смена типа входа не меняет общий контракт settings: mapper/MSBuild задают общие
+defaults, а pair-настройка — требование конкретной пары. `Default` продолжает
+наследование; это не команда забыть ByValueAllowUndefined и вернуться к library default.
+
+### 148. IncludeBase сохраняет выбор стратегии, но не заранее вычисленный default
+
+База:
+
+```csharp
+builder.Map<int, StoredCode>()
+    .Members(code => code switch { _ => Auto() });
+```
+
+Локальная пара после base.Configure:
+
+```csharp
+builder.Map<int, StoredCode>()
+    .IncludeBase<int, StoredCode>()
+    .Members(code => Decode(code) switch
+    {
+        WireCode.Unknown => StoredCode.Unknown
+    });
+```
+
+Decode возвращает WireCode; строки задают отдельные варианты результата метода.
+Настройка ByValue/ByValueAllowUndefined, когда указана, задаётся локальной паре.
+
+| Исходный code | Decode вернул | Стратегия не задана | ByValue | ByValueAllowUndefined |
+|---|---|---|---|---|
+| 1 | Active = 1 | Active = 2 по локальному ByName | Pending = 1 | Pending = 1 |
+| 1 | Large = 300 | Pending = 1 через базовый Auto с default ByValue | Pending = 1 через базовый Auto | Pending = 1 через базовый Auto; локальное 300 вне диапазона |
+| 42 | `(WireCode)42` | Исключение базового Auto | Исключение базового Auto | Неназванное 42 по локальной конвенции |
+
+Без настроенной стратегии локальный enum-вход использует ByName, а базовый
+int-вход — строгий ByValue. С Explicit локальная неявная конвенция пропускается;
+базовый Auto всё равно использует int и бросает для 42 при library default.
+Decode вызывается один раз; применение другой конвенции его не повторяет.
+
+Если ByValueAllowUndefined задана в **базовой паре**, локальный Default сохраняет
+её для обоих входов. Mapper-level ByName не перебивает included pair. Локальный
+ByValue возвращает строгие результаты таблицы; отдельной стратегии базы не остаётся.
+
+Локальный ByName даёт MORPH0023 для унаследованного Auto с int-входом, хотя
+локальному WireCode-входу подходит. Если локально добавить `_ => StoredCode.Unknown`,
+этот fallback заменит базовый Auto: останется только enum-конвенция и ByName станет
+допустимой. Для исходного 1 с Decode = Large результат тогда Unknown.
+При отсутствии локального Members вход остаётся базовым int, и ByName неприменима.
+
+### 149. Смена типа не создаёт новых видов автоматического преобразования
+
+Каждая строка — отдельный mapping switch над вычисленным входом. Во всех строках
+EnumMappingStrategy не задана; у mapping switch есть указанный обычный fallback.
+
+| Зарегистрированная пара | Статический тип и значение входа switch | Fallback | Результат |
+|---|---|---|---|
+| WireCode → string | int 1 | `"fallback"` | `"fallback"`; integer → string не входит в enum-конвенцию |
+| WireCode → string | string `"Active"` | `"fallback"` | `"fallback"`; string → string также не входит |
+| WireCode → int | int 1 | `-1` | -1; общего integer → integer mapping здесь нет |
+| WireCode → StoredCode | object, содержащий WireCode.Active | StoredCode.Unknown | Unknown; runtime enum не меняет статический object-вход |
+
+Замена fallback на `_ => Auto()` во всех строках требует диагностики
+неподдерживаемого входа. Для object действует то же правило, что в сценарии 134:
+генератор не исследует runtime-тип и не выбирает скрытое enum-значение.
+Обычный явный результат по-прежнему может вернуть значение без конвенции.
+
 ## Статус проверки каталога
 
 Примеры сверены с согласованным дизайном; нумерация нужна для обсуждения конкретных
 случаев и последующего переноса в тесты. Они не заменяют проверки production
 генератора, реальной типизации Members, generated code и Rider. Новые ID/severity
 enum-диагностик и точные имена enum-specific exceptions каталог не назначает.
-Открытые сочетания нового правила входа перечислены в
+Оставшееся открытое сочетание нового правила входа описано в
 [дизайне](ENUM_MAPPING_DESIGN.md#открытые-стыки-нового-правила-входа);
-для них здесь не закрепляются несогласованные ожидаемые результаты.
+для него здесь не закрепляются несогласованные ожидаемые результаты.
