@@ -43,6 +43,7 @@
 - [Вложенные пары и границы API](#вложенные-пары-и-границы-api) — 108–118
 - [Обычные типы и кортежи из enum и в enum](#обычные-типы-и-кортежи-из-enum-и-в-enum) — 119–132
 - [Выбор входа конвенции](#выбор-входа-конвенции) — 133–135
+- [IncludeBase и разные входы switch](#includebase-и-разные-входы-switch) — 136–142
 
 ## Обычные enum
 
@@ -1189,7 +1190,7 @@ builder.Map<int, StoredCode>();
 Общий ByName для integer → enum приводит к строгому default ByValue:
 1 даёт Pending, 42 бросает. Нижний MSBuild AllowUndefined повторно не ищется.
 
-### 50. Несколько уровней используют одну конвенцию и один result
+### 50. Несколько уровней используют одну неявную конвенцию и один result
 
 Для цепочки `Base → Middle → Application` каждый уровень вызывает
 `base.Configure(builder)` и включает точную пару через IncludeBase.
@@ -1201,14 +1202,14 @@ builder.Map<int, StoredCode>();
 | Application | `Corrupt => Unrecognized` |
 
 Это те же формы switch над неизменённым status, что в примере 45, с
-квалифицированными именами enum. Вычисляемые входы разных уровней здесь не смешиваются.
+квалифицированными именами enum. Разные входы уровней рассмотрены в сценариях 136–142.
 
 | Вход | Результат |
 |---|---|
 | Cancelled | Archived: ближайший специальный case |
 | Suspended | Disabled |
 | Corrupt | Unrecognized |
-| Active | Active: одна конвенция после всех специальных правил |
+| Active | Active: одна неявная конвенция после всех специальных правил |
 | Legacy | Unknown: ближайший имеющийся fallback |
 
 Если Base задаёт ResolveUsing, он выбирает начальный result один раз; все уровни
@@ -3140,6 +3141,216 @@ Auto получает вычисленное Audit в каждом проход�
 Read, Write, неизвестному биту или нулю и не вызывает NormalizeFlag повторно.
 Сценарий использует одиночный нормализованный бит; обработка составного
 вычисленного входа в ByBit остаётся отдельным открытым вопросом дизайна.
+
+## IncludeBase и разные входы switch
+
+Используются DomainStatus и ApiStatus из начала каталога. Настройки по умолчанию —
+ByName и MemberSelection.Auto. Фрагменты базы и локальной пары размещаются в той
+же конструкции наследования, что в сценарии 45: точная пара включается через
+IncludeBase после base.Configure. Все результаты относятся к Create и Update.
+
+### 136. Локальная нормализация не меняет вход базовых правил
+
+```csharp
+// Базовый mapper.
+builder.Map<DomainStatus, ApiStatus>()
+    .Members(status => status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted,
+        _ => ApiStatus.Unknown
+    });
+
+// Текущий mapper после base.Configure(builder).
+builder.Map<DomainStatus, ApiStatus>()
+    .IncludeBase<DomainStatus, ApiStatus>()
+    .Members(status => Normalize(status) switch
+    {
+        DomainStatus.Suspended => ApiStatus.Disabled
+    });
+```
+
+Normalize возвращает указанное в таблице значение и вызывается один раз.
+
+| Исходный status | Normalize вернул | Результат |
+|---|---|---|
+| Active | Pending | Pending по локальной конвенции |
+| Cancelled | Pending | Deleted: специальное правило базы раньше конвенции |
+| Legacy | Suspended | Disabled: локальное специальное правило |
+| Pending | Legacy | Unknown: локальная конвенция неуспешна, выполняется базовый fallback |
+| Unknown | Cancelled | Unknown: базовый case проверяет исходный Unknown, а не нормализованный Cancelled |
+
+С эффективным Explicit неявная конвенция пропускается:
+Active → нормализованный Pending даёт Unknown; остальные строки сохраняют результат.
+Специальное правило базы для Cancelled по-прежнему выполняется раньше fallback.
+
+### 137. Унаследованный Auto и отсутствующий fallback могут различаться
+
+Используется сценарий 136 с исходным Pending и результатом Normalize = Legacy.
+Специальные ветки не совпадают. Каждая строка — отдельный вариант fallback:
+
+| Fallback базы | Локальный fallback | Результат при Auto |
+|---|---|---|
+| Отсутствует | Отсутствует | Исключение: локальная конвенция для Legacy неуспешна |
+| `_ => ApiStatus.Unknown` | Отсутствует | Unknown |
+| `_ => Auto()` | Отсутствует | Pending: базовый Auto получает исходный Pending |
+| `_ => Auto()` | `_ => Auto()` | Исключение: локальный Auto получает Legacy и заменяет базовый fallback |
+| `_ => Auto()` | `_ => ApiStatus.Unrecognized` | Unrecognized |
+
+В варианте с базовым `_ => Auto()` и без локального fallback, если Normalize
+вернёт Active, локальная неявная конвенция даст ApiStatus.Active,
+не достигая базового fallback Auto. При Explicit эта неявная попытка пропущена,
+поэтому унаследованный Auto для исходного Pending вернёт ApiStatus.Pending.
+Если исходный status = Legacy, а Normalize вернул Corrupt, обе попытки неуспешны:
+базовый Auto бросает и не ищет следующий fallback. Normalize не вызывается повторно.
+
+Таким образом, единственная неявная конвенция может сопровождаться явной
+попыткой для другого входа. Добавление `_ => Auto()` в базу не всегда равнозначно
+отсутствующему fallback при локальном изменении входа.
+
+### 138. Auto в специальной базовой ветке завершает поиск немедленно
+
+В сценарии 136 заменить базовый Members на:
+
+```csharp
+.Members(status => status switch
+{
+    DomainStatus.Active or DomainStatus.Cancelled => Auto(),
+    _ => ApiStatus.Unknown
+})
+```
+
+Локальный Members прежний; Normalize возвращает Pending.
+
+| Исходный status | Результат |
+|---|---|
+| Active | Active: базовая специальная ветка Auto работает с исходным Active |
+| Cancelled | Исключение: у Cancelled нет соответствия, локальная конвенция для Pending не достигается |
+| Legacy | Pending: специальная базовая ветка не совпала, работает локальная конвенция |
+
+Неуспех выбранного Auto не переходит к Unknown. Если вместо объединённого case
+написать `DomainStatus.Active when IsEnabled() => Auto()` и IsEnabled вернёт false,
+исходный Active даст Pending по локальной конвенции.
+
+### 139. Без локального Members вход задаёт ближайший унаследованный Members
+
+Цепочка Base → Middle → Application включает одну точную пару через IncludeBase
+на каждом уровне. Base содержит правила сценария 136, Middle — его нормализующий
+Members. Для исходного Active метод Normalize уровня Middle возвращает Pending.
+Отдельный NormalizeApplication возвращает Legacy.
+
+| Members уровня Application | Результат для исходного Active |
+|---|---|
+| Не задан, только IncludeBase | Pending: вход неявной конвенции задаёт унаследованный Members уровня Middle |
+| `status switch { DomainStatus.Corrupt => ApiStatus.Unrecognized }` | Active: теперь вход задаёт локальный switch |
+| `NormalizeApplication(status) switch { DomainStatus.Corrupt => ApiStatus.Unrecognized }` | Unknown: конвенция для Legacy неуспешна, затем базовый fallback |
+| Последний вариант с MemberSelection.Explicit | Unknown: неявная конвенция пропущена |
+
+В третьем варианте успешные потенциальные соответствия Middle.Pending и
+Base.Active не пробуются: цепочки неявных конвенций уровней нет. Специальные
+правила всех достигнутых уровней сохраняются. В Application без Members при
+Explicit результат также Unknown, поскольку унаследованный fallback — значение.
+
+### 140. Неподдерживаемый локальный вход не заменяется базовым
+
+Base остаётся как в сценарии 136. Локальная пара:
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .IncludeBase<DomainStatus, ApiStatus>()
+    .ResolveUsing((status, previous) => ApiStatus.Pending)
+    .Members((status, previous, result) => (status, result) switch
+    {
+        (DomainStatus.Corrupt, ApiStatus.Pending) => ApiStatus.Unrecognized
+    });
+```
+
+| Исходный status | Результат |
+|---|---|
+| Active | Unknown: tuple не имеет конвенции; базовый source не выбирается вместо него |
+| Cancelled | Deleted по специальному правилу базы |
+| Corrupt | Unrecognized по локальному правилу |
+| Legacy | Unknown |
+
+При замене базового fallback на `_ => Auto()` Active даст Active, Legacy бросит:
+это явный унаследованный запрос для базового source. Написанный локально
+`_ => Auto()` требует диагностики для tuple-входа. Локальный `_ => result`
+вместо него допустим и даёт Pending для Active и Legacy, заменяя базовый fallback;
+Cancelled и Corrupt сохраняют свои специальные результаты.
+
+### 141. Входы вычисляются один раз, fallback сохраняет свой контекст
+
+```csharp
+// Members базы; ReadBaseInput считает вызовы.
+.Members(status =>
+{
+    var input = ReadBaseInput(status);
+    return input switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted,
+        var remaining => RecordFallback(remaining)
+    };
+})
+
+// Локальный Members после IncludeBase; NormalizeLocal считает вызовы.
+.Members(status => NormalizeLocal(status) switch
+{
+    DomainStatus.Suspended => ApiStatus.Disabled
+})
+```
+
+RecordFallback записывает свой аргумент и возвращает ApiStatus.Unrecognized.
+Исходный status = Active; строки задают отдельные варианты поведения методов.
+
+| NormalizeLocal вернул | ReadBaseInput вернул | Результат | Вызовы Local / Base / Fallback |
+|---|---|---|---|
+| Suspended | Не вызывается | Disabled | 1 / 0 / 0 |
+| Pending | Cancelled | Deleted | 1 / 1 / 0 |
+| Pending | Legacy | Pending по локальной конвенции | 1 / 1 / 0 |
+| Legacy | Corrupt | Unrecognized; RecordFallback получил Corrupt | 1 / 1 / 1 |
+| Pending | Бросает InvalidOperationException | То же исключение, конвенция для Pending не запускается | 1 / 1 / 0 |
+
+Возврат к базовому fallback использует вход его switch, а не локальный Legacy
+или исходный Active. При замене fallback на `_ => Auto()` и базовом входе Active
+после неуспеха локального Legacy получится Active: оба метода вызываются по одному
+разу, ReadBaseInput ради Auto повторно не вызывается. Независимые пользовательские
+вычисления не объединяются, даже если иногда возвращают одинаковые значения.
+
+### 142. Локальный result switch и базовый source switch сохраняют разные входы
+
+ChooseInitial возвращает значение из таблицы. Base:
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .ResolveUsing((status, previous) => ChooseInitial(status))
+    .Members(status => status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted,
+        _ => Auto()
+    });
+```
+
+Локальная пара после base.Configure:
+
+```csharp
+builder.Map<DomainStatus, ApiStatus>()
+    .IncludeBase<DomainStatus, ApiStatus>()
+    .Members((status, previous, result) => result switch
+    {
+        ApiStatus.Disabled => ApiStatus.Archived
+    });
+```
+
+| Исходный status | Начальный result | Итог |
+|---|---|---|
+| Active, Legacy | Pending | Pending по локальной конвенции result → result |
+| Cancelled | Pending | Deleted: базовое специальное правило раньше конвенции |
+| Cancelled | Disabled | Archived: локальное специальное правило раньше базового |
+| Active | `(ApiStatus)123` | Active: локальная строгая E → E конвенция неуспешна, затем базовый Auto для source |
+| Legacy | `(ApiStatus)123` | Исключение: базовый Auto тоже не нашёл соответствия |
+
+Локальный `_ => result` сохраняет неназванное 123 для Active и Legacy,
+заменяя базовый fallback Auto. Using вызывается один раз по lifecycle; все уровни
+видят один начальный result, он не становится результатом предыдущей ветки.
 
 ## Статус проверки каталога
 

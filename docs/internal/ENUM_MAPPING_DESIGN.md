@@ -157,7 +157,8 @@ Members — декларативный DSL, не runtime delegate из Configure
 1. Локальные специальные ветки в написанном порядке.
 2. Специальные ветки IncludeBase, от ближайшего уровня к дальнему.
 3. Одна неявная конвенция с effective settings, если selection — Auto и для
-   входа switch поддерживается конвенционное преобразование в destination.
+   выбранного входа switch поддерживается конвенционное преобразование в destination.
+   При композиции вход выбирается по [правилу IncludeBase](#includebase).
 4. Ближайшая завершающая ветка; при отсутствии — mapping exception.
 
 `Explicit` пропускает только шаг 3. **Вход конвенции — значение выражения перед
@@ -205,7 +206,8 @@ fallback. `or` объединяет случаи; patterns и guards не пер
 Даже после false guard для Active конвенция может сопоставить Active.
 Bare завершающий Auto и неявное дополнение одного switch образуют **один**
 автоматический путь: не повторять конвенцию после неудачи и не возвращаться
-к другим веткам после неуспешного явного Auto.
+к другим веткам после неуспешного явного Auto. Унаследованный fallback Auto
+с другим входом остаётся отдельным явным запросом по правилам IncludeBase ниже.
 
 `Members(_ => Auto())` явно запрашивает конвенцию. Прямое
 `Members(source => Compute(source))` задаёт результат для всей текущей единицы
@@ -240,18 +242,52 @@ DSL-семантика: [обычный C# switch](https://learn.microsoft.com/e
 тот же case в базе. `Cancelled => Auto()` перекрывает базовый Cancelled;
 завершающий `_ => Auto()` остаётся после **всех** специальных веток.
 
+Каждый switch сохраняет свой вход, patterns, guards и контекст вычислений.
+Результат `Normalize(source)` локального switch не подставляется вместо source
+в базовые правила. Базовый `source switch` проверяет собственное source,
+даже если локальный switch написан над result или нормализованным значением.
+
+**Вход единственной неявной конвенции задаёт локальный mapping-switch выбранного
+пути Members.** Если локального Members нет, его задаёт ближайший унаследованный
+Members. Прямое явное значение или Auto сохраняет обычный контракт завершения
+пути; дополнительный switch ради наследования не появляется.
+При Explicit неявный шаг пропускается. Если вход локального switch — tuple/object
+без поддерживаемой конвенции, шаг тоже пропускается: подходящий вход в базе
+вместо него не подбирается. После неуспеха не запускаются неявные конвенции
+остальных уровней; выполняется ближайший fallback либо бросается mapping exception.
+
+Унаследованный fallback сохраняет собственные locals и pattern bindings:
+`var remaining => Compute(remaining)` получает вход switch, в котором написан.
+**Унаследованный Auto также использует вход своего switch**, как в специальной
+ветке, так и в fallback. Неуспех выбранного явного Auto сразу бросает; перехода
+к другой конвенции или более дальнему fallback нет. Настройки остаются effective
+settings текущей пары, а не отдельными настройками уровня объявления Auto.
+
+Поэтому одна неявная попытка может сопровождаться явной попыткой для другого
+входа. Например, source = Pending, локальный Normalize вернул Legacy,
+специальные ветки не совпали: локальная ByName-конвенция неуспешна, а базовый
+`source switch { _ => Auto() }` возвращает Pending. Без базового fallback было
+бы исключение; с базовым `_ => Unknown` — Unknown. Отсутствие fallback и
+`_ => Auto()` в базе могут различаться при разных входах уровней.
+Локальный `_ => Auto()` заменяет базовый fallback и в этом примере бросает для
+Legacy; локальный `_ => Unknown` возвращает Unknown. Новых маркеров или настроек нет.
+
 Пример при ByName: база задаёт Cancelled → Deleted, Suspended → Disabled,
 fallback Unknown; локально Cancelled → Archived и fallback Unrecognized.
 Результаты: Cancelled → Archived, Suspended → Disabled, общее Active → Active,
 неизвестное Legacy → Unrecognized. False у локального guard Cancelled даёт Deleted.
 
-Locals уровня вычисляются один раз при входе, до его switch; база достигается
-лениво. Возврат к локальному fallback использует уже полученные locals:
+Locals и вход switch каждого уровня вычисляются один раз при достижении уровня;
+база достигается лениво. Если локальная специальная ветка дала результат, базовые
+вычисления не выполняются. Возврат к fallback использует уже полученные значения:
 `var policy = GetPolicy(source)` не вызывается повторно ради `_ => policy.Unknown`.
+Вход базового switch не вычисляется повторно ради унаследованного Auto.
+Исключения пользовательских вычислений сохраняются, даже если последующая
+неявная конвенция могла бы успешно сопоставить локальный вход.
 Результат выбранной ветки не передаётся следующему уровню как новый вход.
-Все уровни видят один начальный result. Когда switch всех уровней используют
-одно неизменённое source, после специальных правил остаётся одна конвенция.
-Композиция различных входов уровней выделена в [открытые стыки](#открытые-стыки-нового-правила-входа).
+Все уровни видят один начальный result; их входы switch могут различаться.
+Сценарии с разными входами, fallback и эффектами собраны в
+[каталоге, 136–142](ENUM_MAPPING_SCENARIOS.md#includebase-и-разные-входы-switch).
 
 Using наследуется для точной пары и сочетается с Members; inherited Convert
 или фабрика не превращаются в enum rules. После композиции сохраняются проверки
@@ -785,7 +821,7 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 |---|---|
 | API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; Create/Update, включая Update без Create; все null policies; доступное/недоступное чтение result и неиспользуемый параметр; прежний object/tuple API |
 | Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
-| Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; ленивые locals/scopes; один initial result; Convert/destination-method conflicts; фабрика после наследования |
+| Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, Ignore с доступным/недоступным result и scalar nested helpers |
 | Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
 | Строковые flags | Три входных разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null; вывод ByBit/ByMask, порядок/повторы, ноль с именем/aliases и без объявления, пустые вклады и пустой итог |
@@ -796,10 +832,6 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 Следующие сочетания требуют отдельного решения до реализации; результаты для них
 не выводятся из отменённого правила «конвенция всегда использует исходный source»:
 
-- **IncludeBase с разными входами switch.** Например, локальный `Normalize(source)`
-  и базовый `source`: чей вход получает общая неявная конвенция и как с ней
-  сочетается унаследованный fallback Auto. Приоритет специальных правил и ленивые
-  вычисления уровней сохраняются; выбор входа общей конвенции ещё не согласован.
 - **Смена направления преобразования внутри switch.** Например, у enum → enum
   с явным ByValue вычисляемый вход стал строкой: нужна согласованная применимость
   настройки к новому направлению, без молчаливого игнорирования явного выбора.
