@@ -74,6 +74,8 @@ generated-source expectations. Follow the general principles in
   Conventions, validation and runtime access use the original destination
   member; XML documentation links the alias to that member. This applies to
   ordinary destinations and tuple elements.
+- Let the compiler synthesize standard member-plan record methods; do not emit
+  placeholder equality or formatting implementations.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes or compatibility branches without a user-facing need.
 

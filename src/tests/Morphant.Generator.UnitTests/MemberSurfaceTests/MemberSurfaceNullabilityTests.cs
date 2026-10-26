@@ -141,14 +141,6 @@ namespace Morphant.Generated.N_5e01468111660761710199b9666fe80e
             set { }
         }
         #nullable enable annotations
-
-        public bool Equals(DestinationMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;
@@ -274,14 +266,6 @@ namespace Morphant.Generated.N_5e01468111660761710199b9666fe80e
             get => null!;
             set { }
         }
-
-        public bool Equals(DestinationMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;

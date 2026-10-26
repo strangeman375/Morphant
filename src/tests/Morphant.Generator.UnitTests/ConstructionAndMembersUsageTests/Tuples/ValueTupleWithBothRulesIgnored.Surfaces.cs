@@ -228,14 +228,6 @@ namespace Morphant.Generated.N_39feab0eaf8ee9fac3e9ffc76499fd97
             get => null!;
             set { }
         }
-
-        public bool Equals(TupleMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """),

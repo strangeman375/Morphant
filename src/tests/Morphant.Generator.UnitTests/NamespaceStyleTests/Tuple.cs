@@ -253,14 +253,6 @@ namespace Morphant.Generated.N_cc9f02dfd9f8e976ebf2619cedd84fd5
             get => null!;
             set { }
         }
-
-        public bool Equals(TupleMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """),
@@ -597,14 +589,6 @@ internal sealed record TupleMembers
         get => null!;
         set { }
     }
-
-    public bool Equals(TupleMembers? other) => false;
-
-    public override int GetHashCode() => 0;
-
-    public override string ToString() => string.Empty;
-
-    private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
 }
 """),
         ("Morphant.Generated.MemberExtension.Mapper.ValueTuple2ToValueTuple2__3d0d23004af4a28e58552e8729ec32c1.g.cs",

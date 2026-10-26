@@ -212,14 +212,6 @@ namespace Morphant.Generated.N_c465d85b12adb249299335c032aeafc3
             get => null!;
             set { }
         }
-
-        public bool Equals(DestinationMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;
@@ -254,14 +246,6 @@ namespace Morphant.Generated.N_c465d85b12adb249299335c032aeafc3
             get => null!;
             set { }
         }
-
-        public bool Equals(DestinationMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;
@@ -287,14 +271,6 @@ namespace Morphant.Generated.N_c465d85b12adb249299335c032aeafc3
             get => null!;
             set { }
         }
-
-        public bool Equals(DestinationMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;

@@ -141,14 +141,6 @@ internal sealed record DestinationMembers
         get => null!;
         set { }
     }
-
-    public bool Equals(DestinationMembers? other) => false;
-
-    public override int GetHashCode() => 0;
-
-    public override string ToString() => string.Empty;
-
-    private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
 }
 """;
 
@@ -292,14 +284,6 @@ namespace Morphant.Generated.N_5e01468111660761710199b9666fe80e
             get => null!;
             set { }
         }
-
-        public bool Equals(DestinationMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;
@@ -423,14 +407,6 @@ namespace Morphant.Generated.N_22991bac47a8192a7ecf117ee2eaaefb
             get => null!;
             set { }
         }
-
-        public bool Equals(URLMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;
@@ -456,14 +432,6 @@ namespace Morphant.Generated.N_264e3af5698663c4ced047a79636ab8a
             get => null!;
             set { }
         }
-
-        public bool Equals(UrlMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;

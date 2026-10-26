@@ -222,14 +222,6 @@ namespace Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b
             get => null!;
             set { }
         }
-
-        public bool Equals(DestinationMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """),
@@ -1020,14 +1012,6 @@ namespace Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed
             get => null!;
             set { }
         }
-
-        public bool Equals(AnimalDtoMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """),
@@ -1052,14 +1036,6 @@ namespace Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278
             get => null!;
             set { }
         }
-
-        public bool Equals(DogDtoMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """),
@@ -1084,14 +1060,6 @@ namespace Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff
             get => null!;
             set { }
         }
-
-        public bool Equals(EntityDtoMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """),

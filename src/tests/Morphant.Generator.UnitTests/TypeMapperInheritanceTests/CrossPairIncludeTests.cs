@@ -440,14 +440,6 @@ namespace Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9
             get => null!;
             set { }
         }
-
-        public bool Equals(AnimalDtoMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;
@@ -482,14 +474,6 @@ namespace Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0
             get => null!;
             set { }
         }
-
-        public bool Equals(DogDtoMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """;

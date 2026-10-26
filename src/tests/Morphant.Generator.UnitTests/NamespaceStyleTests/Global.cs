@@ -244,14 +244,6 @@ namespace Morphant.Generated.N_927cb67ebfd89714764f8297eab119cd
             get => null!;
             set { }
         }
-
-        public bool Equals(DestinationMembers? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 """),
@@ -585,14 +577,6 @@ internal sealed record DestinationMembers
         get => null!;
         set { }
     }
-
-    public bool Equals(DestinationMembers? other) => false;
-
-    public override int GetHashCode() => 0;
-
-    public override string ToString() => string.Empty;
-
-    private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
 }
 """),
         ("Morphant.Generated.MemberExtension.Mapper.SourceToDestination__d845ce0ac1081d2c394b857f321356fb.g.cs",

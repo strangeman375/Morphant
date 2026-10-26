@@ -32,17 +32,6 @@ internal static class MemberPlanEmitter
 
         WriteMembers(writer, model.Members);
 
-        writer.Line(
-            $"public bool Equals({typeReference}? other) => false;");
-        writer.Line();
-        writer.Line("public override int GetHashCode() => 0;");
-        writer.Line();
-        writer.Line("public override string ToString() => string.Empty;");
-        writer.Line();
-        writer.Line(
-            "private bool PrintMembers(" +
-            "global::System.Text.StringBuilder builder) => false;");
-
         writer.CloseBlock();
         writer.CloseNamespace();
 
@@ -98,7 +87,10 @@ internal static class MemberPlanEmitter
                 writer.Line("#nullable enable annotations");
             }
 
-            writer.Line();
+            if (index + 1 < members.Count)
+            {
+                writer.Line();
+            }
         }
     }
 
