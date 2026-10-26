@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 08:34:56 |
-| Coverage date: | 10/26/2026 - 08:19:59 - 10/26/2026 - 08:34:50 |
+| Generated on: | 10/26/2026 - 10:43:01 |
+| Coverage date: | 10/26/2026 - 10:28:27 - 10/26/2026 - 10:42:55 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 399 |
 | Files: | 221 |
-| **Line coverage:** | 90.9% (41594 of 45728) |
-| Covered lines: | 41594 |
+| **Line coverage:** | 90.9% (41585 of 45719) |
+| Covered lines: | 41585 |
 | Uncovered lines: | 4134 |
-| Coverable lines: | 45728 |
-| Total lines: | 76309 |
-| **Branch coverage:** | 79% (16226 of 20523) |
-| Covered branches: | 16226 |
-| Total branches: | 20523 |
+| Coverable lines: | 45719 |
+| Total lines: | 76301 |
+| **Branch coverage:** | 79% (16228 of 20525) |
+| Covered branches: | 16228 |
+| Total branches: | 20525 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -181,7 +181,7 @@
 |Morphant.Generator.MappingPair.UnifiableMappingPairConflictModel|100%||
 |Morphant.Generator.MappingPair.UnsupportedMappingPairModel|100%||
 |Morphant.Generator.MappingPair.UnsupportedMappingRootModel|100%||
-|Morphant.Generator.MemberSurface.MemberPlan.MemberPlanEmitter|100%|91.3%|
+|Morphant.Generator.MemberSurface.MemberPlan.MemberPlanEmitter|100%|91.6%|
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModel|100%||
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelBuilder|97.7%|81.5%|
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelResult|100%||
@@ -445,4 +445,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #666](https://github.com/strangeman375/Morphant/actions/runs/40290562117).
+Full HTML report: download the **coverage** artifact from [CI run #667](https://github.com/strangeman375/Morphant/actions/runs/40306662384).
