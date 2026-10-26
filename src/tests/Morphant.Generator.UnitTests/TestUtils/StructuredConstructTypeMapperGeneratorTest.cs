@@ -46,7 +46,7 @@ internal sealed class StructuredConstructTypeMapperGeneratorTest
             (
                 typeof(TestStructuredConstructTypeMapperGenerator),
                 expectedSource.FileName,
-                GeneratedSourceText.CreateForWorkspace(expectedSource.Content)
+                GeneratedSourceText.CreateForGenerator(expectedSource.FileName, expectedSource.Content)
             ));
         }
 
@@ -66,8 +66,7 @@ internal sealed class StructuredConstructTypeMapperGeneratorTest
             parseOptions,
             "TestCase.cs");
         var compilation = CSharpCompilation.Create(
-            "MorphantStructuredConstructDiagnostics_" +
-            Guid.NewGuid().ToString("N"),
+            "MorphantStructuredConstructDiagnostics",
             [syntaxTree],
             BuildReferences(),
             new CSharpCompilationOptions(

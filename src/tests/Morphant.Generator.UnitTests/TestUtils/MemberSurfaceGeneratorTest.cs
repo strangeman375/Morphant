@@ -75,7 +75,7 @@ internal sealed class MemberSurfaceGeneratorTest :
             (
                 typeof(TestMemberSurfaceGenerator),
                 expectedSource.FileName,
-                GeneratedSourceText.CreateForWorkspace(expectedSource.Content)
+                GeneratedSourceText.CreateForGenerator(expectedSource.FileName, expectedSource.Content)
             ));
         }
 

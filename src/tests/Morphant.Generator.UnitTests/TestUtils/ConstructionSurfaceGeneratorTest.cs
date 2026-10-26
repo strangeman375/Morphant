@@ -75,7 +75,7 @@ internal sealed class ConstructionSurfaceGeneratorTest :
             (
                 typeof(TestConstructionSurfaceGenerator),
                 expectedSource.FileName,
-                GeneratedSourceText.CreateForWorkspace(expectedSource.Content)
+                GeneratedSourceText.CreateForGenerator(expectedSource.FileName, expectedSource.Content)
             ));
         }
 
