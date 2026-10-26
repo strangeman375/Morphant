@@ -41,7 +41,21 @@ internal static class DotNetCli
         var standardOutput = process.StandardOutput.ReadToEndAsync();
         var standardError = process.StandardError.ReadToEndAsync();
 
-        await process.WaitForExitAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+        {
+            if (!process.HasExited)
+                process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync();
+
+            throw new TimeoutException(
+                $"dotnet {string.Join(' ', arguments)} exceeded 5 minutes in {workingDirectory}." +
+                $"{Environment.NewLine}{await standardOutput}{await standardError}");
+        }
 
         return new ProcessResult(
             process.ExitCode,
