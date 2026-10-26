@@ -14,28 +14,18 @@ if [[ "$roslyn_version" == "$minimum_roslyn_version" ]]; then
   build_target=src/Morphant.slnx
 fi
 
-# Build the generator and its dependencies against the minimum supported Roslyn.
-dotnet restore "$build_target" -p:MorphantRoslynVersion="$minimum_roslyn_version"
+# Only the unit-test host uses the selected version; the generator stays on the baseline.
+dotnet restore "$build_target" -p:MorphantTestRoslynVersion="$roslyn_version"
 dotnet build "$build_target" \
   --configuration Release --no-restore \
-  -p:ContinuousIntegrationBuild=true -p:MorphantRoslynVersion="$minimum_roslyn_version"
-generator_checksum="$(sha256sum "$generator_assembly")"
+  -p:ContinuousIntegrationBuild=true -p:MorphantTestRoslynVersion="$roslyn_version"
 
-# Change only the test host when validating a newer Roslyn version.
-if [[ "$roslyn_version" != "$minimum_roslyn_version" ]]; then
-  dotnet restore "$unit_project" -p:MorphantRoslynVersion="$roslyn_version"
-  dotnet build "$unit_project" \
-    --configuration Release --no-restore \
-    -p:ContinuousIntegrationBuild=true -p:MorphantRoslynVersion="$roslyn_version" \
-    -p:BuildProjectReferences=false
-fi
-
-printf '%s\n' "$generator_checksum" | sha256sum --check
+# The binary compatibility tests also check its baseline Roslyn assembly references.
 cmp "$generator_assembly" "$test_generator_assembly"
 
 dotnet test "$unit_project" \
   --configuration Release --no-build --no-restore \
-  -p:MorphantRoslynVersion="$roslyn_version" \
+  -p:MorphantTestRoslynVersion="$roslyn_version" \
   --results-directory "artifacts/test-results/roslyn-$roslyn_version" \
   --logger "trx;LogFileName=roslyn-$roslyn_version.trx" \
   "$@"

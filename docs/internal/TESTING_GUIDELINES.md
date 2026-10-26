@@ -119,6 +119,11 @@ expectations or verification policy. They are intentionally kept outside
 - Runtime DI tests use `Microsoft.Extensions.DependencyInjection`, including
   real scopes when scope behavior matters. Do not replace it with a custom
   `IServiceProvider` stub.
+- Package tests share immutable package preparation, but each independent
+  scenario owns its consumer workspace. Keep related build/edit/failure/recovery
+  transitions in one test; split unrelated contracts into separately reported
+  tests. Bound child `dotnet` processes and include their command and output
+  when reporting a timeout.
 
 ## Running verification
 
@@ -149,10 +154,12 @@ expectations or verification policy. They are intentionally kept outside
   its Linux test runs in the calling CI or release workflow. Run
   [test-shipped-generator.sh](../../eng/test-shipped-generator.sh) with the host
   version as its first argument and optional `dotnet test` arguments after it.
-- Build the generator against the minimum Roslyn version once. Keep that exact
-  binary while building the newer test host without its project references;
-  verify its checksum and the copy loaded by the tests before running them.
-  Rebuilding the generator for each host does not verify the shipped binary.
+- Select the unit-test host with `MorphantTestRoslynVersion`; it defaults to
+  `MorphantRoslynVersion`, the minimum version used to compile the generator.
+  Restore and build the normal project graph once per host. The script compares
+  the generator output with the copy loaded by the tests, and binary compatibility
+  tests verify its Roslyn assembly references remain at the supported minimum.
+  Never upgrade the generator's compile-time dependencies to select a test host.
 - Use the script with `--filter` for focused verification. When shared
   output directories were used, restore baseline dependencies and rebuild
   affected outputs before resuming ordinary `--no-restore` / `--no-build` runs,
