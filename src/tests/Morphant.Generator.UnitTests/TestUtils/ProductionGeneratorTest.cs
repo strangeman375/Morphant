@@ -40,7 +40,7 @@ internal sealed class ProductionGeneratorTest :
             (
                 typeof(MorphantGenerator),
                 expectedSource.FileName,
-                GeneratedSourceText.Normalize(expectedSource.Content)
+                GeneratedSourceText.CreateForWorkspace(expectedSource.Content)
             ));
         }
 

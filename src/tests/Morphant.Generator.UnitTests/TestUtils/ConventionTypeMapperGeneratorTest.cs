@@ -101,7 +101,7 @@ internal sealed class ConventionTypeMapperGeneratorTest
         (
             typeof(TestConventionTypeMapperGenerator),
             hintName,
-            GeneratedSourceText.Normalize(expected)
+            GeneratedSourceText.CreateForWorkspace(expected)
         ));
 
         await test.RunAsync();
@@ -138,7 +138,7 @@ internal sealed class ConventionTypeMapperGeneratorTest
             (
                 typeof(TestConventionTypeMapperGenerator),
                 expectedSource.FileName,
-                GeneratedSourceText.Normalize(expectedSource.Content)
+                GeneratedSourceText.CreateForWorkspace(expectedSource.Content)
             ));
         }
     }

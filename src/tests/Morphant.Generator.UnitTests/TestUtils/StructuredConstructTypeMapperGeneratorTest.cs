@@ -46,7 +46,7 @@ internal sealed class StructuredConstructTypeMapperGeneratorTest
             (
                 typeof(TestStructuredConstructTypeMapperGenerator),
                 expectedSource.FileName,
-                GeneratedSourceText.Normalize(expectedSource.Content)
+                GeneratedSourceText.CreateForWorkspace(expectedSource.Content)
             ));
         }
 

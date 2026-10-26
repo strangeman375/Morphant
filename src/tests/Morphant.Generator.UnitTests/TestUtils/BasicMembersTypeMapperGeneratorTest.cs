@@ -76,7 +76,7 @@ internal sealed class BasicMembersTypeMapperGeneratorTest
             (
                 typeof(TestBasicMembersTypeMapperGenerator),
                 expectedSource.FileName,
-                GeneratedSourceText.Normalize(expectedSource.Content)
+                GeneratedSourceText.CreateForWorkspace(expectedSource.Content)
             ));
         }
     }
