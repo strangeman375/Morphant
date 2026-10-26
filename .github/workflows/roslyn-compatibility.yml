@@ -1,0 +1,44 @@
+name: Roslyn compatibility
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  test:
+    name: Shipped generator on Roslyn ${{ matrix.roslyn }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        roslyn:
+          - "4.9.2"
+          - "5.9.0"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@349aa191ae05aee6d53db4bcba37bd6980e812fe # v6
+        with:
+          global-json-file: global.json
+
+      - name: Test the shipped generator on the newer Roslyn host
+        run: bash eng/test-shipped-generator.sh "${{ matrix.roslyn }}"
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-roslyn-${{ matrix.roslyn }}
+          path: artifacts/test-results
+          if-no-files-found: warn
+          retention-days: 14

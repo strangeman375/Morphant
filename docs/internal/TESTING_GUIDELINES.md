@@ -141,10 +141,11 @@ expectations or verification policy. They are intentionally kept outside
 ### Roslyn compatibility
 
 - For Roslyn-facing changes, verify affected scenarios on the minimum supported
-  host and the newer host validated by CI. The baseline is declared in
-  [Directory.Build.props](../../src/Directory.Build.props); the newer host and
-  executable procedure are in
-  [test-shipped-generator.sh](../../eng/test-shipped-generator.sh).
+  host and the additional hosts validated by CI. The baseline is declared in
+  [Directory.Build.props](../../src/Directory.Build.props); additional versions
+  are listed in the [shared CI/release matrix](../../.github/workflows/roslyn-compatibility.yml). Run
+  [test-shipped-generator.sh](../../eng/test-shipped-generator.sh) with the host
+  version as its first argument.
 - Build the generator against the minimum Roslyn version once. Keep that exact
   binary while building the newer test host without its project references;
   verify its checksum and the copy loaded by the tests before running them.
