@@ -1,6 +1,6 @@
 # Enum mapping: пользовательские сценарии
 
-Обновлено 2026-10-23. Каталог для проверки **будущего поведения** до реализации feature.
+Обновлено 2026-10-26. Каталог для проверки **будущего поведения** до реализации feature.
 Примеры не являются отчётом о прошедших runtime-тестах. Канонические правила —
 в [согласованном дизайне](ENUM_MAPPING_DESIGN.md); здесь они показаны на задачах,
 коде конфигурации, конкретных входах и ожидаемых результатах.
@@ -45,6 +45,7 @@
 - [Выбор входа конвенции](#выбор-входа-конвенции) — 133–135
 - [IncludeBase и разные входы switch](#includebase-и-разные-входы-switch) — 136–142
 - [Стратегия и тип входа конвенции](#стратегия-и-тип-входа-конвенции) — 143–149
+- [Составной вход ByBit и вычисления](#составной-вход-bybit-и-вычисления) — 150–152
 
 ## Обычные enum
 
@@ -3141,8 +3142,9 @@ builder.Map<SourceAccess, TargetAccess>()
 
 Auto получает вычисленное Audit в каждом проходе. Он не возвращается к исходному
 Read, Write, неизвестному биту или нулю и не вызывает NormalizeFlag повторно.
-Сценарий использует одиночный нормализованный бит; обработка составного
-вычисленного входа в ByBit остаётся отдельным открытым вопросом дизайна.
+Сценарий использует одиночный нормализованный бит. Согласованные границы
+вычислений для составного входа показаны в сценариях 150–152; способ его
+сопоставления внутри конвенции остаётся открытым вопросом дизайна.
 
 ## IncludeBase и разные входы switch
 
@@ -3557,6 +3559,119 @@ EnumMappingStrategy не задана; у mapping switch есть указанн
 неподдерживаемого входа. Для object действует то же правило, что в сценарии 134:
 генератор не исследует runtime-тип и не выбирает скрытое enum-значение.
 Обычный явный результат по-прежнему может вернуть значение без конвенции.
+
+## Составной вход ByBit и вычисления
+
+Используются SourceAccess и TargetAccess из раздела flags между enum;
+настройки по умолчанию — ByBit, ByName и MemberSelection.Auto.
+Здесь проверяется согласованное
+[выполнение пользовательского кода](ENUM_MAPPING_DESIGN.md#составной-вычисленный-вход-в-bybit).
+Для составного входа конвенции зафиксированы вход и эффекты до получения её
+результата; сам результат и действие fallback остаются открытыми. Полные
+результаты указаны только для вариантов, в которых такая конвенция не запускается.
+
+### 150. Составной результат Normalize не запускает специальные правила заново
+
+NormalizeFlag записывает свой аргумент и возвращает SourceAccess.ReadWrite.
+RecordRead/RecordWrite считают вызовы и возвращают TargetAccess.View/Edit.
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => NormalizeFlag(flag) switch
+    {
+        SourceAccess.Read => RecordRead(),
+        SourceAccess.Write => RecordWrite(),
+        _ => Auto()
+    });
+```
+
+Для исходного Read NormalizeFlag вызывается один раз с Read. Вход switch —
+ReadWrite, поэтому RecordRead и RecordWrite не вызываются. Auto получает
+ReadWrite целиком; возможная обработка битов внутри конвенции не вызывает эти
+специальные правила и NormalizeFlag повторно.
+
+| Selection | Завершающая ветка | Согласованное поведение для исходного Read |
+|---|---|---|
+| Auto | `_ => Auto()` | Конвенция получает вычисленное ReadWrite; её итог ещё не определён |
+| Explicit | `_ => Auto()` | Тот же вход явного Auto |
+| Auto | `_ => TargetAccess.Unknown` | Неявная конвенция получает ReadWrite; действие fallback ещё не определено |
+| Explicit | `_ => TargetAccess.Unknown` | Конвенция пропущена, итог Unknown = 128 |
+
+В последнем варианте исходный Read | Write вызывает NormalizeFlag дважды:
+сначала с Read, затем с Write; итог Unknown = 128, RecordRead/RecordWrite не
+вызываются. Это два исходных прохода, а не дополнительный обход вычисленной маски.
+Самостоятельно написанные два вызова NormalizeFlag в одном проходе также
+сохраняются: генератор не объединяет независимые вычисления.
+
+### 151. Составной локальный вход не подменяет и не повторяет правила IncludeBase
+
+ReadBaseInput записывает аргумент и возвращает его без изменений;
+RecordBaseRead считает вызовы и возвращает TargetAccess.View. База:
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => ReadBaseInput(flag) switch
+    {
+        SourceAccess.Read => RecordBaseRead(),
+        _ => TargetAccess.Unknown
+    });
+```
+
+Локальная пара после base.Configure; NormalizeFlag возвращает значение из таблицы:
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .IncludeBase<SourceAccess, TargetAccess>()
+    .Members(flag => NormalizeFlag(flag) switch
+    {
+        SourceAccess.Delete => TargetAccess.None
+    });
+```
+
+| Исходный бит | NormalizeFlag вернул | Вызовы Normalize / ReadBaseInput / RecordBaseRead | Согласованное поведение |
+|---|---|---|---|
+| Read | ReadWrite | 1 / 1 / 1 | View = 16: специальное правило базы сработало для её входа Read |
+| Read | Delete | 1 / 0 / 0 | None = 0: локальное правило завершило проход до базы |
+| Audit | ReadWrite | 1 / 1 / 0 | База проверила Audit; локальная конвенция получает ReadWrite, итог ещё не определён |
+
+В третьей строке наличие Read внутри вычисленного ReadWrite не вызывает
+RecordBaseRead. Базовый уровень уже проверен для собственного входа и не
+запускается заново для компонентов локальной маски.
+
+Отдельный вариант третьей строки: задать Explicit, заменить базовый fallback
+на `_ => Auto()` и вернуть из ReadBaseInput составной SourceAccess.ReadWrite.
+Унаследованный Auto получает именно этот сохранённый вход; оба метода вызваны
+по одному разу, RecordBaseRead не вызывается. Числовой итог Auto пока не определён;
+ради его вычисления базовые методы и правила повторно не запускаются.
+
+### 152. Полный result передаётся конвенции без повторного Members
+
+CreateInitial считает вызовы и возвращает TargetAccess.View | TargetAccess.Edit.
+Observe записывает исходный бит; RecordView считает вызовы и возвращает TargetAccess.Audit.
+
+```csharp
+builder.Map<SourceAccess, TargetAccess>()
+    .ResolveUsing((mask, previous) => CreateInitial(mask))
+    .Members((flag, previous, result) =>
+    {
+        Observe(flag);
+        return result switch
+        {
+            TargetAccess.View => RecordView(),
+            _ => Auto()
+        };
+    });
+```
+
+Для исходного Read фабрика вызывается один раз, Observe получает Read один раз,
+RecordView не вызывается. Вход конвенции — полный result = View | Edit (48).
+Auto не переходит к RecordView ради бита View и не повторяет Observe или фабрику.
+То же верно с Explicit; числовой результат составного Auto пока не фиксируется.
+
+Если одновременно выбрать Explicit и заменить fallback на `_ => result`,
+составная конвенция не запускается: для исходного Read | Write итог 48,
+Observe получает Read и Write, фабрика вызывается один раз. Все проходы читают
+один начальный result; он не становится накопителем вкладов.
 
 ## Статус проверки каталога
 
