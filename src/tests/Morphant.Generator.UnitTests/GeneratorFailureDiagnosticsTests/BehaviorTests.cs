@@ -621,12 +621,12 @@ CommentTerminatorException: before * / after
         Assert.That(
             driverDiagnostics,
             Has.None.Matches<Diagnostic>(diagnostic =>
-                diagnostic.Id is "CS8784" or "CS8785"));
+                diagnostic is { Id: "CS8784" or "CS8785" }));
         Assert.That(
             outputCompilation.GetDiagnostics(),
             Has.None.Matches<Diagnostic>(diagnostic =>
-                diagnostic.Severity is
-                    DiagnosticSeverity.Warning or DiagnosticSeverity.Error));
+                diagnostic is
+                    { Severity: DiagnosticSeverity.Warning or DiagnosticSeverity.Error }));
 
         return new TestRun(
             driver,

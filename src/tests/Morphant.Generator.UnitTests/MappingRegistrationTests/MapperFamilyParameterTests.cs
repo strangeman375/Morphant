@@ -512,7 +512,7 @@ public abstract partial class Family<TMapper, TState> : TypeMapper<TMapper>
             Assert.That(
                 result.Diagnostics,
                 Has.None.Matches<Diagnostic>(diagnostic =>
-                    diagnostic.Id == "MORPH0018"));
+                    diagnostic is { Id: "MORPH0018" }));
             Assert.That(
                 result.CompilerWarningsAndErrors.Select(diagnostic => diagnostic.Id),
                 Is.EqualTo(new[] { "CS1929" }));

@@ -71,7 +71,7 @@ namespace TestCase
                     candidate.Severity == Microsoft.CodeAnalysis
                         .DiagnosticSeverity.Error),
                 Has.Exactly(1).Matches<Microsoft.CodeAnalysis.Diagnostic>(
-                    static candidate => candidate.Id == "MORPH0051"));
+                    static candidate => candidate is { Id: "MORPH0051" }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
