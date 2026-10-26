@@ -21,8 +21,10 @@ env:
   DOTNET_NOLOGO: "1"
 
 jobs:
-  roslyn-compatibility:
-    uses: ./.github/workflows/roslyn-compatibility.yml
+  validation:
+    uses: ./.github/workflows/validation.yml
+    with:
+      cross-platform: ${{ github.event_name != 'pull_request' }}
 
   minimum-sdk-package-consumer:
     name: Package consumer (.NET SDK 7.0.100 / MSBuild 17.4)
@@ -41,12 +43,11 @@ jobs:
 
       - name: Build package with the current SDK
         run: |
-          dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
-          dotnet build src/Morphant.slnx \
+          dotnet restore src/Morphant/Morphant.csproj
+          dotnet build src/Morphant/Morphant.csproj \
             --configuration Release \
             --no-restore \
-            -p:ContinuousIntegrationBuild=true \
-            -p:MorphantRoslynVersion=4.4.0
+            -p:ContinuousIntegrationBuild=true
           dotnet pack src/Morphant/Morphant.csproj \
             --configuration Release \
             --no-build \
@@ -55,88 +56,16 @@ jobs:
             -p:PackageVersion=0.0.0-minimum-sdk.${{ github.run_id }}
 
       - name: Build and run with the minimum SDK host
-        working-directory: src/tests/Morphant.Generator.PackageTests.MinimumSdkConsumer
-        run: |
-          test "$(dotnet --version)" = "7.0.100"
-          dotnet run \
-            --configuration Release \
-            -m:1 \
-            -nodeReuse:false \
-            -p:MorphantTestPackageVersion=0.0.0-minimum-sdk.${{ github.run_id }} \
-            -p:MorphantGitSnapshot=true \
-            '-p:TargetsTriggeredByCompilation="MinimumSdkAfterCompile;PublishMorphantGitSnapshot"' \
-            -p:RestoreSources=${{ github.workspace }}/artifacts/minimum-sdk-packages \
-            -p:NuGetAudit=false
-          test -n "$(find Generated/Morphant/net7.0 -maxdepth 1 -name 'Morphant.Generated.TypeMapper.*.g.cs' -print -quit)"
-          test "$(cat obj/Release/net7.0/minimum-sdk-hook.txt)" = "executed"
-
-  cross-platform:
-    name: Validate (${{ matrix.os }})
-    if: ${{ github.event_name != 'pull_request' }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - windows-latest
-          - macos-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@349aa191ae05aee6d53db4bcba37bd6980e812fe # v6
-        with:
-          global-json-file: global.json
-
-      - name: Restore
-        run: dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
-
-      - name: Build
         run: >-
-          dotnet build src/Morphant.slnx
-          --configuration Release
-          --no-restore
-          -p:ContinuousIntegrationBuild=true
-          -p:MorphantRoslynVersion=4.4.0
-
-      - name: Test generator
-        run: >-
-          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.4.0
-          --results-directory artifacts/test-results/unit
-          --logger "trx;LogFileName=unit.trx"
-
-      - name: Test integration scenarios
-        run: >-
-          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.4.0
-          --results-directory artifacts/test-results/integration
-          --logger "trx;LogFileName=integration.trx"
-
-      - name: Upload test results
-        if: ${{ always() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: test-results-${{ matrix.os }}
-          path: artifacts/test-results
-          if-no-files-found: warn
-          retention-days: 14
+          bash eng/test-minimum-sdk-package.sh
+          "0.0.0-minimum-sdk.${{ github.run_id }}"
+          artifacts/minimum-sdk-packages
 
   publish-coverage-badge:
     name: Publish coverage badge
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     needs:
-      - roslyn-compatibility
-      - cross-platform
+      - validation
       - minimum-sdk-package-consumer
     runs-on: ubuntu-latest
     timeout-minutes: 5

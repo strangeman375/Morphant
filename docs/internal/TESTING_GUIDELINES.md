@@ -148,7 +148,7 @@ expectations or verification policy. They are intentionally kept outside
 - For Roslyn-facing changes, verify affected scenarios on the minimum supported
   host and the additional hosts validated by CI. The baseline is declared in
   [Directory.Build.props](../../src/Directory.Build.props); all tested versions
-  are listed in the [shared CI/release matrix](../../.github/workflows/roslyn-compatibility.yml).
+  are listed in the [shared CI/release matrix](../../.github/workflows/validation.yml).
   Every row runs the same unit suite. The baseline row also builds the full
   solution, runs integration tests and enforces combined coverage; do not repeat
   its Linux test runs in the calling CI or release workflow. Run

@@ -10,16 +10,14 @@ Install the .NET SDK selected by `global.json`, then run the release validation
 from the repository root:
 
 ```shell
-dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
+dotnet restore src/Morphant.slnx
 dotnet build src/Morphant.slnx \
   --configuration Release --no-restore \
-  -p:ContinuousIntegrationBuild=true -p:MorphantRoslynVersion=4.4.0
+  -p:ContinuousIntegrationBuild=true
 dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj \
-  --configuration Release --no-build --no-restore \
-  -p:MorphantRoslynVersion=4.4.0
+  --configuration Release --no-build --no-restore
 dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj \
-  --configuration Release --no-build --no-restore \
-  -p:MorphantRoslynVersion=4.4.0
+  --configuration Release --no-build --no-restore
 ```
 
 Keep each pull request focused. Add or update tests for behavior changes, update

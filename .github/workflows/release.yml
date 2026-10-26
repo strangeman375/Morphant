@@ -104,7 +104,7 @@ jobs:
           global-json-file: global.json
 
       - name: Restore
-        run: dotnet restore src/Morphant/Morphant.csproj -p:MorphantRoslynVersion=4.4.0
+        run: dotnet restore src/Morphant/Morphant.csproj
 
       - name: Build
         run: >-
@@ -112,7 +112,6 @@ jobs:
           --configuration Release
           --no-restore
           -p:ContinuousIntegrationBuild=true
-          -p:MorphantRoslynVersion=4.4.0
 
       - name: Pack release candidate
         run: >-
@@ -122,7 +121,6 @@ jobs:
           --no-restore
           --output artifacts/packages
           -p:ContinuousIntegrationBuild=true
-          -p:MorphantRoslynVersion=4.4.0
 
       - name: Record package hashes
         env:
@@ -147,57 +145,9 @@ jobs:
           compression-level: 0
           retention-days: 30
 
-  roslyn-compatibility:
+  validation:
     needs: preflight
-    uses: ./.github/workflows/roslyn-compatibility.yml
-
-  cross-platform:
-    name: Validate release (${{ matrix.os }})
-    needs: preflight
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - windows-latest
-          - macos-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@349aa191ae05aee6d53db4bcba37bd6980e812fe # v6
-        with:
-          global-json-file: global.json
-
-      - name: Restore
-        run: dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
-
-      - name: Build
-        run: >-
-          dotnet build src/Morphant.slnx
-          --configuration Release
-          --no-restore
-          -p:ContinuousIntegrationBuild=true
-          -p:MorphantRoslynVersion=4.4.0
-
-      - name: Test generator
-        run: >-
-          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.4.0
-
-      - name: Test integration scenarios
-        run: >-
-          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.4.0
+    uses: ./.github/workflows/validation.yml
 
   minimum-sdk-package-consumer:
     name: Validate release package (.NET SDK 7.0.100 / MSBuild 17.4)
@@ -226,26 +176,14 @@ jobs:
         env:
           VERSION: ${{ needs.preflight.outputs.version }}
         shell: bash
-        working-directory: src/tests/Morphant.Generator.PackageTests.MinimumSdkConsumer
-        run: |
-          test "$(dotnet --version)" = "7.0.100"
-          dotnet run \
-            --configuration Release \
-            -m:1 \
-            -nodeReuse:false \
-            -p:MorphantTestPackageVersion="$VERSION" \
-            -p:MorphantGitSnapshot=true \
-            -p:RestoreSources="${{ github.workspace }}/artifacts/release-candidate" \
-            -p:NuGetAudit=false
-          test -n "$(find Generated/Morphant/net7.0 -maxdepth 1 -name 'Morphant.Generated.TypeMapper.*.g.cs' -print -quit)"
+        run: bash eng/test-minimum-sdk-package.sh "$VERSION" artifacts/release-candidate
 
   publish:
     name: Publish to NuGet
     needs:
       - preflight
       - package
-      - roslyn-compatibility
-      - cross-platform
+      - validation
       - minimum-sdk-package-consumer
     runs-on: ubuntu-latest
     timeout-minutes: 10
