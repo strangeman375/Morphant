@@ -13,10 +13,10 @@ dotnet build "$unit_project" \
 generator_checksum="$(sha256sum "$generator_assembly")"
 
 # Change the test host without recompiling the generator or its dependencies.
-dotnet restore "$unit_project" -p:MorphantRoslynVersion=4.9.2
+dotnet restore "$unit_project" -p:MorphantRoslynVersion=5.9.0
 dotnet build "$unit_project" \
   --configuration Release --no-restore \
-  -p:ContinuousIntegrationBuild=true -p:MorphantRoslynVersion=4.9.2 \
+  -p:ContinuousIntegrationBuild=true -p:MorphantRoslynVersion=5.9.0 \
   -p:BuildProjectReferences=false
 
 printf '%s\n' "$generator_checksum" | sha256sum --check
@@ -24,6 +24,6 @@ cmp "$generator_assembly" "$test_generator_assembly"
 
 dotnet test "$unit_project" \
   --configuration Release --no-build --no-restore \
-  -p:MorphantRoslynVersion=4.9.2 \
-  --results-directory artifacts/test-results/roslyn-4.9.2 \
-  --logger 'trx;LogFileName=roslyn-4.9.2.trx'
+  -p:MorphantRoslynVersion=5.9.0 \
+  --results-directory artifacts/test-results/roslyn-5.9.0 \
+  --logger 'trx;LogFileName=roslyn-5.9.0.trx'
