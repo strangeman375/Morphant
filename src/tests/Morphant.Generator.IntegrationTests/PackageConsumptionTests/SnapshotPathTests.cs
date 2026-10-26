@@ -15,100 +15,92 @@ internal sealed partial class PackageConsumptionTests
         var expectedWriteTimes = SnapshotWriteTimes(GeneratedDirectory);
         var projectOutput = Path.Combine(CurrentIntermediate, "Custom Generated", "Project");
 
-        try
+        foreach (var useGlobalProperty in new[] { false, true })
         {
-            foreach (var useGlobalProperty in new[] { false, true })
+            var project = XDocument.Parse(originalProject);
+            project.Root!.AddFirst(new XElement("PropertyGroup",
+                new XElement("EmitCompilerGeneratedFiles", "true"),
+                new XElement("CompilerGeneratedFilesOutputPath", projectOutput)));
+            await File.WriteAllTextAsync(ConsumerProject, project.ToString());
+
+            var output = useGlobalProperty
+                ? Path.Combine(CurrentIntermediate, "Custom Generated", "Global")
+                : projectOutput;
+            var configuredPath = useGlobalProperty
+                ? Path.GetRelativePath(Path.GetDirectoryName(ConsumerProject)!, output)
+                : output;
+            string[] arguments =
+            [
+                .. ConsumerArguments,
+                $"-p:MorphantTestExpectedCompilerOutputPath={configuredPath}",
+                .. useGlobalProperty
+                    ? new[] { $"-p:CompilerGeneratedFilesOutputPath={configuredPath}" }
+                    : Array.Empty<string>()
+            ];
+            Directory.CreateDirectory(output);
+            var stale = Path.Combine(output, "Morphant.Generated.TypeMapper.Stale.g.cs");
+            var foreign = Path.Combine(output, "Other.Generator.Output.g.cs");
+            await File.WriteAllTextAsync(stale, "// stale\r\n");
+            await File.WriteAllTextAsync(foreign, "// foreign\r\n");
+
+            var designTimeBuild = await DotNetCli.Run(RepositoryRoot,
+                [.. BuildArguments(arguments, ConsumerProject), "-p:DesignTimeBuild=true"]);
+            AssertSucceeded(designTimeBuild);
+            Assert.Multiple(() =>
             {
-                var project = XDocument.Parse(originalProject);
-                project.Root!.AddFirst(new XElement("PropertyGroup",
-                    new XElement("EmitCompilerGeneratedFiles", "true"),
-                    new XElement("CompilerGeneratedFilesOutputPath", projectOutput)));
-                await File.WriteAllTextAsync(ConsumerProject, project.ToString());
-
-                var output = useGlobalProperty
-                    ? Path.Combine(CurrentIntermediate, "Custom Generated", "Global")
-                    : projectOutput;
-                var configuredPath = useGlobalProperty
-                    ? Path.GetRelativePath(Path.GetDirectoryName(ConsumerProject)!, output)
-                    : output;
-                string[] arguments =
-                [
-                    .. ConsumerArguments,
-                    $"-p:MorphantTestExpectedCompilerOutputPath={configuredPath}",
-                    .. useGlobalProperty
-                        ? new[] { $"-p:CompilerGeneratedFilesOutputPath={configuredPath}" }
-                        : Array.Empty<string>()
-                ];
-                Directory.CreateDirectory(output);
-                var stale = Path.Combine(output, "Morphant.Generated.TypeMapper.Stale.g.cs");
-                var foreign = Path.Combine(output, "Other.Generator.Output.g.cs");
-                await File.WriteAllTextAsync(stale, "// stale\r\n");
-                await File.WriteAllTextAsync(foreign, "// foreign\r\n");
-
-                var designTimeBuild = await DotNetCli.Run(RepositoryRoot,
-                    [.. BuildArguments(arguments, ConsumerProject), "-p:DesignTimeBuild=true"]);
-                AssertSucceeded(designTimeBuild);
-                Assert.Multiple(() =>
-                {
-                    Assert.That(File.ReadAllText(stale), Is.EqualTo("// stale\r\n"));
-                    Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot));
-                    Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes));
-                });
-
-                var rebuilt = await DotNetCli.Run(RepositoryRoot,
-                    RebuildArguments(arguments, ConsumerProject));
-                AssertSucceeded(rebuilt);
-                Assert.Multiple(() =>
-                {
-                    Assert.That(File.Exists(stale), Is.False);
-                    Assert.That(File.ReadAllText(foreign), Is.EqualTo("// foreign\r\n"));
-                    Assert.That(Directory.GetFiles(output, "Morphant.Generated.*.g.cs", SearchOption.AllDirectories)
-                            .Select(Path.GetFileName).Order(StringComparer.Ordinal),
-                        Is.EqualTo(PrimaryFullGeneratedFiles.Order(StringComparer.Ordinal)),
-                        "Roslyn must emit into the configured path, including when a global property overrides the project.");
-                    Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot));
-                    Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes));
-                });
-
-                await File.WriteAllTextAsync(ConsumerSource, BrokenConsumerSource);
-                var failed = await DotNetCli.Run(RepositoryRoot,
-                    BuildArguments(arguments, ConsumerProject));
-                AssertFailed(failed);
-                Assert.Multiple(() =>
-                {
-                    Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot));
-                    Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes));
-                    Assert.That(File.ReadAllText(foreign), Is.EqualTo("// foreign\r\n"));
-                });
-
-                await File.WriteAllTextAsync(ConsumerSource, originalSource);
-                var recovered = await DotNetCli.Run(RepositoryRoot,
-                    BuildArguments(arguments, ConsumerProject));
-                AssertSucceeded(recovered);
+                Assert.That(File.ReadAllText(stale), Is.EqualTo("// stale\r\n"));
                 Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot));
                 Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes));
-            }
+            });
 
-            var sdkProject = XDocument.Parse(originalProject);
-            sdkProject.Root!.AddFirst(new XElement("PropertyGroup",
-                new XElement("EmitCompilerGeneratedFiles", "true")));
-            await File.WriteAllTextAsync(ConsumerProject, sdkProject.ToString());
-            var sdkDefaultBuild = await DotNetCli.Run(RepositoryRoot,
-                RebuildArguments(ConsumerArguments, ConsumerProject));
-            AssertSucceeded(sdkDefaultBuild);
-            Assert.That(Directory.GetFiles(Path.Combine(CurrentIntermediate, "generated"),
-                        "Morphant.Generated.*.g.cs", SearchOption.AllDirectories)
-                    .Select(Path.GetFileName).Order(StringComparer.Ordinal),
-                Is.EqualTo(PrimaryFullGeneratedFiles.Order(StringComparer.Ordinal)),
-                "The SDK's generated-files path must also be preserved when emission is already enabled.");
+            var rebuilt = await DotNetCli.Run(RepositoryRoot,
+                RebuildArguments(arguments, ConsumerProject));
+            AssertSucceeded(rebuilt);
+            Assert.Multiple(() =>
+            {
+                Assert.That(File.Exists(stale), Is.False);
+                Assert.That(File.ReadAllText(foreign), Is.EqualTo("// foreign\r\n"));
+                Assert.That(Directory.GetFiles(output, "Morphant.Generated.*.g.cs", SearchOption.AllDirectories)
+                        .Select(Path.GetFileName).Order(StringComparer.Ordinal),
+                    Is.EqualTo(PrimaryFullGeneratedFiles.Order(StringComparer.Ordinal)),
+                    "Roslyn must emit into the configured path, including when a global property overrides the project.");
+                Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot));
+                Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes));
+            });
+
+            await File.WriteAllTextAsync(ConsumerSource, BrokenConsumerSource);
+            var failed = await DotNetCli.Run(RepositoryRoot,
+                BuildArguments(arguments, ConsumerProject));
+            AssertFailed(failed);
+            Assert.Multiple(() =>
+            {
+                Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot));
+                Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes));
+                Assert.That(File.ReadAllText(foreign), Is.EqualTo("// foreign\r\n"));
+            });
+
+            await File.WriteAllTextAsync(ConsumerSource, originalSource);
+            var recovered = await DotNetCli.Run(RepositoryRoot,
+                BuildArguments(arguments, ConsumerProject));
+            AssertSucceeded(recovered);
             Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot));
             Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes));
         }
-        finally
-        {
-            await File.WriteAllTextAsync(ConsumerProject, originalProject);
-            await File.WriteAllTextAsync(ConsumerSource, originalSource);
-        }
+
+        var sdkProject = XDocument.Parse(originalProject);
+        sdkProject.Root!.AddFirst(new XElement("PropertyGroup",
+            new XElement("EmitCompilerGeneratedFiles", "true")));
+        await File.WriteAllTextAsync(ConsumerProject, sdkProject.ToString());
+        var sdkDefaultBuild = await DotNetCli.Run(RepositoryRoot,
+            RebuildArguments(ConsumerArguments, ConsumerProject));
+        AssertSucceeded(sdkDefaultBuild);
+        Assert.That(Directory.GetFiles(Path.Combine(CurrentIntermediate, "generated"),
+                    "Morphant.Generated.*.g.cs", SearchOption.AllDirectories)
+                .Select(Path.GetFileName).Order(StringComparer.Ordinal),
+            Is.EqualTo(PrimaryFullGeneratedFiles.Order(StringComparer.Ordinal)),
+            "The SDK's generated-files path must also be preserved when emission is already enabled.");
+        Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot));
+        Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes));
     }
 
     [Test]
@@ -239,7 +231,4 @@ internal sealed partial class PackageConsumptionTests
             "Changing the path must not silently delete a committed old " +
             "snapshot; its reserved files remain excluded from Compile.");
     }
-
-
-
 }

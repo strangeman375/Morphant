@@ -158,7 +158,7 @@ internal sealed partial class PackageConsumptionTests
             Assert.That(
                 SnapshotWriteTimes(GeneratedDirectory),
                 Is.EqualTo(currentSnapshotWriteTimes),
-                "An equivalent build in another Configuration must " +
+                "An equivalent build in another configuration must " +
                 "reuse the shared snapshot without metadata churn.");
             Assert.That(
                 Directory.GetDirectories(
@@ -169,9 +169,6 @@ internal sealed partial class PackageConsumptionTests
                 "Debug and Release must not create duplicate snapshot " +
                 "directories.");
         });
-        await File.WriteAllTextAsync(
-            ConsumerSource,
-            OriginalConsumerSource);
     }
 
     [Test]
@@ -256,6 +253,8 @@ internal sealed partial class PackageConsumptionTests
             RepositoryRoot,
             ConsumerArguments);
         AssertSucceeded(recoveredRun);
+        Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(successfulSnapshot),
+            "Recovery must restore the successful mapping snapshot.");
     }
 
     [Test]
@@ -305,29 +304,22 @@ internal sealed partial class PackageConsumptionTests
             new XElement("MorphantGitSnapshot", "true"),
             new XElement("EmitCompilerGeneratedFiles", "false")));
 
-        try
-        {
-            await File.WriteAllTextAsync(ConsumerProject, project.ToString());
-            await File.WriteAllTextAsync(Path.Combine(GeneratedDirectory,
-                "Morphant.Generated.TypeMapper.StaleEmission.g.cs"), "// stale\r\n");
+        await File.WriteAllTextAsync(ConsumerProject, project.ToString());
+        await File.WriteAllTextAsync(Path.Combine(GeneratedDirectory,
+            "Morphant.Generated.TypeMapper.StaleEmission.g.cs"), "// stale\r\n");
 
-            // Both properties come from the project, without a global snapshot override.
-            var rebuilt = await DotNetCli.Run(RepositoryRoot,
-                RebuildArguments(BaseConsumerArguments, ConsumerProject));
-            AssertSucceeded(rebuilt);
-            Assert.Multiple(() =>
-            {
-                Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot),
-                    "Enabling snapshots in the project must override ordinary EmitCompilerGeneratedFiles=false " +
-                    "and publish the current snapshot, removing its stale file.");
-                Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes),
-                    "Identical snapshot files and foreign files must remain untouched.");
-            });
-        }
-        finally
+        // Both properties come from the project, without a global snapshot override.
+        var rebuilt = await DotNetCli.Run(RepositoryRoot,
+            RebuildArguments(BaseConsumerArguments, ConsumerProject));
+        AssertSucceeded(rebuilt);
+        Assert.Multiple(() =>
         {
-            await File.WriteAllTextAsync(ConsumerProject, originalProject);
-        }
+            Assert.That(SnapshotContents(GeneratedDirectory), Is.EqualTo(expectedSnapshot),
+                "Enabling snapshots in the project must override ordinary EmitCompilerGeneratedFiles=false " +
+                "and publish the current snapshot, removing its stale file.");
+            Assert.That(SnapshotWriteTimes(GeneratedDirectory), Is.EqualTo(expectedWriteTimes),
+                "Identical snapshot files and foreign files must remain untouched.");
+        });
     }
 
     private static async Task AssertTamperedSnapshotIsRepairedByRebuild(
