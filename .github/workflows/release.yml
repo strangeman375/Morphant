@@ -104,11 +104,11 @@ jobs:
           global-json-file: global.json
 
       - name: Restore
-        run: dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
+        run: dotnet restore src/Morphant/Morphant.csproj -p:MorphantRoslynVersion=4.4.0
 
       - name: Build
         run: >-
-          dotnet build src/Morphant.slnx
+          dotnet build src/Morphant/Morphant.csproj
           --configuration Release
           --no-restore
           -p:ContinuousIntegrationBuild=true
