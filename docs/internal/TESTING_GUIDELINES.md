@@ -142,15 +142,18 @@ expectations or verification policy. They are intentionally kept outside
 
 - For Roslyn-facing changes, verify affected scenarios on the minimum supported
   host and the additional hosts validated by CI. The baseline is declared in
-  [Directory.Build.props](../../src/Directory.Build.props); additional versions
-  are listed in the [shared CI/release matrix](../../.github/workflows/roslyn-compatibility.yml). Run
+  [Directory.Build.props](../../src/Directory.Build.props); all tested versions
+  are listed in the [shared CI/release matrix](../../.github/workflows/roslyn-compatibility.yml).
+  Every row runs the same unit suite. The baseline row also builds the full
+  solution, runs integration tests and enforces combined coverage; do not repeat
+  its Linux test runs in the calling CI or release workflow. Run
   [test-shipped-generator.sh](../../eng/test-shipped-generator.sh) with the host
-  version as its first argument.
+  version as its first argument and optional `dotnet test` arguments after it.
 - Build the generator against the minimum Roslyn version once. Keep that exact
   binary while building the newer test host without its project references;
   verify its checksum and the copy loaded by the tests before running them.
   Rebuilding the generator for each host does not verify the shipped binary.
-- Use the script or the same sequence with a focused test filter. When shared
+- Use the script with `--filter` for focused verification. When shared
   output directories were used, restore baseline dependencies and rebuild
   affected outputs before resuming ordinary `--no-restore` / `--no-build` runs,
   including after a failed compatibility check. Follow any workspace-specific

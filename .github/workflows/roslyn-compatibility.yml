@@ -12,15 +12,19 @@ env:
 
 jobs:
   test:
-    name: Shipped generator on Roslyn ${{ matrix.roslyn }}
+    name: Validate (Ubuntu, Roslyn ${{ matrix.roslyn }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: ${{ matrix.baseline && 35 || 15 }}
     strategy:
       fail-fast: false
       matrix:
-        roslyn:
-          - "4.9.2"
-          - "5.9.0"
+        include:
+          - roslyn: "4.4.0"
+            baseline: true
+          - roslyn: "4.9.2"
+            baseline: false
+          - roslyn: "5.9.0"
+            baseline: false
 
     steps:
       - name: Check out repository
@@ -31,8 +35,53 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Test the shipped generator on the newer Roslyn host
-        run: bash eng/test-shipped-generator.sh "${{ matrix.roslyn }}"
+      - name: Test the shipped generator
+        run: |
+          test_options=()
+          if [[ "${{ matrix.baseline }}" == "true" ]]; then
+            test_options+=(--collect:"XPlat Code Coverage" --settings eng/coverlet.runsettings)
+          fi
+          bash eng/test-shipped-generator.sh "${{ matrix.roslyn }}" "${test_options[@]}"
+
+      - name: Test integration scenarios
+        if: ${{ matrix.baseline }}
+        run: >-
+          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=${{ matrix.roslyn }}
+          --collect:"XPlat Code Coverage"
+          --settings eng/coverlet.runsettings
+          --results-directory artifacts/test-results/integration
+          --logger "trx;LogFileName=integration.trx"
+
+      - name: Restore coverage report tool
+        if: ${{ matrix.baseline }}
+        run: dotnet tool restore
+
+      - name: Create coverage report
+        if: ${{ matrix.baseline }}
+        run: |
+          dotnet reportgenerator \
+            "-reports:artifacts/test-results/*/*/coverage.cobertura.xml" \
+            "-targetdir:artifacts/coverage" \
+            "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;Badges" \
+            "-assemblyfilters:+Morphant;+Morphant.Generator;+Morphant.Build.Tasks"
+
+      - name: Enforce coverage
+        if: ${{ matrix.baseline }}
+        run: |
+          python3 eng/verify_coverage.py \
+            artifacts/coverage/Cobertura.xml Morphant.Generator 85 75
+          python3 eng/verify_coverage.py \
+            artifacts/coverage/Cobertura.xml Morphant 75 75
+          python3 eng/verify_coverage.py \
+            artifacts/coverage/Cobertura.xml Morphant.Build.Tasks 50 40
+
+      - name: Add coverage summary
+        if: ${{ matrix.baseline }}
+        run: cat artifacts/coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test results
         if: ${{ always() }}
@@ -42,3 +91,12 @@ jobs:
           path: artifacts/test-results
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Upload coverage report
+        if: ${{ always() && matrix.baseline }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: artifacts/coverage
+          if-no-files-found: warn
+          retention-days: 30

@@ -114,26 +114,6 @@ jobs:
           -p:ContinuousIntegrationBuild=true
           -p:MorphantRoslynVersion=4.4.0
 
-      - name: Test generator
-        run: >-
-          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.4.0
-          --results-directory artifacts/test-results/unit
-          --logger "trx;LogFileName=unit.trx"
-
-      - name: Test integration scenarios
-        run: >-
-          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.4.0
-          --results-directory artifacts/test-results/integration
-          --logger "trx;LogFileName=integration.trx"
-
       - name: Pack release candidate
         run: >-
           dotnet pack src/Morphant/Morphant.csproj
@@ -154,15 +134,6 @@ jobs:
           "Morphant.$VERSION.nupkg"
           "Morphant.$VERSION.snupkg"
           > SHA256SUMS
-
-      - name: Upload test results
-        if: ${{ always() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: release-test-results-ubuntu
-          path: artifacts/test-results
-          if-no-files-found: warn
-          retention-days: 30
 
       - name: Upload release candidate
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

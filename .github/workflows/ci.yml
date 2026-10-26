@@ -21,96 +21,6 @@ env:
   DOTNET_NOLOGO: "1"
 
 jobs:
-  validate:
-    name: Validate (Ubuntu, Roslyn 4.4)
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@349aa191ae05aee6d53db4bcba37bd6980e812fe # v6
-        with:
-          global-json-file: global.json
-
-      - name: Restore
-        run: dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
-
-      - name: Build
-        run: >-
-          dotnet build src/Morphant.slnx
-          --configuration Release
-          --no-restore
-          -p:ContinuousIntegrationBuild=true
-          -p:MorphantRoslynVersion=4.4.0
-
-      - name: Test generator
-        run: >-
-          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.4.0
-          --collect:"XPlat Code Coverage"
-          --settings eng/coverlet.runsettings
-          --results-directory artifacts/test-results/unit
-          --logger "trx;LogFileName=unit.trx"
-
-      - name: Test integration scenarios
-        run: >-
-          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.4.0
-          --collect:"XPlat Code Coverage"
-          --settings eng/coverlet.runsettings
-          --results-directory artifacts/test-results/integration
-          --logger "trx;LogFileName=integration.trx"
-
-      - name: Restore coverage report tool
-        run: dotnet tool restore
-
-      - name: Create coverage report
-        run: |
-          dotnet reportgenerator \
-            "-reports:artifacts/test-results/*/*/coverage.cobertura.xml" \
-            "-targetdir:artifacts/coverage" \
-            "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;Badges" \
-            "-assemblyfilters:+Morphant;+Morphant.Generator;+Morphant.Build.Tasks"
-
-      - name: Enforce coverage
-        run: |
-          python3 eng/verify_coverage.py \
-            artifacts/coverage/Cobertura.xml Morphant.Generator 85 75
-          python3 eng/verify_coverage.py \
-            artifacts/coverage/Cobertura.xml Morphant 75 75
-          python3 eng/verify_coverage.py \
-            artifacts/coverage/Cobertura.xml Morphant.Build.Tasks 50 40
-
-      - name: Add coverage summary
-        run: cat artifacts/coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload test results
-        if: ${{ always() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: test-results-ubuntu
-          path: artifacts/test-results
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Upload coverage report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: coverage
-          path: artifacts/coverage
-          if-no-files-found: warn
-          retention-days: 30
-
   roslyn-compatibility:
     uses: ./.github/workflows/roslyn-compatibility.yml
 
@@ -225,7 +135,6 @@ jobs:
     name: Publish coverage badge
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     needs:
-      - validate
       - roslyn-compatibility
       - cross-platform
       - minimum-sdk-package-consumer
