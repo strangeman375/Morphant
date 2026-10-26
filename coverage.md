@@ -3,8 +3,8 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 06:16:02 |
-| Coverage date: | 10/26/2026 - 06:01:25 - 10/26/2026 - 06:15:56 |
+| Generated on: | 10/26/2026 - 06:59:58 |
+| Coverage date: | 10/26/2026 - 06:49:42 - 10/26/2026 - 06:59:54 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 399 |
@@ -445,4 +445,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #660](https://github.com/strangeman375/Morphant/actions/runs/40276687912).
+Full HTML report: download the **coverage** artifact from [CI run #662](https://github.com/strangeman375/Morphant/actions/runs/40281503137).
