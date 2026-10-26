@@ -47,6 +47,8 @@ namespace TestCase
         StructuredConstructTypeMapperGeneratorTest.RunAndAssertDiagnostics(
             LanguageVersion.CSharp9,
             source,
-            "TestCase.cs(28,33): error CS0121: The call is ambiguous between the following methods or properties: 'DestinationConstruction.DestinationConstruction(ConstructorParameter<int>)' and 'DestinationConstruction.DestinationConstruction(ConstructorParameter<string>)'");
+            RoslynHost.Version.Major < 5
+                ? "TestCase.cs(28,33): error CS0121: The call is ambiguous between the following methods or properties: 'DestinationConstruction.DestinationConstruction(ConstructorParameter<int>)' and 'DestinationConstruction.DestinationConstruction(ConstructorParameter<string>)'"
+                : "TestCase.cs(28,33): error CS0121: The call is ambiguous between the following methods or properties: 'Morphant.Generated.N_514fc9b114c28c4f7b19934966519ff3.DestinationConstruction.DestinationConstruction(Morphant.Members.ConstructorParameter<int>)' and 'Morphant.Generated.N_514fc9b114c28c4f7b19934966519ff3.DestinationConstruction.DestinationConstruction(Morphant.Members.ConstructorParameter<string>)'");
     }
 }

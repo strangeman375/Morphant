@@ -49,9 +49,13 @@ internal sealed class CollectionLimitationsTests
         {
             (Name: "InitAfterCollection", Body: InitAfterBody, Codes: new[] { "CS8852" }),
             // Relocating the only await also leaves the enclosing async lambda
-            // without an await. Both compiler diagnostics become MORPH0030;
-            // the final generated mapper must contain only valid typed stubs.
-            (Name: "AwaitedMemberCollection", Body: AwaitedMemberBody, Codes: new[] { "CS1998", "CS4032" })
+            // without an await. Hosts before Roslyn 5 also report CS1998.
+            // Each remaining diagnostic becomes MORPH0030; the final generated
+            // mapper must contain only valid typed stubs.
+            (Name: "AwaitedMemberCollection", Body: AwaitedMemberBody,
+                Codes: RoslynHost.ReportsAsyncWithoutAwaitWarning
+                    ? new[] { "CS1998", "CS4032" }
+                    : new[] { "CS4032" })
         };
         foreach (var item in cases)
         foreach (var version in new[] { LanguageVersion.CSharp9, LanguageVersion.CSharp10 })

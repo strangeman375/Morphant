@@ -138,8 +138,16 @@ namespace TestCase
     }
 }
 """;
-        AssertSourceWarningOnly(Run(source.Replace("__CALLBACK__", callback)
-            .Replace("__EXPRESSION__", expression)), "CS1998", "delegate");
+        var result = Run(source.Replace("__CALLBACK__", callback)
+            .Replace("__EXPRESSION__", expression));
+        if (RoslynHost.ReportsAsyncWithoutAwaitWarning)
+        {
+            AssertSourceWarningOnly(result, "CS1998", "delegate");
+        }
+        else
+        {
+            AssertNoDiagnostics(result);
+        }
     }
 
     [TestCase("Construct")]
