@@ -1,6 +1,6 @@
 # Enum mapping: пользовательские сценарии
 
-Обновлено 2026-10-26. Каталог для проверки **будущего поведения** до реализации feature.
+Обновлено 2026-11-06. Каталог для проверки **будущего поведения** до реализации feature.
 Примеры не являются отчётом о прошедших runtime-тестах. Канонические правила —
 в [согласованном дизайне](ENUM_MAPPING_DESIGN.md); здесь они показаны на задачах,
 коде конфигурации, конкретных входах и ожидаемых результатах.
@@ -45,7 +45,7 @@
 - [Выбор входа конвенции](#выбор-входа-конвенции) — 133–135
 - [IncludeBase и разные входы switch](#includebase-и-разные-входы-switch) — 136–142
 - [Стратегия и тип входа конвенции](#стратегия-и-тип-входа-конвенции) — 143–149
-- [Составной вход ByBit и вычисления](#составной-вход-bybit-и-вычисления) — 150–152
+- [Составной вход ByBit и вычисления](#составной-вход-bybit-и-вычисления) — 150–158
 
 ## Обычные enum
 
@@ -3142,9 +3142,9 @@ builder.Map<SourceAccess, TargetAccess>()
 
 Auto получает вычисленное Audit в каждом проходе. Он не возвращается к исходному
 Read, Write, неизвестному биту или нулю и не вызывает NormalizeFlag повторно.
-Сценарий использует одиночный нормализованный бит. Согласованные границы
-вычислений для составного входа показаны в сценариях 150–152; способ его
-сопоставления внутри конвенции остаётся открытым вопросом дизайна.
+Сценарий использует одиночный нормализованный бит. Побитовый перевод составного
+входа, границы fallback и вычислений показаны в
+[сценариях 150–158](#составной-вход-bybit-и-вычисления).
 
 ## IncludeBase и разные входы switch
 
@@ -3562,13 +3562,11 @@ EnumMappingStrategy не задана; у mapping switch есть указанн
 
 ## Составной вход ByBit и вычисления
 
-Используются SourceAccess и TargetAccess из раздела flags между enum;
-настройки по умолчанию — ByBit, ByName и MemberSelection.Auto.
-Здесь проверяется согласованное
-[выполнение пользовательского кода](ENUM_MAPPING_DESIGN.md#составной-вычисленный-вход-в-bybit).
-Для составного входа конвенции зафиксированы вход и эффекты до получения её
-результата; сам результат и действие fallback остаются открытыми. Полные
-результаты указаны только для вариантов, в которых такая конвенция не запускается.
+Сценарии 150–152 используют SourceAccess и TargetAccess из раздела flags между
+enum; последующие примеры задают свои типы. Настройки по умолчанию — ByBit,
+ByName и MemberSelection.Auto. Проверяются
+[побитовая конвенция вычисленной маски и fallback всего текущего вклада](ENUM_MAPPING_DESIGN.md#составной-вычисленный-вход-в-bybit),
+с сохранением исходных проходов и однократных пользовательских вычислений.
 
 ### 150. Составной результат Normalize не запускает специальные правила заново
 
@@ -3587,14 +3585,15 @@ builder.Map<SourceAccess, TargetAccess>()
 
 Для исходного Read NormalizeFlag вызывается один раз с Read. Вход switch —
 ReadWrite, поэтому RecordRead и RecordWrite не вызываются. Auto получает
-ReadWrite целиком; возможная обработка битов внутри конвенции не вызывает эти
-специальные правила и NormalizeFlag повторно.
+ReadWrite целиком и переводит его биты встроенной конвенцией. В TargetAccess
+нет имён Read и Write, поэтому конвенция неуспешна. Явные Read → View и
+Write → Edit не становятся её таблицей соответствий и не запускаются повторно.
 
 | Selection | Завершающая ветка | Согласованное поведение для исходного Read |
 |---|---|---|
-| Auto | `_ => Auto()` | Конвенция получает вычисленное ReadWrite; её итог ещё не определён |
-| Explicit | `_ => Auto()` | Тот же вход явного Auto |
-| Auto | `_ => TargetAccess.Unknown` | Неявная конвенция получает ReadWrite; действие fallback ещё не определено |
+| Auto | `_ => Auto()` | Исключение маппинга: нет конвенционного перевода битов Read/Write |
+| Explicit | `_ => Auto()` | То же исключение: явный Auto доступен и при Explicit |
+| Auto | `_ => TargetAccess.Unknown` | Unknown = 128 после неуспеха всей попытки конвенции |
 | Explicit | `_ => TargetAccess.Unknown` | Конвенция пропущена, итог Unknown = 128 |
 
 В последнем варианте исходный Read | Write вызывает NormalizeFlag дважды:
@@ -3632,7 +3631,7 @@ builder.Map<SourceAccess, TargetAccess>()
 |---|---|---|---|
 | Read | ReadWrite | 1 / 1 / 1 | View = 16: специальное правило базы сработало для её входа Read |
 | Read | Delete | 1 / 0 / 0 | None = 0: локальное правило завершило проход до базы |
-| Audit | ReadWrite | 1 / 1 / 0 | База проверила Audit; локальная конвенция получает ReadWrite, итог ещё не определён |
+| Audit | ReadWrite | 1 / 1 / 0 | Unknown = 128: локальная конвенция не переводит Read/Write, выбран fallback базы |
 
 В третьей строке наличие Read внутри вычисленного ReadWrite не вызывает
 RecordBaseRead. Базовый уровень уже проверен для собственного входа и не
@@ -3641,8 +3640,9 @@ RecordBaseRead. Базовый уровень уже проверен для с�
 Отдельный вариант третьей строки: задать Explicit, заменить базовый fallback
 на `_ => Auto()` и вернуть из ReadBaseInput составной SourceAccess.ReadWrite.
 Унаследованный Auto получает именно этот сохранённый вход; оба метода вызваны
-по одному разу, RecordBaseRead не вызывается. Числовой итог Auto пока не определён;
-ради его вычисления базовые методы и правила повторно не запускаются.
+по одному разу, RecordBaseRead не вызывается. Итог — исключение маппинга:
+у Read/Write нет соответствующих имён в TargetAccess. Базовые методы и правила
+повторно не запускаются.
 
 ### 152. Полный result передаётся конвенции без повторного Members
 
@@ -3666,12 +3666,184 @@ builder.Map<SourceAccess, TargetAccess>()
 Для исходного Read фабрика вызывается один раз, Observe получает Read один раз,
 RecordView не вызывается. Вход конвенции — полный result = View | Edit (48).
 Auto не переходит к RecordView ради бита View и не повторяет Observe или фабрику.
-То же верно с Explicit; числовой результат составного Auto пока не фиксируется.
+Биты View и Edit переводятся по именам из TargetAccess в тот же enum;
+итог — View | Edit = 48. То же верно с Explicit и с Auto<TargetAccess>().
+В ByMask значение 48 не имеет целого объявленного имени: тот же Auto бросит.
 
 Если одновременно выбрать Explicit и заменить fallback на `_ => result`,
 составная конвенция не запускается: для исходного Read | Write итог 48,
 Observe получает Read и Write, фабрика вызывается один раз. Все проходы читают
 один начальный result; он не становится накопителем вкладов.
+
+### 153. Конвенция вычисленной маски переводит биты, даже если есть composite name
+
+Типы для сценариев 153–156 и 158:
+
+```csharp
+[Flags] enum InputAccess
+{
+    None = 0, Read = 1, Write = 2, Audit = 4, ReadWrite = Read | Write
+}
+
+[Flags] enum OutputAccess
+{
+    None = 0, Read = 16, Write = 32, ReadWrite = 128, Unknown = 256
+}
+
+builder.Map<InputAccess, OutputAccess>()
+    .Members(flag => Normalize(flag) switch { _ => OutputAccess.Unknown });
+```
+
+Исходный вход — Read. Normalize вызывается один раз и возвращает указанную маску:
+
+| Вычисленный вход | Результат ByBit | Результат ByMask |
+|---|---|---|
+| None = 0 | 0 | 0 |
+| Read = 1 | OutputAccess.Read = 16 | 16 |
+| ReadWrite = 3 | Read \| Write = 48 | OutputAccess.ReadWrite = 128 |
+| Read \| Audit = 5 | Unknown = 256 | Unknown = 256 |
+| `(InputAccess)8` | Unknown = 256 | Unknown = 256 |
+
+В третьей строке наличие или отсутствие составного имени не меняет результат
+ByBit. Ноль также не требует объявления None. Для ReadWrite явные Auto() и
+Auto<OutputAccess>() дают 48 и при MemberSelection.Explicit; для Read | Audit
+они бросают. Explicit с обычным fallback пропускает конвенцию и возвращает Unknown.
+
+### 154. Fallback заменяет весь вклад неудачной попытки, включая успешные биты
+
+Исходный вход — InputAccess.Read; Normalize возвращает Read | Audit = 5.
+Фабрика создаёт доступный начальный result = OutputAccess.Write = 32:
+
+```csharp
+builder.Map<InputAccess, OutputAccess>()
+    .ResolveUsing((mask, previous) => OutputAccess.Write)
+    .Members((flag, previous, result) => Normalize(flag) switch
+    {
+        _ => result
+    });
+```
+
+Read переводится в 16, Audit не переводится. Частичный перевод 16 отбрасывается.
+Каждая строка заменяет завершающую ветку; Normalize и выбранное выражение
+fallback вычисляются по одному разу:
+
+| Завершающая ветка | Итог текущего прохода и всей операции |
+|---|---|
+| `_ => OutputAccess.Unknown` | 256, а не 272 |
+| `_ => (OutputAccess)0` | 0, а не 16 |
+| `_ => result` | 32, а не 48 |
+| `_ => Ignore()` | 32, а не 48 |
+| `_ => Auto()` или отсутствие fallback | Исключение маппинга |
+
+`var remaining => RecordFallback(remaining)`, где метод возвращает Unknown,
+вызывает RecordFallback один раз с полным захваченным Read | Audit = 5,
+а не с Audit = 4. Его результат — 256. При Explicit обычные fallback дают
+те же результаты без попытки конвенции; явный Auto всё равно бросает.
+Исключение самого Normalize или RecordFallback передаётся вызывающему коду.
+
+### 155. Исходная комбинация и вычисленная комбинация имеют разные границы fallback
+
+Во всех строках используется InputAccess → OutputAccess, обычный завершающий
+fallback `_ => OutputAccess.Unknown` и настройки по умолчанию.
+
+| Исходный вход | Вход mapping switch в каждом проходе | Итог |
+|---|---|---|
+| Read \| Audit = 5 | Неизменённый flag: Read, затем Audit | Read \| Unknown = 272 |
+| Read = 1 | Normalize(Read) = Read \| Audit | Unknown = 256 |
+| Read \| Write = 3 | Normalize(Read) = Read \| Audit; Normalize(Write) = Write | Unknown \| Write = 288 |
+| Read \| Write = 3 | Normalize(Read) = Read; Normalize(Write) = Read \| Audit | Read \| Unknown = 272 |
+
+Первая строка имеет два исходных прохода; вторая — один проход с составным
+входом конвенции. В третьей и четвёртой строках неудачный перевод заменяется
+fallback только в своём проходе: результат другого прохода не теряется.
+Normalize вызывается один раз на исходный бит, в порядке Read, затем Write.
+Это также показывает, почему вынесение Normalize до вызова mapping может менять
+результат. Вынос того же выражения в local внутри текущего прохода его не меняет.
+
+Если убрать fallback в последней строке, второй проход бросит: первый вклад
+не возвращается как частичный результат, эффекты обоих вызовов Normalize остаются.
+
+### 156. Унаследованный Auto не получает частичный результат локальной конвенции
+
+Базовая конфигурация; локальная пара включает её после base.Configure:
+
+```csharp
+// База.
+builder.Map<InputAccess, OutputAccess>()
+    .Members(flag => flag switch { _ => Auto() });
+
+// Локальная пара.
+builder.Map<InputAccess, OutputAccess>()
+    .IncludeBase<InputAccess, OutputAccess>()
+    .Members(flag => Normalize(flag) switch
+    {
+        InputAccess.None => OutputAccess.None
+    });
+```
+
+Исходный вход — Write = 2; Normalize один раз возвращает Read | Audit = 5.
+Локальная неявная конвенция не переводит Audit и отбрасывает частичный Read = 16.
+Базовый Auto получает собственный захваченный Write = 2 и возвращает
+OutputAccess.Write = 32. Итог — **32, а не 48**; повторного Normalize или
+повторного прохода базовых правил нет.
+
+Локальный `_ => OutputAccess.Unknown` заменит базовый fallback и даст 256.
+Локальный `_ => Auto()` также заменит его, но бросит для локального входа 5;
+перехода к успешному базовому Auto после этого не будет.
+
+### 157. Известный composite в result не гарантирует строгий ByValue в ByBit
+
+SourceBits и DestinationPair — типы сценария 66; в DestinationPair объявлено
+только Pair = 3. Исходный вход — SourceBits.Read:
+
+```csharp
+builder.Map<SourceBits, DestinationPair>()
+    .EnumMappingStrategy(EnumMappingStrategy.ByValue)
+    .ResolveUsing((mask, previous) => DestinationPair.Pair)
+    .Members((flag, previous, result) => result switch { _ => Auto() });
+```
+
+| Режим / стратегия / вариант Members | Результат |
+|---|---|
+| ByBit / ByValue / как выше | Исключение: отдельные 1 и 2 не допустимы в DestinationPair |
+| ByBit / ByValue / `_ => result` | Pair = 3 как окончательный fallback после неуспеха конвенции |
+| ByBit / ByValueAllowUndefined / как выше | Pair = 3, OR допустимых 1 и 2 |
+| ByMask / ByValue / как выше | Pair = 3, проверяется целое объявленное значение |
+| ByBit / ByValue / `((int)result) switch { _ => Auto() }` | Pair = 3: фактический int-вход переводится целиком |
+
+Фабрика вызывается один раз, result остаётся полным начальным Pair. В последней
+строке исходный проход ByBit сохраняется; явный cast меняет вид конвенции на
+integer → flags. Явные Auto и Auto<DestinationPair>() дают одинаковое поведение.
+
+Диапазон также проверяется по отдельным битам **фактического** flags-входа.
+Например, для WideMask → NarrowMask из сценария 67 исходный `(WideMask)1` и
+`Normalize(flag) switch`, где Normalize один раз возвращает WideMask.All = -1,
+под ByBit + ByValueAllowUndefined не переводятся: положительный бит 128
+не помещается в sbyte. Fallback `(NarrowMask)0` даёт 0, без сохранения меньших
+битов; Auto бросает. ByMask для той же вычисленной маски даёт NarrowMask.All = -1.
+AllowUndefined не разрешает переполнение.
+
+### 158. Строковый вывод вычисленной маски тоже образует один вклад
+
+```csharp
+builder.Map<InputAccess, string>()
+    .Members(flag => Normalize(flag) switch { _ => "unknown" });
+```
+
+Исходный вход — Read; Normalize вызывается один раз. Режим — ByBit + ByName:
+
+| Вычисленная маска | Результат |
+|---|---|
+| ReadWrite = 3 | `"Read, Write"`, а не `"ReadWrite"` |
+| `Read \| (InputAccess)8` | `"unknown"`, а не `"Read, unknown"` |
+| None = 0 | `"None"` |
+
+Во второй строке `_ => Auto()` бросит; fallback `""` даст пустую строку целиком.
+Для исходного Read | Write, если оба вызова Normalize возвращают ReadWrite,
+результат — `"Read, Write, Read, Write"`: два исходных вклада сохраняют повторы.
+В ByMask вычисленное ReadWrite даёт целое имя `"ReadWrite"`.
+Это не меняет string → flags: составное имя входного токена из сценария 79
+остаётся одним переводом имени, без рекурсивного обхода полученного enum-результата.
 
 ## Статус проверки каталога
 
@@ -3679,6 +3851,3 @@ Observe получает Read и Write, фабрика вызывается од
 случаев и последующего переноса в тесты. Они не заменяют проверки production
 генератора, реальной типизации Members, generated code и Rider. Новые ID/severity
 enum-диагностик и точные имена enum-specific exceptions каталог не назначает.
-Оставшееся открытое сочетание нового правила входа описано в
-[дизайне](ENUM_MAPPING_DESIGN.md#открытые-стыки-нового-правила-входа);
-для него здесь не закрепляются несогласованные ожидаемые результаты.
