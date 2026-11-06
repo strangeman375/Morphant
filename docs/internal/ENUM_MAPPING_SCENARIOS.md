@@ -214,8 +214,11 @@ builder.Map<NameSource, NameTarget>()
 | `READY` | `NameTarget.READY = 20`, точное совпадение |
 | `ready` | `NameTarget.Ready = 10`, явное разрешение конфликта |
 
-Без последней явной ветки автоматический путь для `ready` неоднозначен и требует
-диагностики. Если оба destination-имени имеют число 10, конфликт числа исчезает.
+Без последней явной ветки автоматический путь для `ready` неоднозначен:
+Warning при генерации, EnumMappingException для этого входа без fallback.
+Обычный fallback обработает `ready`, но Warning сохранится; Ready и READY
+по-прежнему переводятся по точному имени. Если оба destination-имени имеют
+число 10, конфликта и предупреждения нет.
 При единственном destination-имени `Ready` все три source-имени сопоставляются ему.
 Смена `CurrentCulture`, например на `tr-TR`, результат не меняет.
 
@@ -223,21 +226,35 @@ builder.Map<NameSource, NameTarget>()
 
 ```csharp
 enum AliasSource { Ready = 1, Active = 1 }
-enum AliasTarget { Ready = 10 }
+enum AliasTarget { Unknown = 0, Ready = 10 }
 
 builder.Map<AliasSource, AliasTarget>();
 ```
 
-| Объявления destination | Вход `Ready` или `Active` | Результат |
-|---|---|---|
-| Только `Ready = 10` | Число 1 | 10: одного найденного имени достаточно |
-| `Ready = 10, Active = 10` | Число 1 | 10: найденные соответствия согласованы |
-| `Ready = 10, Active = 20` | Число 1 | Диагностика неоднозначного автоматического соответствия |
+Во всех вариантах AliasTarget содержит Unknown = 0; таблица меняет только
+объявления, соответствующие source aliases. Вход Ready или Active — одно число 1.
 
-В последнем варианте явная ветка `AliasSource.Ready => AliasTarget.Ready`
-разрешает конфликт для **обоих** aliases: runtime-значения одинаковы.
+| Имена destination для aliases | Диагностика неоднозначности | Результат |
+|---|---|---|
+| Только `Ready = 10` | Нет | 10: одного найденного имени достаточно |
+| `Ready = 10, Active = 10` | Нет | 10: найденные соответствия согласованы |
+| `Ready = 10, Active = 20` | Warning | EnumMappingException: нет однозначного соответствия и fallback |
+
+Для последнего варианта каждая строка ниже задаёт отдельную конфигурацию
+Members; вход — Ready или Active:
+
+| Конфигурация | Диагностика неоднозначности | Результат |
+|---|---|---|
+| Switch с `_ => AliasTarget.Unknown` | Warning | Unknown = 0 через обычный fallback |
+| Switch с `AliasSource.Ready => AliasTarget.Ready` | Нет | 10 для **обоих** aliases: явное правило обрабатывает число 1 |
+| Switch с `AliasSource.Ready => Auto(), _ => AliasTarget.Unknown` | Warning | EnumMappingException немедленно; fallback не вызывается |
+| Explicit и switch с `_ => AliasTarget.Unknown` | Нет | Unknown = 0; автоматического пути нет |
+| Explicit и switch с `AliasSource.Ready => Auto(), _ => AliasTarget.Unknown` | Warning | EnumMappingException; явный Auto сохраняет автоматический путь |
+| Прямое `Members(value => AliasTarget.Unknown)` | Нет | Unknown = 0; результат полностью задан пользователем |
+
 Две отдельные ветки для Ready и Active не позволяют различить их и сохраняют
-обычную диагностику C# о недостижимой ветке.
+обычную диагностику C# о недостижимой ветке. Warning неоднозначности действует
+и при default UnmappedMemberValidation.None; это не проверка coverage.
 
 ### 10. Маппинг enum в тот же enum не является безусловным копированием
 
@@ -546,9 +563,14 @@ builder.Map<string, TextStatus>()
 | `"ready"`, `"rEaDy"` | Unknown: неуспех ignore-case конвенции |
 | `"ready"` без fallback | Исключение маппинга |
 | `"ready"` с явной веткой `"ready" => TextStatus.Ready` | Число 1 |
+| `"ready"` с явной веткой `"ready" => Auto()` и fallback Unknown | EnumMappingException немедленно, без fallback |
 
-Статически известный конфликт дополнительно диагностируется; runtime не должен
-выбирать первое объявление. Конкретный ID/severity новой диагностики здесь не задаётся.
+Статически известный конфликт даёт Warning; runtime не выбирает первое
+объявление. Fallback сохраняет предупреждение. Явная ветка для "ready" не
+устраняет конфликт для "rEaDy" и других неоднозначных вариантов регистра,
+доходящих до конвенции. Если Ready и READY имеют одно число 1, конфликт исчезает:
+все указанные варианты регистра переводятся в 1 без этого предупреждения.
+Конкретный ID новой диагностики пока не назначен.
 
 ### 21. Canonical output при aliases
 
@@ -559,9 +581,14 @@ builder.Map<AliasedStatus, string>()
     .Members(status => status switch { AliasedStatus.Ready => "ready" });
 ```
 
-`Ready` и `Active` оба дают `"ready"`. Без явной ветки ByName требует диагностики:
-по числу 1 нельзя восстановить, какое имя написал вызывающий код.
-Явный canonical output нужен и для aliases, отличающихся только регистром.
+`Ready` и `Active` оба дают `"ready"`, предупреждения неоднозначности нет.
+Без явной ветки ByName даёт Warning, а число 1 — EnumMappingException:
+по нему нельзя восстановить, какое имя написал вызывающий код.
+Замена ветки на обычный `_ => "unknown"` возвращает "unknown" для обоих aliases,
+но сохраняет Warning. Ветка `AliasedStatus.Ready => Auto()` немедленно бросает
+EnumMappingException даже при наличии `_ => "unknown"`.
+То же правило действует для aliases, отличающихся только регистром.
+Прямое `Members(status => "ready")` полностью задаёт результат и не получает Warning.
 
 ### 22. Числовое представление enum в строке
 
@@ -2014,9 +2041,12 @@ builder.Map<ZeroAliases, string>()
 | `(NoZeroName)0` | `"0"` |
 | ZeroAliases.None или Empty | `"none"` из явного правила |
 
-Без явного canonical output у ZeroAliases требуется диагностика неоднозначного
-имени. Пустая строка на **входе** всё равно означает ноль; это не требование
-выводить любую нулевую маску как пустую строку.
+Без явной ветки у ZeroAliases возникает Warning неоднозначного имени;
+ноль без fallback даёт EnumMappingException. Замена ветки на `_ => "unknown"`
+даёт "unknown" для нуля, но сохраняет Warning. Явное правило из примера
+устраняет конфликт для обоих нулевых aliases. Пустая строка на **входе**
+всё равно означает ноль; это не требование выводить любую нулевую маску
+как пустую строку.
 
 ### 87. Явный пустой вклад и полностью пустой результат
 
@@ -3911,6 +3941,8 @@ builder.Map<InputAccess, string>()
 | Bare Map<int, StoredCode>(), 42 | EnumMappingException | Число 42 не объявлено в destination при строгом ByValue |
 | Та же пара, 300 | EnumMappingException | Число 300 вне диапазона byte; это не пользовательский OverflowException |
 | DomainStatus → ApiStatus с обычным `_ => ApiStatus.Unknown`; вход Legacy | Unknown | Исключения нет: fallback обработал неуспех конвенции |
+| Конфликтный AliasSource → AliasTarget из сценария 09 без fallback; вход 1 | Warning при генерации, EnumMappingException при вызове | Неоднозначное соответствие для числа 1, а не отсутствие имени |
+| AliasedStatus → string из сценария 21 без явного правила и fallback; вход 1 | Warning при генерации, EnumMappingException при вызове | Неоднозначное выходное имя для числа 1 |
 
 Create даёт Operation.Create, Update — Operation.Update. SourceType и
 DestinationType соответствуют точной регистрации: например, int и StoredCode,
@@ -4010,6 +4042,7 @@ StatusDetails, не исследуя его свойства и не пытая�
 
 Примеры сверены с согласованным дизайном; нумерация нужна для обсуждения конкретных
 случаев и последующего переноса в тесты. Они не заменяют проверки production
-генератора, реальной типизации Members, generated code и Rider. Новые ID/severity
-enum-диагностик каталог не назначает. Тип EnumMappingException и требования к
-его сообщению согласованы; его runtime-реализации пока нет.
+генератора, реальной типизации Members, generated code и Rider. Новые ID
+enum-диагностик пока не назначены; согласованные уровни указаны в соответствующих
+сценариях. Тип EnumMappingException и требования к его сообщению согласованы;
+его runtime-реализации пока нет.
