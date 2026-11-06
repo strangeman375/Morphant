@@ -803,9 +803,10 @@ ByMask продолжает сопоставлять целое значение
 Если хотя бы один бит не переведён, частичные результаты этой попытки
 отбрасываются. Неявная конвенция передаёт управление ближайшему fallback;
 его выражение вычисляется один раз и задаёт **весь вклад текущего прохода**.
-`_ => Unknown` даёт только Unknown, нулевой результат — только 0,
-`_ => result` и `_ => Ignore()` — полный начальный result. Успешно переведённые
-части не добавляются к выбранному fallback.
+`_ => Unknown` даёт только Unknown, `_ => result` — полный начальный result,
+а `_ => Ignore()` пропускает весь вклад текущего прохода: ноль для маски,
+пустой вклад для строки. Успешно переведённые части не добавляются к выбранному
+fallback.
 
 Fallback сохраняет вход и контекст собственного switch: `var remaining`
 обозначает его захваченный вход, а не специально созданный остаток битов.
@@ -834,8 +835,9 @@ OR fallback для Missing, а один исходный Read, превращё�
 
 При nullable destination null из любого правила бита немедленно завершает всю
 операцию с null: следующие биты не вычисляются, прошлые эффекты не откатываются.
-Null не означает удаление бита; для этого нужен ноль. ByMask возвращает обычный
-scalar nullable результат. Null source и terminal null фабрики следуют общему lifecycle.
+Null не означает пропуск вклада; для этого нужен ноль или Ignore(). ByMask
+возвращает обычный scalar nullable результат. Null source и terminal null
+фабрики следуют общему lifecycle.
 
 Using всегда получает полную source-маску и вызывается один раз, когда этого
 требует lifecycle. Все биты/уровни видят один начальный полный result и исходный
@@ -936,7 +938,7 @@ Read или Write никогда не возвращаются. Все биты 
 Это compile-time acknowledgement: конвенцию не отключает, бит не удаляет,
 результат не меняет. Нужен настоящий discard отдельным statement верхнего уровня
 тела lambda, не присваивание переменной `_`. Для source используется явное правило,
-включая `SourceEnum.SomeMember => Ignore()`; runtime-смысл Ignore описан ниже.
+включая `SourceEnum.SomeMember => Ignore()`; runtime-смысл описан в [Ignore](#ignore).
 
 ## Вложенное использование
 
@@ -957,11 +959,37 @@ Update возвращает scalar result, не изменяет передан�
 если тот доступен; иначе Create. Формы Map без source не применимы: имени
 принимающего member для вывода источника здесь нет.
 
-`Ignore()` / `Ignore<T>()` сохраняет выбранный начальный result. Без него —
-диагностика доступности, как при чтении result; ноль не изобретается. В ByBit
-это вклад **полного** начального result, не пропуск бита: для пропуска возвращают
-нулевую destination-маску (`default` или `(Target)0`) либо `""` при строковом выводе.
+## Ignore
+
+`Ignore()` и `Ignore<T>()` пропускают текущую единицу обработки:
+
+| Режим | Результат Ignore |
+|---|---|
+| ByBit, flags destination | Нулевой вклад в OR, включая отдельный строковый токен |
+| ByBit, строковый destination | Пропуск строкового вклада без разделителя |
+| Scalar mapping вне ByBit, включая ByMask | Выбранный начальный result; без него — диагностика доступности, как при чтении result |
+
+В ByBit начальный result не читается и не требуется, в том числе на Create
+без фабрики. Для nullable destination это non-null ноль или пустая строка,
+не null. Если все вклады пропущены, итог — 0 или `""`; начальный result,
+имя нуля и `"0"` вместо этого не подставляются. Нулевой source проходит
+правила один раз и также может быть явно проигнорирован.
+
+В ByBit Ignore не очищает биты, добавленные другими вкладами, и не сохраняет флаг
+из прежнего destination при Update. Чтобы добавить полный начальный destination,
+пользователь явно возвращает `result` с обычной проверкой его доступности.
+
+Выбранный Ignore окончателен для текущей единицы: поиск правил не продолжается,
+следующие биты/токены обрабатываются как обычно. Специальная ветка с Ignore
+предшествует конвенции; завершающий `_ => Ignore()` остаётся fallback после неё.
+Прямой `Members(_ => Ignore())` не запускает конвенцию. IncludeBase использует
+единый effective FlagsMappingMode текущей пары, включая унаследованные Ignore.
+Типизированная форма меняет только target typing, не это поведение.
+
+Null policies, terminal null фабрики и пользовательские вычисления сохраняют
+обычный порядок; Ignore не отменяет вызов Using или уже выполненные эффекты.
 Ignore подтверждает обработку source-случая, но сам не перечисляет destination.
+Примеры — [сценарии 164–166](ENUM_MAPPING_SCENARIOS.md#ignore-в-bybit).
 
 ## Реализация и проверенные предпосылки
 
@@ -1041,10 +1069,10 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 | API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; Create/Update, включая Update без Create; все null policies; доступное/недоступное чтение result и неиспользуемый параметр; прежний object/tuple API |
 | Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
-| Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, Ignore с доступным/недоступным result и scalar nested helpers |
+| Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
 | Стратегия и тип входа | Library default для фактического входа; смена enum/string/integer и result → result; разные типы в путях Members и IncludeBase; явная совместимая/несовместимая стратегия, унаследованный выбор и Default; общие defaults без повторного поиска; неявная конвенция и Auto/Auto<T>, Explicit и отсутствие автоматических путей; диагностика конфигурации до runtime; неподдерживаемое преобразование без расширения API |
 | Ошибки enum | Единый EnumMappingException для отсутствия результата; точная зарегистрированная пара и операция; фактический вход, причина, проблемный бит/токен; Explicit без фиктивной попытки конвенции, result и inherited Auto; отсутствие повторных вычислений и пользовательского ToString; успешный fallback без исключения, исходные user/lifecycle/configuration exceptions |
-| Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; побитовая конвенция вычисленной маски без повторного Members/IncludeBase; неуспех всей попытки и полный вклад fallback, 0/result/Ignore/remaining, собственный вход inherited Auto; исходная и вычисленная комбинации, сохранение других вкладов и однократных независимых вычислений; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
+| Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; побитовая конвенция вычисленной маски без повторного Members/IncludeBase; неуспех всей попытки и полный вклад fallback, 0/result/Ignore/remaining, собственный вход inherited Auto; ByBit Ignore/Ignore<T> без initial result, nullable ноль, все вклады пропущены, приоритет и наследование режима; исходная и вычисленная комбинации, сохранение других вкладов и однократных независимых вычислений; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
 | Строковые flags | Три входных разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null; вывод ByBit/ByMask, порядок/повторы, ноль с именем/aliases и без объявления, пустые вклады и пустой итог |
 | Toolchain | Реальная nullable marker/delegate типизация и доступность result; C# 9, minimum Roslyn, MSBuild и IDE; suppressor diagnostic families, guards, отключённые анализаторы и warnings-as-errors; nested switch/wrong types/obsolete; edit settings/enum/callback, recovery и cancellation |
 

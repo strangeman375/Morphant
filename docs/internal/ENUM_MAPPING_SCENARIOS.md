@@ -49,6 +49,7 @@
 - [Стратегия и тип входа конвенции](#стратегия-и-тип-входа-конвенции) — 143–149
 - [Составной вход ByBit и вычисления](#составной-вход-bybit-и-вычисления) — 150–158
 - [Ошибки enum-маппинга](#ошибки-enum-маппинга) — 159–163
+- [Ignore в ByBit](#ignore-в-bybit) — 164–166
 
 ## Обычные enum
 
@@ -1483,7 +1484,7 @@ builder.Map<SourceAccess, TargetAccess?>()
 | Read \| Write \| Delete | null | Не вызывается |
 | Delete | 0 | Один вызов |
 
-Для удаления Write с сохранением остальных битов нужно вернуть 0 вместо null.
+Для пропуска вклада Write с продолжением обработки подходят нулевая маска или Ignore().
 
 ### 61. Фабрика работает один раз, result не является накопителем
 
@@ -1503,12 +1504,13 @@ builder.Map<SourceAccess, TargetAccess>()
 |---|---|
 | Read | View = 16: Audit из фабрики не добавляется автоматически |
 | Read \| Write | View \| Audit = 80 |
-| Read \| Delete | View \| Audit = 80: Ignore даёт полную начальную маску |
+| Read \| Delete | View = 16: Ignore пропускает вклад Delete |
 | Write \| Delete | Audit = 64 |
+| Delete | None = 0: начальная маска не восстанавливается |
 
 Фабрика получает полную source-маску и вызывается один раз. Каждый бит видит
-result = Audit, даже после вклада View. Для пропуска Delete нужен None/default,
-а не Ignore. Previous по-прежнему означает полную исходную destination-маску.
+result = Audit, даже после вклада View. Ignore не читает result; явный `=> result`
+добавляет его целиком. Previous по-прежнему означает полную исходную destination-маску.
 
 ### 62. Composite pattern над result может быть достижим
 
@@ -1912,16 +1914,17 @@ builder.Map<string, Access>()
 В ByMask Record получил бы исходную строку один раз, а ошибка конвенции
 относилась бы ко всему списку.
 
-### 81. Using видит полную строку, Ignore — полную начальную маску
+### 81. Using видит полную строку, Ignore пропускает токен
 
 `InitialMask` получает вход, считает вызовы и возвращает Access.Audit.
 
 ```csharp
 builder.Map<string, Access>()
     .ResolveUsing((text, previous) => InitialMask(text))
-    .Members(part => part switch
+    .Members((part, previous, result) => part switch
     {
-        "keep" => Ignore(),
+        "skip" => Ignore(),
+        "keep" => result,
         _ => Auto()
     });
 ```
@@ -1929,11 +1932,14 @@ builder.Map<string, Access>()
 | Вход | Результат | InitialMask |
 |---|---|---|
 | `"Read"` | Read = 1 | Один вызов с `"Read"`; Audit не добавляется |
+| `"Read;skip"` | Read = 1 | Один вызов с `"Read;skip"` |
+| `"skip;skip"` | None = 0 | Один вызов; оба токена пропущены |
 | `"Read;keep"` | Read \| Audit = 5 | Один вызов с `"Read;keep"` |
-| `"keep;keep"` | Audit = 4 | Один вызов; оба Ignore дают ту же маску |
+| `"keep;keep"` | Audit = 4 | Один вызов; оба явных result дают ту же маску |
 
-Замена Ignore на Access.None превратила бы keep в пустой вклад. Если начальная
-фабрика nullable destination вернула null, токенизация/правила не продолжаются.
+Ignore для skip эквивалентен вкладу Access.None. Выражение result для keep явно
+добавляет полную начальную маску. Если начальная фабрика nullable destination
+вернула null, токенизация/правила не продолжаются.
 
 ### 82. Null токена останавливает весь строковый ввод
 
@@ -2125,7 +2131,7 @@ builder.Map<Access, string?>()
 | Read \| Audit | InvalidOperationException |
 
 Null не является ещё одним пустым вкладом. Для исключения Write из строки с
-продолжением обработки нужен `""`.
+продолжением обработки подходят `""` или Ignore().
 
 ### 91. Числовой вывод форматирует целую маску
 
@@ -2163,12 +2169,18 @@ builder.Map<Access, string>()
 | Вход | Результат ByBit |
 |---|---|
 | Read | `"read"`, без автоматического добавления cached |
-| ReadWrite | `"read, cached"` |
-| Write \| Audit | `"cached, cached"` |
+| ReadWrite | `"read"`, без разделителя для Write |
+| Write | `""`, начальная строка не восстанавливается |
+| Write \| Audit | `"cached"`, только явный вклад Audit |
 
-ResolveUsing получает всю маску один раз. Все result/Ignore читают одну начальную
-строку cached; previous остаётся исходной строкой Update. Без Members фабрика
-вернула бы один `"cached"` для любой маски.
+ResolveUsing получает всю маску один раз. Result читает начальную строку cached,
+Ignore её не читает; previous остаётся исходной строкой Update. Без Members
+фабрика вернула бы один `"cached"` для любой маски.
+
+Если заменить результат Audit на `Ignore<string>()`, Write | Audit даст `""`,
+не `"0"` и не имя None. Дополнительная ветка `Access.None => Ignore()` даёт `""`
+и для нулевого входа. В исходной конфигурации замена Ignore для Write на result
+даст для Write | Audit строку `"cached, cached"`: повторы явных вкладов сохраняются.
 
 ### 93. Explicit относится и к выводу нулевой маски
 
@@ -3808,7 +3820,7 @@ fallback вычисляются по одному разу:
 | `_ => OutputAccess.Unknown` | 256, а не 272 |
 | `_ => (OutputAccess)0` | 0, а не 16 |
 | `_ => result` | 32, а не 48 |
-| `_ => Ignore()` | 32, а не 48 |
+| `_ => Ignore()` или `_ => Ignore<OutputAccess>()` | 0: весь вклад пропущен, ни частичный 16, ни initial result = 32 не добавляются |
 | `_ => Auto()` или отсутствие fallback | Исключение маппинга |
 
 `var remaining => RecordFallback(remaining)`, где метод возвращает Unknown,
@@ -4037,6 +4049,115 @@ ToString: он считает вызовы и бросает InvalidOperationExc
 Итог — EnumMappingException: правило не подошло, конвенции для StatusDetails нет.
 GetDetails вызывается один раз, ToString — ни разу. Сообщение обозначает тип
 StatusDetails, не исследуя его свойства и не пытаясь форматировать содержимое.
+
+## Ignore в ByBit
+
+Каноническая семантика — в [дизайне](ENUM_MAPPING_DESIGN.md#ignore).
+Дополняет маски с фабрикой (61), строковые токены (81), строковые вклады (92)
+и fallback вычисленной маски (154).
+
+### 164. Ignore без фабрики: Create, Update, nullable и независимые вклады
+
+Используются SourceAccess/TargetAccess из раздела «Flags между enum».
+Record добавляет полученный non-null SourceAccess в список и возвращает его:
+
+```csharp
+builder.Map<SourceAccess?, TargetAccess?>()
+    .MemberSelection(MemberSelection.Explicit)
+    .UnmappedMemberValidation(UnmappedMemberValidation.Source)
+    .Members(flag =>
+    {
+        var recorded = Record(flag);
+        return recorded switch
+        {
+            SourceAccess.Read => TargetAccess.View | TargetAccess.Edit,
+            SourceAccess.Write => Ignore(),
+            _ => Ignore<TargetAccess?>()
+        };
+    });
+```
+
+| Source | Результат Create и Update | Вызовы Record по порядку |
+|---|---|---|
+| null | null по default source policy | Нет |
+| None = 0 | Non-null 0 | None один раз |
+| Write | Non-null 0 | Write |
+| Write \| Delete | Non-null 0 | Write, Delete |
+| Read \| Write | View \| Edit = 48 | Read, Write |
+| `(SourceAccess)16` | Non-null 0 | 16 |
+
+Для non-null source результаты одинаковы на Update с destination = Unknown
+и с null destination при default Create policy. Initial result не требуется;
+ни одна форма Ignore его не читает. Source coverage закрыт явными правилами
+и fallback. Игнорирование Write не удаляет Edit, уже добавленный вкладом Read.
+Вычисления Record сохраняются даже тогда, когда все вклады проигнорированы.
+Замена Ignore для Write на null завершила бы операцию на Write, не достигнув Delete;
+`default` для nullable destination также означает null, а не нулевой вклад.
+
+### 165. Унаследованный Ignore использует effective mode текущей пары
+
+Используется Access из сценария 70. В базе:
+
+```csharp
+builder.Map<Access, Access>()
+    .FlagsMappingMode(FlagsMappingMode.ByMask)
+    .ConstructUsing(mask => Access.Audit)
+    .Members(mask => mask switch
+    {
+        Access.Read => Ignore(),
+        _ => Auto()
+    });
+```
+
+В текущем mapper:
+
+```csharp
+base.Configure(builder);
+builder.Map<Access, Access>()
+    .IncludeBase<Access, Access>()
+    .FlagsMappingMode(FlagsMappingMode.ByBit)
+    .Members(flag => flag switch { Access.Write => Access.Read });
+```
+
+| Effective mode / source | Create | Update с destination = ReadWrite |
+|---|---|---|
+| ByBit / Read | 0 | 0 |
+| ByBit / ReadWrite | Read = 1: вклад Write сохранён | Read = 1 |
+| Убрать локальный ByBit: inherited ByMask / Read | Audit = 4 | ReadWrite = 3 |
+| Убрать локальный ByBit: inherited ByMask / ReadWrite | ReadWrite = 3 по конвенции | ReadWrite = 3 |
+
+В ByBit базовый Ignore завершает обработку Read; конвенция для этого прохода
+не запускается. Он не запрещает локальному Write добавить Read другим вкладом.
+ConstructUsing вызывается один раз на Create и пропускается на Update с destination.
+В ByMask Ignore сохраняет выбранный initial result. Без фабрики этот ByMask-путь
+на Create диагностируется; тот же Ignore в ByBit допустим без фабрики.
+
+### 166. Ignore в специальной ветке, fallback и прямом результате
+
+```csharp
+builder.Map<Access, Access>()
+    .Members(flag => flag switch
+    {
+        Access.Read => Ignore(),
+        _ => Ignore()
+    });
+```
+
+| Source | Default Auto | Добавить MemberSelection.Explicit |
+|---|---|---|
+| Read | 0: специальное правило до конвенции | 0 |
+| Write | Write = 2: конвенция до fallback | 0 |
+| ReadWrite | Write = 2 | 0 |
+| `(Access)16` | 0: fallback после неуспеха | 0 |
+| None | 0 по конвенции | 0 через fallback |
+
+Фабрика не требуется; результаты одинаковы для Create и Update.
+Прямое `.Members(_ => Ignore())` даёт 0 для всех этих входов и при Auto:
+это полный явный результат текущего прохода, без автоматического дополнения.
+Для string → Access прямой Ignore так же пропускает каждый токен, включая
+повторы и пустые: `"Read;;Missing"` даёт non-null 0 без фабрики и исключения.
+Для Access → string прямой Ignore даёт `""`, включая нулевой вход; начальная
+строка Update и конвенционные имена не подмешиваются.
 
 ## Статус проверки каталога
 
