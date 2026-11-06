@@ -2231,8 +2231,21 @@ Warning можно повысить до error обычными средства
 | `_ => CoverageTarget.Internal` | Internal | Закрыт для всех оставшихся source-значений |
 | `_ => throw new InvalidOperationException()` | Пользовательское исключение | Закрыт для всех оставшихся source-значений |
 
-Общий fallback удобен для forward compatibility, но coverage уже не предупредит
-о появлении следующего source-значения, которое попадёт в этот fallback.
+После добавления `Suspended = 4` в CoverageSource, без изменений mapping и
+CoverageTarget, действуют те же правила:
+
+| Завершающая ветка | Runtime для Suspended | Source coverage Suspended |
+|---|---|---|
+| `_ => CoverageTarget.Internal` | Internal | Покрыт; warning нет |
+| `_ => throw new InvalidOperationException()` | Пользовательское исключение | Покрыт; warning нет |
+| `_ => Auto()` | Исключение маппинга | Warning: конвенционного соответствия нет |
+| Отсутствует | Исключение маппинга | Warning: значение не обработано |
+
+В первых двух строках общий fallback уже задаёт поведение нового значения;
+дублировать его отдельным `CoverageSource.Suspended => ...` ради coverage
+не требуется. Те же результаты относятся к source-части Strict; destination
+проверяется отдельно. Контракт полноты обработки описан в
+[дизайне](ENUM_MAPPING_DESIGN.md#проверка-покрытия).
 
 ### 99. Destination coverage и many-to-one
 
