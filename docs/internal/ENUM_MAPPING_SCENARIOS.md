@@ -1333,6 +1333,28 @@ builder.Map<NamedSource, NamedTarget>();
 Добавление/удаление имени ReadWrite не меняет побитовый результат 24. ByMask не
 пытается собрать неназванную пятёрку по отдельным именам.
 
+Вариант с особым результатом целой маски:
+
+```csharp
+builder.Map<NamedSource, NamedTarget>()
+    .FlagsMappingMode(FlagsMappingMode.ByMask)
+    .Members(mask => mask switch
+    {
+        NamedSource.ReadWrite => NamedTarget.Audit,
+        _ => Auto()
+    });
+```
+
+| Вход | ByMask, как выше | Если выбрать ByBit |
+|---|---|---|
+| ReadWrite = 3 | Audit = 32 по явному правилу | Read \| Write = 24; warning о недостижимом составном case |
+| Read \| Audit = 5 | Исключение: имени целой маски нет | Read \| Audit = 40 |
+
+Один такой switch не объединяет особый результат ReadWrite с автоматическим
+побитовым переводом остальных комбинаций. Это
+[принятая граница режимов](ENUM_MAPPING_DESIGN.md#bybit-и-bymask), а не основание
+добавлять скрытый побитовый шаг после неуспеха ByMask.
+
 ### 56. Только составное объявление без отдельных имён битов
 
 ```csharp
