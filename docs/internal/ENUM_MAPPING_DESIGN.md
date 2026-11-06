@@ -43,7 +43,8 @@ builder.Map<DomainStatus, ApiStatus>()
 
 Специальные ветки имеют приоритет. Остальные значения получают конвенцию;
 `Unknown` возвращается только при её неуспехе. Завершающая ветка необязательна:
-без неё отсутствие результата приводит к mapping exception на Create и Update.
+без неё отсутствие результата приводит к
+[EnumMappingException](#ошибки-выполнения) на Create и Update.
 
 ## Настройки
 
@@ -409,6 +410,70 @@ Result доступен только по пути, где начальное з
 читать его нельзя; не подставлять ноль и не запускать конвенцию заранее.
 Диагностируется недоступное **чтение**, не неиспользуемый параметр:
 `(_, _, _, context) => ...` допустимо для доступа к Operation.
+
+## Ошибки выполнения
+
+Для неуспеха выбора scalar-результата в поддерживаемых enum-парах используется
+один `Morphant.Exceptions.EnumMappingException : MappingException`.
+Он применяется и без Members, и при исчерпании правил, и при неуспехе выбранного
+Auto. Отдельные классы исключений для каждой причины и новые настройки реакции
+на ошибку не вводятся.
+
+| Путь | Результат |
+|---|---|
+| Неявная конвенция неуспешна, fallback отсутствует | EnumMappingException |
+| При Explicit ни одно правило не подошло, fallback отсутствует | EnumMappingException; конвенция не запускалась |
+| Для допустимого object/tuple-входа mapping switch нет конвенции, правила не дали результата | EnumMappingException; значение не подменяется source или его компонентом |
+| Выбранный Auto()/Auto<T>() не нашёл соответствия | EnumMappingException немедленно, без другого fallback |
+| Неявная конвенция неуспешна, выбран обычный fallback | Его результат либо его собственное исключение |
+
+`UnmatchedMappingSwitchException` сохраняет контракт обычных object/tuple mappings.
+Для scalar enum-правил он не используется: switch может отсутствовать, а ветка
+с неуспешным Auto — уже совпасть. Вложенные обычные C# switch, Using и Convert
+сохраняют собственную семантику исключений.
+
+Исключение наследует `Operation`, `SourceType` и `DestinationType` из
+[MappingException](../../src/Morphant/Exceptions/MappingException.cs).
+Типы остаются **точной зарегистрированной парой**, включая nullable; вычисленный
+тип входа конвенции их не заменяет. Для вложенного mapping это пара и операция
+того mapping, который завершился ошибкой; внешняя пара исключение не оборачивает.
+
+Сообщение указывает фактический проверявшийся вход, статический тип входного
+выражения и причину неуспеха: нет соответствия по имени, число недопустимо,
+выход за диапазон, неоднозначность строкового имени при выполнении либо
+отсутствие подходящего правила.
+Если неявный шаг пропущен из-за Explicit или отсутствия поддерживаемой
+конвенции, сообщение об исчерпании правил не описывает неудачную попытку
+конвенции. Выбранный явный Auto по-прежнему сообщает о своём неуспехе.
+Для enum/integer сохраняется точное число и знак; имя enum может дополнять число.
+Строка показывается как строковое значение.
+Точная формулировка сообщения не является машинным протоколом.
+
+Вход берётся из уже достигнутой точки отказа: это сохранённое значение mapping
+switch или текущее source для Auto вне switch. Для result switch им будет result;
+для унаследованного Auto — вход его собственного switch, даже после неуспеха
+локальной конвенции с другим входом. Если отказ относится к биту или токену
+внутри составного входа конвенции, сообщение указывает этот элемент вместе
+со входом попытки. Исходный бит до Normalize не подставляется вместо вычисленной
+маски. Ранее неуспешная попытка сама по себе не создаёт исключение, если
+последующее разрешённое продолжение успешно.
+
+Формирование сообщения не повторяет Normalize, getters, guards, фабрики или
+другие пользовательские вычисления. Содержимое object/tuple-входа не требуется
+форматировать: достаточно обозначить его тип; не вызывать пользовательский
+ToString и не исследовать поля ради текста. Runtime reflection не добавляется.
+
+Пользовательские исключения, включая явный throw и checked cast, передаются
+без оборачивания с исходным типом и stack trace. Ошибки конфигурации и lifecycle
+сохраняют [существующие исключения](../exceptions.md), в частности
+MappingConfigurationException, NullSourceException, NullDestinationException
+и MappingOperationNotSupportedException. Неподдерживаемый явный Auto или
+несовместимая стратегия остаются диагностикой конфигурации, а не причиной
+EnumMappingException при выполнении. Правила fallback, отсутствие частичного
+результата и сохранение уже выполненных эффектов не меняются.
+
+Тип исключения, сообщения и границы —
+[сценарии 159–163](ENUM_MAPPING_SCENARIOS.md#ошибки-enum-маппинга).
 
 ## Имена и строки
 
@@ -948,6 +1013,7 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, Ignore с доступным/недоступным result и scalar nested helpers |
 | Стратегия и тип входа | Library default для фактического входа; смена enum/string/integer и result → result; разные типы в путях Members и IncludeBase; явная совместимая/несовместимая стратегия, унаследованный выбор и Default; общие defaults без повторного поиска; неявная конвенция и Auto/Auto<T>, Explicit и отсутствие автоматических путей; диагностика конфигурации до runtime; неподдерживаемое преобразование без расширения API |
+| Ошибки enum | Единый EnumMappingException для отсутствия результата; точная зарегистрированная пара и операция; фактический вход, причина, проблемный бит/токен; Explicit без фиктивной попытки конвенции, result и inherited Auto; отсутствие повторных вычислений и пользовательского ToString; успешный fallback без исключения, исходные user/lifecycle/configuration exceptions |
 | Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; побитовая конвенция вычисленной маски без повторного Members/IncludeBase; неуспех всей попытки и полный вклад fallback, 0/result/Ignore/remaining, собственный вход inherited Auto; исходная и вычисленная комбинации, сохранение других вкладов и однократных независимых вычислений; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
 | Строковые flags | Три входных разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null; вывод ByBit/ByMask, порядок/повторы, ноль с именем/aliases и без объявления, пустые вклады и пустой итог |
 | Toolchain | Реальная nullable marker/delegate типизация и доступность result; C# 9, minimum Roslyn, MSBuild и IDE; suppressor diagnostic families, guards, отключённые анализаторы и warnings-as-errors; nested switch/wrong types/obsolete; edit settings/enum/callback, recovery и cancellation |

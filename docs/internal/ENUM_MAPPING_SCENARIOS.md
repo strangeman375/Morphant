@@ -19,9 +19,11 @@
   `mapper.Map<TSource, TDestination>(source, destination)`.
 - Если операция не указана, таблица описывает Create и Update с non-null
   destination; существующее значение не даёт скрытого fallback.
-- «Исключение маппинга» означает отсутствие результата по принятому контракту.
-  Здесь не назначается имя ещё не реализованному enum-specific exception.
-  Явные пользовательские исключения названы отдельно.
+- «Исключение маппинга» при отсутствии enum-результата означает будущий
+  `Morphant.Exceptions.EnumMappingException`; то же относится к краткому
+  «Исключение» в таблицах enum-конвенций. Явные пользовательские исключения,
+  ошибки конфигурации и lifecycle названы отдельно. Контракт — в
+  [дизайне](ENUM_MAPPING_DESIGN.md#ошибки-выполнения).
 - «Диагностика» относится к конфигурации/компиляции, а не к возвращаемому значению.
   Coverage по умолчанию выключен; его warnings отмечены там, где он включён.
 - В таблицах значения enum приводятся именами и при необходимости числами.
@@ -46,6 +48,7 @@
 - [IncludeBase и разные входы switch](#includebase-и-разные-входы-switch) — 136–142
 - [Стратегия и тип входа конвенции](#стратегия-и-тип-входа-конвенции) — 143–149
 - [Составной вход ByBit и вычисления](#составной-вход-bybit-и-вычисления) — 150–158
+- [Ошибки enum-маппинга](#ошибки-enum-маппинга) — 159–163
 
 ## Обычные enum
 
@@ -3880,9 +3883,125 @@ builder.Map<InputAccess, string>()
 Это не меняет string → flags: составное имя входного токена из сценария 79
 остаётся одним переводом имени, без рекурсивного обхода полученного enum-результата.
 
+## Ошибки enum-маппинга
+
+Ниже проверяются тип исключения и смысл сообщения по
+[согласованному контракту](ENUM_MAPPING_DESIGN.md#ошибки-выполнения).
+Формулировки в таблицах не задают точный текст сообщения. EnumMappingException
+и генерация этих ошибок ещё не реализованы.
+
+### 159. Один тип исключения для неуспешной конвенции и отсутствующего правила
+
+Используются DomainStatus/ApiStatus и StoredCode из предыдущих разделов.
+Каждая строка — отдельная конфигурация:
+
+| Конфигурация и вход | Результат | Причина в сообщении |
+|---|---|---|
+| Bare Map<DomainStatus, ApiStatus>(), Legacy | EnumMappingException | Для DomainStatus.Legacy = 6 нет ByName-соответствия |
+| Явное `DomainStatus.Legacy => Auto()` и fallback Unknown; вход Legacy | EnumMappingException | Неуспех выбранного Auto для Legacy; ветка уже совпала |
+| Explicit, только правило `Active => ApiStatus.Active`; вход Pending | EnumMappingException | Подходящего явного правила нет; конвенция отключена, хотя имя Pending есть в destination |
+| Bare Map<int, StoredCode>(), 42 | EnumMappingException | Число 42 не объявлено в destination при строгом ByValue |
+| Та же пара, 300 | EnumMappingException | Число 300 вне диапазона byte; это не пользовательский OverflowException |
+| DomainStatus → ApiStatus с обычным `_ => ApiStatus.Unknown`; вход Legacy | Unknown | Исключения нет: fallback обработал неуспех конвенции |
+
+Create даёт Operation.Create, Update — Operation.Update. SourceType и
+DestinationType соответствуют точной регистрации: например, int и StoredCode,
+а не underlying byte. В nullable-паре свойства также сохраняют nullable-типы,
+хотя Members после null handling может проверять non-null enum-значение.
+
+### 160. Ошибка указывает вычисленную маску и её непереведённый бит
+
+Используются InputAccess/OutputAccess из сценария 153. Normalize считает вызовы
+и возвращает InputAccess.Read | InputAccess.Audit = 5:
+
+```csharp
+builder.Map<InputAccess, OutputAccess>()
+    .Members(flag => Normalize(flag) switch { _ => Auto() });
+```
+
+Для исходного InputAccess.Read = 1 Normalize вызывается один раз. Read переводится,
+Audit не переводится; итог — EnumMappingException. Сообщение указывает:
+
+- вход попытки: InputAccess со значением 5;
+- проблемный бит: Audit = 4, для которого нет имени в OutputAccess;
+- причину: отсутствие ByName-соответствия.
+
+Сообщения только об исходном Read = 1 недостаточно. Частичный OutputAccess.Read
+не возвращается; ради сообщения Normalize не запускается повторно.
+
+Отдельный вариант той же пары:
+
+```csharp
+builder.Map<InputAccess, OutputAccess>()
+    .ResolveUsing((mask, previous) => OutputAccess.Read | (OutputAccess)512)
+    .Members((flag, previous, result) => result switch { _ => Auto() });
+```
+
+Для исходного Read фабрика вызывается один раз. EnumMappingException указывает
+фактический вход OutputAccess = 528 и неназванный бит 512. При этом свойства
+SourceType/DestinationType остаются InputAccess/OutputAccess: result switch
+не превращает регистрацию в другую пару. Фабрика для текста не повторяется.
+
+### 161. Ошибка унаследованного Auto описывает его собственный вход
+
+Вариант композиции из сценария 141: базовый fallback заменён на `_ => Auto()`,
+локального fallback нет. Исходный status = Pending; NormalizeLocal возвращает
+Legacy = 6, ReadBaseInput возвращает Corrupt = 5. Специальные ветки не совпадают.
+
+Локальная конвенция для Legacy неуспешна; затем базовый Auto не переводит Corrupt.
+Бросается EnumMappingException с входом DomainStatus.Corrupt = 5 и причиной
+неуспеха именно этой попытки. Исходный Pending и локальный Legacy не подменяют
+вход выбранного Auto. Оба метода вызваны по одному разу.
+
+Если ReadBaseInput вернёт Active, базовый Auto успешно даст ApiStatus.Active:
+неуспех локального Legacy не приводит к исключению. Если же локально написать
+`_ => Auto()`, он заменит базовый fallback и исключение будет относиться к
+локальному Legacy = 6.
+
+### 162. Строковая ошибка сохраняет границу токена или целой попытки
+
+Используется Access из сценария 70. Исходная строка — `"Read,Missing,Write"`;
+Unknown в Access имеет значение 8:
+
+| Конфигурация string → Access | Результат | Сообщение при ошибке |
+|---|---|---|
+| Bare registration, ByBit | EnumMappingException; Write не достигается | Вход попытки `"Missing"`, имя не распознано |
+| Bare registration, ByMask | EnumMappingException | Вход попытки `"Read,Missing,Write"`, проблемный токен `"Missing"` |
+| ByBit, обычный fallback `_ => Access.Unknown` | Read \| Unknown \| Write = 11 | Исключения нет |
+| ByMask, тот же fallback | Unknown = 8 | Исключения нет; частичный Read не добавляется |
+
+Во всех вариантах зарегистрированная пара остаётся string/Access. Текст ошибки
+не требует повторного вызова пользовательского Members для токена или маски.
+Для runtime-неоднозначности строкового имени из сценария 20 без fallback также
+используется EnumMappingException, с указанием неоднозначности, а не отсутствия имени.
+
+### 163. Пользовательские вычисления, конфигурация и lifecycle сохраняют свои ошибки
+
+Каждая строка — отдельный вариант уже приведённых конфигураций:
+
+| Ситуация | Ожидаемое поведение |
+|---|---|
+| Normalize бросает InvalidOperationException | То же исключение без оборачивания; Normalize не повторяется |
+| Явный checked cast в fallback сценария 30 переполняется | Пользовательский OverflowException |
+| Fallback сам бросает FormatException | Пользовательский FormatException |
+| Вложенный enum mapping из object mapping не находит результата | Его EnumMappingException с парой и операцией вложенного mapping; внешняя пара его не оборачивает |
+| Null source при NullSourceHandling.Throw | NullSourceException до Members |
+| Update с non-null source и null destination при NullDestinationHandling.Throw | NullDestinationException до Members |
+| Create отключён настройкой MappingMode | MappingOperationNotSupportedException |
+| Явный ByName для int → StoredCode | MORPH0023; если вызвана типизированная заглушка некорректной пары — MappingConfigurationException |
+| Явный Auto для object/tuple-входа без конвенции | Диагностика конфигурации, не runtime-подбор enum-поля |
+
+Отдельная проверка текста ошибки: в сценарии 134 убрать fallback и вернуть из
+GetDetails объект с IsBlocked = false. Дополнительно у StatusDetails переопределён
+ToString: он считает вызовы и бросает InvalidOperationException.
+Итог — EnumMappingException: правило не подошло, конвенции для StatusDetails нет.
+GetDetails вызывается один раз, ToString — ни разу. Сообщение обозначает тип
+StatusDetails, не исследуя его свойства и не пытаясь форматировать содержимое.
+
 ## Статус проверки каталога
 
 Примеры сверены с согласованным дизайном; нумерация нужна для обсуждения конкретных
 случаев и последующего переноса в тесты. Они не заменяют проверки production
 генератора, реальной типизации Members, generated code и Rider. Новые ID/severity
-enum-диагностик и точные имена enum-specific exceptions каталог не назначает.
+enum-диагностик каталог не назначает. Тип EnumMappingException и требования к
+его сообщению согласованы; его runtime-реализации пока нет.
