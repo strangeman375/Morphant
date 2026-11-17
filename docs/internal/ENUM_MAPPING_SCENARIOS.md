@@ -57,6 +57,7 @@
 - [Members для object/tuple → enum](#members-для-objecttuple--enum) — 170–175
 - [Coverage выбранного enum-входа](#coverage-выбранного-enum-входа) — 176–178
 - [Flags-конвенция для выбранного входа](#flags-конвенция-для-выбранного-входа) — 179–184
+- [Null выбранного входа конвенции](#null-выбранного-входа-конвенции) — 185–189
 
 ## Обычные enum
 
@@ -4806,6 +4807,170 @@ ReadWrite проверяется как полный выбранный вход
 закрывает только ReadWrite. Перенос правил в отдельную RequestAccess → RenamedAccess
 пару с ByBit и вызов через nested Map дают ReadWrite → View | Write = 24;
 во вложенной паре непокрытым остаётся Legacy.
+
+## Null выбранного входа конвенции
+
+Контракт — в [дизайне](ENUM_MAPPING_DESIGN.md#null-выбранного-входа).
+DomainStatus/ApiStatus заданы в начале каталога; RequestAccess/ApiAccess —
+в сценариях 179–184. Общий объект следующих примеров:
+
+```csharp
+class NullableInputRequest
+{
+    public DomainStatus? Status { get; set; }
+    public string? Text { get; set; }
+    public int? Code { get; set; }
+    public RequestAccess? Access { get; set; }
+}
+```
+
+### 185. Null объекта и null его свойства имеют разные точки обработки
+
+```csharp
+builder.Map<NullableInputRequest?, ApiStatus?>()
+    .Members(request => request.Status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted,
+        _ => ApiStatus.Unknown
+    });
+```
+
+Меняется только NullSourceHandling этой пары:
+
+| Вход / операция | Default ReturnNull | ReturnDestination | Throw |
+|---|---|---|---|
+| Create, request = null | null | null | NullSourceException |
+| Update, request = null, previous = Archived | null | Archived | NullSourceException |
+| Create, request не null, Status = null | Non-null Unknown = 0 | Non-null Unknown = 0 | Non-null Unknown = 0 |
+| Update, request не null, Status = null, previous = Archived | Non-null Unknown = 0 | Non-null Unknown = 0 | Non-null Unknown = 0 |
+| Non-null request, Status = Active | Active = 20 | Active = 20 | Active = 20 |
+
+Для null объекта Members не выполняется. Для null свойства он выполняется,
+конвенция неуспешна и выбран обычный fallback. Throw не применяется к свойству,
+ReturnDestination не сохраняет previous вместо написанного fallback.
+Status читается один раз; его null не вызывает NullReferenceException или
+исключение от неявного чтения Nullable.Value.
+
+### 186. Явный null-result, обычный fallback и Auto
+
+Каждая строка — отдельное изменение Members из сценария 185 при non-null request
+и Status = null:
+
+| Изменение | Результат |
+|---|---|
+| Нет изменений | Non-null Unknown через fallback |
+| Добавить `null => null` | null как явный результат правила |
+| Добавить `null => ApiStatus.Archived` | Archived |
+| Добавить `null => throw new InvalidOperationException()` | Пользовательское исключение без оборачивания |
+| Добавить `null => Auto()` при сохранённом `_ => Unknown` | EnumMappingException немедленно; обычный fallback не достигается |
+| Заменить fallback на `_ => Auto()` или `_ => Auto<ApiStatus?>()` | EnumMappingException |
+| Убрать fallback, оставив Cancelled-ветку | EnumMappingException |
+| Добавить MemberSelection.Explicit к исходному варианту | Unknown без попытки конвенции |
+
+Сообщение EnumMappingException обозначает null и тип DomainStatus? выбранного
+входа. Исключение относится к исходной зарегистрированной паре; Operation
+соответствует вызову; свойство не читается повторно ради текста ошибки.
+
+При non-nullable ApiStatus destination отсутствие результата также бросает:
+неявного default(ApiStatus) для null свойства нет. Явный `null => null` тогда
+недопустим по типу destination. Source coverage проверяет объявления DomainStatus,
+а null не становится дополнительной enum-константой; обычные проверки C# сохраняются.
+
+### 187. Nullable-элемент tuple и результат Normalize сохраняют эффекты
+
+Tuple-вариант:
+
+```csharp
+builder.Map<(DomainStatus? Status, bool PreserveNull), ApiStatus?>()
+    .Members(source => source.Status switch
+    {
+        null when source.PreserveNull => null,
+        _ => ApiStatus.Unknown
+    });
+```
+
+| Tuple | Результат |
+|---|---|
+| `(null, true)` | null по явной ветке |
+| `(null, false)` | Non-null Unknown через fallback |
+| `(Active, true)` или `(Active, false)` | Active по конвенции |
+
+Для System.Tuple<DomainStatus?, bool> выбирается Item1 и guard читает Item2.
+Null самого ссылочного tuple обрабатывается общей policy до Members.
+
+Отдельная конфигурация: Normalize возвращает DomainStatus? со значением null;
+CreateInitial имеет return type ApiStatus? и возвращает ApiStatus.Pending.
+Оба метода принимают DomainStatus и записывают свои вызовы:
+
+```csharp
+builder.Map<DomainStatus, ApiStatus?>()
+    .ConstructUsing(CreateInitial)
+    .Members(status => Normalize(status) switch { _ => ApiStatus.Unknown });
+```
+
+| Операция / вариант | Результат | Вызовы по порядку |
+|---|---|---|
+| Create с Active | Non-null Unknown | CreateInitial, Normalize |
+| Update с Active, previous = Archived | Non-null Unknown | Normalize |
+| Create, заменить fallback на Auto | EnumMappingException | CreateInitial, Normalize |
+| CreateInitial вернул null | null, Members пропущен | Только CreateInitial |
+| Create, Normalize бросил пользовательское исключение | То же исключение; fallback не выполняется | CreateInitial, Normalize |
+
+Каждый указанный вызов выполняется один раз; null вычисленного входа не повторяет
+фабрику и не запускает null policies заново. Вынос Normalize в пользовательский
+local сохраняет результаты и число вызовов.
+
+В string → ApiStatus Members с `text = null!; return Auto();` используется
+изменённое text: EnumMappingException, а не конвенция первоначальной строки
+или повторный NullSourceHandling. Явные `.Value` у пустого nullable и `.Trim()`
+у null сохраняют собственные C# исключения, даже при наличии обычного fallback.
+
+### 188. Null выбранной строки, числа или flags не означает нулевое значение
+
+Каждая строка задаёт отдельный вариант пары NullableInputRequest → ApiAccess?
+с Members вида `request => <вход> switch { _ => ApiAccess.Unknown }`:
+
+| Вход switch | Значение | Результат |
+|---|---|---|
+| request.Text | null | Non-null Unknown = 64 |
+| request.Text | `""`, `"   "` или `"0"` | Non-null None = 0 |
+| request.Text | `"Read, Write"` | Read \| Write = 24 |
+| request.Code | null | Non-null Unknown = 64 |
+| request.Code | 0 | Non-null None = 0 |
+| request.Code | 8 | Read = 8 по строгому ByValue |
+| request.Access | null | Non-null Unknown = 64 |
+| request.Access | None = 0 | Non-null None = 0 |
+| request.Access | ReadWrite | Read \| Write = 24 при default ByBit |
+
+У nullable значения сначала проверяется наличие; конвенция non-null числа/enum
+сохраняет обычную стратегию. При замене fallback на Auto все три null-входа
+бросят EnumMappingException. Для string и flags null одинаково неуспешен и при
+ByMask; это не пустой токен, не пустая маска и не null-result всей операции.
+
+### 189. Null вычисленного входа ByBit отличается от возвращённого null
+
+NormalizeFlag записывает исходный RequestAccess-бит и возвращает RequestAccess?:
+для Write — null, для остальных значений — переданное значение.
+
+```csharp
+builder.Map<RequestAccess, ApiAccess?>()
+    .Members(flag => NormalizeFlag(flag) switch { _ => ApiAccess.Unknown });
+```
+
+| Source / вариант Members | Результат | Вызовы NormalizeFlag |
+|---|---|---|
+| Write, как выше | Non-null Unknown = 64 | Write |
+| ReadWrite, как выше | Read \| Unknown = 72 | Read, Write |
+| Read \| Write \| Legacy, как выше | Read \| Unknown = 72 | Read, Write, Legacy |
+| Read \| Write \| Legacy, добавить `null => null` | null: выбранный результат завершает операцию | Read, Write; Legacy не достигается |
+| Read \| Write \| Legacy, заменить fallback на Auto | EnumMappingException; частичный Read не возвращается | Read, Write |
+| Read \| Write \| Legacy, заменить fallback на Ignore() | Non-null Read = 8 | Read, Write, Legacy |
+
+При null входа обычный fallback задаёт вклад текущего прохода, и следующие
+исходные биты обрабатываются. Ignore в этом исходном ByBit даёт нулевой вклад
+без фабрики. Явный null-result имеет отдельный terminal-контракт; ранее
+выполненные эффекты не откатываются. Non-null Unknown из fallback не становится
+новым source и повторно не проходит правила.
 
 ## Статус проверки каталога
 

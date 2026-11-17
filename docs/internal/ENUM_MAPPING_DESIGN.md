@@ -334,6 +334,40 @@ switch остаётся значение для конвенции. Явные �
 `result switch { _ => result }` сохраняет 123 через fallback, а `_ => Auto()` бросает.
 Конвенция не создаёт начальный result и не вычисляется заранее ради него.
 
+### Null выбранного входа
+
+Если выражение перед mapping switch дало null, он сначала участвует в обычных
+patterns и guards. Для иначе поддерживаемого nullable enum/integer или string
+преобразования достигнутая конвенция неуспешна: null не сопоставляется по имени,
+не превращается в 0 или пустую строку и не распространяется в destination
+автоматически. Неявная конвенция переходит к обычному fallback; без результата
+бросается EnumMappingException. Выбранный Auto/Auto<T>, включая inherited Auto,
+на null сразу бросает EnumMappingException без перехода к другому fallback.
+То же относится к Auto вне switch, если пользователь изменил source на null
+после входных guards: используется его текущее значение.
+
+`NullSourceHandling` применяется к корневому source зарегистрированного mapping
+до Members. Он не запускается повторно для null-свойства, элемента кортежа,
+local или результата Normalize. Фабрика и уже выполненные пользовательские
+вычисления не повторяются и не откатываются; null destination policy также
+не запускается заново. У явного nested Map действует lifecycle его собственной
+зарегистрированной пары.
+
+`null => null` явно возвращает null при nullable destination;
+`null => Target.Unknown` или явный throw задают другое поведение. Прямое
+выражение результата Members и terminal null фабрики сохраняют свои контракты.
+Null **входа конвенции** сам по себе не является null **результата правила**:
+в исходном ByBit он передаёт управление fallback текущего прохода, тогда как
+возвращённый nullable-result null завершает всю операцию. Ignore сохраняет
+[смысл исходного прохода](#ignore).
+
+Применимость стратегии определяется по статическому типу, включая underlying
+тип Nullable<T>; runtime-null не делает неподдерживаемый Auto допустимым.
+Null не является объявленным enum-member и не добавляется в Source coverage.
+Пользовательские `.Value`, `.Trim()` и другие выражения сохраняют обычные C#
+исключения: ошибка их вычисления не подменяется неуспехом конвенции.
+Примеры — [сценарии 185–189](ENUM_MAPPING_SCENARIOS.md#null-выбранного-входа-конвенции).
+
 ### Ветки, Auto и вычисления
 
 | Декларация | Поведение |
@@ -448,6 +482,8 @@ source проверяется первым, null destination не превращ
 Nullable registration точная: автоматически искать underlying pair нельзя.
 `ReturnNull` для non-nullable enum destination даёт `default`, даже без
 объявленного нуля; это результат null policy, не конвенции.
+Null, полученный уже внутри Members, следует отдельному правилу
+[выбранного входа](#null-выбранного-входа).
 
 | Метод | Create | Update с destination | Update с null destination и `NullDestinationHandling.Create` |
 |---|---|---|---|
@@ -520,6 +556,7 @@ Auto. Отдельные классы исключений для каждой �
 | При Explicit ни одно правило не подошло, fallback отсутствует | EnumMappingException; конвенция не запускалась |
 | Для допустимого object/tuple-входа mapping switch нет конвенции, правила не дали результата | EnumMappingException; значение не подменяется source или его компонентом |
 | Выбранный Auto()/Auto<T>() не нашёл соответствия | EnumMappingException немедленно, без другого fallback |
+| Поддерживаемый выбранный nullable/string-вход равен null | Неуспех конвенции; обычный fallback либо EnumMappingException, без повторной null source policy |
 | Неявная конвенция неуспешна, выбран обычный fallback | Его результат либо его собственное исключение |
 
 `UnmatchedMappingSwitchException` сохраняет контракт mappings со структурным
@@ -536,14 +573,16 @@ object/tuple destination.
 
 Сообщение указывает фактический проверявшийся вход, статический тип входного
 выражения и причину неуспеха: нет соответствия по имени, число недопустимо,
-выход за диапазон, неоднозначное соответствие либо отсутствие подходящего
-правила. Неоднозначность указывается и для enum-входа, и для строки; она
-не подменяется сообщением об отсутствии имени.
+выход за диапазон, неоднозначное соответствие, null входа конвенции либо
+отсутствие подходящего правила. Неоднозначность указывается и для enum-входа,
+и для строки; она не подменяется сообщением об отсутствии имени.
 Если неявный шаг пропущен из-за Explicit или отсутствия поддерживаемой
 конвенции, сообщение об исчерпании правил не описывает неудачную попытку
 конвенции. Выбранный явный Auto по-прежнему сообщает о своём неуспехе.
 Для enum/integer сохраняется точное число и знак; имя enum может дополнять число.
 Строка показывается как строковое значение.
+Null выбранного входа обозначается как null со статическим типом выражения;
+он не форматируется как пустая строка, ноль или содержимое исходного объекта.
 Точная формулировка сообщения не является машинным протоколом.
 
 Вход берётся из уже достигнутой точки отказа: это сохранённое значение mapping
@@ -1025,6 +1064,9 @@ Coverage проверяет итоговую композицию правил, 
 | Прямое выражение результата Members | Обрабатывает текущий вход; enum-выражения внутри результата не становятся новыми входами coverage |
 | Явный nested Map/Create/Update | Правила проверяются в зарегистрированной вложенной паре с её настройкой |
 
+Null выбранного nullable-входа не входит в объявления underlying enum;
+эта проверка не обещает обработки null без явного правила или fallback.
+
 Например, в Order → ApiStatus с `order.Status switch` проверяются объявления
 enum-типа Status. Вынос этого значения в local или замена входа на
 `Normalize(order.Status)` с тем же enum return type не меняет множество
@@ -1231,7 +1273,7 @@ incrementality, cancellation/recovery; path структурного object/tupl
 
 | Область | Проверки |
 |---|---|
-| API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; class/struct/ValueTuple/System.Tuple → enum через scalar Members, явный выбор входа и whole-source patterns; Create/Update, включая Update без Create; все null policies; доступное/недоступное чтение result и неиспользуемый параметр; прежний API структурного object/tuple destination |
+| API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; class/struct/ValueTuple/System.Tuple → enum через scalar Members, явный выбор входа и whole-source patterns; Create/Update, включая Update без Create; все null policies; null выбранного свойства/элемента/local/результата метода без повторных guards, неуспех конвенции против явного null-result, string null против пустоты, Auto и обычный fallback, effects фабрики и Nullable.Value/Trim; доступное/недоступное чтение result и неиспользуемый параметр; прежний API структурного object/tuple destination |
 | Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; независимая UnmappedEnumMemberValidation, default Source, общий enum типа настройки, pair/IncludeBase/mapper/MSBuild precedence без перехода к обычной validation; coverage всех режимов и статического enum-типа выбранного входа, свойства/элементы/locals/результаты методов без анализа тел, whole-object patterns и nested Map без скрытых проверок; guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
