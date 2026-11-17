@@ -1,6 +1,6 @@
 # Enum mapping: пользовательские сценарии
 
-Обновлено 2026-11-06. Каталог для проверки **будущего поведения** до реализации feature.
+Обновлено 2026-11-17. Каталог для проверки **будущего поведения** до реализации feature.
 Примеры не являются отчётом о прошедших runtime-тестах. Канонические правила —
 в [согласованном дизайне](ENUM_MAPPING_DESIGN.md); здесь они показаны на задачах,
 коде конфигурации, конкретных входах и ожидаемых результатах.
@@ -25,7 +25,10 @@
   ошибки конфигурации и lifecycle названы отдельно. Контракт — в
   [дизайне](ENUM_MAPPING_DESIGN.md#ошибки-выполнения).
 - «Диагностика» относится к конфигурации/компиляции, а не к возвращаемому значению.
-  Coverage по умолчанию выключен; его warnings отмечены там, где он включён.
+  Enum coverage по умолчанию — `UnmappedEnumMemberValidation` со значением
+  `UnmappedMemberValidation.Source`: необработанные объявленные source-значения
+  дают warnings. Таблицы runtime-результатов не являются полным перечнем диагностик;
+  отключить только coverage можно через `.UnmappedEnumMemberValidation(UnmappedMemberValidation.None)`.
 - В таблицах значения enum приводятся именами и при необходимости числами.
   Это не результат вызова `Enum.ToString()`.
 
@@ -50,6 +53,7 @@
 - [Составной вход ByBit и вычисления](#составной-вход-bybit-и-вычисления) — 150–158
 - [Ошибки enum-маппинга](#ошибки-enum-маппинга) — 159–163
 - [Ignore в ByBit](#ignore-в-bybit) — 164–166
+- [Независимая настройка enum coverage](#независимая-настройка-enum-coverage) — 167–169
 
 ## Обычные enum
 
@@ -84,6 +88,10 @@ builder.Map<DomainStatus, ApiStatus>();
 | `Unknown = 0` | `ApiStatus.Unknown = 0` |
 | `Cancelled` | Исключение маппинга: имени нет |
 | `(DomainStatus)20` | Исключение маппинга: совпадение с числом destination не заменяет имя |
+
+Default Source даёт coverage warnings для Cancelled, Suspended, Corrupt и Legacy:
+эти объявленные source-значения не обработаны. Неназванное 20 не проверяется как
+объявление; дополнительные ApiStatus-значения default Source не требуют покрытия.
 
 ### 02. Несколько исключений из конвенции
 
@@ -255,7 +263,8 @@ Members; вход — Ready или Active:
 
 Две отдельные ветки для Ready и Active не позволяют различить их и сохраняют
 обычную диагностику C# о недостижимой ветке. Warning неоднозначности действует
-и при default UnmappedMemberValidation.None; это не проверка coverage.
+и при `.UnmappedEnumMemberValidation(UnmappedMemberValidation.None)`;
+это не проверка coverage.
 
 ### 10. Маппинг enum в тот же enum не является безусловным копированием
 
@@ -2277,7 +2286,7 @@ enum CoverageTarget { Active = 10, Deleted = 20, Internal = 30 }
 
 ```csharp
 builder.Map<CoverageSource, CoverageTarget>()
-    .UnmappedMemberValidation(UnmappedMemberValidation.Source)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Source)
     .Members(value => value switch
     {
         CoverageSource.Cancelled => CoverageTarget.Deleted
@@ -2290,7 +2299,9 @@ builder.Map<CoverageSource, CoverageTarget>()
 | Cancelled | Deleted | Покрыт |
 | New | Исключение | Warning: объявленное source-значение не обработано |
 
-При UnmappedMemberValidation.None warning исчезнет, но New всё ещё бросит.
+Та же Source-проверка действует без явного вызова настройки: это library default.
+При `.UnmappedEnumMemberValidation(UnmappedMemberValidation.None)` warning
+исчезнет, но New всё ещё бросит.
 Warning можно повысить до error обычными средствами; новая runtime-стратегия
 для этого не требуется.
 
@@ -2326,7 +2337,7 @@ CoverageTarget, действуют те же правила:
 
 ```csharp
 builder.Map<CoverageSource, CoverageTarget>()
-    .UnmappedMemberValidation(UnmappedMemberValidation.Destination)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Destination)
     .Members(value => value switch
     {
         CoverageSource.Cancelled or CoverageSource.New => CoverageTarget.Deleted
@@ -2341,7 +2352,7 @@ Internal даёт warning. Два source-значения для Deleted доп�
 
 ```csharp
 builder.Map<CoverageSource, CoverageTarget>()
-    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Strict)
     .Members(value =>
     {
         _ = CoverageTarget.Internal;
@@ -2369,7 +2380,7 @@ enum ReviewStatus { Active = 1, Hidden = 2 }
 
 builder.Map<ReviewStatus, ReviewStatus>(MappingMode.Update)
     .MemberSelection(MemberSelection.Explicit)
-    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Strict)
     .Members(status =>
     {
         _ = ReviewStatus.Hidden;
@@ -2394,7 +2405,7 @@ enum DeclaredTarget { Active = 1, Archived = 2 }
 
 builder.Map<DeclaredSource, DeclaredTarget>()
     .EnumMappingStrategy(EnumMappingStrategy.ByValue)
-    .UnmappedMemberValidation(UnmappedMemberValidation.Destination);
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Destination);
 ```
 
 `Active → Active`, `(DeclaredSource)2 → Archived`. При этом Archived даёт
@@ -2413,7 +2424,7 @@ coverage warning: объявленного source-соответствия ил�
 
 builder.Map<CoverageFlags, CoverageFlagsDto>()
     .MemberSelection(MemberSelection.Explicit)
-    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Strict)
     .Members(flag =>
     {
         _ = CoverageFlagsDto.Audit;
@@ -2443,7 +2454,7 @@ Warnings нет. Не нужно отдельно доказывать возм�
 
 ```csharp
 builder.Map<CoverageSource, CoverageTarget>()
-    .UnmappedMemberValidation(UnmappedMemberValidation.Source)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Source)
     .Members(value => value switch
     {
         CoverageSource.Cancelled => CoverageTarget.Deleted,
@@ -2467,7 +2478,7 @@ Source coverage должен учитывать false-путь и предупр
 
 ```csharp
 builder.Map<CoverageSource, CoverageTarget>()
-    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Strict)
     .Members(value => ComputeTarget(value));
 ```
 
@@ -2486,7 +2497,7 @@ enum CoveredAlias { Ready = 1, Active = 1 }
 enum CoveredAliasDto { Ready = 10, Available = 10 }
 
 builder.Map<CoveredAlias, CoveredAliasDto>()
-    .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Strict)
     .Members(value => value switch { CoveredAlias.Ready => CoveredAliasDto.Ready });
 ```
 
@@ -2498,9 +2509,9 @@ builder.Map<CoveredAlias, CoveredAliasDto>()
 
 ```csharp
 builder.Map<int, StoredCode>()
-    .UnmappedMemberValidation(UnmappedMemberValidation.Destination);
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Destination);
 builder.Map<DomainStatus, string>()
-    .UnmappedMemberValidation(UnmappedMemberValidation.Source);
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Source);
 ```
 
 В первой паре 0, 1 и 2 соответствуют всем объявленным StoredCode; destination
@@ -4064,7 +4075,7 @@ Record добавляет полученный non-null SourceAccess в спис
 ```csharp
 builder.Map<SourceAccess?, TargetAccess?>()
     .MemberSelection(MemberSelection.Explicit)
-    .UnmappedMemberValidation(UnmappedMemberValidation.Source)
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Source)
     .Members(flag =>
     {
         var recorded = Record(flag);
@@ -4158,6 +4169,103 @@ builder.Map<Access, Access>()
 повторы и пустые: `"Read;;Missing"` даёт non-null 0 без фабрики и исключения.
 Для Access → string прямой Ignore даёт `""`, включая нулевой вход; начальная
 строка Update и конвенционные имена не подмешиваются.
+
+## Независимая настройка enum coverage
+
+Канонические правила — в [дизайне](ENUM_MAPPING_DESIGN.md#проверка-покрытия).
+Используются CoverageSource и CoverageTarget из сценария 97.
+
+### 167. Общий Destination для объектов и Source для enum
+
+```csharp
+class CoverageOrder
+{
+    public int Id { get; set; }
+    public string Legacy { get; set; } = "";
+    public CoverageSource Status { get; set; }
+}
+
+class CoverageOrderDto
+{
+    public int Id { get; set; }
+    public CoverageTarget Status { get; set; }
+    public string Description { get; set; } = "";
+}
+
+builder.UnmappedMemberValidation(UnmappedMemberValidation.Destination);
+builder.UnmappedEnumMemberValidation(UnmappedMemberValidation.Source);
+
+builder.Map<CoverageSource, CoverageTarget>()
+    .Members(value => value switch
+    {
+        CoverageSource.Cancelled => CoverageTarget.Deleted
+    });
+builder.Map<CoverageOrder, CoverageOrderDto>()
+    .Members((source, _) => new() { Status = Map(source.Status) });
+```
+
+| Необработанный элемент | Диагностика |
+|---|---|
+| CoverageOrder.Legacy | Нет: обычная политика проверяет только destination |
+| CoverageOrderDto.Description | Warning обычного member coverage |
+| CoverageSource.New | Warning enum source coverage |
+| CoverageTarget.Internal | Нет: enum-политика проверяет только source |
+
+Id сопоставляется по конвенции, Status — явным nested Map. Удаление общей
+enum-настройки сохраняет тот же результат: её library default — Source.
+Смена только обычной политики на None убирает warning для Description,
+но сохраняет его для New; смена только enum-политики на None делает обратное.
+Наличие enum-свойства не меняет политику остальных членов объекта.
+
+### 168. Default и None в независимой цепочке enum-настройки
+
+Во всех вариантах используется Members из сценария 97. Обычная общая
+UnmappedMemberValidation задана как Strict, но не участвует в enum coverage.
+В таблице перечислены только значения UnmappedEnumMemberValidation;
+MSBuild-свойство — MorphantUnmappedEnumMemberValidation. «Нет» означает,
+что на уровне нет конкретного enum-значения. Base mappers не задают иных
+enum-настроек; IncludeBase при наличии подключён обычным способом.
+
+| MSBuild | Текущий mapper | Включённая пара | Текущая пара | Effective / warnings текущей пары |
+|---|---|---|---|---|
+| Нет | Default | Нет | Default | Source / New |
+| Destination | Default | Нет | Default | Destination / Internal |
+| Destination | None | Нет | Default | None / нет |
+| Destination | None | Strict | Default | Strict / New и Internal |
+| Destination | None | Strict | Source | Source / New |
+| Destination | None | Strict | None | None / нет |
+| Destination | None | Strict | Сначала None, затем Default | Strict / New и Internal |
+
+Default продолжает поиск только enum-настройки; None завершает его и отключает
+coverage. В последней строке действует обычное правило последней записи.
+Во всех вариантах runtime одинаков: Active → Active, Cancelled → Deleted,
+New → исключение. Диагностики не добавляют runtime-ветвей.
+
+### 169. Source не меняет сторону проверки для string/integer
+
+```csharp
+builder.Map<string, CoverageTarget>()
+    .MemberSelection(MemberSelection.Explicit)
+    .Members(text => text switch
+    {
+        "active" => CoverageTarget.Active,
+        _ => CoverageTarget.Deleted
+    });
+```
+
+| Enum coverage | Диагностика |
+|---|---|
+| Не задан / Source | Нет: у string нет объявленных enum source-значений |
+| Destination / Strict | Warning для неиспользованного CoverageTarget.Internal |
+| None | Нет |
+
+Во всех вариантах `"active"` возвращает Active, остальные non-null строки —
+Deleted. Default Source не подменяется на Destination из-за типа source.
+
+В bare `builder.Map<int, CoverageTarget>();` default Source также не перечисляет
+возможные числа и не даёт coverage warnings. Строгий ByValue по умолчанию
+принимает 10, 20 и 30; 123 бросает. В обратном направлении enum → string/integer
+Source проверяет объявленные enum source-значения, как в сценарии 107.
 
 ## Статус проверки каталога
 

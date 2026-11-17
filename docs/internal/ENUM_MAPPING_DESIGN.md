@@ -1,6 +1,6 @@
 # Enum mapping: согласованный дизайн
 
-Обновлено 2026-11-06. **Feature ещё не реализована**. Согласованные правила,
+Обновлено 2026-11-17. **Feature ещё не реализована**. Согласованные правила,
 отложенные возможности и проверки реализации описаны ниже.
 Примеры ниже описывают будущий DSL. Этот документ — канонический контракт;
 обоснования и источники: [стратегия по умолчанию](ENUM_MAPPING_DEFAULT_RESEARCH.md),
@@ -48,12 +48,13 @@ builder.Map<DomainStatus, ApiStatus>()
 
 ## Настройки
 
-Нужны только два новых независимых выбора:
+Для enum-маппинга вводятся три независимые настройки:
 
 | Настройка | Вопрос | Значения и library default |
 |---|---|---|
 | `EnumMappingStrategy` | Что считать соответствием? | `Default`, **`ByName`**, `ByValue`, `ByValueAllowUndefined`; для integer-to-enum default — строгий `ByValue` |
 | `FlagsMappingMode` | Обрабатывать единицу или полную маску? | `Default`, **`ByBit`**, `ByMask`; flags-to-flags, string-to-flags и flags-to-string под ByName; единица — бит или строковый токен |
+| `UnmappedEnumMemberValidation` | Какие enum-значения должны быть обработаны? | Существующий enum `UnmappedMemberValidation`: `Default`, `None`, **`Source`**, `Destination`, `Strict`; compile-time warnings |
 
 ```csharp
 builder.Map<WireCode, StoredCode>()
@@ -68,15 +69,15 @@ builder.Map<WireCode, StoredCode>()
 | Существующая настройка | Применение к enum |
 |---|---|
 | `MemberSelection.Auto` (default) / `Explicit` | Включает / отключает неявную конвенцию; явный `Auto()` работает в обоих случаях |
-| `UnmappedMemberValidation` | Compile-time coverage; default `None`, предупреждения; runtime mapping не меняет |
+| `UnmappedMemberValidation` | Coverage object/tuple members с прежним default `None`; enum coverage задаётся независимо через `UnmappedEnumMemberValidation` |
 | `MappingMode` | Default `CreateAndUpdate`; отключённая операция немедленно бросает исключение |
 | `NullSourceHandling`, `NullDestinationHandling` | Общие null policies; defaults `ReturnNull` и `Create`; ноль не является null |
 | `ConstructorSelection` | Для scalar destination общий default игнорируется; явная pair-настройка, включая `Default`, даёт `MORPH0023` |
 | `Flattening` | Не преобразует enum-имена; корректное значение не влияет на них, неверное effective value сохраняет обычную диагностику |
 | `UnknownDerivedTypeHandling` | Не относится к неизвестному enum-числу; scalar-пары не получают derived dispatch |
 
-Дополнительные настройки fallback, overflow, runtime validation, ignore-case
-и enum coverage не вводятся; нет `Auto(fallback: ...)` или `Auto(value)`.
+Дополнительные настройки fallback, overflow, runtime validation и ignore-case
+не вводятся; нет `Auto(fallback: ...)` или `Auto(value)`.
 Числовую допустимость выбирает стратегия, реакцию на отсутствие соответствия — `Members`.
 
 ### Наследование и применимость
@@ -84,6 +85,12 @@ builder.Map<WireCode, StoredCode>()
 Обычный [precedence](../settings/README.md#precedence): текущая пара → included
 пары от ближайшей → текущий mapper → подключённые base mappers от ближайшего
 → MSBuild → library default. Каждая настройка разрешается независимо.
+
+`UnmappedEnumMemberValidation` использует эти же уровни и MSBuild-свойство
+`MorphantUnmappedEnumMemberValidation`. `Default` ищет только enum-настройку
+на следующих уровнях; если конкретного значения нет, результат — `Source`.
+Значение обычной `UnmappedMemberValidation` не подхватывается ни на одном уровне.
+Явный `None` отключает enum coverage, включая унаследованный `Strict`.
 
 - `Default` продолжает поиск, а не сбрасывает наследование. Для сброса
   унаследованного ослабленного режима нужен `ByValue`, для `ByMask` — `ByBit`.
@@ -514,8 +521,8 @@ Ready = 10, Active = 20 в destination неоднозначны. Явная ве
 Explicit без Auto, не получает предупреждения только из-за aliases или
 различий регистра в объявлениях. Несколько имён, ведущих к одному
 конечному enum-числу, не являются конфликтом. Проверка не зависит от
-UnmappedMemberValidation; новых настроек нет, Warning можно повысить до Error
-обычными средствами настройки диагностик.
+UnmappedEnumMemberValidation; отдельной настройки неоднозначностей нет.
+Warning можно повысить до Error обычными средствами настройки диагностик.
 
 Для string-входа конфликт ignore-case этапа относится только к неоднозначным
 строкам. Точные Ready и READY по-прежнему допустимы. Явное правило для строки
@@ -894,13 +901,26 @@ result или Normalize(flag) может быть достижимым. Анал
 
 ## Проверка покрытия
 
-Используется UnmappedMemberValidation с default None и warnings; severity
-можно повышать обычными средствами. Coverage проверяет итоговую композицию
-правил, конвенции и fallback, не меняя runtime-допустимость и порядок. Проверяются
+Используется отдельная `UnmappedEnumMemberValidation` с типом
+`UnmappedMemberValidation` и единым library default **`Source`**. Уровень —
+Warning; severity можно повышать обычными средствами. Настройка проверяет
+значения scalar enum-пар, включая flags и nullable. Проверка object/tuple
+members остаётся у обычной `UnmappedMemberValidation`: наличие enum-свойства
+не переключает политику содержащего объекта. Явный nested Map использует
+настройку своей зарегистрированной enum-пары.
+
+Source выбран для раннего обнаружения необработанных объявленных входов.
+Дополнительные destination-значения могут использоваться другими источниками
+и сами по себе не делают направленное преобразование неполным. Их контроль
+включается через Destination или Strict; None отключает coverage.
+
+Coverage проверяет итоговую композицию правил, конвенции и fallback,
+не меняя runtime-допустимость и порядок. Проверяются
 связи между объявлениями и явными правилами, не множество всех возможных
 результатов исполнения. Для enum → enum неназванный source не закрывает
 destination coverage: Source { Active = 1 } → Target { Active = 1, Archived = 2 }
-под ByValue предупреждает об Archived, хотя runtime-вход (Source)2 допустим.
+под ByValue с Destination/Strict предупреждает об Archived, хотя runtime-вход
+(Source)2 допустим. Default Source такого destination-warning не даёт.
 
 | Режим / случай | Проверка |
 |---|---|
@@ -922,8 +942,13 @@ Source, включая source-часть Strict, проверяет полнот
 
 Тело Using не анализируется; наличие фабрики не доказывает полноту Members.
 `_ => result` явно обрабатывает остаток source, но не перечисляет destination.
-Для string/integer проверяется конечная enum-сторона; неназванные числа —
-runtime-вопрос. При None непокрытый runtime-вход всё равно бросает без fallback.
+Для string/integer нет списка объявленных enum-значений на соответствующей
+стороне. Проверяется только выбранная enum-сторона: default Source ничего
+не проверяет для string/integer → enum и не превращается в Destination;
+Destination/Strict может проверить enum destination. Для enum → string/integer
+Source проверяет enum source. Все возможные строки и числа не перечисляются;
+неназванные числа — runtime-вопрос. При None непокрытый runtime-вход всё равно
+бросает без fallback.
 
 В ByBit source composites покрыты, когда обработаны их отдельные биты.
 Destination coverage проверяет участие битов в соответствиях и явных вкладах:
@@ -939,6 +964,8 @@ Read или Write никогда не возвращаются. Все биты 
 результат не меняет. Нужен настоящий discard отдельным statement верхнего уровня
 тела lambda, не присваивание переменной `_`. Для source используется явное правило,
 включая `SourceEnum.SomeMember => Ignore()`; runtime-смысл описан в [Ignore](#ignore).
+Независимые общие политики и наследование настройки показаны в
+[сценариях 167–169](ENUM_MAPPING_SCENARIOS.md#независимая-настройка-enum-coverage).
 
 ## Вложенное использование
 
@@ -1069,7 +1096,7 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 | API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; Create/Update, включая Update без Create; все null policies; доступное/недоступное чтение result и неиспользуемый параметр; прежний object/tuple API |
 | Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
-| Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
+| Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; независимая UnmappedEnumMemberValidation, default Source, общий enum типа настройки, pair/IncludeBase/mapper/MSBuild precedence без перехода к обычной validation; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
 | Стратегия и тип входа | Library default для фактического входа; смена enum/string/integer и result → result; разные типы в путях Members и IncludeBase; явная совместимая/несовместимая стратегия, унаследованный выбор и Default; общие defaults без повторного поиска; неявная конвенция и Auto/Auto<T>, Explicit и отсутствие автоматических путей; диагностика конфигурации до runtime; неподдерживаемое преобразование без расширения API |
 | Ошибки enum | Единый EnumMappingException для отсутствия результата; точная зарегистрированная пара и операция; фактический вход, причина, проблемный бит/токен; Explicit без фиктивной попытки конвенции, result и inherited Auto; отсутствие повторных вычислений и пользовательского ToString; успешный fallback без исключения, исходные user/lifecycle/configuration exceptions |
 | Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; побитовая конвенция вычисленной маски без повторного Members/IncludeBase; неуспех всей попытки и полный вклад fallback, 0/result/Ignore/remaining, собственный вход inherited Auto; ByBit Ignore/Ignore<T> без initial result, nullable ноль, все вклады пропущены, приоритет и наследование режима; исходная и вычисленная комбинации, сохранение других вкладов и однократных независимых вычислений; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
