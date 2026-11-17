@@ -94,9 +94,8 @@ builder.Map<DomainStatus, ApiStatus>();
 | `Cancelled` | Исключение маппинга: имени нет |
 | `(DomainStatus)20` | Исключение маппинга: совпадение с числом destination не заменяет имя |
 
-Default Source даёт coverage warnings для Cancelled, Suspended, Corrupt и Legacy:
-эти объявленные source-значения не обработаны. Неназванное 20 не проверяется как
-объявление; дополнительные ApiStatus-значения default Source не требуют покрытия.
+Default Source предупреждает о Cancelled, Suspended, Corrupt и Legacy. Неназванное 20 и
+дополнительные destination-значения в эту проверку не входят.
 
 ### 02. Несколько исключений из конвенции
 
@@ -116,8 +115,7 @@ builder.Map<DomainStatus, ApiStatus>()
 | `Active` | `Active`, хотя ветка не написана |
 | `Legacy` | Исключение маппинга |
 
-Такой короткий mapping switch не должен требовать `_ => Auto()` ради устранения
-предупреждения о неполноте. Это требование к итоговой интеграции compiler/IDE.
+Неполный mapping switch не требует `_ => Auto()` ради устранения compiler/IDE warning.
 
 ### 03. Завершающая ветка — fallback после конвенции
 
@@ -137,8 +135,7 @@ builder.Map<DomainStatus, ApiStatus>()
 | `Unknown` | `Unknown` |
 | `Legacy`, `(DomainStatus)123` | `Unrecognized` |
 
-Это намеренная DSL-семантика. В обычном C# такой switch вернул бы
-`Unrecognized` и для `Active`.
+В обычном C# Active тоже дал бы Unrecognized; здесь действует DSL-конвенция перед fallback.
 
 ### 04. Полностью явная таблица
 
@@ -228,13 +225,10 @@ builder.Map<NameSource, NameTarget>()
 | `READY` | `NameTarget.READY = 20`, точное совпадение |
 | `ready` | `NameTarget.Ready = 10`, явное разрешение конфликта |
 
-Без последней явной ветки автоматический путь для `ready` неоднозначен:
-Warning при генерации, EnumMappingException для этого входа без fallback.
-Обычный fallback обработает `ready`, но Warning сохранится; Ready и READY
-по-прежнему переводятся по точному имени. Если оба destination-имени имеют
-число 10, конфликта и предупреждения нет.
-При единственном destination-имени `Ready` все три source-имени сопоставляются ему.
-Смена `CurrentCulture`, например на `tr-TR`, результат не меняет.
+Без явного правила ready: Warning и неуспех конвенции; fallback обрабатывает вход, но warning
+сохраняет. Exact Ready/READY остаются 10/20. При обоих destination-числах 10 конфликта нет;
+при единственном имени Ready все три source-имени переводятся в него. Culture, включая tr-TR,
+не влияет.
 
 ### 09. Aliases одного source-числа
 
@@ -266,10 +260,8 @@ Members; вход — Ready или Active:
 | Explicit и switch с `AliasSource.Ready => Auto(), _ => AliasTarget.Unknown` | Warning | EnumMappingException; явный Auto сохраняет автоматический путь |
 | Прямое `Members(value => AliasTarget.Unknown)` | Нет | Unknown = 0; результат полностью задан пользователем |
 
-Две отдельные ветки для Ready и Active не позволяют различить их и сохраняют
-обычную диагностику C# о недостижимой ветке. Warning неоднозначности действует
-и при `.UnmappedEnumMemberValidation(UnmappedMemberValidation.None)`;
-это не проверка coverage.
+Отдельные cases Ready/Active дают обычную C# ошибку недостижимой ветки. Warning
+неоднозначности сохраняется и при enum coverage None.
 
 ### 10. Маппинг enum в тот же enum не является безусловным копированием
 
@@ -294,7 +286,7 @@ builder.Map<DomainStatus, DomainStatus>()
     });
 ```
 
-Active даёт Pending; явное правило не обходится identity-оптимизацией.
+Active → Pending; identity-оптимизация не обходит правило.
 
 ## Выражения и управление выполнением
 
@@ -305,9 +297,8 @@ builder.Map<DomainStatus, ApiStatus>()
     .Members(status => Compute(status));
 ```
 
-Если `Compute` всегда возвращает `ApiStatus.Disabled`, то `Active`, `Legacy` и
-неназванное число 123 дают `Disabled`. Compute вызывается один раз; исключение из
-него передаётся вызывающему коду. Конвенция не переопределяет прямой результат.
+Если Compute всегда возвращает Disabled, то Active, Legacy и неназванное 123 дают Disabled.
+Compute вызывается один раз, его исключение сохраняется.
 
 ### 12. Mapping switch в local и alias
 
@@ -331,9 +322,8 @@ builder.Map<DomainStatus, ApiStatus>()
 | `Active` | `Active` |
 | `Legacy` | Исключение маппинга |
 
-Перенос возвращаемого switch в неизменяемый local не отключает декларативный
-разбор. `Auto<ApiStatus>()` здесь явно задаёт тип; смешанному switch под `var`
-может не хватить target type для голого Auto.
+Неизменяемый local сохраняет mapping switch. Для смеси enum/Auto под var может потребоваться
+target type через Auto<ApiStatus>().
 
 ### 13. If/else, логические условия и short-circuit
 
@@ -377,9 +367,8 @@ builder.Map<DomainStatus, ApiStatus>()
     });
 ```
 
-`Cancelled → Deleted`, `Active → Active`, `Legacy → исключение маппинга`,
-`Corrupt → InvalidOperationException`. Поддержка управляющей конструкции не
-отменяет обычные C# требования: нельзя удалить default и оставить путь без return.
+Cancelled → Deleted; Active → Active; Legacy → EnumMappingException; Corrupt →
+InvalidOperationException. Удаление default оставит недопустимый C# путь без return.
 
 ### 15. Conditional expression выбирает декларативный путь
 
@@ -445,9 +434,8 @@ Normalize = Legacy явный Auto бросает: исходный Active не 
 | Cancelled | ApiStatus.Deleted по явному правилу | ApiStatus.Deleted по явному правилу |
 | Legacy | ApiStatus.Unknown через fallback | ApiStatus.Unknown через fallback |
 
-Normalize вызывается один раз; patterns и конвенция используют normalized.
-При замене fallback на `_ => Auto()` Pending сопоставляется и при Explicit,
-а Legacy вызывает исключение. Наличие local не включает и не отключает конвенцию.
+Normalize вызывается один раз. С `_ => Auto()` Pending переводится и при Explicit, Legacy
+бросает; local не меняет конвенцию.
 
 ### 17. Изменённая переменная source и вложенный обычный switch
 
@@ -500,9 +488,8 @@ builder.Map<DomainStatus, ApiStatus>()
     });
 ```
 
-`Cancelled` при коде 1 даёт Deleted, при коде 2 — Archived; `Active` даёт Active
-без GetCode. Внутренний switch остаётся C#: удаление его `_` сохраняет обычное
-предупреждение о неполноте. Конвенция туда не добавляется.
+Cancelled: код 1 → Deleted, код 2 → Archived. Active → Active без GetCode. Внутренний switch —
+C#: удаление `_` сохраняет warning о неполноте.
 
 ## Обычные enum и строки
 
@@ -528,7 +515,7 @@ builder.Map<string, DomainStatus>()
 | `"ACTIVE" → DomainStatus` | `Active` по конвенции |
 | `"REMOVED" → DomainStatus` | Исключение: явный string pattern регистрозависим |
 
-Обратная регистрация нужна отдельно; из первой она не строится автоматически.
+Обратная регистрация независима и не строится автоматически.
 
 ### 19. Обычный строковый enum не получает flags-parser
 
@@ -558,9 +545,8 @@ builder.Map<string, DomainStatus>()
 | `" Pending "` | Pending |
 | `"   "`, `" 2 "`, `" Missing "` | Unknown |
 
-Trim вычисляется один раз. Замена fallback на `_ => Auto()` сохраняет успешные
-соответствия и даёт исключение для трёх последних строк. Это пользовательская
-нормализация; регистрация без Trim по-прежнему не убирает пробелы.
+Trim вызывается один раз. С `_ => Auto()` три последних входа бросают; без явно написанного
+Trim пробелы сохраняются.
 
 ### 20. Неоднозначность регистра для конкретной входной строки
 
@@ -580,12 +566,9 @@ builder.Map<string, TextStatus>()
 | `"ready"` с явной веткой `"ready" => TextStatus.Ready` | Число 1 |
 | `"ready"` с явной веткой `"ready" => Auto()` и fallback Unknown | EnumMappingException немедленно, без fallback |
 
-Статически известный конфликт даёт Warning; runtime не выбирает первое
-объявление. Fallback сохраняет предупреждение. Явная ветка для "ready" не
-устраняет конфликт для "rEaDy" и других неоднозначных вариантов регистра,
-доходящих до конвенции. Если Ready и READY имеют одно число 1, конфликт исчезает:
-все указанные варианты регистра переводятся в 1 без этого предупреждения.
-Конкретный ID новой диагностики пока не назначен.
+Конфликт даёт Warning независимо от fallback. Правило для "ready" не покрывает другие
+конфликтные варианты регистра. Если Ready = READY = 1, все варианты дают 1 без warning. ID
+диагностики пока не назначен.
 
 ### 21. Canonical output при aliases
 
@@ -596,14 +579,10 @@ builder.Map<AliasedStatus, string>()
     .Members(status => status switch { AliasedStatus.Ready => "ready" });
 ```
 
-`Ready` и `Active` оба дают `"ready"`, предупреждения неоднозначности нет.
-Без явной ветки ByName даёт Warning, а число 1 — EnumMappingException:
-по нему нельзя восстановить, какое имя написал вызывающий код.
-Замена ветки на обычный `_ => "unknown"` возвращает "unknown" для обоих aliases,
-но сохраняет Warning. Ветка `AliasedStatus.Ready => Auto()` немедленно бросает
-EnumMappingException даже при наличии `_ => "unknown"`.
-То же правило действует для aliases, отличающихся только регистром.
-Прямое `Members(status => "ready")` полностью задаёт результат и не получает Warning.
+Ready/Active → "ready" без warning. Без правила: Warning и EnumMappingException для 1; с `_ =>
+"unknown"` — "unknown", warning остаётся; с `Ready => Auto()` — исключение даже при fallback.
+Прямой Members(status => "ready") не предупреждается. То же относится к aliases, различающимся
+только регистром.
 
 ### 22. Числовое представление enum в строке
 
@@ -624,8 +603,8 @@ builder.Map<WideCode, string>()
 | `SignedCode.MinusOne` | `"-1"` |
 | `WideCode.Maximum` | `"18446744073709551615"` |
 
-ByValueAllowUndefined даёт те же строки. Culture не добавляет группировку и не
-меняет знак. Обратный string → enum автоматически такой numeric text не разбирает.
+AllowUndefined даёт те же строки; culture не меняет знак/группировку. Обратного numeric
+parsing нет.
 
 ### 23. Пользовательский формат и явный числовой alias
 
@@ -652,9 +631,8 @@ builder.Map<string, DomainStatus>()
 | `"STATUS_ACTIVE"`, `"2" → DomainStatus` | `Active` |
 | `"STATUS_PENDING"`, `"02" → DomainStatus` | `Unknown` |
 
-Массовая обработка префиксов, snake_case и wire attributes не возникает из этих
-двух явных aliases. Для полностью своего форматирования подходит прямой Members
-или Convert.
+Префиксы, snake_case и wire attributes автоматически не обрабатываются; свой полный формат
+задаётся прямым Members/Convert.
 
 ## Числа и диапазоны
 
@@ -679,8 +657,7 @@ builder.Map<WireCode, StoredCode>()
 | `(WireCode)42` | Исключение | Исключение | Неназванное 42 |
 | `WireCode.Large = 300` | Исключение | Исключение диапазона конвенции | То же, без усечения |
 
-Все «исключения» здесь — исключения маппинга при отсутствии fallback,
-а не обещание бросать `OverflowException` из неявной конвенции.
+Здесь исключение означает EnumMappingException, не обязательный OverflowException.
 
 ### 25. Integer → enum по умолчанию строгий
 
@@ -713,8 +690,7 @@ builder.Map<SparseSource, ExpandedTarget>()
 | `(SparseSource)2` | `ExpandedTarget.Archived` |
 | `(SparseSource)3` | Исключение маппинга |
 
-Неназванный source 2 допустим в runtime, но не закрывает destination coverage
-для Archived. Пример с диагностикой приведён в разделе coverage.
+Неназванный source 2 не закрывает Destination coverage Archived — см. 102.
 
 ### 27. Enum → integer сохраняет число и проверяет диапазон
 
@@ -729,8 +705,8 @@ builder.Map<WireCode, byte>();
 | `(WireCode)255` | byte 255 |
 | `Large = 300` | Исключение маппинга |
 
-У byte нет списка объявлений. Явные ByValue и ByValueAllowUndefined допустимы
-и дают те же результаты; ByName несовместима с enum → integer.
+ByValue и ByValueAllowUndefined допустимы и дают эти же результаты; ByName для enum → integer
+ошибочна.
 
 ### 28. Знак и широкий ulong не теряются
 
@@ -785,8 +761,7 @@ builder.Map<WireCode, StoredCode>()
 | `Large = 300` | Неназванное 44 из пользовательского unchecked |
 | `Large = 300`, заменить на `checked` | OverflowException из пользовательского cast |
 
-Неявная конвенция никогда сама не усекала 300 до 44. Явный результат не получает
-повторной проверки объявленности.
+300 → 44 — эффект явного unchecked, без повторной проверки объявленности.
 
 ### 31. Явный Auto не использует числовой fallback
 
@@ -817,8 +792,8 @@ builder.Map<int, StoredCode>()
     });
 ```
 
-42 даёт неназванное 42 даже при строгом ByValue; 43 даёт Unknown.
-Строгость относится к конвенции, а не к валидации всего пользовательского кода.
+42 → неназванное 42 даже при строгом ByValue; 43 → Unknown. Явный результат не
+перевалидируется.
 
 ## Nullable, Create, Update и фабрики
 
@@ -840,8 +815,7 @@ builder.Map<DomainStatus?, ApiStatus?>()
 | Update null, previous = Archived | null по default ReturnNull |
 | Update Cancelled, previous = null | Deleted; операция остаётся Update |
 
-Регистрация `DomainStatus → ApiStatus` сама по себе не заменяет точную
-nullable value-type пару из примера.
+Нужна точная nullable value-type пара; underlying регистрация её не заменяет.
 
 ### 34. Все политики null source
 
@@ -854,9 +828,8 @@ nullable value-type пару из примера.
 | ReturnDestination | null | Archived |
 | Throw | NullSourceException | NullSourceException |
 
-В отдельной паре `DomainStatus? → ApiStatus` ReturnNull даёт `(ApiStatus)0`.
-Если destination enum не объявляет ноль, всё равно возвращается default:
-это null policy, а не успешная enum-конвенция.
+Для DomainStatus? → ApiStatus ReturnNull возвращает default = 0 даже без объявления нуля в
+destination.
 
 ### 35. Null destination и порядок guards
 
@@ -903,9 +876,8 @@ builder.Map<DomainStatus, ApiStatus>()
             : ApiStatus.Archived);
 ```
 
-Create Active даёт Pending; Update Active с любым non-null destination — Archived.
-Параметр result не читается, поэтому его отсутствие на Create не является ошибкой.
-Этот DSL context предоставляет Operation; полный `context.Mapper` доступен в Using/Convert.
+Create Active → Pending; Update Active с non-null destination → Archived. Неиспользуемый
+result допустим без фабрики. Полный context.Mapper доступен в Using/Convert.
 
 ### 38. ConstructUsing создаёт начальный результат только при необходимости
 
@@ -929,8 +901,8 @@ builder.Map<DomainStatus, ApiStatus>()
 | Create Cancelled | Deleted | 1, хотя Members заменяет результат |
 | Update Cancelled, Archived | Deleted | 0 |
 
-Для nullable destination Update Active с null и policy Create вызывает фабрику
-один раз, даёт Pending и остаётся Update.
+Nullable Update Active с null destination и policy Create: один вызов фабрики, Pending,
+Operation.Update.
 
 ### 39. ResolveUsing всегда выбирает result, previous остаётся исходным
 
@@ -950,8 +922,7 @@ builder.Map<DomainStatus, ApiStatus>()
 | Update Active, Archived | previous Archived, result Pending | Archived |
 | Update Active, Unknown | previous Unknown, result Pending | Pending |
 
-ResolveUsing вызывается один раз во всех трёх случаях. Без чтения previous
-из result нельзя восстановить старый destination.
+ResolveUsing вызывается один раз; старый destination доступен через previous, не result.
 
 ### 40. Switch над result корректирует результат фабрики
 
@@ -1004,8 +975,7 @@ builder.Map<DomainStatus, ApiStatus>()
 | Cancelled | Deleted | Deleted |
 | Legacy | Pending через fallback | Pending |
 
-Наличие фабрики не меняет смысл Members: вход выбирается выражением перед switch.
-Вариант с tuple и отказ от неявного выбора его элемента показаны в сценарии 133.
+Вход конвенции задаёт switch, независимо от фабрики. Tuple-вариант — 133.
 
 ### 41. Ignore сохраняет начальный result
 
@@ -1025,9 +995,8 @@ builder.Map<DomainStatus, ApiStatus>()
 | Update Cancelled, Archived | Archived |
 | Create Active | Active по конвенции |
 
-Если убрать фабрику и оставить Create включённым, Ignore для Cancelled требует
-диагностики недоступного result. Он не изобретает ни ноль, ни default fallback.
-Для пары только с Update и non-nullable destination существующий result доступен.
+Без фабрики включённый Create диагностирует недоступный result для Ignore. При Update-only с
+non-nullable destination result доступен.
 
 ### 42. Фабрика без Members и terminal null
 
@@ -1042,10 +1011,8 @@ builder.Map<DomainStatus, ApiStatus?>()
 | Active | Неназванное 123; конвенция не запускается поверх фабрики |
 | Corrupt | null |
 
-Если добавить `.Members(status => ApiStatus.Active)`, Active даст Active, но
-Corrupt всё равно даст null: terminal null пропускает Members. Исключение
-фабрики тоже не перехватывается. Явный null из Members допустим для nullable
-destination и не вызывает null policies повторно.
+Добавление Members(status => ApiStatus.Active): Active → Active, Corrupt → terminal null без
+Members. Исключение фабрики сохраняется; явный nullable null-result не повторяет policies.
 
 ### 43. Update возвращает scalar, включая режим Update-only
 
@@ -1070,9 +1037,8 @@ var mapped = mapper.Map<DomainStatus, ApiStatus>(DomainStatus.Active, old);
 // old == ApiStatus.Archived; mapped == ApiStatus.Active
 ```
 
-Для nullable Update-only пары с policy Create null destination также допустим,
-если её правила не читают отсутствующий result либо выбирают его фабрикой;
-включать MappingMode.Create для этого не требуется.
+Nullable Update-only с null destination и policy Create допустим без включения Create: нужен
+путь без чтения отсутствующего result либо фабрика.
 
 ### 44. Convert владеет всем алгоритмом
 
@@ -1086,8 +1052,8 @@ builder.Map<DomainStatus?, ApiStatus?>()
 | null | Unknown, не default null policy |
 | Active, Cancelled, Legacy | Disabled, без enum-конвенции |
 
-Members и Using нельзя добавлять к локальному Convert. Его тело — обычный C#,
-поэтому там нет автоматического дополнения switch и DSL Auto/Ignore.
+Локальный Convert несовместим с Members/Using; внутри обычный C# без
+DSL-конвенции/Auto/Ignore.
 
 ## Наследование и настройки
 
@@ -1131,9 +1097,8 @@ public partial class ApplicationMapper : StatusMapperBase<ApplicationMapper>
 | Active | Active по общей конвенции |
 | Legacy | Unrecognized из локального fallback |
 
-Удаление локального fallback вернёт Unknown для Legacy. Локальный Members не
-стирает Suspended из базы. Enum-наследования типов здесь нет: включается та же
-пара из базового mapper.
+Без локального fallback Legacy → Unknown. Suspended остаётся базовым правилом; включается та
+же пара, не наследование enum-типов.
 
 ### 46. Guard и явный Auto перекрывают базовое правило по-разному
 
@@ -1154,8 +1119,7 @@ public partial class ApplicationMapper : StatusMapperBase<ApplicationMapper>
 | Active | false | Active |
 | Legacy | false | Исключение: локальный `_ => Auto()` заменил базовый fallback |
 
-Если вместо guard написать `DomainStatus.Cancelled => Auto()`, Cancelled бросит
-исключение: явный Auto не возвращается к базовому `Cancelled => Deleted`.
+Замена guard на Cancelled => Auto(): Cancelled бросает до базового Cancelled → Deleted.
 
 ### 47. Locals базы вычисляются только при достижении базы
 
@@ -1210,10 +1174,8 @@ builder.Map<DomainStatus, ApiStatus>()
 | `.MemberSelection(Explicit)` | Explicit | Unknown | Unknown |
 | `.MemberSelection(Explicit).MemberSelection(Default)` | Auto из included pair | Active | Unknown |
 
-В таблице имена значений сокращены; в C# используются
-`MemberSelection.Explicit` и `MemberSelection.Default`. Последняя запись уровня
-побеждает, Default продолжает поиск. Положение mapper-level вызова до/после Map
-не должно менять результаты.
+Имена MemberSelection в таблице сокращены. Последняя запись побеждает; Default продолжает
+наследование; расположение mapper-level вызова относительно Map не влияет.
 
 ### 49. Default не сбрасывает унаследованную числовую стратегию
 
@@ -1234,8 +1196,8 @@ builder.EnumMappingStrategy(EnumMappingStrategy.ByName);
 builder.Map<int, StoredCode>();
 ```
 
-Общий ByName для integer → enum приводит к строгому default ByValue:
-1 даёт Pending, 42 бросает. Нижний MSBuild AllowUndefined повторно не ищется.
+Результаты: 1 → Pending, 42 → исключение. Общий ByName неприменим, остаётся строгий ByValue;
+нижний MSBuild AllowUndefined не ищется.
 
 ### 50. Несколько уровней используют одну неявную конвенцию и один result
 
@@ -1259,8 +1221,8 @@ builder.Map<int, StoredCode>();
 | Active | Active: одна неявная конвенция после всех специальных правил |
 | Legacy | Unknown: ближайший имеющийся fallback |
 
-Если Base задаёт ResolveUsing, он выбирает начальный result один раз; все уровни
-видят этот result. Выбранное Deleted не передаётся в Middle как новый source.
+Inherited ResolveUsing выбирает один общий initial result; результат ветки не передаётся
+следующему уровню.
 
 ## Flags между enum
 
@@ -1323,8 +1285,8 @@ builder.Map<SourceAccess, TargetAccess>()
 | Delete | 0 |
 | Delete \| Audit | Audit = 64 |
 
-Для явного enum-нуля также подходят `TargetAccess.None` и `(TargetAccess)0`.
-Голое `=> 0` — ограничение типизации scalar marker, а не другой runtime-контракт.
+Ноль: TargetAccess.None, (TargetAccess)0 или default; bare => 0 не поддерживается типизацией
+marker.
 
 ### 53. Неизвестный бит проходит обычные правила
 
@@ -1336,9 +1298,8 @@ builder.Map<SourceAccess, TargetAccess>()
 | Read \| (SourceAccess)16 | View \| Unknown = 144 | Исключение всей операции |
 | (SourceAccess)16 \| (SourceAccess)32 | Unknown = 128 | Исключение |
 
-Явная ветка `(SourceAccess)16 => TargetAccess.Edit` позволяет обработать этот
-бит до конвенции; тогда Read \| 16 даст View \| Edit = 48. Совпадение исходного
-числа 16 с TargetAccess.View само по себе не создаёт ByName-соответствие.
+С `(SourceAccess)16 => TargetAccess.Edit` вход Read | 16 даёт View | Edit = 48. Само
+совпадение числа с View не создаёт ByName-соответствия.
 
 ### 54. Composite case требует ByMask
 
@@ -1356,8 +1317,7 @@ builder.Map<SourceAccess, TargetAccess>()
 | ByBit | Unknown: Read и Write отдельно дошли до fallback | Warning о доказанно недостижимом composite case |
 | `.FlagsMappingMode(FlagsMappingMode.ByMask)` | View \| Edit = 48 | Composite case достижим |
 
-Для ByMask вход Read всё ещё даёт Unknown: правило ReadWrite не является
-правилом для каждого входящего бита.
+В ByMask Read → Unknown: ReadWrite-правило не применяется к компонентам.
 
 ### 55. ByMask + ByName сопоставляет целое имя
 
@@ -1395,10 +1355,8 @@ builder.Map<NamedSource, NamedTarget>()
 | ReadWrite = 3 | Audit = 32 по явному правилу | Read \| Write = 24; warning о недостижимом составном case |
 | Read \| Audit = 5 | Исключение: имени целой маски нет | Read \| Audit = 40 |
 
-Один такой switch не объединяет особый результат ReadWrite с автоматическим
-побитовым переводом остальных комбинаций. Это
-[принятая граница режимов](ENUM_MAPPING_DESIGN.md#bybit-и-bymask), а не основание
-добавлять скрытый побитовый шаг после неуспеха ByMask.
+Whole-mask override с побитовым переводом остальных комбинаций требует явного алгоритма:
+[граница режимов](ENUM_MAPPING_DESIGN.md#bybit-и-bymask).
 
 ### 56. Только составное объявление без отдельных имён битов
 
@@ -1414,9 +1372,8 @@ builder.Map<PairSource, PairTarget>();
 | ByBit + ByName | Исключение: у source-битов 1 и 2 нет имён | 0 |
 | ByMask + ByName | Pair = 12 | 0 |
 
-В ByBit можно задать явные `(PairSource)1 => (PairTarget)4` и
-`(PairSource)2 => (PairTarget)8`; тогда итогом станет 12. Наличие Pair = 3 само
-по себе не создаёт такие правила.
+Явные ByBit-правила `(PairSource)1 => (PairTarget)4` и `(PairSource)2 => (PairTarget)8` дают
+12; объявление Pair их не создаёт.
 
 ### 57. Нулевая маска проходит правила один раз
 
@@ -1436,8 +1393,8 @@ builder.Map<SourceAccess, TargetAccess>()
 | Read = 1 | View = 16; правило None не добавляет Unknown |
 | Read \| Audit = 9 | View \| Audit = 80 |
 
-Без явного None ноль по конвенции даёт 0, даже если ни одна сторона не объявляет
-имя нуля. Это действует в ByBit и ByMask для любой применимой enum-стратегии.
+Без явного нулевого правила конвенция даёт 0 в обоих режимах, даже без имени нуля, при любой
+применимой стратегии.
 
 ### 58. Explicit отключает конвенцию, сохраняя разбиение
 
@@ -1473,9 +1430,8 @@ builder.Map<SourceAccess, TargetAccess>()
 | ReadWrite = 3 | Read, Write | 0 |
 | 0 | 0 один раз | 0 |
 
-Alias `View = Read` в source не добавил бы вызова. Если Record бросает на Delete,
-Read уже обработан, Audit не обрабатывается; частичный результат не возвращается,
-а запись Read в список сохраняется.
+Alias View = Read не добавляет вызов. При исключении на Delete запись Read сохраняется, Audit
+не вызывается, частичный результат не возвращается.
 
 ### 60. Null из одного бита завершает nullable mapping
 
@@ -1522,9 +1478,8 @@ builder.Map<SourceAccess, TargetAccess>()
 | Write \| Delete | Audit = 64 |
 | Delete | None = 0: начальная маска не восстанавливается |
 
-Фабрика получает полную source-маску и вызывается один раз. Каждый бит видит
-result = Audit, даже после вклада View. Ignore не читает result; явный `=> result`
-добавляет его целиком. Previous по-прежнему означает полную исходную destination-маску.
+Фабрика один раз получает полную маску. Все биты видят result = Audit, previous — полную
+исходную destination-маску; только явный => result добавляет её вклад.
 
 ### 62. Composite pattern над result может быть достижим
 
@@ -1538,14 +1493,9 @@ builder.Map<SourceAccess, TargetAccess>()
     });
 ```
 
-Для Read \| Write оба прохода видят полный result = 48 и возвращают Audit;
-итог Audit = 64. Это достижимый case, поэтому warning «composite недостижим
-в ByBit» здесь неверен. Аналогично нельзя объявлять недостижимым composite,
-получаемый через пользовательский `Normalize(flag)`.
-
-Если фабрика вернёт TargetAccess.View, специальная ветка не совпадёт: Auto
-получит View и вернёт View. Для входа Read \| Write оба вклада равны View,
-итог View = 16. Исходные Read и Write входом этого Auto не становятся.
+Read | Write: оба прохода видят result = 48, возвращают Audit, итог 64. Case достижим, как и
+возможный composite из Normalize(flag). Если фабрика вернёт View, оба Auto получают View, итог
+16; исходные Read/Write входом Auto не становятся.
 
 ## Flags и числовые стратегии
 
@@ -1565,8 +1515,7 @@ builder.Map<int, PairAudit>();
 | 7 | Pair \| Audit, хотя 7 отдельно не объявлено | То же |
 | 1, 2, 5, 6 | Исключение | Соответствующее неназванное число |
 
-В строгом режиме нельзя взять только часть Pair. FlagsMappingMode здесь не нужен:
-integer → flags обрабатывает целое число.
+Строгий режим не извлекает часть Pair. Integer-вход целый, FlagsMappingMode неприменим.
 
 ### 64. All = -1 не разрешает любое число
 
@@ -1600,9 +1549,8 @@ builder.Map<WireAccess, Bits>()
 | `(WireAccess)1` | Bits.Read |
 | `(WireAccess)4` | Исключение |
 
-Это целое значение: flags только на одной стороне. При ByName ReadWrite не
-сопоставляется автоматически отдельным Read и Write. Если убрать `[Flags]`
-у Bits, строгий ByValue для числа 3 тоже бросит: обычному enum нужно точное объявление.
+Flags только у destination: целое значение. ByName не разбирает ReadWrite на Read/Write; без
+Flags у Bits строгий ByValue для 3 бросает.
 
 ### 66. ByBit и ByMask дают разные результаты строгой проверки
 
@@ -1620,9 +1568,8 @@ builder.Map<SourceBits, DestinationPair>()
 | Read = 1 | Исключение | Исключение |
 | 0 | 0 | 0 |
 
-ByValueAllowUndefined даёт 3 в обоих режимах, но число вызовов правил остаётся
-разным. В ByBit явные `Read => (DestinationPair)1` и `Write => (DestinationPair)2`
-также дают 3: дополнительная строгая проверка поверх явных вкладов не выполняется.
+AllowUndefined даёт 3 в обоих режимах с разным числом проходов. Явные ByBit-вклады Read →
+(DestinationPair)1, Write → (DestinationPair)2 также дают 3 без повторной validation.
 
 ### 67. Проверка диапазона зависит от единицы обработки
 
@@ -1640,7 +1587,7 @@ builder.Map<WideMask, NarrowMask>()
 | ByBit, All = -1 | Исключение: уже отдельный положительный бит 128 не помещается в sbyte |
 | ByBit, `(WideMask)64` | Неназванное 64 |
 
-Побитовый обход не делает narrowing cast всей маски заранее.
+Маска не сужается заранее перед обходом битов.
 
 ### 68. Знаковый старший бит сохраняет математическое значение
 
@@ -1661,10 +1608,9 @@ builder.Map<SignedBits, UnsignedBits>()
 | SignedBits → LargerBits, Low \| High | -127: вклады 1, затем -128 |
 | SignedBits → UnsignedBits, High | Исключение: -128 не равно 128 |
 
-При ByName последняя пара может дать High = 128 по имени. В sbyte обходится
-ровно восемь физических битов; дополнительного расширения до 32/64 проходов нет.
-Для ulong-флага `1UL << 63` сохраняется положительное 9223372036854775808,
-поэтому числовое сопоставление в long не помещается.
+ByName для SignedBits → UnsignedBits даёт High = 128 по имени. Обход ограничен 8 физическими
+битами sbyte без расширения. Ulong-бит 1UL << 63 положителен (9223372036854775808) и
+численно не помещается в long.
 
 ### 69. IncludeBase не создаёт смешанного прохода маски и битов
 
@@ -1684,8 +1630,7 @@ builder.Map<SourceAccess, TargetAccess>()
 | Локальный ByBit | View \| Unknown = 144 | Read — local; Write — inherited fallback; базовый composite недостижим и предупреждается |
 | Вместо ByBit указать Default | View \| Edit = 48 | Наследуется ByMask; базовый composite совпал |
 
-Ни в одном варианте сначала не применяется whole-mask правило, а затем те же
-Members ещё раз к отдельным битам.
+Смешанного прохода «маска, затем её биты» нет.
 
 ## Строка в flags
 
@@ -1717,8 +1662,7 @@ builder.Map<string, Access>();
 | `"Read Write"`, `"Read\tWrite"`, `"Read\nWrite"` | Исключение: whitespace внутри не разделяет имена |
 | `"Read+Write"` | Исключение: плюс не разделитель |
 
-Строки в таблице записаны как C# literals: `\t`, `\r`, `\n` обозначают реальные
-пробельные символы на входе, а `\|` — обычный символ `|`, экранированный для Markdown.
+В таблице C# literals: \t/\r/\n — реальные whitespace; \| — Markdown-экранирование обычного |.
 
 ### 71. Пустая строка, нулевой текст и пустые элементы списка
 
@@ -1736,12 +1680,9 @@ builder.Map<string, Access>();
 | `"Read,  ,Write"` | `"Read"`, `""`, `"Write"` | 3 |
 | `"Read,0,None"` | Три токена | Read = 1 |
 
-Если удалить None из enum, `""` и `"0"` сохраняют результат 0, а `"None"`
-перестаёт быть конвенционным именем. В ByMask нулевые вклады конвенции те же,
-но Members получает всю строку один раз.
-Лишние разделители здесь допустимы намеренно: пустой токен имеет одинаковый
-конвенционный смысл независимо от позиции. Пользовательская обработка пустоты
-показана в сценариях 74–75; токены не пропускаются перед Members.
+Без None токены ""/"0" всё равно дают 0, имя "None" перестаёт распознаваться. ByMask сохраняет
+эти нулевые вклады с одним проходом Members. Пустые токены доходят до правил в любой позиции —
+см. 74–75.
 
 ### 72. Пользовательские aliases применяются к каждому токену
 
@@ -1777,8 +1718,8 @@ builder.Map<string, Access>()
     });
 ```
 
-`"VIEW;Write" → 3`, `" view " → 1`, `"missing" → исключение`.
-Ложный guard не мешает обычному `"Write" → Access.Write`.
+"VIEW;Write" → 3; " view " → 1; "missing" → исключение. False guard оставляет конвенционное
+Write → Write.
 
 ### 74. Пользователь может запретить пустые токены
 
@@ -1797,11 +1738,9 @@ builder.Map<string, Access>()
 | `"Read,Write"` | 3 |
 | `"0"` | 0: нулевой текст не является пустым токеном |
 
-При ошибке после Read итоговая частичная маска не возвращается. Если нужно
-запретить и нулевой текст, можно написать `"" or "0" => throw ...`.
-Правило запрещает также полностью пустую строку. Если требуется разрешать её,
-но отвергать пустые элементы списка, пользователь проверяет исходную строку
-целиком, например в Members с ByMask или в Convert.
+После Read ошибка не возвращает частичную маску. `"" or "0" => throw ...` запретит и нулевой
+текст. Чтобы разрешить пустую строку, но запретить пустые элементы списка, проверяется целая
+строка через ByMask/Convert.
 
 ### 75. Пустой токен можно заменить собственным вкладом
 
@@ -1823,7 +1762,7 @@ builder.Map<string, Access>()
 | `"None"` | 0: объявленное имя не стало строкой `"0"` |
 | `"Read,0"` | Read \| Audit = 5 |
 
-Явные правила имеют приоритет и над специальной конвенцией пустоты/нуля.
+Явные правила предшествуют и конвенции пустоты/нуля.
 
 ### 76. Explicit сохраняет токенизацию, но выключает все неявные соответствия
 
@@ -1845,8 +1784,7 @@ builder.Map<string, Access>()
 | `""`, `"0"` | Unknown = 8, конвенция нуля отключена |
 | `"view,,Write"` | Read \| Write \| Unknown = 11 |
 
-Если заменить fallback на `_ => Auto()`, CLR-имена, пустота и `"0"` снова
-обрабатываются по явному запросу конвенции; неизвестный токен бросает.
+С `_ => Auto()` CLR-имена, "" и "0" снова распознаются; неизвестный токен бросает.
 
 ### 77. ByMask получает исходную строку до trim и разбиения
 
@@ -1868,8 +1806,7 @@ builder.Map<string, Access>()
 | `"Read;Write"`, `"Read\|Write"` | 3 |
 | `"Read,,Write;"` | 3 |
 
-Напротив, ByBit всегда сначала делит строку: whole-string pattern с запятой
-не является правилом для отдельного токена.
+В ByBit whole-string pattern с запятой не совпадает с отдельным токеном.
 
 ### 78. Пользовательский alias не становится частью ByMask-parser
 
@@ -1883,8 +1820,8 @@ builder.Map<string, Access>()
 | `"Read,Write"` | 3 | 3 |
 | `" view "` | Read = 1 | Unknown = 8: pattern всей строки не совпал, CLR-имени view нет |
 
-Без fallback неуспех конвенции ByMask приводит к исключению. Явная ветка
-`"view,Write" => Access.ReadWrite` может задать whole-string исключение.
+Без fallback ByMask бросает. Явное "view,Write" => Access.ReadWrite задаёт whole-string
+исключение.
 
 ### 79. Составное имя токена не запускает повторные правила по битам
 
@@ -1903,8 +1840,7 @@ builder.Map<string, Access>()
 | `"ReadWrite"` | ReadWrite = 3: одно объявленное имя |
 | `"ReadWrite,Read"` | 3 |
 
-В string → flags единица — токен, даже если он обозначает composite. Это не
-рекурсивный flags → flags вызов.
+Единица — токен, включая composite name; повторного flags → flags mapping нет.
 
 ### 80. Повторы и порядок токенов сохраняют эффекты
 
@@ -1925,8 +1861,7 @@ builder.Map<string, Access>()
 | `"Read,,Read;"` | `"Read"`, `""`, `"Read"`, `""` | 1 |
 | `"Read,Missing,Write"` | `"Read"`, `"Missing"` | Исключение; Write не достигнут |
 
-В ByMask Record получил бы исходную строку один раз, а ошибка конвенции
-относилась бы ко всему списку.
+ByMask: один Record с исходной строкой, ошибка всей попытки.
 
 ### 81. Using видит полную строку, Ignore пропускает токен
 
@@ -1951,9 +1886,8 @@ builder.Map<string, Access>()
 | `"Read;keep"` | Read \| Audit = 5 | Один вызов с `"Read;keep"` |
 | `"keep;keep"` | Audit = 4 | Один вызов; оба явных result дают ту же маску |
 
-Ignore для skip эквивалентен вкладу Access.None. Выражение result для keep явно
-добавляет полную начальную маску. Если начальная фабрика nullable destination
-вернула null, токенизация/правила не продолжаются.
+Skip даёт 0, keep явно добавляет initial result. Null фабрики nullable destination завершает
+mapping до токенизации.
 
 ### 82. Null токена останавливает весь строковый ввод
 
@@ -1992,8 +1926,8 @@ builder.Map<string, Access>()
 | `"view;Missing"` | Read \| Unknown = 9 |
 | `"edit;"` | Write = 2: пустой токен успешно дал 0 до inherited fallback |
 
-Добавление локального `_ => Auto()` сохраняет базовый alias view, но заменяет
-базовый fallback: `"view;Missing"` тогда бросает.
+Локальный `_ => Auto()` сохраняет alias view, но заменяет базовый fallback: "view;Missing"
+бросает.
 
 ### 84. Числовой текст и имена с разделителем
 
@@ -2023,8 +1957,7 @@ builder.Map<string, Access>()
     .Members(text => text switch { "Full;control" => Access.ReadWrite });
 ```
 
-`"Full;control"` даст 3. В ByBit эта строка состоит из двух токенов и такой
-whole-string pattern не сработает. Автоматического quote/escape-протокола нет.
+"Full;control" → 3 в ByMask; ByBit разделяет её на два токена. Quote/escape-протокола нет.
 
 ## Flags в строку
 
@@ -2042,7 +1975,7 @@ builder.Map<Access, string>();
 | ReadWrite \| Audit = 7 | `"Read, Write, Audit"` | Исключение |
 | None = 0 | `"None"` | `"None"` |
 
-ByMask не вызывает конвенцию для отдельных битов после неудачи целого имени.
+После неуспеха целого имени ByMask не пробует биты.
 
 ### 86. Ноль с именем, без имени и с aliases
 
@@ -2061,12 +1994,9 @@ builder.Map<ZeroAliases, string>()
 | `(NoZeroName)0` | `"0"` |
 | ZeroAliases.None или Empty | `"none"` из явного правила |
 
-Без явной ветки у ZeroAliases возникает Warning неоднозначного имени;
-ноль без fallback даёт EnumMappingException. Замена ветки на `_ => "unknown"`
-даёт "unknown" для нуля, но сохраняет Warning. Явное правило из примера
-устраняет конфликт для обоих нулевых aliases. Пустая строка на **входе**
-всё равно означает ноль; это не требование выводить любую нулевую маску
-как пустую строку.
+Без явной ветки: Warning, ноль → EnumMappingException. С `_ => "unknown"`: ноль → "unknown",
+warning сохраняется. None => "none" разрешает оба aliases. Пустая входная строка означает 0,
+не обязательный пустой вывод.
 
 ### 87. Явный пустой вклад и полностью пустой результат
 
@@ -2089,7 +2019,7 @@ builder.Map<Access, string>()
 | Read \| Audit | `"Audit"`, без начального разделителя |
 | Write \| Audit | `"Audit"` |
 
-Пустой итог не нормализуется обратно в имя None или `"0"`.
+Пустой итог остаётся "", без None/"0".
 
 ### 88. Неизвестный бит при ByName не становится числом
 
@@ -2105,8 +2035,8 @@ builder.Map<Access, string>()
 | Read \| (Access)16 | `"Read, unknown"` | `"unknown"` |
 | `(Access)16 \| (Access)32` | `"unknown, unknown"` | `"unknown"` |
 
-Без fallback неизвестный бит/маска бросает. С явным `(Access)16 => Auto()`
-число 16 бросает даже при наличии завершающего `"unknown"`.
+Без fallback неизвестный вход бросает. Явный (Access)16 => Auto() бросает для 16 даже при
+fallback "unknown".
 
 ### 89. Порядок строковых вкладов и повторы
 
@@ -2120,10 +2050,8 @@ builder.Map<Access, string>()
     });
 ```
 
-ReadWrite даёт `"access, access"`, ReadWrite \| Audit —
-`"access, access, audit"`. Вызовы следуют битам 1, 2, 4 независимо от порядка
-объявлений и записи выражения `Audit | Write | Read`. Совпадающие строки не
-удаляются; строковые вклады соединяются через `", "`.
+ReadWrite → "access, access"; ReadWrite | Audit → "access, access, audit". Порядок — биты 1,
+2, 4 независимо от объявлений/порядка операндов; повторы сохраняются.
 
 ### 90. Null строкового вклада завершает операцию
 
@@ -2144,8 +2072,7 @@ builder.Map<Access, string?>()
 | Read \| Write \| Audit | null; Audit не достигается |
 | Read \| Audit | InvalidOperationException |
 
-Null не является ещё одним пустым вкладом. Для исключения Write из строки с
-продолжением обработки подходят `""` или Ignore().
+Для пропуска Write с продолжением нужны "" или Ignore(), не null.
 
 ### 91. Числовой вывод форматирует целую маску
 
@@ -2163,8 +2090,7 @@ builder.Map<Access, string>()
 | Read \| (Access)16 = 17 | `"17"` |
 | None = 0 | `"0"`, стратегия числовая |
 
-ByValueAllowUndefined даёт то же. Без Members ReadWrite даёт `"3"`.
-Здесь нет строк `"1, 2"`, а pair-настройка FlagsMappingMode неприменима.
+AllowUndefined даёт то же; без Members ReadWrite → "3". FlagsMappingMode неприменим.
 
 ### 92. Фабричная строка не является аккумулятором
 
@@ -2187,14 +2113,11 @@ builder.Map<Access, string>()
 | Write | `""`, начальная строка не восстанавливается |
 | Write \| Audit | `"cached"`, только явный вклад Audit |
 
-ResolveUsing получает всю маску один раз. Result читает начальную строку cached,
-Ignore её не читает; previous остаётся исходной строкой Update. Без Members
-фабрика вернула бы один `"cached"` для любой маски.
+Фабрика один раз получает полную маску; previous — исходная строка Update. Без Members любой
+вход даёт "cached".
 
-Если заменить результат Audit на `Ignore<string>()`, Write | Audit даст `""`,
-не `"0"` и не имя None. Дополнительная ветка `Access.None => Ignore()` даёт `""`
-и для нулевого входа. В исходной конфигурации замена Ignore для Write на result
-даст для Write | Audit строку `"cached, cached"`: повторы явных вкладов сохраняются.
+Варианты: Audit => Ignore<string>() даёт Write | Audit → ""; None => Ignore() даёт 0 → "".
+Если Write возвращает result, Write | Audit → "cached, cached".
 
 ### 93. Explicit относится и к выводу нулевой маски
 
@@ -2216,7 +2139,7 @@ builder.Map<Access, string>()
 | None = 0 | `"?"`, конвенционное None отключено |
 | None, добавить `Access.None => Auto()` | `"None"` |
 
-Для NoZeroName такая явная нулевая ветка с Auto вернула бы `"0"`.
+Auto для нуля NoZeroName вернёт "0".
 
 ### 94. Чтение и запись нормализуют представление, а не сохраняют исходный текст
 
@@ -2233,10 +2156,8 @@ builder.Map<Access, string>();
 | `"Read,,Write;"` | 3 | `"Read, Write"` |
 | `""`, `"0"`, `",;"` | 0 | `"None"` |
 
-Для enum без объявления нуля последние входы дали бы `"0"`. В обратном порядке
-Access → строка → Access эти обычные значения сохраняются, если обе пары
-используют совместимые правила. Сохранения пробелов, разделителей и повторов
-исходного текста этот контракт не обещает.
+Без имени нуля последние входы дают "0". Access → string → Access сохраняет эти значения при
+совместимых правилах; исходное текстовое оформление не сохраняется.
 
 ### 95. Свои строковые имена задаются в обоих направлениях
 
@@ -2255,11 +2176,8 @@ builder.Map<string, Access>()
     });
 ```
 
-ReadWrite → `"view, edit"` → ReadWrite. Если не задать обратные aliases,
-второе преобразование бросит. Если выходной Read возвращает `""`, то
-ReadWrite → `"edit"` → Write: явное удаление вклада намеренно теряет информацию.
-Числовая выходная строка `"3"` также не создаёт автоматический numeric parser
-в обратной паре.
+ReadWrite → "view, edit" → ReadWrite; без обратных aliases второй mapping бросает. При Read =>
+"": ReadWrite → "edit" → Write. Числовой вывод "3" не включает обратный numeric parser.
 
 ## Coverage и намеренные исключения
 
@@ -2304,11 +2222,8 @@ builder.Map<CoverageSource, CoverageTarget>()
 | Cancelled | Deleted | Покрыт |
 | New | Исключение | Warning: объявленное source-значение не обработано |
 
-Та же Source-проверка действует без явного вызова настройки: это library default.
-При `.UnmappedEnumMemberValidation(UnmappedMemberValidation.None)` warning
-исчезнет, но New всё ещё бросит.
-Warning можно повысить до error обычными средствами; новая runtime-стратегия
-для этого не требуется.
+Без настройки действует тот же Source. None убирает warning, но New бросает; severity можно
+повысить до error.
 
 ### 98. Явный запрет закрывает source coverage, Auto — не обязательно
 
@@ -2332,11 +2247,9 @@ CoverageTarget, действуют те же правила:
 | `_ => Auto()` | Исключение маппинга | Warning: конвенционного соответствия нет |
 | Отсутствует | Исключение маппинга | Warning: значение не обработано |
 
-В первых двух строках общий fallback уже задаёт поведение нового значения;
-дублировать его отдельным `CoverageSource.Suspended => ...` ради coverage
-не требуется. Те же результаты относятся к source-части Strict; destination
-проверяется отдельно. Контракт полноты обработки описан в
-[дизайне](ENUM_MAPPING_DESIGN.md#проверка-покрытия).
+Общий fallback закрывает новые Source-значения и source-часть Strict без отдельных cases;
+Destination проверяется отдельно. [Контракт
+coverage](ENUM_MAPPING_DESIGN.md#проверка-покрытия).
 
 ### 99. Destination coverage и many-to-one
 
@@ -2349,9 +2262,8 @@ builder.Map<CoverageSource, CoverageTarget>()
     });
 ```
 
-Active → Active; Cancelled и New → Deleted. Destination Active и Deleted покрыты;
-Internal даёт warning. Два source-значения для Deleted допустимы: обратимость
-или взаимно однозначная таблица не требуется.
+Active → Active; Cancelled/New → Deleted. Active/Deleted покрыты, Internal даёт warning;
+many-to-one допустим.
 
 ### 100. Discard исключает destination из coverage, сохраняя алгоритм
 
@@ -2374,9 +2286,8 @@ builder.Map<CoverageSource, CoverageTarget>()
 | Cancelled, New | Deleted |
 | `(CoverageSource)123` | Исключение |
 
-Coverage этой таблицы закрыт: Internal намеренно исключён. Discard не добавляет
-ветку, fallback или присваивание результата. Если позднее в destination появится
-другое несопоставленное значение, Strict снова даст warning.
+Coverage закрыт; discard исключает Internal без runtime-правила. Новое несопоставленное
+destination-значение снова даст warning.
 
 ### 101. При E → E discard подтверждает только destination
 
@@ -2399,8 +2310,7 @@ builder.Map<ReviewStatus, ReviewStatus>(MappingMode.Update)
 | Добавить `ReviewStatus.Hidden => Ignore()` | Active | Source Hidden обработан; coverage закрыт |
 | Вместо Explicit выбрать Auto | Hidden | Конвенция сохранила Hidden; discard её не выключил |
 
-Если в варианте с Ignore previous = Hidden, результат тоже Hidden. Ignore
-подтверждает source-случай, но не означает «возвратить ноль».
+При previous = Hidden Ignore тоже вернёт Hidden; это обработка Source, не возврат нуля.
 
 ### 102. Неназванный runtime-source не закрывает destination coverage
 
@@ -2413,10 +2323,8 @@ builder.Map<DeclaredSource, DeclaredTarget>()
     .UnmappedEnumMemberValidation(UnmappedMemberValidation.Destination);
 ```
 
-`Active → Active`, `(DeclaredSource)2 → Archived`. При этом Archived даёт
-coverage warning: объявленного source-соответствия или явного правила для него
-нет. Добавление `(DeclaredSource)2 => DeclaredTarget.Archived` в Members
-явно описывает соответствие и закрывает этот пробел.
+Active → Active; (DeclaredSource)2 → Archived с Destination warning: объявленного соответствия
+нет. Явное (DeclaredSource)2 => DeclaredTarget.Archived закрывает его.
 
 ### 103. Coverage flags проверяет участие битов, а ноль — отдельно
 
@@ -2449,11 +2357,10 @@ builder.Map<CoverageFlags, CoverageFlagsDto>()
 | Write | View = 16 | Обычное явное правило |
 | ReadWrite | View \| Edit = 48 | Source composite покрыт через Read и Write |
 
-Warnings нет. Не нужно отдельно доказывать возможность вернуть только Edit.
-Если убрать ветку None, появится непокрытый ноль с обеих сторон; Audit по-прежнему
-исключён discard. Если выбрать ByMask, ReadWrite потребует собственного
-соответствия: правила Read и Write не обрабатывают целую тройку. Destination Edit
-в ByMask также не покрыт: целое значение 32 ни одним из этих правил не возвращается.
+Warnings нет, отдельная достижимость Edit не требуется. Удаление None-ветки оставит непокрытый
+ноль с обеих сторон; Audit остаётся исключённым. ByMask дополнительно требует Source ReadWrite
+и Destination Edit = 32: отдельные Read/Write не покрывают целую маску, а целое 32 не
+возвращается.
 
 ### 104. Неизвестный guard не доказывает полное покрытие
 
@@ -2473,8 +2380,7 @@ builder.Map<CoverageSource, CoverageTarget>()
 | New | false | Исключение: конвенции для New нет |
 | Active | Не вызывается | Active |
 
-Source coverage должен учитывать false-путь и предупреждать о New. Самого
-присутствия именованного case с произвольным guard недостаточно.
+Warning для New: false-путь произвольного guard не обработан.
 
 ### 105. Динамический результат отличается от доказанно непокрытого значения
 
@@ -2487,13 +2393,9 @@ builder.Map<CoverageSource, CoverageTarget>()
     .Members(value => ComputeTarget(value));
 ```
 
-Active даёт Active, New даёт Deleted. Source обработан прямым результатом;
-генератор не анализирует тело метода, чтобы доказать все destination-результаты.
-Ожидается warning о границе destination-анализа, а не утверждение, что конкретное
-значение заведомо недостижимо.
-
-Аналогично `_ => result` с фабрикой не перечисляет destination-значения.
-Наличие Using само по себе не доказывает полноту правил Members.
+Active → Active, New → Deleted. Source покрыт; Destination даёт warning о границе анализа,
+поскольку тело ComputeTarget не анализируется. `_ => result`/Using также не перечисляют
+destination-значения и не доказывают полноту Members.
 
 ### 106. Aliases в coverage — одна физическая группа
 
@@ -2506,9 +2408,8 @@ builder.Map<CoveredAlias, CoveredAliasDto>()
     .Members(value => value switch { CoveredAlias.Ready => CoveredAliasDto.Ready });
 ```
 
-Оба source-имени дают число 10. Отдельных warnings для Active и Available нет:
-каждая сторона имеет одну физическую группу. Discard одного destination alias
-тоже относится ко всей группе, а не создаёт runtime-различие её имён.
+Оба aliases → 10, без отдельных warnings для Active/Available. Discard относится ко всей
+числовой группе.
 
 ### 107. Для integer/string проверяется конечная enum-сторона
 
@@ -2519,11 +2420,9 @@ builder.Map<DomainStatus, string>()
     .UnmappedEnumMemberValidation(UnmappedMemberValidation.Source);
 ```
 
-В первой паре 0, 1 и 2 соответствуют всем объявленным StoredCode; destination
-coverage закрыт. 42 всё равно бросает. Во второй паре каждый объявленный
-DomainStatus имеет строковое имя, source coverage закрыт; `(DomainStatus)123`
-при ByName всё равно бросает. Все возможные integers и строки не перечисляются
-ради compile-time coverage.
+Integer → StoredCode: 0/1/2 закрывают Destination, 42 бросает. DomainStatus → string: все
+объявления закрывают Source, неназванное 123 бросает. Бесконечные множества строк/чисел не
+перечисляются.
 
 ## Вложенные пары и границы API
 
@@ -2545,11 +2444,9 @@ builder.Map<Order, OrderDto>()
 | Cancelled | Deleted |
 | Legacy | Исключение вложенного mapping |
 
-Обе точные пары должны быть доступны mapper. Замена Map на Auto не запускает
-enum-пару: между разными enum нет implicit C# conversion. Для свойства того же
-enum обычное копирование значения остаётся доступным. Get-only enum-свойство
-нельзя изменить «по месту» через nested Update: scalar возвращает новое значение,
-которое нужно куда-то присвоить.
+Обе пары доступны mapper. Auto вместо Map не подходит: между разными enum нет implicit
+conversion; same-enum property копируется. Get-only enum нельзя обновить по месту — нужно
+присвоить возвращённый scalar.
 
 ### 109. Enum-пара внутри именованного tuple
 
@@ -2564,13 +2461,9 @@ builder.Map<DomainStatus, (ApiStatus Status, string Label)>()
     });
 ```
 
-Active даёт `(Status: ApiStatus.Active, Label: "status")`, Cancelled —
-`(Status: ApiStatus.Deleted, Label: "status")`. Tuple остаётся обычной структурной
-парой; scalar-правила находятся в отдельном вложенном enum mapping.
-
-При Update Cancelled с destination `(Status: ApiStatus.Active, Label: "old")`
-возвращается `(Status: ApiStatus.Deleted, Label: "status")`. Исходная переменная
-с ValueTuple не меняется без присваивания возвращённого значения.
+Active → (Active, "status"), Cancelled → (Deleted, "status") с именами Status/Label. Update
+Cancelled с (Active, "old") возвращает (Deleted, "status"); исходный ValueTuple меняется
+только после присваивания результата. Tuple-пара остаётся структурной.
 
 ### 110. Nested Map, Create и Update внутри scalar Members
 
@@ -2595,8 +2488,7 @@ builder.Map<DomainStatus, ApiStatus>()
 | Вместо Map написать `Create<ApiStatus>("wire")` | Pending при внешнем Create и Update |
 | Вместо Map написать `Update<ApiStatus>("wire", ApiStatus.Disabled)` | Archived при обеих внешних операциях |
 
-Nested helper получает явный source. Голое `Map()` в scalar Members не может
-вывести его по имени принимающего свойства, поскольку такого свойства здесь нет.
+Scalar Map требует явного source: принимающего member для вывода имени нет.
 
 ### 111. Value и generic helpers сохраняют тип результата
 
@@ -2610,9 +2502,8 @@ builder.Map<DomainStatus, ApiStatus?>()
     });
 ```
 
-Cancelled → null; Suspended → Disabled; Active → Active; Legacy → исключение.
-Value задаёт явный результат и не запускает скрытую проверку объявленности.
-Typed Auto решает target-typing задачу, сохраняя обычный контракт конвенции.
+Cancelled → null; Suspended → Disabled; Active → Active; Legacy → исключение. Value задаёт
+готовый результат, typed Auto — типизацию конвенции.
 
 ### 112. Enum-источник не лишает DTO структурного создания
 
@@ -2629,9 +2520,8 @@ builder.Map<DomainStatus, StatusDto>()
     .Members(status => new() { Label = "status" });
 ```
 
-Active даёт DTO с Code = 2 и Label = `"status"`. Это object mapping, поэтому
-Construct применим. Для scalar enum → enum, enum ↔ string и enum ↔ integer
-нет структурного конструктора: там используются Members, Using либо Convert.
+Active → DTO { Code = 2, Label = "status" }. Структурный Construct допустим; у scalar
+destination вместо него Members/Using/Convert.
 
 ### 113. Неприменимые настройки диагностируются
 
@@ -2648,10 +2538,8 @@ Construct применим. Для scalar enum → enum, enum ↔ string и enum
 | `Access → string` с ByValue | `.FlagsMappingMode(FlagsMappingMode.ByBit)` | MORPH0023 |
 | `DomainStatus → ApiStatus` | `.ConstructorSelection(ConstructorSelection.Default)` | MORPH0023 даже при значении Default |
 
-Общий mapper-level default на неприменимой паре игнорируется, а не превращает
-любую регистрацию в ошибку. Некорректные значения enum-настроек всё равно
-диагностируются по обычному контракту настроек. Using без Members не делает
-применимую настройку запрещённой: она просто не преобразует готовый результат фабрики.
+Неприменимый общий default игнорируется; неверное значение настройки диагностируется. Using
+без Members допускает совместимую настройку без конвенции поверх результата.
 
 ### 114. Ошибки типов и ограничения маркеров не скрываются
 
@@ -2683,10 +2571,8 @@ Construct применим. Для scalar enum → enum, enum ↔ string и enum
 })
 ```
 
-Здесь `_` — настоящая переменная: присваивание не исключает Internal из coverage.
-Ожидаемые runtime-результаты остаются Active/Deleted, а destination warning для
-Internal сохраняется. Настоящий discard должен быть отдельным statement верхнего
-уровня тела Members; подтверждение не прячется в условном или вложенном блоке.
+Здесь `_` — переменная: Internal не исключён, warning сохраняется; runtime — Active/Deleted.
+Настоящий discard нужен отдельным statement верхнего уровня Members.
 
 ### 116. Отложенные возможности не появляются из сходства имён
 
@@ -2701,12 +2587,9 @@ builder.Map<ProtocolStatus, BusinessStatus>()
     });
 ```
 
-Вход STATUS_PENDING_APPROVAL даёт PendingApproval по явному правилу.
-Без Members — отсутствие ByName-соответствия: регистронезависимое сравнение
-не удаляет префикс/подчёркивания. `EnumMember`, `Description` и подобные атрибуты
-также не подменяют CLR-имена конвенции. Автоматическое построение обратной пары, общий numeric parsing,
-проекции, автоматическое отображение коллекций и настройка разделителя остаются
-за текущей границей feature.
+STATUS_PENDING_APPROVAL → PendingApproval по правилу; без него ByName не находит соответствия.
+Префиксы, подчёркивания, EnumMember/Description, reverse, общий numeric parsing,
+коллекции/проекции и настройка разделителей остаются вне feature.
 
 ### 117. Result можно читать только на пути, где он существует
 
@@ -2727,10 +2610,8 @@ builder.Map<DomainStatus, ApiStatus>()
 | Update Active, Archived | Archived |
 | Update Active, Unknown = 0 | Unknown: ноль является доступным result |
 
-Destination здесь non-nullable. При замене его на ApiStatus? одного условия
-Operation == Update уже недостаточно: Update может получить null destination.
-Без фабрики такой путь не даёт result и требует диагностики. Безусловное чтение
-result на Create также недопустимо; для него сначала нужен Using.
+С ApiStatus? условия Update недостаточно: destination может быть null, result недоступен.
+Такое чтение и безусловное чтение на Create требуют фабрики либо другого пути.
 
 ### 118. Вычисляемый fallback выполняется только после неуспеха конвенции
 
@@ -2752,10 +2633,8 @@ builder.Map<DomainStatus, ApiStatus>()
 | Legacy | Unrecognized | Один вызов с Legacy |
 | `(DomainStatus)123` | Unrecognized | Один вызов с числом 123 |
 
-`var remaining` без guard является завершающей веткой, как `_`. При Explicit
-Active тоже даст Unrecognized с одним вызовом. Если же пользователь сам заранее
-вычислит `var fallback = LogFallback(status);` перед switch, этот local сохранит
-написанное место и вычислится при входе в блок, как в сценарии 47.
+При Explicit Active → Unrecognized с одним вызовом. Var-pattern без guard — fallback. Заранее
+вычисленный `var fallback = LogFallback(status);` сохранит вызов перед switch, как в 47.
 
 ## Обычные типы и кортежи из enum и в enum
 
@@ -2816,10 +2695,8 @@ builder.Map<StatusCarrier, DomainStatus>()
 | Update, Status = Active, previous = Suspended | Active |
 | Create, Status = `(DomainStatus)123` | Неназванное 123: callback явно вернул готовое значение |
 
-Поле Comment не участвует в вычислении. ResolveUsing повторно выбирает enum и
-на Update; содержимое source не сопоставляется destination по названию Status.
-То же поведение даёт `.Members(source => source.Status)`: прямой enum-результат
-окончателен, включая неназванное 123.
+Comment не участвует. Прямое Members(source => source.Status) даёт те же результаты, включая
+123; Update тоже выбирает новое значение.
 
 ### 120. Класс → другой enum через зарегистрированную пару
 
@@ -2837,12 +2714,9 @@ builder.Map<StatusCarrier, ApiStatus>()
 | Update, Status = Cancelled, previous = Archived | Update с Archived | Deleted: в общей enum-паре нет правила сохранения previous |
 | Create или Update, Status = Legacy | Соответствующая операция | Исключение вложенного mapping |
 
-Adaptive Map использует доступный result для вложенного Update; без него
-вызывает Create. Если вложенная пара позднее получит правило сохранения Archived,
-оно начнёт действовать и здесь. Non-null результат Using также передаётся
-во вложенный Update при внешнем Create.
-Явный `Create<ApiStatus>(source.Status)` всегда запросил бы вложенный Create,
-даже при внешнем Update.
+Map выбирает Update по доступному result (включая Using на внешнем Create), иначе Create.
+Новое правило вложенной пары, сохраняющее Archived, подействует здесь. Явный
+Create<ApiStatus>(source.Status) всегда вызывает Create.
 
 ### 121. Обычная структура → enum по нескольким признакам
 
@@ -2869,8 +2743,7 @@ builder.Map<ApprovalFacts, ApiStatus>()
 | false | true | Disabled |
 | true | true | Disabled: первое правило имеет приоритет |
 
-Это полное пользовательское решение по двум полям; конвенция enum-имён между
-ветками обычного switch не добавляется.
+Using содержит обычный C# switch без добавленной конвенции.
 
 ### 122. Enum → обычная структура с вычисляемыми полями
 
@@ -2896,8 +2769,8 @@ builder.Map<DomainStatus, StatusFacts>()
 | Pending | false / false |
 | `(DomainStatus)123` | false / false по написанным C# сравнениям |
 
-При Update оба поля получают новые значения. Как и для ValueTuple, вызывающий
-код сохраняет результат: `facts = mapper.Map(status, facts)`.
+Update вычисляет оба поля заново; результат сохраняется присваиванием `facts =
+mapper.Map(status, facts)`.
 
 ### 123. Flags ↔ DTO с отдельными bool-свойствами
 
@@ -2932,10 +2805,8 @@ builder.Map<PermissionDto, Access>()
 | DTO true / true → Access | ReadWrite = 3 |
 | Update Access, DTO false / false, previous = ReadWrite | None = 0 |
 
-В обеих корневых парах пользовательские выражения работают с целым объектом или
-маской. Здесь не запускается проход Members для каждого отдельного бита.
-Roundtrip Read \| Audit → DTO → Access даёт только Read: потеря Audit следует
-из явно выбранных полей DTO.
+Обе пары обрабатывают source целиком. Roundtrip Read | Audit → DTO → Access даёт Read: для
+Audit поля нет.
 
 ### 124. Именованный ValueTuple → enum с дополнительным условием
 
@@ -2955,8 +2826,7 @@ builder.Map<(DomainStatus Status, bool IsArchived), ApiStatus>()
 | `(Status: Legacy, IsArchived: false)` | Исключение вложенного mapping |
 | `(Status: Legacy, IsArchived: true)` | Archived; вложенная пара не вызывается |
 
-Status выбран явно. Из того, что tuple содержит enum-элемент, автоматический
-выбор этого элемента для корневой enum-конвенции не следует.
+Status выбран выражением пользователя; tuple не выбирает enum-компонент автоматически.
 
 ### 125. Tuple из нескольких объектов → один enum
 
@@ -2988,9 +2858,8 @@ builder.Map<(Order? Order, AccountState? Account), ApiStatus>()
 | Legacy / true | Disabled, до вложенного mapping |
 | Order = null или Account = null | Пользовательский ArgumentException |
 
-Сам ValueTuple не равен null. Null его элементов не является null корневого
-source и обрабатывается написанными проверками. Та же схема позволяет передать
-вместе с моделью пользовательскую политику выбора enum.
+ValueTuple не null; null его элементов обрабатывает явный guard. Tuple позволяет передать
+вместе модель и политику выбора.
 
 ### 126. Безымянный ValueTuple → enum через ItemN
 
@@ -3008,9 +2877,8 @@ builder.Map<(DomainStatus, bool), ApiStatus>()
 | `(Legacy, true)` | Archived |
 | `(Legacy, false)` | Исключение вложенного mapping |
 
-Это явные обращения к Item1/Item2, а не позиционная конвенция. Для tuple
-`(bool, DomainStatus)` выражения нужно поменять: source.Item1 станет условием,
-а source.Item2 — входом вложенной enum-пары.
+Для (bool, DomainStatus) Item1 станет условием, Item2 — входом mapping; обращения явные,
+позиционной конвенции нет.
 
 ### 127. System.Tuple → enum и null ссылочного tuple
 
@@ -3029,8 +2897,8 @@ builder.Map<Tuple<DomainStatus, bool>?, ApiStatus?>()
 | Create null | null; ResolveUsing не вызывается |
 | Update null, previous = Archived | null по default ReturnNull |
 
-После null policy callback получает non-null System.Tuple. Его read-only
-элементы можно читать; создавать изменённый tuple для этого не требуется.
+После null policy callback читает non-null System.Tuple; read-only элементы не требуют
+пересоздания.
 
 ### 128. Enum → System.Tuple: создание, сохранение и явная замена
 
@@ -3061,9 +2929,8 @@ builder.Map<DomainStatus, Tuple<ApiStatus, string>>()
         Create<string>(status)));
 ```
 
-Теперь Update Cancelled с тем же previous возвращает **другой** Tuple:
-Deleted / `"Cancelled"`. Явные Create для элементов запрашивают вложенный Create
-в обеих внешних операциях. Отличие от mutable ValueTuple видно в сценарии 109.
+Resolve возвращает другой Tuple: Update Cancelled → Deleted / "Cancelled". Create элементов
+используется при обеих внешних операциях; mutable ValueTuple — 109.
 
 ### 129. Nullable enum ↔ nullable объект-обёртка
 
@@ -3089,9 +2956,8 @@ builder.Map<DomainStatus?, NullableStatusCarrier?>()
 | Unknown = 0 → объект | Non-null объект со Status = Unknown |
 | Active → объект | Объект со Status = Active |
 
-Если для первой пары выбрать NullSourceHandling.ReturnDestination, null объект
-на Update сохранит previous. Объект со Status = null всё равно вернёт null:
-это результат callback, который завершает операцию без повторной null policy.
+ReturnDestination сохранит previous для null объекта на Update; объект с Status = null вернёт
+null из callback без повторной policy.
 
 ### 130. Nullable ValueTuple → enum с сохранением previous
 
@@ -3111,8 +2977,7 @@ builder.Map<(DomainStatus Status, bool PreservePrevious)?, ApiStatus?>()
 | Update `(Legacy, true)`, destination = null | Исключение вложенного mapping: сохранять нечего |
 | Create non-null tuple `(Unknown, false)` | Non-null ApiStatus.Unknown = 0 |
 
-Callback получает распакованный ValueTuple после null policy. Отсутствующий
-tuple и tuple с нулевым enum-элементом различаются.
+Callback получает распакованный tuple; отсутствие tuple отличается от нулевого enum-элемента.
 
 ### 131. ConstructUsing при объект → enum не заменяет существующий enum
 
@@ -3127,9 +2992,8 @@ builder.Map<StatusCarrier, DomainStatus>()
 | Update, source.Status = Active, previous = Suspended | Suspended: фабрика пропущена |
 | Update, source.Status = Active, previous = Unknown = 0 | Unknown: ноль — существующий destination |
 
-Для выбора нового enum и на Update подходит ResolveUsing из сценария 119.
-В варианте с nullable destination `DomainStatus?` и policy Create Update с null
-destination вызвал бы ConstructUsing и вернул Active.
+Для нового значения на Update нужен ResolveUsing (119). Nullable destination с null и policy
+Create вызовет ConstructUsing: результат Active.
 
 ### 132. Convert задаёт собственную обработку nullable tuple
 
@@ -3151,9 +3015,8 @@ builder.Map<(bool IsReady, bool IsBlocked)?, DomainStatus?>()
 | `(true, false)` | Active |
 | `(false, true)`, `(true, true)` | Suspended |
 
-Convert получает исходный nullable tuple и владеет алгоритмом целиком, включая
-null source. Использование source.Value защищено написанной проверкой; null
-не завершается до callback, как было бы при стандартной policy у ResolveUsing.
+Convert получает исходный nullable tuple; source.Value защищён явным guard. В отличие от
+ResolveUsing, null не завершается до callback.
 
 ## Выбор входа конвенции
 
@@ -3193,10 +3056,8 @@ builder.Map<DomainStatus, ApiStatus>()
 })
 ```
 
-Здесь Cancelled даёт Deleted, Active — Active, Legacy — исключение маппинга.
-Чтобы сохранять result при неуспехе конвенции, используется `_ => result`, как
-в сценарии 40. Если входом конвенции должен быть result, выбирается `result switch`,
-а status остаётся доступен в guard.
+Cancelled → Deleted; Active → Active; Legacy → исключение. `_ => result` сохраняет фабричное
+значение при неуспехе (40); result switch выбирает его как вход, оставляя status для guard.
 
 ### 134. Object-вход switch не означает автоматический поиск enum-поля
 
@@ -3223,11 +3084,8 @@ builder.Map<DomainStatus, ApiStatus>()
 | Legacy | Active / false | Unknown |
 | Active | Active / true | Disabled |
 
-GetDetails вызывается один раз. Object → ApiStatus не имеет конвенции:
-ни исходный status, ни свойство Status не подставляются вместо object-входа.
-Явный Auto здесь требует диагностики. Это switch внутри уже поддерживаемой
-enum-пары; тот же принцип действует для whole-object switch в регистрации
-object → enum из сценария 172.
+GetDetails вызывается один раз; конвенция не выбирает ни исходный status, ни поле Status.
+Явный Auto диагностируется. Whole-object регистрация следует тому же правилу (172).
 
 ### 135. Нормализация бита меняет вход конвенции, сохраняя проходы Members
 
@@ -3247,11 +3105,8 @@ builder.Map<SourceAccess, TargetAccess>()
 | `(SourceAccess)16` | 16 | Audit = 64 |
 | None = 0 | 0 один раз | Audit = 64 |
 
-Auto получает вычисленное Audit в каждом проходе. Он не возвращается к исходному
-Read, Write, неизвестному биту или нулю и не вызывает NormalizeFlag повторно.
-Сценарий использует одиночный нормализованный бит. Побитовый перевод составного
-входа, границы fallback и вычислений показаны в
-[сценариях 150–158](#составной-вход-bybit-и-вычисления).
+Auto получает вычисленное Audit без повторного NormalizeFlag. Составной вход и границы
+fallback — [150–158](#составной-вход-bybit-и-вычисления).
 
 ## IncludeBase и разные входы switch
 
@@ -3290,9 +3145,8 @@ Normalize возвращает указанное в таблице значен
 | Pending | Legacy | Unknown: локальная конвенция неуспешна, выполняется базовый fallback |
 | Unknown | Cancelled | Unknown: базовый case проверяет исходный Unknown, а не нормализованный Cancelled |
 
-С эффективным Explicit неявная конвенция пропускается:
-Active → нормализованный Pending даёт Unknown; остальные строки сохраняют результат.
-Специальное правило базы для Cancelled по-прежнему выполняется раньше fallback.
+При Explicit Active → нормализованный Pending даёт Unknown; остальные строки прежние. Базовый
+Cancelled обрабатывается до fallback.
 
 ### 137. Унаследованный Auto и отсутствующий fallback могут различаться
 
@@ -3307,16 +3161,10 @@ Active → нормализованный Pending даёт Unknown; осталь
 | `_ => Auto()` | `_ => Auto()` | Исключение: локальный Auto получает Legacy и заменяет базовый fallback |
 | `_ => Auto()` | `_ => ApiStatus.Unrecognized` | Unrecognized |
 
-В варианте с базовым `_ => Auto()` и без локального fallback, если Normalize
-вернёт Active, локальная неявная конвенция даст ApiStatus.Active,
-не достигая базового fallback Auto. При Explicit эта неявная попытка пропущена,
-поэтому унаследованный Auto для исходного Pending вернёт ApiStatus.Pending.
-Если исходный status = Legacy, а Normalize вернул Corrupt, обе попытки неуспешны:
-базовый Auto бросает и не ищет следующий fallback. Normalize не вызывается повторно.
-
-Таким образом, единственная неявная конвенция может сопровождаться явной
-попыткой для другого входа. Добавление `_ => Auto()` в базу не всегда равнозначно
-отсутствующему fallback при локальном изменении входа.
+Базовый Auto без локального fallback: Normalize = Active даёт локальный Active, а при Explicit
+— базовый Pending. Source Legacy и Normalize = Corrupt: базовый Auto тоже бросает. Normalize
+не повторяется. Одна неявная попытка может продолжиться явной для другого входа; поэтому
+inherited Auto отличается от отсутствия fallback.
 
 ### 138. Auto в специальной базовой ветке завершает поиск немедленно
 
@@ -3338,9 +3186,8 @@ Active → нормализованный Pending даёт Unknown; осталь
 | Cancelled | Исключение: у Cancelled нет соответствия, локальная конвенция для Pending не достигается |
 | Legacy | Pending: специальная базовая ветка не совпала, работает локальная конвенция |
 
-Неуспех выбранного Auto не переходит к Unknown. Если вместо объединённого case
-написать `DomainStatus.Active when IsEnabled() => Auto()` и IsEnabled вернёт false,
-исходный Active даст Pending по локальной конвенции.
+Auto не переходит к Unknown. Замена специальной ветки на Active when IsEnabled() => Auto() с
+false даёт Pending по локальной конвенции.
 
 ### 139. Без локального Members вход задаёт ближайший унаследованный Members
 
@@ -3356,10 +3203,9 @@ Members. Для исходного Active метод Normalize уровня Midd
 | `NormalizeApplication(status) switch { DomainStatus.Corrupt => ApiStatus.Unrecognized }` | Unknown: конвенция для Legacy неуспешна, затем базовый fallback |
 | Последний вариант с MemberSelection.Explicit | Unknown: неявная конвенция пропущена |
 
-В третьем варианте успешные потенциальные соответствия Middle.Pending и
-Base.Active не пробуются: цепочки неявных конвенций уровней нет. Специальные
-правила всех достигнутых уровней сохраняются. В Application без Members при
-Explicit результат также Unknown, поскольку унаследованный fallback — значение.
+Неявные Middle.Pending/Base.Active не пробуются после локального неуспеха; их специальные
+правила сохраняются. Без Application Members при Explicit результат Unknown из inherited
+fallback.
 
 ### 140. Неподдерживаемый локальный вход не заменяется базовым
 
@@ -3382,11 +3228,9 @@ builder.Map<DomainStatus, ApiStatus>()
 | Corrupt | Unrecognized по локальному правилу |
 | Legacy | Unknown |
 
-При замене базового fallback на `_ => Auto()` Active даст Active, Legacy бросит:
-это явный унаследованный запрос для базового source. Написанный локально
-`_ => Auto()` требует диагностики для tuple-входа. Локальный `_ => result`
-вместо него допустим и даёт Pending для Active и Legacy, заменяя базовый fallback;
-Cancelled и Corrupt сохраняют свои специальные результаты.
+Базовый `_ => Auto()`: Active → Active, Legacy бросает. Локальный Auto для tuple ошибочен;
+локальный `_ => result` допустим и даёт Pending для Active/Legacy, сохраняя специальные
+Cancelled/Corrupt.
 
 ### 141. Входы вычисляются один раз, fallback сохраняет свой контекст
 
@@ -3420,11 +3264,8 @@ RecordFallback записывает свой аргумент и возвращ�
 | Legacy | Corrupt | Unrecognized; RecordFallback получил Corrupt | 1 / 1 / 1 |
 | Pending | Бросает InvalidOperationException | То же исключение, конвенция для Pending не запускается | 1 / 1 / 0 |
 
-Возврат к базовому fallback использует вход его switch, а не локальный Legacy
-или исходный Active. При замене fallback на `_ => Auto()` и базовом входе Active
-после неуспеха локального Legacy получится Active: оба метода вызываются по одному
-разу, ReadBaseInput ради Auto повторно не вызывается. Независимые пользовательские
-вычисления не объединяются, даже если иногда возвращают одинаковые значения.
+Fallback использует вход своего switch. С базовым Auto и ReadBaseInput = Active локальный
+Legacy даёт Active; оба метода вызваны один раз. Независимые вычисления не объединяются.
 
 ### 142. Локальный result switch и базовый source switch сохраняют разные входы
 
@@ -3459,9 +3300,8 @@ builder.Map<DomainStatus, ApiStatus>()
 | Active | `(ApiStatus)123` | Active: локальная строгая E → E конвенция неуспешна, затем базовый Auto для source |
 | Legacy | `(ApiStatus)123` | Исключение: базовый Auto тоже не нашёл соответствия |
 
-Локальный `_ => result` сохраняет неназванное 123 для Active и Legacy,
-заменяя базовый fallback Auto. Using вызывается один раз по lifecycle; все уровни
-видят один начальный result, он не становится результатом предыдущей ветки.
+Локальный `_ => result` заменит базовый Auto и сохранит 123 для Active/Legacy. Using
+вызывается один раз; result общий для уровней.
 
 ## Стратегия и тип входа конвенции
 
@@ -3495,9 +3335,8 @@ builder.Map<int, StoredCode>()
     .Members(code => ((WireCode)code) switch { _ => StoredCode.Unknown });
 ```
 
-Для входа 1 конвенция получает WireCode.Active и возвращает StoredCode.Active = 2
-по имени; для 2 — StoredCode.Pending = 1. Cast написан пользователем и сохраняет
-обычную семантику C#. Регистрация WireCode → StoredCode для этого не нужна.
+1 → StoredCode.Active = 2; 2 → StoredCode.Pending = 1 по имени после явного C# cast. Отдельная
+WireCode → StoredCode регистрация не нужна.
 
 ### 144. Строковый вход получает конвенцию имён
 
@@ -3517,13 +3356,8 @@ NormalizeText возвращает string и вызывается один ра�
 | `" Active "` | Unknown; скрытого Trim нет |
 | `"Missing"` | Unknown |
 
-При замене fallback на `_ => Auto()` последние три строки бросают. Существующий
-`Auto<ApiStatus>()` выбирает тот же вход и ту же конвенцию.
-
-Явный ByName допустим и сохраняет результаты. ByValue или ByValueAllowUndefined
-даёт MORPH0023: числовая стратегия для string → enum неприменима.
-ByValue не заменяется на поиск имени и не включает numeric parsing.
-Fallback не скрывает ошибку настройки; это диагностика конфигурации до runtime.
+Auto вместо fallback бросает для последних трёх входов; typed Auto эквивалентен. ByName
+допустим; ByValue/AllowUndefined дают MORPH0023 независимо от fallback, без numeric parsing.
 
 ### 145. Совместимая явная стратегия сохраняется при смене типа
 
@@ -3554,11 +3388,9 @@ ByValueAllowUndefined даёт ту же строку; ByName и отсутст�
 | WireCode → byte | StoredCode.Active = 2 | ByValue / ByValueAllowUndefined | byte 2 |
 | WireCode → byte | StoredCode.Active = 2 | ByName | MORPH0023: enum → integer требует числовую стратегию |
 
-Выбор может быть применим только после пользовательского преобразования входа:
-string → StoredCode с вычисленным int допускает ByValue. Исходные типы регистрации
-не запрещают настройку, подходящую фактическому автоматическому пути.
-Поведение одинаково у Auto и неявной конвенции; при обычном fallback неуспех
-допустимой конвенции возвращает fallback, несовместимая настройка остаётся ошибкой.
+Тип выбранного входа определяет совместимость: string-регистрация с вычисленным int допускает
+ByValue. Неуспех допустимой конвенции обрабатывается fallback, несовместимая стратегия —
+ошибка конфигурации.
 
 ### 146. Разные пути Members могут иметь разные library defaults
 
@@ -3580,15 +3412,10 @@ builder.Map<WireCode, StoredCode>()
 | ByValueAllowUndefined | Pending = 1 | Pending = 1 |
 | ByName | MORPH0023 для числового пути; конфигурация ошибочна независимо от результата UseNumericInput | Та же диагностика |
 
-С `MemberSelection.Explicit` и без Auto обе ветви возвращают Unknown:
-неявных автоматических путей нет, ByName применима к зарегистрированной enum-паре.
-Если числовой fallback заменить на `_ => Auto()` или `_ => Auto<StoredCode>()`,
-ByName снова несовместима. Direct Auto вне switch использует WireCode source
-и допускает ByName; менять его вход на последний вычисленный int нельзя.
-
-Прямое `Members(code => StoredCode.Unknown)` или Using без Members не получает
-конвенцию поверх результата. Для них применимая к регистрации ByName допустима,
-как и раньше; дополнительная диагностика за отсутствие автоматического пути не нужна.
+Explicit без Auto: обе ветви дают Unknown, ByName остаётся допустимой по исходной enum-паре.
+Auto в int-пути снова делает её несовместимой. Auto вне switch использует WireCode, поэтому
+ByName допустима. Прямой результат/Using также допускает ByName без конвенции поверх
+результата.
 
 ### 147. Общий default отличается от явной настройки пары
 
@@ -3603,9 +3430,8 @@ ByName снова несовместима. Direct Auto вне switch испол
 | Не задано | ByValueAllowUndefined | ByValue | Unknown: явный строгий выбор пары |
 | Не задано | ByValueAllowUndefined | ByName | MORPH0023; явный выбор пары не игнорируется |
 
-Смена типа входа не меняет общий контракт settings: mapper/MSBuild задают общие
-defaults, а pair-настройка — требование конкретной пары. `Default` продолжает
-наследование; это не команда забыть ByValueAllowUndefined и вернуться к library default.
+Default продолжает наследование; mapper/MSBuild задают общие defaults, pair-настройка —
+требование конкретной пары.
 
 ### 148. IncludeBase сохраняет выбор стратегии, но не заранее вычисленный default
 
@@ -3636,20 +3462,13 @@ Decode возвращает WireCode; строки задают отдельны
 | 1 | Large = 300 | Pending = 1 через базовый Auto с default ByValue | Pending = 1 через базовый Auto | Pending = 1 через базовый Auto; локальное 300 вне диапазона |
 | 42 | `(WireCode)42` | Исключение базового Auto | Исключение базового Auto | Неназванное 42 по локальной конвенции |
 
-Без настроенной стратегии локальный enum-вход использует ByName, а базовый
-int-вход — строгий ByValue. С Explicit локальная неявная конвенция пропускается;
-базовый Auto всё равно использует int и бросает для 42 при library default.
-Decode вызывается один раз; применение другой конвенции его не повторяет.
+Default выбирается отдельно: локальный enum — ByName, базовый int — ByValue. Explicit
+пропускает локальную попытку; базовый Auto для 42 бросает. Decode один раз.
 
-Если ByValueAllowUndefined задана в **базовой паре**, локальный Default сохраняет
-её для обоих входов. Mapper-level ByName не перебивает included pair. Локальный
-ByValue возвращает строгие результаты таблицы; отдельной стратегии базы не остаётся.
-
-Локальный ByName даёт MORPH0023 для унаследованного Auto с int-входом, хотя
-локальному WireCode-входу подходит. Если локально добавить `_ => StoredCode.Unknown`,
-этот fallback заменит базовый Auto: останется только enum-конвенция и ByName станет
-допустимой. Для исходного 1 с Decode = Large результат тогда Unknown.
-При отсутствии локального Members вход остаётся базовым int, и ByName неприменима.
+Inherited AllowUndefined сохраняется через локальный Default и выше mapper ByName; локальный
+ByValue задаёт строгую стратегию обоим входам. Локальный ByName несовместим с базовым int
+Auto. Замена этого fallback локальным Unknown убирает конфликт: при source 1 и Decode = Large
+результат Unknown. Без локального Members ByName по-прежнему неприменима.
 
 ### 149. Смена типа не создаёт новых видов автоматического преобразования
 
@@ -3663,10 +3482,8 @@ EnumMappingStrategy не задана; у mapping switch есть указанн
 | WireCode → int | int 1 | `-1` | -1; общего integer → integer mapping здесь нет |
 | WireCode → StoredCode | object, содержащий WireCode.Active | StoredCode.Unknown | Unknown; runtime enum не меняет статический object-вход |
 
-Замена fallback на `_ => Auto()` во всех строках требует диагностики
-неподдерживаемого входа. Для object действует то же правило, что в сценарии 134:
-генератор не исследует runtime-тип и не выбирает скрытое enum-значение.
-Обычный явный результат по-прежнему может вернуть значение без конвенции.
+Auto вместо fallback во всех строках диагностируется. Runtime object не выбирает скрытый enum;
+явный результат остаётся допустимым.
 
 ## Составной вход ByBit и вычисления
 
@@ -3704,11 +3521,9 @@ Write → Edit не становятся её таблицей соответс�
 | Auto | `_ => TargetAccess.Unknown` | Unknown = 128 после неуспеха всей попытки конвенции |
 | Explicit | `_ => TargetAccess.Unknown` | Конвенция пропущена, итог Unknown = 128 |
 
-В последнем варианте исходный Read | Write вызывает NormalizeFlag дважды:
-сначала с Read, затем с Write; итог Unknown = 128, RecordRead/RecordWrite не
-вызываются. Это два исходных прохода, а не дополнительный обход вычисленной маски.
-Самостоятельно написанные два вызова NormalizeFlag в одном проходе также
-сохраняются: генератор не объединяет независимые вычисления.
+В последнем варианте Read | Write вызывает NormalizeFlag дважды, по порядку Read/Write, даёт
+128 без RecordRead/RecordWrite. Два независимо написанных NormalizeFlag внутри одного прохода
+также не объединяются.
 
 ### 151. Составной локальный вход не подменяет и не повторяет правила IncludeBase
 
@@ -3741,16 +3556,9 @@ builder.Map<SourceAccess, TargetAccess>()
 | Read | Delete | 1 / 0 / 0 | None = 0: локальное правило завершило проход до базы |
 | Audit | ReadWrite | 1 / 1 / 0 | Unknown = 128: локальная конвенция не переводит Read/Write, выбран fallback базы |
 
-В третьей строке наличие Read внутри вычисленного ReadWrite не вызывает
-RecordBaseRead. Базовый уровень уже проверен для собственного входа и не
-запускается заново для компонентов локальной маски.
-
-Отдельный вариант третьей строки: задать Explicit, заменить базовый fallback
-на `_ => Auto()` и вернуть из ReadBaseInput составной SourceAccess.ReadWrite.
-Унаследованный Auto получает именно этот сохранённый вход; оба метода вызваны
-по одному разу, RecordBaseRead не вызывается. Итог — исключение маппинга:
-у Read/Write нет соответствующих имён в TargetAccess. Базовые методы и правила
-повторно не запускаются.
+В строке 3 Read внутри ReadWrite не вызывает RecordBaseRead. Вариант: Explicit, базовый Auto,
+ReadBaseInput возвращает ReadWrite — исключение, поскольку TargetAccess не имеет Read/Write.
+Normalize/ReadBaseInput по одному разу, RecordBaseRead не вызывается.
 
 ### 152. Полный result передаётся конвенции без повторного Members
 
@@ -3771,17 +3579,11 @@ builder.Map<SourceAccess, TargetAccess>()
     });
 ```
 
-Для исходного Read фабрика вызывается один раз, Observe получает Read один раз,
-RecordView не вызывается. Вход конвенции — полный result = View | Edit (48).
-Auto не переходит к RecordView ради бита View и не повторяет Observe или фабрику.
-Биты View и Edit переводятся по именам из TargetAccess в тот же enum;
-итог — View | Edit = 48. То же верно с Explicit и с Auto<TargetAccess>().
-В ByMask значение 48 не имеет целого объявленного имени: тот же Auto бросит.
+Source Read: фабрика/Observe по одному разу, RecordView не вызывается; Auto переводит полный
+result = 48, итог 48 (также при Explicit/typed Auto). ByMask бросает: целого имени 48 нет.
 
-Если одновременно выбрать Explicit и заменить fallback на `_ => result`,
-составная конвенция не запускается: для исходного Read | Write итог 48,
-Observe получает Read и Write, фабрика вызывается один раз. Все проходы читают
-один начальный result; он не становится накопителем вкладов.
+Explicit с `_ => result`, source Read | Write: итог 48 без конвенции, Observe(Read),
+Observe(Write), одна фабрика. Result не накапливает вклады.
 
 ### 153. Конвенция вычисленной маски переводит биты, даже если есть composite name
 
@@ -3812,10 +3614,8 @@ builder.Map<InputAccess, OutputAccess>()
 | Read \| Audit = 5 | Unknown = 256 | Unknown = 256 |
 | `(InputAccess)8` | Unknown = 256 | Unknown = 256 |
 
-В третьей строке наличие или отсутствие составного имени не меняет результат
-ByBit. Ноль также не требует объявления None. Для ReadWrite явные Auto() и
-Auto<OutputAccess>() дают 48 и при MemberSelection.Explicit; для Read | Audit
-они бросают. Explicit с обычным fallback пропускает конвенцию и возвращает Unknown.
+Composite name не меняет ByBit, None не требуется для 0. Explicit + Auto/typed Auto: ReadWrite
+→ 48, Read | Audit бросает. Explicit + обычный fallback всегда даёт Unknown.
 
 ### 154. Fallback заменяет весь вклад неудачной попытки, включая успешные биты
 
@@ -3843,11 +3643,9 @@ fallback вычисляются по одному разу:
 | `_ => Ignore()` или `_ => Ignore<OutputAccess>()` | 0: весь вклад пропущен, ни частичный 16, ни initial result = 32 не добавляются |
 | `_ => Auto()` или отсутствие fallback | Исключение маппинга |
 
-`var remaining => RecordFallback(remaining)`, где метод возвращает Unknown,
-вызывает RecordFallback один раз с полным захваченным Read | Audit = 5,
-а не с Audit = 4. Его результат — 256. При Explicit обычные fallback дают
-те же результаты без попытки конвенции; явный Auto всё равно бросает.
-Исключение самого Normalize или RecordFallback передаётся вызывающему коду.
+Var remaining передаёт RecordFallback полный Read | Audit = 5 один раз; результат 256.
+Explicit с обычным fallback даёт те же значения без конвенции, с Auto бросает. Исключения
+Normalize/RecordFallback сохраняются.
 
 ### 155. Исходная комбинация и вычисленная комбинация имеют разные границы fallback
 
@@ -3861,15 +3659,10 @@ fallback `_ => OutputAccess.Unknown` и настройки по умолчани
 | Read \| Write = 3 | Normalize(Read) = Read \| Audit; Normalize(Write) = Write | Unknown \| Write = 288 |
 | Read \| Write = 3 | Normalize(Read) = Read; Normalize(Write) = Read \| Audit | Read \| Unknown = 272 |
 
-Первая строка имеет два исходных прохода; вторая — один проход с составным
-входом конвенции. В третьей и четвёртой строках неудачный перевод заменяется
-fallback только в своём проходе: результат другого прохода не теряется.
-Normalize вызывается один раз на исходный бит, в порядке Read, затем Write.
-Это также показывает, почему вынесение Normalize до вызова mapping может менять
-результат. Вынос того же выражения в local внутри текущего прохода его не меняет.
-
-Если убрать fallback в последней строке, второй проход бросит: первый вклад
-не возвращается как частичный результат, эффекты обоих вызовов Normalize остаются.
+Normalize один раз на исходный бит, Read перед Write. Fallback заменяет только свой проход.
+Вынос Normalize до mapping может менять итог; local внутри прохода — нет. Без fallback в
+последней строке второй проход бросает без частичного результата, эффекты обоих вызовов
+сохраняются.
 
 ### 156. Унаследованный Auto не получает частичный результат локальной конвенции
 
@@ -3889,15 +3682,9 @@ builder.Map<InputAccess, OutputAccess>()
     });
 ```
 
-Исходный вход — Write = 2; Normalize один раз возвращает Read | Audit = 5.
-Локальная неявная конвенция не переводит Audit и отбрасывает частичный Read = 16.
-Базовый Auto получает собственный захваченный Write = 2 и возвращает
-OutputAccess.Write = 32. Итог — **32, а не 48**; повторного Normalize или
-повторного прохода базовых правил нет.
-
-Локальный `_ => OutputAccess.Unknown` заменит базовый fallback и даст 256.
-Локальный `_ => Auto()` также заменит его, но бросит для локального входа 5;
-перехода к успешному базовому Auto после этого не будет.
+Source Write = 2; один Normalize → Read | Audit = 5. Локальная попытка отбрасывает частичный
+Read = 16, базовый Auto переводит свой Write: итог **32, не 48**. Локальный fallback Unknown
+даст 256; локальный Auto бросит для 5 вместо обращения к базовому.
 
 ### 157. Известный composite в result не гарантирует строгий ByValue в ByBit
 
@@ -3919,17 +3706,12 @@ builder.Map<SourceBits, DestinationPair>()
 | ByMask / ByValue / как выше | Pair = 3, проверяется целое объявленное значение |
 | ByBit / ByValue / `((int)result) switch { _ => Auto() }` | Pair = 3: фактический int-вход переводится целиком |
 
-Фабрика вызывается один раз, result остаётся полным начальным Pair. В последней
-строке исходный проход ByBit сохраняется; явный cast меняет вид конвенции на
-integer → flags. Явные Auto и Auto<DestinationPair>() дают одинаковое поведение.
+Одна фабрика; result — полный Pair. Cast в int меняет конвенцию на целое число, сохраняя
+исходные проходы; typed Auto эквивалентен.
 
-Диапазон также проверяется по отдельным битам **фактического** flags-входа.
-Например, для WideMask → NarrowMask из сценария 67 исходный `(WideMask)1` и
-`Normalize(flag) switch`, где Normalize один раз возвращает WideMask.All = -1,
-под ByBit + ByValueAllowUndefined не переводятся: положительный бит 128
-не помещается в sbyte. Fallback `(NarrowMask)0` даёт 0, без сохранения меньших
-битов; Auto бросает. ByMask для той же вычисленной маски даёт NarrowMask.All = -1.
-AllowUndefined не разрешает переполнение.
+WideMask → NarrowMask (67): source 1, один Normalize → All = -1. ByBit + AllowUndefined не
+переводит положительный бит 128 в sbyte: fallback 0 даёт 0 без меньших битов, Auto бросает.
+ByMask даёт -1; AllowUndefined не разрешает overflow.
 
 ### 158. Строковый вывод вычисленной маски тоже образует один вклад
 
@@ -3946,12 +3728,9 @@ builder.Map<InputAccess, string>()
 | `Read \| (InputAccess)8` | `"unknown"`, а не `"Read, unknown"` |
 | None = 0 | `"None"` |
 
-Во второй строке `_ => Auto()` бросит; fallback `""` даст пустую строку целиком.
-Для исходного Read | Write, если оба вызова Normalize возвращают ReadWrite,
-результат — `"Read, Write, Read, Write"`: два исходных вклада сохраняют повторы.
-В ByMask вычисленное ReadWrite даёт целое имя `"ReadWrite"`.
-Это не меняет string → flags: составное имя входного токена из сценария 79
-остаётся одним переводом имени, без рекурсивного обхода полученного enum-результата.
+Во второй строке Auto бросает, fallback "" даёт "". Если source Read | Write и оба Normalize
+возвращают ReadWrite, итог "Read, Write, Read, Write". ByMask даёт целое "ReadWrite". Это не
+меняет атомарность composite name во входном string-токене (79).
 
 ## Ошибки enum-маппинга
 
@@ -3976,10 +3755,8 @@ builder.Map<InputAccess, string>()
 | Конфликтный AliasSource → AliasTarget из сценария 09 без fallback; вход 1 | Warning при генерации, EnumMappingException при вызове | Неоднозначное соответствие для числа 1, а не отсутствие имени |
 | AliasedStatus → string из сценария 21 без явного правила и fallback; вход 1 | Warning при генерации, EnumMappingException при вызове | Неоднозначное выходное имя для числа 1 |
 
-Create даёт Operation.Create, Update — Operation.Update. SourceType и
-DestinationType соответствуют точной регистрации: например, int и StoredCode,
-а не underlying byte. В nullable-паре свойства также сохраняют nullable-типы,
-хотя Members после null handling может проверять non-null enum-значение.
+Operation соответствует вызову; SourceType/DestinationType — зарегистрированные типы, например
+int/StoredCode, не byte. Nullable<T> сохраняется в паре даже при non-null входе Members.
 
 ### 160. Ошибка указывает вычисленную маску и её непереведённый бит
 
@@ -4009,26 +3786,17 @@ builder.Map<InputAccess, OutputAccess>()
     .Members((flag, previous, result) => result switch { _ => Auto() });
 ```
 
-Для исходного Read фабрика вызывается один раз. EnumMappingException указывает
-фактический вход OutputAccess = 528 и неназванный бит 512. При этом свойства
-SourceType/DestinationType остаются InputAccess/OutputAccess: result switch
-не превращает регистрацию в другую пару. Фабрика для текста не повторяется.
+Source Read: одна фабрика; ошибка сообщает OutputAccess = 528 и бит 512, свойства пары
+остаются InputAccess/OutputAccess. Повторного вычисления для сообщения нет.
 
 ### 161. Ошибка унаследованного Auto описывает его собственный вход
 
-Вариант композиции из сценария 141: базовый fallback заменён на `_ => Auto()`,
-локального fallback нет. Исходный status = Pending; NormalizeLocal возвращает
-Legacy = 6, ReadBaseInput возвращает Corrupt = 5. Специальные ветки не совпадают.
+Вариант 141: базовый fallback Auto, локального нет; source Pending, NormalizeLocal → Legacy =
+6, ReadBaseInput → Corrupt = 5. После локального неуспеха базовый Auto бросает
+EnumMappingException для Corrupt, оба метода по одному разу.
 
-Локальная конвенция для Legacy неуспешна; затем базовый Auto не переводит Corrupt.
-Бросается EnumMappingException с входом DomainStatus.Corrupt = 5 и причиной
-неуспеха именно этой попытки. Исходный Pending и локальный Legacy не подменяют
-вход выбранного Auto. Оба метода вызваны по одному разу.
-
-Если ReadBaseInput вернёт Active, базовый Auto успешно даст ApiStatus.Active:
-неуспех локального Legacy не приводит к исключению. Если же локально написать
-`_ => Auto()`, он заменит базовый fallback и исключение будет относиться к
-локальному Legacy = 6.
+ReadBaseInput → Active даст Active без исключения. Локальный `_ => Auto()` заменит базовый и
+бросит для Legacy = 6.
 
 ### 162. Строковая ошибка сохраняет границу токена или целой попытки
 
@@ -4042,10 +3810,8 @@ Unknown в Access имеет значение 8:
 | ByBit, обычный fallback `_ => Access.Unknown` | Read \| Unknown \| Write = 11 | Исключения нет |
 | ByMask, тот же fallback | Unknown = 8 | Исключения нет; частичный Read не добавляется |
 
-Во всех вариантах зарегистрированная пара остаётся string/Access. Текст ошибки
-не требует повторного вызова пользовательского Members для токена или маски.
-Для runtime-неоднозначности строкового имени из сценария 20 без fallback также
-используется EnumMappingException, с указанием неоднозначности, а не отсутствия имени.
+Пара ошибки — string/Access, повторного Members нет. Неоднозначность из 20 сообщает именно
+конфликт, не отсутствие имени.
 
 ### 163. Пользовательские вычисления, конфигурация и lifecycle сохраняют свои ошибки
 
@@ -4063,12 +3829,9 @@ Unknown в Access имеет значение 8:
 | Явный ByName для int → StoredCode | MORPH0023; если вызвана типизированная заглушка некорректной пары — MappingConfigurationException |
 | Явный Auto для object/tuple-входа без конвенции | Диагностика конфигурации, не runtime-подбор enum-поля |
 
-Отдельная проверка текста ошибки: в сценарии 134 убрать fallback и вернуть из
-GetDetails объект с IsBlocked = false. Дополнительно у StatusDetails переопределён
-ToString: он считает вызовы и бросает InvalidOperationException.
-Итог — EnumMappingException: правило не подошло, конвенции для StatusDetails нет.
-GetDetails вызывается один раз, ToString — ни разу. Сообщение обозначает тип
-StatusDetails, не исследуя его свойства и не пытаясь форматировать содержимое.
+В 134 убрать fallback, GetDetails возвращает IsBlocked = false, ToString считает вызовы и
+бросает InvalidOperationException. Ожидается EnumMappingException с типом StatusDetails:
+GetDetails один раз, ToString ни разу, поля ради сообщения не исследуются.
 
 ## Ignore в ByBit
 
@@ -4106,13 +3869,9 @@ builder.Map<SourceAccess?, TargetAccess?>()
 | Read \| Write | View \| Edit = 48 | Read, Write |
 | `(SourceAccess)16` | Non-null 0 | 16 |
 
-Для non-null source результаты одинаковы на Update с destination = Unknown
-и с null destination при default Create policy. Initial result не требуется;
-ни одна форма Ignore его не читает. Source coverage закрыт явными правилами
-и fallback. Игнорирование Write не удаляет Edit, уже добавленный вкладом Read.
-Вычисления Record сохраняются даже тогда, когда все вклады проигнорированы.
-Замена Ignore для Write на null завершила бы операцию на Write, не достигнув Delete;
-`default` для nullable destination также означает null, а не нулевой вклад.
+Update с Unknown/null destination (policy Create) даёт те же результаты. Source coverage
+закрыт; Ignore не требует result и не очищает Edit от Read. Record сохраняется при всех
+Ignore. Замена Write на null/default nullable завершит операцию до Delete.
 
 ### 165. Унаследованный Ignore использует effective mode текущей пары
 
@@ -4146,11 +3905,9 @@ builder.Map<Access, Access>()
 | Убрать локальный ByBit: inherited ByMask / Read | Audit = 4 | ReadWrite = 3 |
 | Убрать локальный ByBit: inherited ByMask / ReadWrite | ReadWrite = 3 по конвенции | ReadWrite = 3 |
 
-В ByBit базовый Ignore завершает обработку Read; конвенция для этого прохода
-не запускается. Он не запрещает локальному Write добавить Read другим вкладом.
-ConstructUsing вызывается один раз на Create и пропускается на Update с destination.
-В ByMask Ignore сохраняет выбранный initial result. Без фабрики этот ByMask-путь
-на Create диагностируется; тот же Ignore в ByBit допустим без фабрики.
+ByBit Ignore завершает Read без конвенции, но не мешает Write добавить Read. ConstructUsing:
+один вызов на Create, ноль на non-null Update. ByMask Ignore требует initial result: без
+фабрики Create диагностируется; ByBit такого ограничения нет.
 
 ### 166. Ignore в специальной ветке, fallback и прямом результате
 
@@ -4171,13 +3928,9 @@ builder.Map<Access, Access>()
 | `(Access)16` | 0: fallback после неуспеха | 0 |
 | None | 0 по конвенции | 0 через fallback |
 
-Фабрика не требуется; результаты одинаковы для Create и Update.
-Прямое `.Members(_ => Ignore())` даёт 0 для всех этих входов и при Auto:
-это полный явный результат текущего прохода, без автоматического дополнения.
-Для string → Access прямой Ignore так же пропускает каждый токен, включая
-повторы и пустые: `"Read;;Missing"` даёт non-null 0 без фабрики и исключения.
-Для Access → string прямой Ignore даёт `""`, включая нулевой вход; начальная
-строка Update и конвенционные имена не подмешиваются.
+Create/Update без фабрики дают одинаковое. Прямой Members(_ => Ignore()): flags → flags всегда
+0; string → Access, включая "Read;;Missing", non-null 0; Access → string всегда "", включая
+ноль. Initial result/конвенционные имена не добавляются.
 
 ## Независимая настройка enum coverage
 
@@ -4220,11 +3973,8 @@ builder.Map<CoverageOrder, CoverageOrderDto>()
 | CoverageSource.New | Warning enum source coverage |
 | CoverageTarget.Internal | Нет: enum-политика проверяет только source |
 
-Id сопоставляется по конвенции, Status — явным nested Map. Удаление общей
-enum-настройки сохраняет тот же результат: её library default — Source.
-Смена только обычной политики на None убирает warning для Description,
-но сохраняет его для New; смена только enum-политики на None делает обратное.
-Наличие enum-свойства не меняет политику остальных членов объекта.
+Id — конвенция, Status — nested Map. Без общей enum-настройки остаётся default Source. Обычный
+None убирает только Description warning, enum None — только New.
 
 ### 168. Default и None в независимой цепочке enum-настройки
 
@@ -4245,10 +3995,8 @@ enum-настроек; IncludeBase при наличии подключён об
 | Destination | None | Strict | None | None / нет |
 | Destination | None | Strict | Сначала None, затем Default | Strict / New и Internal |
 
-Default продолжает поиск только enum-настройки; None завершает его и отключает
-coverage. В последней строке действует обычное правило последней записи.
-Во всех вариантах runtime одинаков: Active → Active, Cancelled → Deleted,
-New → исключение. Диагностики не добавляют runtime-ветвей.
+Default продолжает enum-цепочку, None отключает coverage, последняя запись побеждает. Runtime
+всех строк: Active → Active, Cancelled → Deleted, New бросает.
 
 ### 169. Source не меняет сторону проверки для string/integer
 
@@ -4268,13 +4016,9 @@ builder.Map<string, CoverageTarget>()
 | Destination / Strict | Warning для неиспользованного CoverageTarget.Internal |
 | None | Нет |
 
-Во всех вариантах `"active"` возвращает Active, остальные non-null строки —
-Deleted. Default Source не подменяется на Destination из-за типа source.
-
-В bare `builder.Map<int, CoverageTarget>();` default Source также не перечисляет
-возможные числа и не даёт coverage warnings. Строгий ByValue по умолчанию
-принимает 10, 20 и 30; 123 бросает. В обратном направлении enum → string/integer
-Source проверяет объявленные enum source-значения, как в сценарии 107.
+Все варианты: "active" → Active, остальные non-null строки → Deleted. Bare int →
+CoverageTarget также не получает Source warnings: 10/20/30 допустимы по ByValue, 123 бросает.
+Enum → string/integer проверяет объявленный source (107).
 
 ## Members для object/tuple → enum
 
@@ -4303,17 +4047,10 @@ builder.Map<StatusCarrier, ApiStatus>()
 | Legacy | EnumMappingException |
 | `(DomainStatus)20` | EnumMappingException: число destination не заменяет имя source |
 
-Свойство Status читается один раз при входе в switch; patterns и конвенция
-используют это значение. Comment не участвует. Отдельная регистрация
-DomainStatus → ApiStatus не требуется и, если она есть, автоматически не вызывается.
-Exception сохраняет SourceType = StatusCarrier, DestinationType = ApiStatus;
-проблемный вход — выбранный DomainStatus, без повторного чтения свойства.
-Default Source coverage предупреждает о Suspended, Corrupt и Legacy:
-проверяется DomainStatus выбранного входа, несмотря на class source регистрации.
-
-При MemberSelection.Explicit Active бросает, Cancelled по-прежнему даёт Deleted.
-Добавление `_ => Auto()` возвращает конвенцию для Active и при Explicit.
-Тот же Members применим к обычному struct с DomainStatus-свойством Status.
+Status читается один раз, Comment не участвует; отдельная enum-пара не нужна и не вызывается.
+Ошибка: пара StatusCarrier/ApiStatus, фактический DomainStatus-вход. Default Source
+предупреждает о Suspended/Corrupt/Legacy. Explicit: Active бросает, Cancelled → Deleted; Auto
+возвращает конвенцию. Struct с таким свойством эквивалентен.
 
 ### 171. Tuple выбирает enum-вход и учитывает дополнительное условие
 
@@ -4333,14 +4070,9 @@ builder.Map<(DomainStatus Status, bool IsArchived), ApiStatus>()
 | `(Legacy, false)` | EnumMappingException |
 | `(Active, true)` или `(Legacy, true)` | Archived: специальная ветка до конвенции |
 
-Конвенция получает Status, guard читает исходный IsArchived. Для безымянного
-ValueTuple и System.Tuple<DomainStatus, bool> явно используются Item1 и Item2;
-выбор элемента по позиции или типу автоматически не добавляется.
-
-В варианте `(int Code, bool IsArchived)` с `source.Code switch`, тем же guard
-и `_ => Auto()` вместо Cancelled-ветки default определяется по int-входу:
-`(20, false)` → Active, `(30, false)` → Deleted, `(2, false)` → исключение,
-`(2, true)` → Archived. Это строгий ByValue, а не ByName из-за enum destination.
+Вход — Status, guard — IsArchived; unnamed/System.Tuple используют Item1/Item2. Вариант (int
+Code, bool IsArchived), Code switch с тем же guard и Auto вместо Cancelled: (20,false) →
+Active, (30,false) → Deleted, (2,false) бросает, (2,true) → Archived; default ByValue.
 
 ### 172. Whole-object patterns возвращают enum без выбора скрытого входа
 
@@ -4363,10 +4095,8 @@ builder.Map<StatusDetails, ApiStatus>()
 | Cancelled / true | Disabled: первая специальная ветка |
 | Legacy / false | Unknown |
 
-Убрать fallback — исключение для Active/Legacy при IsBlocked = false.
-Заменить его на `_ => Auto()` — диагностика неподдерживаемого входа конвенции.
-Сам Members и property patterns допустимы. То же правило действует для
-whole-tuple switch с явными tuple patterns.
+Без fallback Active/Legacy при IsBlocked=false бросают; Auto вместо fallback диагностируется.
+Property/whole-tuple patterns сами допустимы.
 
 ### 173. IncludeBase композиционно дополняет object → enum
 
@@ -4400,11 +4130,8 @@ builder.Map<StatusCarrier, ApiStatus>()
 | Active | Active по конвенции после специальных веток |
 | Legacy | Unknown по унаследованному fallback |
 
-Включается та же пара StatusCarrier → ApiStatus. Два написанных обращения
-source.Status остаются независимыми вычислениями; базовый уровень достигается
-лениво, как в обычных enum-парах. Локальный Cancelled не читает свойство в базе.
-Default Source coverage закрыт общим унаследованным fallback; локальный
-неполный switch не получает отдельного предупреждения за отсутствие остальных cases.
+Два source.Status — независимые чтения одной включённой пары; базовое лениво и не выполняется
+для локального Cancelled. Общий inherited fallback закрывает Source coverage всей композиции.
 
 ### 174. Nullable object, previous, result и Operation сохраняют lifecycle
 
@@ -4436,11 +4163,8 @@ builder.Map<StatusCarrier?, ApiStatus?>()
 | Create / null | null, фабрика и Members пропущены |
 | Update / null / Archived | null по default ReturnNull; фабрика и Members пропущены |
 
-Non-null source доступен Members без дополнительного null guard. ResolveUsing
-вызывается один раз при каждом non-null source, даже если Members возвращает old.
-Вариант с `_ => Ignore()` вместо `_ => result` сохраняет те же результаты:
-это scalar mapping вне ByBit, initial result выбран фабрикой.
-Без Using чтение result или такой Ignore на Create диагностируется.
+ResolveUsing вызывается один раз для non-null source даже при return old. Ignore вместо result
+сохраняет таблицу; без Using такое чтение/Ignore на Create диагностируется.
 
 ### 175. Объект передаёт полную flags-маску явному nested Map
 
@@ -4470,12 +4194,9 @@ builder.Map<AccessCarrier, TargetAccess>()
 | Read \| Audit | View \| Audit = 80 |
 | Read \| Delete | View \| Unknown = 144 |
 
-Внешний Members читает Permissions один раз и передаёт полную маску вложенной
-паре. Уже вложенная пара применяет свой default ByBit и обрабатывает биты.
-Adaptive Map выбирает nested Create или Update по доступности result; явные
-Create/Update сохраняют свои обычные контракты. Enum coverage вложенной пары
-проверяется независимо от внешнего объекта. Прямая сборка маски без nested Map
-показана в сценарии 123.
+Permissions читается один раз; полную маску обрабатывает nested ByBit-пара со своей coverage.
+Adaptive Map использует доступность result, явные Create/Update — свою операцию. Прямая сборка
+маски — 123.
 
 ## Coverage выбранного enum-входа
 
@@ -4528,8 +4249,8 @@ Note не анализируется этой enum-проверкой. Для st
 | `_ => throw new InvalidOperationException()` | Закрыт явным запретом |
 | `_ => Auto()` | Warning: у New нет конвенционного соответствия |
 
-Унаследованный общий fallback также закрывает покрытие, как в сценарии 173.
-Warnings не вычисляются отдельно для неполного Members каждого уровня.
+Inherited общий fallback также закрывает coverage всей композиции, не отдельных неполных
+Members (173).
 
 ### 177. Local и Normalize не сужают набор объявлений enum для проверки
 
@@ -4556,15 +4277,10 @@ builder.Map<CoverageEnvelope, CoverageTarget>()
 | `Normalize(source.Status) switch` | Active | Warning для New |
 | Normalize через local, как выше | Active | Warning для New |
 
-В двух последних строках Normalize вызывается один раз. Его return type —
-CoverageSource; проверяются все объявления этого типа. Генератор не анализирует
-тело метода, чтобы исключить New, и не утверждает, что Normalize вернёт New.
-Добавление обычного fallback закрывает Source coverage; None отключает его.
-Оба изменения сохраняют фактический Active в этих двух строках.
-
-То же правило действует, если enum-результат метода выбран внутри регистрации
-string/integer → enum: отсутствие enum в TSource не отключает проверку выбранного
-enum-входа. При самом string/integer-входе остаётся контракт сценария 169.
+Normalize один раз; проверяются все объявления его return type без анализа тела и обещания
+достижимости New. Fallback закрывает coverage, None отключает; фактический Active сохраняется.
+Это относится и к enum-input метода внутри string/integer-регистрации; сами string/integer
+следуют 169.
 
 ### 178. Whole-object switch и nested Map не запускают скрытую проверку свойств
 
@@ -4599,10 +4315,8 @@ builder.Map<CoverageEnvelope, CoverageTarget>()
     .Members(source => Map<CoverageTarget>(source.Status));
 ```
 
-Warning для New принадлежит вложенной CoverageSource → CoverageTarget.
-Внешний None его не отключает и дополнительный warning для того же свойства
-не создаётся. Если у вложенной пары тоже выбрать None, coverage warnings исчезнут,
-но source.Status = New по-прежнему бросит исключение вложенного mapping.
+Warning New принадлежит вложенной паре; внешний None не отключает и не дублирует его.
+Вложенный None уберёт warning, но New продолжит бросать.
 
 ## Flags-конвенция для выбранного входа
 
@@ -4640,18 +4354,10 @@ builder.Map<AccessRequest, ApiAccess>()
 | ReadWrite = 3 | Read \| Write = 24 | Unknown = 64: у destination нет имени ReadWrite |
 | Read \| Legacy = 5 | Unknown = 64 | Unknown = 64 |
 
-Результаты одинаковы для Create и Update с previous = Special. Внешний Members
-получает объект один раз; Access читается один раз. В последней строке
-переведённый Read отбрасывается вместе с неуспешной попыткой: fallback возвращает
-64, а не 72. Его выражение выполняется один раз.
-
-Замена fallback на `_ => Auto()` или отсутствие fallback приводят к исключению
-вместо Unknown. При MemberSelection.Explicit обычный fallback всегда даёт Unknown;
-совместимая pair-настройка режима допустима, но неактивна. Явный Auto запрашивает
-конвенцию и при Explicit.
-Типизированный Auto<ApiAccess>()
-имеет то же поведение. Для tuple с явно выбранным RequestAccess-элементом
-действуют те же правила.
+Один внешний проход/чтение Access, одинаково Create и Update с Special. Read | Legacy: весь
+fallback 64, не 72. Без fallback/с Auto неуспех бросает. Explicit + обычный fallback даёт
+Unknown с допустимым неактивным mode; Auto (включая typed) возвращает конвенцию. Tuple
+эквивалентен.
 
 ### 180. Whole-mask override не становится правилом для каждого бита
 
@@ -4675,14 +4381,9 @@ builder.Map<AccessRequest, ApiAccess>()
 | ReadWrite | Read \| Write = 24 | Special \| Write = 48 |
 | Read \| Legacy | Unknown = 64 | Special \| Unknown = 96 |
 
-В первой конфигурации Read-ветка не совпадает с полной комбинацией. ByBit-конвенция
-переводит Read по имени и не возвращается в эту ветку. Во второй конфигурации
-вложенная пара вызывает свои правила на каждом исходном бите.
-
-Добавление явного `RequestAccess.ReadWrite => ApiAccess.Special` в первую
-конфигурацию даёт Special для ReadWrite при обоих режимах: whole-mask case
-достижим и окончателен, warning о недостижимости по одному ByBit недопустим.
-Read | Legacy по-прежнему даёт только Unknown.
+Whole-mask Read-ветка не применяется внутри комбинации; nested ByBit применяет её к каждому
+биту. Добавление ReadWrite => Special даёт Special в обоих режимах без warning недостижимости;
+Read | Legacy остаётся Unknown.
 
 ### 181. Строка из объекта разбирается целиком без повторения Members
 
@@ -4705,16 +4406,10 @@ builder.Map<AccessRequest, ApiAccess>()
 | `""`, `"   "`, `"0"` | None = 0 |
 | `"8"` | Unknown: произвольный numeric parsing не включён |
 
-Text читается один раз, patterns видят исходную выбранную строку. Whole-string
-ветка "Read" не применяется к токену списка. В обоих режимах конвенция разбирает
-список CLR-имён; ByMask не ограничивает её единственным именем. Любой неизвестный
-токен отменяет всю попытку, после чего внешний fallback выполняется один раз.
-Для повторения пользовательских правил на токенах нужен nested Map в отдельную
-string → ApiAccess пару с ByBit.
-
-При Explicit обычный fallback даёт Unknown для списка и пустоты; совместимая
-pair-настройка режима остаётся допустимой. Замена fallback на Auto возвращает встроенный разбор;
-"Read|Missing" при этом бросает.
+Text читается один раз; Read-ветка не применяется к токенам списка. В обоих режимах
+неизвестный токен отменяет весь разбор, fallback один раз. Для правил на токенах нужен nested
+string → flags ByBit. Explicit + обычный fallback даёт Unknown для списка/пустоты с допустимым
+mode; Auto включает разбор и бросает для "Read|Missing".
 
 ### 182. Ignore сохраняет начальный result внешнего scalar-прохода
 
@@ -4732,18 +4427,14 @@ builder.Map<AccessRequest, ApiAccess>()
 | Read \| Legacy / ByBit | Special = 32 | Unknown = 64 |
 | ReadWrite / ByMask | Special = 32 | Unknown = 64 |
 
-Ignore — fallback после неуспеха конвенции. Частичный перевод Read не добавляется
-к initial result. На Create фабрика вызывается один раз; на Update с non-null
-destination пропускается. Ignore<ApiAccess>() имеет ту же семантику.
-При Explicit конвенция пропускается и Ignore сохраняет initial result для всех
-входов; совместимый режим можно оставить на паре неактивным.
+Ignore/typed Ignore сохраняет initial result без частичного Read. Фабрика: один раз на Create,
+пропуск на non-null Update. Explicit сохраняет result для всех входов, mode допустим
+неактивным.
 
-Без фабрики такой путь на Create диагностируется как недоступный initial result.
-При MappingMode.Update с non-nullable destination previous доступен, включая 0.
-Nullable destination с фабрикой сохраняет non-null Special при неуспехе; при
-Update с null destination default Create policy вызывает фабрику, операция
-остаётся Update. Прямой `.Members(_ => Ignore())` без pair-настройки режима
-сохраняет доступный initial result без запуска конвенции.
+Без фабрики Create диагностируется; Update-only non-nullable допускает previous, включая 0.
+Nullable: non-null Special сохраняется; null Update destination вызывает фабрику при policy
+Create, операция Update. Прямой Members(_ => Ignore()) без mode сохраняет result без
+конвенции.
 
 ### 183. Режим применим к выбранному входу и наследуется обычным способом
 
@@ -4776,9 +4467,8 @@ builder.Map<AccessRequest, ApiAccess>()
 | Прямой `ApiAccess.Special`, либо Using без Members | Явная pair-настройка даёт MORPH0023: нет применимого исходного прохода или flags-конвенции |
 | Один путь Members выбирает flags-вход, другой — int-вход | Режим применим к flags-пути; int переводится целиком |
 
-Для исходной RequestAccess → ApiAccess пары режим остаётся применимым к её
-собственному проходу, даже если Auto внутри Members получает int-вход или
-конвенция вообще не вызывается. Это прежний контракт, включая сценарий 157.
+У исходной flags-пары mode применим к проходам даже при выбранном int-входе Auto или
+отсутствии конвенции (157).
 
 ### 184. Coverage не переносит whole-mask overrides на биты комбинации
 
@@ -4801,15 +4491,9 @@ builder.Map<AccessRequest, RenamedAccess>()
 | Legacy | Исключение | Warning для Legacy |
 | ReadWrite | Исключение | Warning для объявленного composite ReadWrite |
 
-ReadWrite проверяется как полный выбранный вход. Read-ветка ему не подходит,
-а встроенная конвенция не знает имени Read в RenamedAccess. Наличие отдельных
-успешных правил Read и Write не закрывает coverage комбинации, поскольку
-внешний Members не выполняется для каждого бита.
-
-Общий fallback `RenamedAccess.None` закрывает оба warnings. Явная ReadWrite-ветка
-закрывает только ReadWrite. Перенос правил в отдельную RequestAccess → RenamedAccess
-пару с ByBit и вызов через nested Map дают ReadWrite → View | Write = 24;
-во вложенной паре непокрытым остаётся Legacy.
+ReadWrite не совпадает с Read-веткой, конвенция не знает Read в RenamedAccess. Fallback None
+закрывает оба warnings; явная ReadWrite-ветка — только ReadWrite. Nested ByBit-пара даёт
+ReadWrite → View | Write = 24, предупреждая только о Legacy.
 
 ## Null выбранного входа конвенции
 
@@ -4848,11 +4532,8 @@ builder.Map<NullableInputRequest?, ApiStatus?>()
 | Update, request не null, Status = null, previous = Archived | Non-null Unknown = 0 | Non-null Unknown = 0 | Non-null Unknown = 0 |
 | Non-null request, Status = Active | Active = 20 | Active = 20 | Active = 20 |
 
-Для null объекта Members не выполняется. Для null свойства он выполняется,
-конвенция неуспешна и выбран обычный fallback. Throw не применяется к свойству,
-ReturnDestination не сохраняет previous вместо написанного fallback.
-Status читается один раз; его null не вызывает NullReferenceException или
-исключение от неявного чтения Nullable.Value.
+Null объекта пропускает Members. Null свойства один раз доходит до fallback, без повторной
+policy, NullReferenceException или неявного Nullable.Value.
 
 ### 186. Явный null-result, обычный fallback и Auto
 
@@ -4870,14 +4551,9 @@ Status читается один раз; его null не вызывает NullR
 | Убрать fallback, оставив Cancelled-ветку | EnumMappingException |
 | Добавить MemberSelection.Explicit к исходному варианту | Unknown без попытки конвенции |
 
-Сообщение EnumMappingException обозначает null и тип DomainStatus? выбранного
-входа. Исключение относится к исходной зарегистрированной паре; Operation
-соответствует вызову; свойство не читается повторно ради текста ошибки.
-
-При non-nullable ApiStatus destination отсутствие результата также бросает:
-неявного default(ApiStatus) для null свойства нет. Явный `null => null` тогда
-недопустим по типу destination. Source coverage проверяет объявления DomainStatus,
-а null не становится дополнительной enum-константой; обычные проверки C# сохраняются.
+Ошибка сообщает null/DomainStatus?, исходную пару и операцию без повторного чтения.
+Non-nullable destination также не получает default: отсутствие результата бросает, null-result
+недопустим. Coverage проверяет DomainStatus, не null; C# проверки сохраняются.
 
 ### 187. Nullable-элемент tuple и результат Normalize сохраняют эффекты
 
@@ -4919,14 +4595,9 @@ builder.Map<DomainStatus, ApiStatus?>()
 | CreateInitial вернул null | null, Members пропущен | Только CreateInitial |
 | Create, Normalize бросил пользовательское исключение | То же исключение; fallback не выполняется | CreateInitial, Normalize |
 
-Каждый указанный вызов выполняется один раз; null вычисленного входа не повторяет
-фабрику и не запускает null policies заново. Вынос Normalize в пользовательский
-local сохраняет результаты и число вызовов.
-
-В string → ApiStatus Members с `text = null!; return Auto();` используется
-изменённое text: EnumMappingException, а не конвенция первоначальной строки
-или повторный NullSourceHandling. Явные `.Value` у пустого nullable и `.Trim()`
-у null сохраняют собственные C# исключения, даже при наличии обычного fallback.
+Каждый вызов — один раз, без повторных policies/фабрики; local сохраняет результат. В string →
+ApiStatus `text = null!; return Auto();` бросает для текущего null. Явные .Value/.Trim()
+сохраняют собственные исключения даже с fallback.
 
 ### 188. Null выбранной строки, числа или flags не означает нулевое значение
 
@@ -4945,10 +4616,8 @@ local сохраняет результаты и число вызовов.
 | request.Access | None = 0 | Non-null None = 0 |
 | request.Access | ReadWrite | Read \| Write = 24 при default ByBit |
 
-У nullable значения сначала проверяется наличие; конвенция non-null числа/enum
-сохраняет обычную стратегию. При замене fallback на Auto все три null-входа
-бросят EnumMappingException. Для string и flags null одинаково неуспешен и при
-ByMask; это не пустой токен, не пустая маска и не null-result всей операции.
+Auto вместо fallback бросает для всех трёх null-входов. String/flags null неуспешен и при
+ByMask; non-null nullable input сохраняет обычную стратегию.
 
 ### 189. Null вычисленного входа ByBit отличается от возвращённого null
 
@@ -4969,11 +4638,8 @@ builder.Map<RequestAccess, ApiAccess?>()
 | Read \| Write \| Legacy, заменить fallback на Auto | EnumMappingException; частичный Read не возвращается | Read, Write |
 | Read \| Write \| Legacy, заменить fallback на Ignore() | Non-null Read = 8 | Read, Write, Legacy |
 
-При null входа обычный fallback задаёт вклад текущего прохода, и следующие
-исходные биты обрабатываются. Ignore в этом исходном ByBit даёт нулевой вклад
-без фабрики. Явный null-result имеет отдельный terminal-контракт; ранее
-выполненные эффекты не откатываются. Non-null Unknown из fallback не становится
-новым source и повторно не проходит правила.
+Null входа передаёт управление fallback текущего бита; Ignore даёт 0 без фабрики. Null-result
+завершает операцию; effects сохраняются, результат Unknown повторно не обрабатывается.
 
 ## Совместимые настройки и aliases
 
@@ -4989,9 +4655,8 @@ builder.Map<RequestAccess, ApiAccess?>()
 | string → DomainStatus | ByValue / ByValueAllowUndefined | MORPH0023; numeric parsing не добавляется |
 | WireCode → byte | ByName | MORPH0023 |
 
-Первые три строки совпадают с регистрацией без настройки. Обычный fallback
-обрабатывает неуспех допустимой конвенции; явный Auto бросает. Правило действует
-также для выбранного входа и унаследованной настройки.
+Первые три строки равнозначны отсутствию настройки. Обычный fallback обрабатывает неуспех;
+Auto бросает. Выбранный вход/inherited-настройка следуют тому же правилу.
 
 ### 191. Explicit сохраняет совместимую настройку неактивной
 
@@ -5010,14 +4675,13 @@ builder.Map<AccessRequest, ApiAccess>()
 | Сохранить Explicit и заменить fallback на Auto | 24 с ByBit; EnumMappingException с ByMask |
 | Настройка ByBit и Members унаследованы; локально только Explicit | Unknown = 64; удалять настройку базы не требуется |
 
-Для CoverageEnvelope → CoverageTarget аналогично допустим ByName при Explicit
-и `source.Status switch { _ => CoverageTarget.Internal }`: результат Internal,
-стратегия неактивна. Если заменить fallback на Auto, Active переводится в Active,
-New бросает. Без автоматических путей подходит зарегистрированная пара **либо**
-один из выбранных статических входов; наличие реальных Auto требует совместимости
-каждого из них. Явный ByName для int-входа Auto остаётся MORPH0023.
-Прямой результат/Using у object → enum без подходящего выбранного входа не
-создаёт применимость настройки; исходные flags-пары сохраняют собственный режим.
+CoverageEnvelope → CoverageTarget: ByName + Explicit + Status switch с fallback Internal
+допустимы, итог Internal. С Auto: Active → Active, New бросает.
+
+Без автопутей достаточно исходной пары либо выбранного статического входа; реальные Auto
+должны быть совместимы все (ByName для int Auto — MORPH0023). Прямой результат/Using object →
+enum без подходящего входа не делает настройку применимой; исходные flags-пары сохраняют свой
+режим.
 
 ### 192. Точные совпадения выбираются для всей группы aliases
 
@@ -5033,11 +4697,9 @@ New бросает. Без автоматических путей подход�
 | Ready, Active | Ready = 10, Active = 10 | 10; несколько точных имён дают одно число |
 | Missing, ready | Ready = 10 | 10; отсутствие соответствия для Missing не отменяет успех |
 
-Перестановка объявлений ничего не меняет. Неоднозначность означает Warning и
-неуспех конвенции: обычный fallback даёт свой результат, отсутствие fallback
-или выбранный Auto — EnumMappingException. Явное правило для числа 1 разрешает
-конфликт всей группы. Canonical enum → string по-прежнему требует явного выбора
-при нескольких aliases; этот поиск относится к enum → enum.
+Порядок объявлений не влияет. Неоднозначность даёт Warning и неуспех: fallback — свой
+результат, отсутствие/Auto — EnumMappingException. Явное правило 1 разрешает всю группу. Enum
+→ string с aliases по-прежнему требует canonical output.
 
 ## Статус проверки каталога
 

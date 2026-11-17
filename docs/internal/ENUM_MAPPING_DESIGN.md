@@ -1,38 +1,16 @@
 # Enum mapping: согласованный дизайн
 
-Обновлено 2026-11-17. **Feature ещё не реализована**. Согласованные правила,
-отложенные возможности и проверки реализации описаны ниже.
-Примеры ниже описывают будущий DSL. Этот документ — канонический контракт;
-обоснования и источники: [стратегия по умолчанию](ENUM_MAPPING_DEFAULT_RESEARCH.md),
+Обновлено 2026-11-17. **Feature ещё не реализована.** Это канонический контракт;
+[сценарии](ENUM_MAPPING_SCENARIOS.md) содержат конфигурации, входы и результаты.
+Обоснования: [default](ENUM_MAPPING_DEFAULT_RESEARCH.md),
 [числа](ENUM_MAPPING_NUMERIC_RESEARCH.md), [flags](ENUM_MAPPING_FLAGS_RESEARCH.md).
-Конкретные конфигурации, входы и ожидаемые результаты собраны в отдельном
-[каталоге пользовательских сценариев](ENUM_MAPPING_SCENARIOS.md).
 
 ## Объём и API
 
-Поддерживаются enum ↔ enum, enum ↔ integer, enum ↔ string, flags, aliases,
-nullable, Create/Update и IncludeBase. Целые типы: `sbyte`, `byte`, `short`,
-`ushort`, `int`, `uint`, `long`, `ulong`.
-Scalar Members также доступен для class/struct и кортежей → enum, включая
-nullable: пользователь явно выбирает вход конвенции или вычисляет результат.
-
-Вне объёма: автоматический reverse, общий числовой string-to-enum parsing,
-wire attributes, naming policies, коллекции и проекции. Строковые списки flags
-поддерживаются в обоих направлениях; настройка разделителей отложена.
-
-| API scalar enum-пары | Контракт |
-|---|---|
-| `Members` | Типизированные декларативные правила значений через C# expressions |
-| `ConstructUsing`, `ResolveUsing` | Обычный C# после null handling; можно сочетать с Members и читать начальный `result` |
-| `Construct`, `Resolve` | Не генерируются: структурного создания scalar-значения нет |
-| [Convert](../api/convert.md) | Обычный callback, владеющий всем алгоритмом, включая null handling |
-| `Map`, settings, `IncludeBase` | Существующие контракты с уточнениями ниже |
-
-Для enum/string/integer-направлений выше при default `MemberSelection.Auto`
-регистрация `Map<TSource, TDestination>()` уже сопоставляет значения по конвенции,
-без вызова `Members`. У object/tuple нет неявного выбора enum-свойства или элемента.
-Граница определяется видом mapping: enum-to-DTO не теряет object construction
-из-за enum source. Отдельных `Values`, `Flags`, `MapValue`, `Inherited` не нужно.
+Поддерживаются enum ↔ enum, enum ↔ string, enum ↔ integer, flags, aliases,
+nullable, Create/Update и IncludeBase. Integer: sbyte, byte, short, ushort,
+int, uint, long, ulong. Class/struct, ValueTuple и System.Tuple → enum получают
+scalar Members с явным выбором входа; enum → object/tuple сохраняет структурный API.
 
 ```csharp
 builder.Map<DomainStatus, ApiStatus>()
@@ -44,205 +22,152 @@ builder.Map<DomainStatus, ApiStatus>()
     });
 ```
 
-Специальные ветки имеют приоритет. Остальные значения получают конвенцию;
-`Unknown` возвращается только при её неуспехе. Завершающая ветка необязательна:
-без неё отсутствие результата приводит к
-[EnumMappingException](#ошибки-выполнения) на Create и Update.
+Специальные ветки выполняются первыми; остальные значения получают конвенцию.
+Unknown — fallback после её неуспеха. Без fallback отсутствие результата
+даёт EnumMappingException. При default MemberSelection.Auto конвенция работает
+и у регистрации без Members.
+
+| API scalar enum-пары | Назначение |
+|---|---|
+| Members | Декларативные правила значений, включая обычные выражения и управляющие конструкции |
+| ConstructUsing / ResolveUsing | Фабрика начального result; сочетается с Members, без Members её результат окончателен |
+| [Convert](../api/convert.md) | Обычный callback, владеющий всем алгоритмом и null handling |
+| Construct / Resolve | Не генерируются: scalar destination не имеет структурного создания |
+| Map, settings, IncludeBase | Существующий API с правилами ниже; новых Values/Flags/MapValue/Inherited нет |
+
+Вне объёма: автоматический reverse, общий numeric string parsing, wire attributes,
+naming policies, коллекции, проекции, настройка разделителей.
 
 ## Настройки
 
-Для enum-маппинга вводятся три независимые настройки:
-
-| Настройка | Вопрос | Значения и library default |
-|---|---|---|
-| `EnumMappingStrategy` | Что считать соответствием? | `Default`, **`ByName`**, `ByValue`, `ByValueAllowUndefined`; для integer-to-enum default — строгий `ByValue` |
-| `FlagsMappingMode` | Как обрабатывать исходные flags и выбранный вход конвенции? | `Default`, **`ByBit`**, `ByMask`; применимость к исходному проходу и фактическому входу конвенции определяется отдельно [ниже](#flagsmappingmode-и-выбранный-вход) |
-| `UnmappedEnumMemberValidation` | Какие enum-значения должны быть обработаны? | Существующий enum `UnmappedMemberValidation`: `Default`, `None`, **`Source`**, `Destination`, `Strict`; compile-time warnings |
+| Настройка | Значения и library default |
+|---|---|
+| EnumMappingStrategy | Default, ByName, ByValue, ByValueAllowUndefined; default зависит от фактического входа — таблица ниже |
+| FlagsMappingMode | Default, **ByBit**, ByMask; единица Members и способ flags-конвенции |
+| UnmappedEnumMemberValidation | Существующий enum UnmappedMemberValidation: Default, None, **Source**, Destination, Strict; compile-time warnings |
 
 ```csharp
 builder.Map<WireCode, StoredCode>()
     .EnumMappingStrategy(EnumMappingStrategy.ByValue);
 ```
 
-`ByName` — default enum-to-enum, включая E → E, и enum-to-string.
-`ByValue` строгий; `ByValueAllowUndefined` сохраняет любое представимое число.
-Критерий, единица обработки, отключение конвенции и проверка покрытия — разные
-вопросы. Ручной cast не заменяет настройку общей числовой конвенции.
-
-| Существующая настройка | Применение к enum |
+| Существующая настройка | Контракт |
 |---|---|
-| `MemberSelection.Auto` (default) / `Explicit` | Включает / отключает неявную конвенцию; явный `Auto()` работает в обоих случаях |
-| `UnmappedMemberValidation` | Coverage object/tuple members с прежним default `None`; enum coverage задаётся независимо через `UnmappedEnumMemberValidation` |
-| `MappingMode` | Default `CreateAndUpdate`; отключённая операция немедленно бросает исключение |
-| `NullSourceHandling`, `NullDestinationHandling` | Общие null policies; defaults `ReturnNull` и `Create`; ноль не является null |
-| `ConstructorSelection` | Для scalar destination общий default игнорируется; явная pair-настройка, включая `Default`, даёт `MORPH0023` |
-| `Flattening` | Не преобразует enum-имена; корректное значение не влияет на них, неверное effective value сохраняет обычную диагностику |
-| `UnknownDerivedTypeHandling` | Не относится к неизвестному enum-числу; scalar-пары не получают derived dispatch |
+| MemberSelection.Auto / Explicit | Default Auto включает неявную конвенцию; Explicit отключает только её. Явный Auto доступен всегда |
+| UnmappedMemberValidation | Только object/tuple members, прежний default None; независима от enum coverage |
+| MappingMode | Default CreateAndUpdate; отключённая операция немедленно бросает |
+| NullSourceHandling / NullDestinationHandling | Defaults ReturnNull / Create; zero не является null |
+| ConstructorSelection | Scalar: общий default игнорируется, явная pair-настройка, включая Default, даёт MORPH0023 |
+| Flattening | Не меняет enum-имена; неверное effective value сохраняет обычную диагностику |
+| UnknownDerivedTypeHandling | Не относится к неизвестному enum-числу; scalar-пары не получают derived dispatch |
 
-Дополнительные настройки fallback, overflow, runtime validation и ignore-case
-не вводятся; нет `Auto(fallback: ...)` или `Auto(value)`.
-Числовую допустимость выбирает стратегия, реакцию на отсутствие соответствия — `Members`.
+Нет новых настроек fallback, overflow, runtime validation, ignore-case,
+а также Auto(fallback: ...) и Auto(value). Допустимость числа задаёт стратегия,
+реакцию на неуспех — Members.
 
 ### Наследование и применимость
 
-Обычный [precedence](../settings/README.md#precedence): текущая пара → included
-пары от ближайшей → текущий mapper → подключённые base mappers от ближайшего
-→ MSBuild → library default. Каждая настройка разрешается независимо.
+Для каждой настройки действует общий [precedence](../settings/README.md#precedence):
+текущая пара → included пары от ближайшей → текущий mapper → подключённые base
+mappers от ближайшего → MSBuild → library default. Базы подключаются через
+base.Configure и IncludeBase. Последняя запись уровня побеждает; положение
+mapper-level вызова относительно Map не влияет.
 
-`UnmappedEnumMemberValidation` использует эти же уровни и MSBuild-свойство
-`MorphantUnmappedEnumMemberValidation`. `Default` ищет только enum-настройку
-на следующих уровнях; если конкретного значения нет, результат — `Source`.
-Значение обычной `UnmappedMemberValidation` не подхватывается ни на одном уровне.
-Явный `None` отключает enum coverage, включая унаследованный `Strict`.
+Default продолжает поиск, а не сбрасывает наследование. Для строгого режима поверх
+ByValueAllowUndefined нужен ByValue, для побитового поверх ByMask — ByBit.
+Pair-настройка базы выше настройки текущего mapper; локальная pair-настройка выше обеих.
 
-- `Default` продолжает поиск, а не сбрасывает наследование. Для сброса
-  унаследованного ослабленного режима нужен `ByValue`, для `ByMask` — `ByBit`.
-- Последняя запись одного уровня побеждает; положение mapper-level вызова
-  относительно `Map` не влияет. База участвует через `base.Configure` и `IncludeBase`.
-- Included pair выше mapper: mapper-level `Explicit` не перебивает её `Auto`;
-  pair-level `Explicit` перебивает, последующий `Default` возвращает наследование.
+UnmappedEnumMemberValidation использует свою цепочку и MSBuild-свойство
+MorphantUnmappedEnumMemberValidation: Default нигде не подхватывает обычную
+UnmappedMemberValidation; отсутствие значения даёт Source. None отключает coverage,
+включая унаследованный Strict.
 
-| Направление | `EnumMappingStrategy` | `FlagsMappingMode` |
+| Направление | EnumMappingStrategy | FlagsMappingMode |
 |---|---|---|
-| Enum → enum | Все стратегии; default `ByName`; при `[Flags]` только с одной стороны — правила целого значения | Только когда оба enum имеют `[Flags]`, включая nullable underlying types |
-| Enum → string | Все стратегии; default `ByName`; числовые режимы дают одинаковое представление | Применима только для flags source под ByName; числовые режимы обрабатывают целую маску |
-| Integer → enum | `ByValue` / `ByValueAllowUndefined`; default `ByValue` | Неприменима; целое число, для flags destination — допустимость маски |
-| Enum → integer | `ByValue` (default) / `ByValueAllowUndefined`; оба переносят число с проверкой диапазона, без требования объявленности source | Неприменима |
-| String → enum | `ByName` (default); конвенция CLR-имён, числовые стратегии неприменимы | Для flags destination: ByBit — токены, ByMask — исходная строка; иначе неприменима |
+| Enum → enum | Все; default ByName, включая E → E | Когда оба enum имеют Flags, включая nullable underlying types |
+| Enum → string | Все; default ByName, числовые стратегии дают одинаковый текст | Только flags source под ByName; числовой режим форматирует целую маску |
+| Integer → enum | ByValue (default), ByValueAllowUndefined | Неприменим: целое число, для flags destination проверяется допустимость маски |
+| Enum → integer | ByValue (default), ByValueAllowUndefined; одинаковый перенос числа с проверкой диапазона | Неприменим |
+| String → enum | ByName (default); числовые стратегии неприменимы | Для flags destination: ByBit — токены, ByMask — целая строка |
 
-Для FlagsMappingMode таблица определяет исходную единицу Members по
-зарегистрированной паре и способ обработки фактического входа конвенции.
-Object/tuple source остаётся целым; извлечённое значение подчиняется
-[правилу выбранного входа](#flagsmappingmode-и-выбранный-вход).
+Явная несовместимая pair-настройка, включая inherited, даёт MORPH0023.
+Несовместимый общий default игнорируется **без поиска нижней настройки**:
+mapper ByName поверх MSBuild ByValueAllowUndefined для integer → enum оставляет
+строгий library default ByValue. Некорректные значения настроек диагностируются.
 
-Явную неприменимую pair-настройку, включая унаследованную через IncludeBase,
-диагностировать по общему контракту `MORPH0023`; неприменимый общий default
-игнорируется. Для integer-to-enum явный `ByName` ошибочен; выигравший общий
-`ByName` оставляет строгий default.
-Resolver **не ищет заново** нижнюю числовую настройку: mapper-level `ByName`
-поверх MSBuild `ByValueAllowUndefined` всё равно даёт строгий `ByValue`.
-
-Using не превращает пару в Convert: применимая настройка допустима даже без
-Members или достижимого автоматического пути и может участвовать в IncludeBase.
-Без Members она не преобразует готовое значение фабрики. Остальные declarative
-settings сохраняют обычные проверки значений и применимости.
-
-`Convert` сохраняет полное владение алгоритмом: inherited declarative settings
-игнорируются, локальные несовместимые настройки диагностируются. `MappingMode`
-и `UnknownDerivedTypeHandling` остаются применимыми. Members с локальным Convert
-несовместим; обычный Convert не получает enum-конвенцию.
+Using не запускает конвенцию поверх готового результата и не запрещает совместимую
+настройку. Convert игнорирует inherited declarative settings; локальные несовместимые
+настройки диагностируются. MappingMode и UnknownDerivedTypeHandling остаются
+применимыми; локальный Convert несовместим с Members/Using.
 
 ### Стратегия для входа конвенции
 
-**Применимость EnumMappingStrategy и её library default определяются по
-статическому типу фактического входа конвенции и destination текущей пары.**
-В mapping switch это тип выражения перед switch, вне него — тип source.
-Тип не выводится из совпавшего pattern или runtime-значения внутри object.
-Регистрация пары и выбранный destination при этом не меняются; другие
-зарегистрированные mappings автоматически не вызываются. Используется столбец
-EnumMappingStrategy в таблице выше; `result switch` с enum-результатом относится
-к enum → enum.
+Стратегия и её library default определяются по **статическому типу входа конвенции**
+и destination текущей пары: перед mapping switch — тип его выражения, вне switch —
+source. Nullable рассматривается по underlying type; runtime object и совпавший
+pattern тип не меняют. Регистрация пары сохраняется, другой mapping не вызывается.
 
-Сначала обычный precedence выбирает настройку, сохраняя отличие явного выбора
-пары от общего default. Затем она проверяется для каждого автоматического пути:
+Сначала precedence выбирает настройку и её происхождение; затем таблица выше
+применяется к каждому автоматическому пути. Совместимое конкретное значение
+сохраняется, включая inherited; при отсутствии подходящего общего значения
+выбирается library default для этого пути. Поэтому enum и int в разных путях
+могут получить разные defaults, но явная стратегия пары остаётся одной.
 
-- Применимое конкретное значение сохраняется, включая выбор из IncludeBase.
-  Смена типа входа не сбрасывает `ByValue` или `ByValueAllowUndefined` в `ByName`.
-- Несовместимый явный выбор пары даёт `MORPH0023`, а не другую стратегию или
-  fallback. Диагностика указывает стратегию, типы входа и destination и
-  соответствующий switch/Auto; для наследования также источник настройки.
-- Общие mapper/MSBuild defaults сохраняют правила применимости выше: несовместимый
-  общий default игнорируется без повторного поиска нижней настройки.
-- Если применимая настройка не получена, library default выбирается здесь, а не
-  заранее по исходной регистрации. `Default` по-прежнему продолжает наследование.
+Все реальные автоматические пути должны ей соответствовать, включая Auto<T>
+и inherited Auto. Guard, fallback и текущий runtime-вход не скрывают несовместимость.
+MORPH0023 указывает стратегию, типы, switch/Auto и источник inherited-настройки.
 
-Правило одинаково для неявной конвенции, `Auto()` и `Auto<T>()`, включая
-унаследованные Auto. Поэтому при разных типах входов library defaults могут
-различаться; явно выбранная стратегия остаётся одной для текущей пары и должна
-подходить всем её автоматическим путям после композиции. Настройки и defaults
-уровня объявления Auto отдельно не сохраняются.
+Если автоматических путей нет, достаточно совместимости с зарегистрированной
+парой **либо** одним статическим входом mapping switch после композиции.
+При Explicit совместимая настройка остаётся неактивной; без Members проверяется
+исходная пара. Прямые результаты не получают конвенцию или validation стратегии.
 
-Проверяется конфигурация, а не только путь конкретного runtime-вызова:
-fallback и guard не скрывают несовместимость существующего автоматического пути.
-При `MemberSelection.Explicit` неявного пути нет, но явный Auto проверяется.
-Прямые результаты не получают конвенцию и проверку её стратегии. Если
-автоматических путей вообще нет, настройка допустима, если подходит
-зарегистрированной паре либо хотя бы одному статическому входу mapping switch
-после композиции. Выбранные типы учитываются и при Explicit: совместимая
-настройка остаётся неактивной, её удаление не требуется. Без Members остаётся
-проверка зарегистрированной пары. Реальные автоматические пути по-прежнему
-должны быть совместимы с выбранной стратегией каждый.
-
-Отсутствие поддерживаемого преобразования и несовместимость настройки — разные
-случаи. Например, для string → string или integer → string enum-конвенции нет:
-неявный шаг пропускается, явный Auto диагностируется. Нового общего преобразования
-строк, чисел или object здесь нет. Единицу обработки FlagsMappingMode это правило
-не переопределяет; обработка составного вычисленного входа ByBit
-описана [ниже](#составной-вычисленный-вход-в-bybit).
-Примеры смены типа, настроек и наследования —
-[сценарии 143–149](ENUM_MAPPING_SCENARIOS.md#стратегия-и-тип-входа-конвенции).
+Неподдерживаемая конвенция отличается от несовместимой настройки: для object/tuple,
+string → string, integer → string/integer неявный шаг отсутствует, явный Auto
+диагностируется. Новых общих преобразований здесь нет.
+Примеры — [143–149](ENUM_MAPPING_SCENARIOS.md#стратегия-и-тип-входа-конвенции),
+[190–191](ENUM_MAPPING_SCENARIOS.md#совместимые-настройки-и-aliases).
 
 ### FlagsMappingMode и выбранный вход
 
-Один effective FlagsMappingMode выбирается обычным precedence; library default
-для применимого flags-преобразования — ByBit. Он определяет две части алгоритма:
+Один effective mode действует на всю пару, включая inherited rules:
 
-- Исходный проход Members — по зарегистрированной паре, как в таблице выше.
-  Object/tuple → enum получает целый объект/кортеж один раз; извлечение свойства
-  не создаёт дополнительных проходов Members или IncludeBase.
-- Способ встроенной конвенции — по статическому типу её фактического входа
-  и destination. Flags-маска под ByBit переводится по физическим битам;
-  под ByMask — целиком. Integer-вход остаётся целым числом.
+| Что определяется | Основание |
+|---|---|
+| Исходный проход Members | Зарегистрированная пара по таблице применимости |
+| Встроенная flags-конвенция | Статический тип выбранного входа и destination; ByBit — биты, ByMask — целая маска |
 
-Явная pair-настройка, в том числе унаследованная, допустима, если она применима
-к исходному проходу или flags-преобразованию хотя бы одного статического входа
-mapping switch после композиции, включая Explicit без Auto.
-Если таких применений нет, действует MORPH0023; неприменимый общий default
-игнорируется. Выбранные типы анализируются как конфигурация, независимо
-от конкретного runtime-входа. Отключение конвенции не запрещает совместимый режим;
-он остаётся неактивным. Без выбранных входов остаётся применимость исходной пары.
-Наличие integer/обычного enum-входа рядом с flags-путём не превращает его
-в побитовый: режим действует там, где применим, включая inherited Auto.
+Object/tuple → enum получает целый source один раз. В request.Access switch
+patterns видят полную маску: Read не совпадает с Read \| Write. ByBit-конвенция
+переводит её биты сама, без повторения Members. Для пользовательских правил
+на каждом бите нужен nested Map в flags-пару.
 
-В `request.Access switch`, где Access — flags enum, patterns проверяют одну
-полную маску. `Read => ...` не обрабатывает Read внутри Read | Write.
-Если достигнута ByBit-конвенция, она переводит биты встроенными правилами,
-без повторного запуска пользовательских веток. Явные whole-mask результаты
-окончательны. Для пользовательских правил на каждом бите служит явный nested
-Map в зарегистрированную flags-пару.
+В request.Text switch patterns видят полную строку. Конвенция в **обоих** режимах
+разбирает весь список CLR-имён; ByMask не требует единственного имени. Для правил
+на каждом токене нужен nested Map в string → flags пару. Integer-вход всегда целый.
 
-Для `request.Text switch` с string-входом patterns видят полную выбранную
-строку. Встроенная конвенция разбирает список CLR-имён с обычными разделителями,
-trim и нулевыми токенами. ByMask сохраняет существующий разбор всего списка;
-он не требует одного имени вместо списка. Поскольку внешний Members не
-повторяется для токенов, оба режима здесь дают одинаковый результат встроенного
-разбора и одну общую границу fallback. Правила для каждого токена доступны
-через nested Map в string → flags пару с ByBit.
+Явный mode допустим для исходного прохода либо flags-преобразования хотя бы одного
+выбранного статического входа, включая Explicit без Auto. Иначе — MORPH0023;
+неприменимый общий default игнорируется. Если режим нужен только выбранному входу,
+Explicit оставляет его неактивным; режим исходного прохода действует и при Explicit.
+Без выбранных входов проверяется исходная пара.
 
-Выражение входа вычисляется один раз при достижении switch. Любой
-непереведённый бит/токен означает неуспех **всей** попытки конвенции; частичный
-OR отбрасывается, обычный fallback вычисляется один раз и задаёт весь результат.
-Явный Auto/Auto<T> при неуспехе сразу бросает. Explicit отключает только неявную
-конвенцию; пользовательские вычисления сохраняют свой порядок.
-
-Внешний Ignore сохраняет смысл исходного прохода: для object/tuple → enum
-это scalar Ignore с доступным initial result, даже когда сама конвенция
-использует ByBit. Фабрика, null policies, previous/result и Create/Update
-следуют общему lifecycle. Примеры —
-[сценарии 179–184](ENUM_MAPPING_SCENARIOS.md#flags-конвенция-для-выбранного-входа).
+Вычисленный вход образует **одну попытку конвенции**: любой непереведённый бит/токен
+отменяет её частичный результат. Обычный fallback задаёт результат целиком, Auto
+бросает. Внешний Ignore сохраняет единицу исходного Members, поэтому у object/tuple
+он сохраняет initial result даже при ByBit-конвенции.
+Примеры — [179–184](ENUM_MAPPING_SCENARIOS.md#flags-конвенция-для-выбранного-входа).
 
 ## Members: правила и конвенция
 
-Members — декларативный DSL, не runtime delegate из Configure. Внутри Members
-конвенцией дополняется только switch, непосредственно задающий enum-правила.
-Вложенные switch справа от `=>`, пользовательские методы и Using/Convert остаются C#.
+Members — декларативный DSL, не runtime delegate из Configure. Конвенция дополняет
+только switch, непосредственно задающий правила результата. Вложенный switch
+справа от выбранной ветки, пользовательские методы, Using и Convert остаются C#.
 
 ### Object/tuple → enum
 
-При enum destination Members возвращает scalar-результат и для обычного
-object/tuple source. Поддерживаются class, struct, ValueTuple и System.Tuple,
-включая nullable формы и все четыре callback-формы ниже. Source после обычной
-null policy доступен целиком; Members не повторяется для его свойств или элементов.
+Scalar Members доступен для class/struct, ValueTuple и System.Tuple, включая
+nullable и все четыре callback-формы. Пользователь выбирает вход или готовый результат:
 
 ```csharp
 builder.Map<Order, ApiStatus>()
@@ -252,1050 +177,580 @@ builder.Map<Order, ApiStatus>()
     });
 ```
 
-Здесь patterns и конвенция получают одно значение order.Status. Active
-сопоставляется по имени, Cancelled — явным правилом; необработанный Legacy
-бросает EnumMappingException. Отдельная регистрация DomainStatus → ApiStatus
-для этой конвенции не требуется. Выбор стратегии следует
-[статическому типу выбранного входа](#стратегия-для-входа-конвенции).
-
-Whole-object/tuple switch допускает property/tuple patterns и явные результаты.
-Конвенция не выбирает компонент за пользователя; Auto для неподдерживаемого
-целого object/tuple-входа диагностируется. Для вызова зарегистрированной пары
-подходит `.Members(order => Map<ApiStatus>(order.Status))`: это обычный
-[nested Map](#вложенное-использование), включая выбор Create/Update по result.
-
-Прямое enum-выражение, в том числе собранная flags-маска, задаёт готовый результат.
-Using, previous/result, Ignore, IncludeBase той же пары и null handling сохраняют
-общие scalar-контракты. Enum → object/tuple по-прежнему использует структурный
-destination и обычные Construct/Resolve/Members. Примеры —
-[сценарии 170–175](ENUM_MAPPING_SCENARIOS.md#members-для-objecttuple--enum).
+Patterns и конвенция получают order.Status; отдельная enum-пара для конвенции
+не нужна. Whole-object/tuple patterns допустимы, но не выбирают скрытое enum-поле:
+Auto для целого неподдерживаемого входа диагностируется. Для зарегистрированной
+пары служит явный Map<ApiStatus>(order.Status). Прямой enum-результат, включая
+собранную flags-маску, окончателен. Using, IncludeBase и lifecycle общие;
+enum → object/tuple сохраняет структурные Construct/Resolve/Members.
+Примеры — [170–175](ENUM_MAPPING_SCENARIOS.md#members-для-objecttuple--enum).
 
 ### Где применяется конвенция
 
-| Форма | Автоматическое поведение |
+| Форма | Поведение |
 |---|---|
-| Регистрация без Members и Using при `MemberSelection.Auto` | Конвенция для source после null handling; без соответствия — mapping exception |
-| `ConstructUsing` / `ResolveUsing` без Members | Выбранное по lifecycle значение окончательно; конвенция не перезаписывает его преобразованием source и не проверяет повторно |
-| Прямое обычное выражение Members | Готовый результат текущей единицы; нет конвенции до или после него |
-| Mapping switch при `MemberSelection.Auto` | Специальные правила, затем конвенция для входа switch, затем fallback |
-| Mapping switch при `MemberSelection.Explicit` | Только явные правила и fallback; явный Auto остаётся доступен |
-| Явный `Auto()` / `Auto<T>()` | Запрос конвенции; неуспех немедленно бросает, без перехода к другим правилам |
+| Без Members и Using | При Auto — конвенция source после null handling |
+| Using без Members | Выбранный по lifecycle результат окончателен |
+| Прямое выражение Members | Готовый результат текущей единицы, без конвенции до/после |
+| Mapping switch | Специальные правила → при Auto конвенция → ближайший fallback |
+| Явный Auto()/Auto<T>() | Запрос конвенции и при Explicit; неуспех немедленно бросает |
 
-Конвенция преобразует выбранный вход в destination текущей пары. Она не ищет
-зарегистрированный пользовательский mapping; для него служит `Map`.
-Явный результат выбранной ветки также окончателен: конвенция не преобразует
-и не проверяет его повторно.
+Конвенция не ищет зарегистрированную пользовательскую пару. Явный результат
+правила не преобразуется и не проверяется повторно.
 
 ### Входы и приоритет
 
-Сохраняются четыре формы callback:
-
-| Форма | Доступные значения |
+| Callback | Дополнительные доступные значения |
 |---|---|
-| `source => rules` | Non-null source после null policy |
-| `(source, previous) => rules` | Дополнительно `Option` исходного non-null destination; `None` на Create и Update с null destination |
-| `(source, previous, result) => rules` | Дополнительно реально выбранный начальный non-null destination |
-| `(source, previous, result, context) => rules` | Дополнительно существующий DSL context с `Operation`, без полного runtime `MappingContext` |
+| source => rules | Non-null source после null policy |
+| (source, previous) => rules | Option исходного non-null destination; None на Create и Update с null destination |
+| (source, previous, result) => rules | Реально выбранный начальный non-null destination |
+| (source, previous, result, context) => rules | DSL context с Operation, без полного runtime MappingContext |
 
-В flags-to-flags и flags-to-string под ByName единица source — бит при ByBit
-и маска при ByMask; в string-to-flags — токен и полная строка соответственно.
-`previous` и `result` остаются полными destination-значениями.
+Для каждой исходной единицы: локальные специальные ветки → специальные ветки
+IncludeBase от ближайшей → одна неявная конвенция при Auto и поддерживаемом входе
+→ ближайший fallback → EnumMappingException, если результата нет.
 
-Для каждой единицы правила выполняются в порядке:
-
-1. Локальные специальные ветки в написанном порядке.
-2. Специальные ветки IncludeBase, от ближайшего уровня к дальнему.
-3. Одна неявная конвенция с effective settings, если selection — Auto и для
-   выбранного входа switch поддерживается конвенционное преобразование в destination.
-   При композиции вход выбирается по [правилу IncludeBase](#includebase).
-4. Ближайшая завершающая ветка; при отсутствии — mapping exception.
-
-`Explicit` пропускает только шаг 3. **Вход конвенции — значение выражения перед
-mapping switch**. Оно вычисляется один раз на своём месте; patterns, неявная
-конвенция и явный Auto этого switch используют одно полученное значение.
-
-| Выражение перед switch | Вход patterns и конвенции |
-|---|---|
-| `source` | Текущее значение source при входе в switch |
-| `source.Trim()` / `Normalize(source)` | Результат вычисления, включая trim или нормализацию |
-| `normalized` | Значение пользовательского local при входе в switch; неявная конвенция при Auto сохраняется |
-| `result` | Начальный destination; конвенция работает с destination → destination |
-| `(source, result)` / `(result, source)` или произвольный объект | Patterns проверяют целое значение; без поддерживаемой конвенции неявный шаг отсутствует, явный Auto диагностируется |
-
-Вне mapping switch явный Auto использует **текущее source в точке вызова**.
-Сохранённого первоначального source для обхода пользовательских изменений нет.
-Типизированный Auto меняет только target typing, а не выбор входа.
-Новой формы `Auto(value)` нет: вход задаётся выражением перед switch.
-
-У tuple/object не выбирается первый, enum-типизированный или названный source
-компонент. Если условию нужны другие значения, они доступны в `when`, а перед
-switch остаётся значение для конвенции. Явные результаты tuple/object switch
-допустимы, в том числе в [object/tuple → enum](#objecttuple--enum).
-
-Например, при source = Active и фабричном result = Pending:
-`result switch { _ => Auto() }` даёт Pending, как и `_ => result`.
-`source switch { _ => result }` при Auto даёт Active, при Explicit — Pending.
-Для неназванного result = 123 строгая E → E конвенция неуспешна:
-`result switch { _ => result }` сохраняет 123 через fallback, а `_ => Auto()` бросает.
-Конвенция не создаёт начальный result и не вычисляется заранее ради него.
+**Вход switch вычисляется один раз на своём месте.** Patterns и Auto этого switch
+используют то же значение: source, Normalize(source), local или result.
+У result switch конвенция имеет направление destination → destination.
+Tuple/object не выбирает первый, именованный или enum-компонент; дополнительные
+условия можно вынести в guard. Auto вне switch получает текущее source в точке
+вызова; типизированная форма меняет только target typing.
 
 ### Null выбранного входа
 
-Если выражение перед mapping switch дало null, он сначала участвует в обычных
-patterns и guards. Для иначе поддерживаемого nullable enum/integer или string
-преобразования достигнутая конвенция неуспешна: null не сопоставляется по имени,
-не превращается в 0 или пустую строку и не распространяется в destination
-автоматически. Неявная конвенция переходит к обычному fallback; без результата
-бросается EnumMappingException. Выбранный Auto/Auto<T>, включая inherited Auto,
-на null сразу бросает EnumMappingException без перехода к другому fallback.
-То же относится к Auto вне switch, если пользователь изменил source на null
-после входных guards: используется его текущее значение.
+Null сначала участвует в patterns/guards. У иначе поддерживаемого nullable
+enum/integer или string-преобразования он означает неуспех конвенции, без
+автоматического null-result, нуля или пустой строки:
 
-`NullSourceHandling` применяется к корневому source зарегистрированного mapping
-до Members. Он не запускается повторно для null-свойства, элемента кортежа,
-local или результата Normalize. Фабрика и уже выполненные пользовательские
-вычисления не повторяются и не откатываются; null destination policy также
-не запускается заново. У явного nested Map действует lifecycle его собственной
-зарегистрированной пары.
+| Путь | Поведение |
+|---|---|
+| Неявная конвенция | Обычный fallback; без результата — EnumMappingException |
+| Выбранный Auto, включая inherited и вне switch | EnumMappingException немедленно |
+| Явное null => null | Terminal null при nullable destination |
+| Явное значение/throw | Написанный результат/исключение |
 
-`null => null` явно возвращает null при nullable destination;
-`null => Target.Unknown` или явный throw задают другое поведение. Прямое
-выражение результата Members и terminal null фабрики сохраняют свои контракты.
-Null **входа конвенции** сам по себе не является null **результата правила**:
-в исходном ByBit он передаёт управление fallback текущего прохода, тогда как
-возвращённый nullable-result null завершает всю операцию. Ignore сохраняет
-[смысл исходного прохода](#ignore).
+NullSourceHandling относится только к корневому source до Members. Null свойства,
+элемента, local или результата метода не повторяет guards, фабрику или destination
+policy. Пользовательское присваивание source = null после guards также не
+запускает их заново. Nested Map имеет lifecycle своей пары.
 
-Применимость стратегии определяется по статическому типу, включая underlying
-тип Nullable<T>; runtime-null не делает неподдерживаемый Auto допустимым.
-Null не является объявленным enum-member и не добавляется в Source coverage.
-Пользовательские `.Value`, `.Trim()` и другие выражения сохраняют обычные C#
-исключения: ошибка их вычисления не подменяется неуспехом конвенции.
-Примеры — [сценарии 185–189](ENUM_MAPPING_SCENARIOS.md#null-выбранного-входа-конвенции).
+Null входа ByBit передаёт управление fallback текущего прохода; null **результата**
+завершает всю nullable-операцию. Null не добавляется к enum Source coverage и не
+делает неподдерживаемый Auto допустимым. Явные .Value, .Trim() и другие выражения
+сохраняют собственные C# исключения. Примеры —
+[185–189](ENUM_MAPPING_SCENARIOS.md#null-выбранного-входа-конвенции).
 
 ### Ветки, Auto и вычисления
 
-| Декларация | Поведение |
+| Запись | Роль |
 |---|---|
-| `Cancelled => Deleted` | Явное соответствие до конвенции |
-| `Corrupt => throw ...` | Явный запрет; исключение не считается неуспехом конвенции |
-| `Active => Auto()` | Явный запрос конвенции, включая Explicit; неуспех сразу бросает |
-| `_ => Unknown` | Fallback после конвенции; при Explicit — после явных правил |
-| `_ => Auto()` | Конвенция для остатка; без соответствия — исключение |
-| `_ when condition => ...` | Специальная ветка до конвенции; false продолжает поиск |
+| Cancelled => Deleted; Corrupt => throw ... | Специальное соответствие/запрет до конвенции |
+| Active => Auto() | Явная конвенция; её неуспех не продолжает поиск правил |
+| _ when condition => ... | Специальная ветка; false позволяет базе/конвенции обработать тот же вход |
+| Завершающий _ => expression или var remaining => expression без guard | Fallback после конвенции, при Explicit — после специальных правил |
+| Завершающий _ => Auto() | Один автоматический путь этого switch, без повторной попытки после неуспеха |
 
-Завершающий `_ => expression` или `var remaining => expression` без guard —
-fallback. `or` объединяет случаи; patterns и guards не переупорядочиваются.
-Даже после false guard для Active конвенция может сопоставить Active.
-Bare завершающий Auto и неявное дополнение одного switch образуют **один**
-автоматический путь: не повторять конвенцию после неудачи и не возвращаться
-к другим веткам после неуспешного явного Auto. Унаследованный fallback Auto
-с другим входом остаётся отдельным явным запросом по правилам IncludeBase ниже.
+Or-patterns, guards, блоки, if/else, switch statements, conditional expressions,
+логические условия, locals и неизменяемые aliases сохраняют scopes и short-circuit.
+Возвращаемый mapping switch остаётся таковым после переноса в local; вложенный
+switch внутри выбранного результата остаётся C#. Требования C# к return-путям
+сохраняются. Method group и полный imperative algorithm задаются Using/Convert.
 
-`Members(_ => Auto())` явно запрашивает конвенцию. Прямое
-`Members(source => Compute(source))` задаёт результат для всей текущей единицы
-и может завершить поиск до inherited rules и конвенции. Поддерживаются основные
-декларативные управляющие конструкции остальных типов: блоки, locals и их aliases,
-if/else, switch statements, условные expressions, логические условия и guards.
-Сохраняются их scopes, short-circuit и действующие statement boundaries.
-Перенос возвращаемого mapping switch в неизменяемый local alias не отключает
-конвенцию. Вложенный switch внутри выбранного результата остаётся обычным C#.
-Требования C# к завершённости return-путей сохраняются; method group и полный
-imperative algorithm задаются Using/Convert.
-
-Выражение перед switch вычисляется один раз на своём месте. Сохраняются scopes,
-locals, комментарии, независимые вычисления, условность guards и результатов.
-Изменение source до switch меняет его вход. Изменение переменной в guard не
-меняет уже вычисленное значение switch: patterns и Auto сохраняют этот вход,
-а обычные выражения видят текущее состояние переменных. Вне switch Auto видит
-изменённое source. Exceptions пользователя не перехватываются для fallback.
-Дополнение перед `_` — осознанная
-DSL-семантика: [обычный C# switch](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/switch-expression)
-сам конвенцию не добавляет.
+Прямой Members(source => Compute(source)) завершает текущий путь до inherited
+rules/конвенции. Вычисления, комментарии и их написанный порядок сохраняются;
+независимые вызовы не объединяются. Изменение source до switch меняет вход;
+присваивание в guard не меняет уже захваченное значение switch, но видно обычным
+выражениям. User exceptions не перехватываются ради fallback.
+Дополнение перед fallback — осознанное отличие от
+[обычного C# switch](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/switch-expression).
 
 ### IncludeBase
 
-Объединяются правила **той же пары типов** по обычным
-[правилам наследования](../configuration-inheritance.md). Новый Members не
-стирает базовые overrides. Локальный fallback заменяет только базовый fallback;
-без локального наследуется ближайший. Это относится и к `throw`, и к `Auto()`.
+Включаются правила **той же пары** по общему
+[контракту наследования](../configuration-inheritance.md). Локальный Members
+сохраняет inherited overrides; локальный fallback заменяет только ближайший
+inherited fallback, включая throw/Auto. Уровень важнее специфичности: локальный
+_ when true предшествует именованному case базы; false допускает базовую ветку.
+Специальный Auto завершает поиск, завершающий Auto остаётся после всех специальных веток.
 
-Уровень важнее специфичности pattern: локальный `_ when condition` при true
-предшествует базовому именованному case. False guard позволяет проверить
-тот же case в базе. `Cancelled => Auto()` перекрывает базовый Cancelled;
-завершающий `_ => Auto()` остаётся после **всех** специальных веток.
+| Что наследуется/выбирается | Правило |
+|---|---|
+| Вход единственной неявной конвенции | Локальный mapping switch выбранного пути; без локального Members — ближайший inherited Members |
+| Неподдерживаемый локальный вход | Неявный шаг отсутствует; подходящий вход базы вместо него не ищется |
+| Входы базовых правил | Собственные выражения и контексты; локальный Normalize не подменяет source базы |
+| Inherited fallback и Auto | Используют вход, locals и pattern bindings своего switch; Auto получает effective settings текущей пары |
+| Вычисления уровня | Лениво при достижении, один раз; fallback использует уже полученные значения |
+| Result | Один начальный result для всех уровней; выбранная ветка не становится входом следующего уровня |
 
-Каждый switch сохраняет свой вход, patterns, guards и контекст вычислений.
-Результат `Normalize(source)` локального switch не подставляется вместо source
-в базовые правила. Базовый `source switch` проверяет собственное source,
-даже если локальный switch написан над result или нормализованным значением.
+Поэтому локальная неявная попытка может продолжиться inherited **явным** Auto
+с другим входом. Например, локальный Legacy не переводится, но базовый Auto
+для исходного Pending возвращает Pending. Без этого fallback было бы исключение;
+локальный _ => Auto() заменяет его и бросает для Legacy. Цепочки неявных конвенций нет.
 
-**Вход единственной неявной конвенции задаёт локальный mapping-switch выбранного
-пути Members.** Если локального Members нет, его задаёт ближайший унаследованный
-Members. Прямое явное значение или Auto сохраняет обычный контракт завершения
-пути; дополнительный switch ради наследования не появляется.
-При Explicit неявный шаг пропускается. Если вход локального switch — tuple/object
-без поддерживаемой конвенции, шаг тоже пропускается: подходящий вход в базе
-вместо него не подбирается. После неуспеха не запускаются неявные конвенции
-остальных уровней; выполняется ближайший fallback либо бросается mapping exception.
-
-Унаследованный fallback сохраняет собственные locals и pattern bindings:
-`var remaining => Compute(remaining)` получает вход switch, в котором написан.
-**Унаследованный Auto также использует вход своего switch**, как в специальной
-ветке, так и в fallback. Неуспех выбранного явного Auto сразу бросает; перехода
-к другой конвенции или более дальнему fallback нет. Настройки остаются effective
-settings текущей пары, а не отдельными настройками уровня объявления Auto;
-применимость стратегии и её default определяются
-[типом входа этого Auto](#стратегия-для-входа-конвенции).
-
-Поэтому одна неявная попытка может сопровождаться явной попыткой для другого
-входа. Например, source = Pending, локальный Normalize вернул Legacy,
-специальные ветки не совпали: локальная ByName-конвенция неуспешна, а базовый
-`source switch { _ => Auto() }` возвращает Pending. Без базового fallback было
-бы исключение; с базовым `_ => Unknown` — Unknown. Отсутствие fallback и
-`_ => Auto()` в базе могут различаться при разных входах уровней.
-Локальный `_ => Auto()` заменяет базовый fallback и в этом примере бросает для
-Legacy; локальный `_ => Unknown` возвращает Unknown. Новых маркеров или настроек нет.
-
-Пример при ByName: база задаёт Cancelled → Deleted, Suspended → Disabled,
-fallback Unknown; локально Cancelled → Archived и fallback Unrecognized.
-Результаты: Cancelled → Archived, Suspended → Disabled, общее Active → Active,
-неизвестное Legacy → Unrecognized. False у локального guard Cancelled даёт Deleted.
-
-Locals и вход switch каждого уровня вычисляются один раз при достижении уровня;
-база достигается лениво. Если локальная специальная ветка дала результат, базовые
-вычисления не выполняются. Возврат к fallback использует уже полученные значения:
-`var policy = GetPolicy(source)` не вызывается повторно ради `_ => policy.Unknown`.
-Вход базового switch не вычисляется повторно ради унаследованного Auto.
-Исключения пользовательских вычислений сохраняются, даже если последующая
-неявная конвенция могла бы успешно сопоставить локальный вход.
-Результат выбранной ветки не передаётся следующему уровню как новый вход.
-Все уровни видят один начальный result; их входы switch могут различаться.
-Сценарии с разными входами, fallback и эффектами собраны в
-[каталоге, 136–142](ENUM_MAPPING_SCENARIOS.md#includebase-и-разные-входы-switch).
-
-Using наследуется для точной пары и сочетается с Members; inherited Convert
-или фабрика не превращаются в enum rules. После композиции сохраняются проверки
-доступности result, нескольких destination methods, конфликтов с Convert,
-helper accessibility и cross-assembly inheritance. Нового маркера Inherited нет.
+Прямой результат/Auto сохраняет завершение пути; дополнительный switch ради
+наследования не создаётся. Исключение базового вычисления сохраняется, даже если
+позднейшая локальная конвенция могла бы сработать. Using наследуется для точной пары;
+проверки доступности result, конфликтов destination methods/Convert, accessibility
+и cross-assembly inheritance остаются общими. Примеры —
+[136–142](ENUM_MAPPING_SCENARIOS.md#includebase-и-разные-входы-switch).
 
 ## Lifecycle и Using
 
-Порядок: общие guards → начальный destination → проверка terminal null →
-Members → результат. Сохраняются [null policies](../settings/null-handling.md):
-source проверяется первым, null destination не превращает Update в Create.
-Nullable registration точная: автоматически искать underlying pair нельзя.
-`ReturnNull` для non-nullable enum destination даёт `default`, даже без
-объявленного нуля; это результат null policy, не конвенции.
-Null, полученный уже внутри Members, следует отдельному правилу
-[выбранного входа](#null-выбранного-входа).
+Порядок: общие guards → начальный destination → terminal-null check → Members
+→ результат. [Null source](../settings/null-handling.md) проверяется первым;
+Update с null destination остаётся Update. Ноль — имеющийся destination.
+Nullable value-type registration точная, underlying pair автоматически не ищется.
+ReturnNull для non-nullable enum возвращает default даже без объявленного нуля.
 
-| Метод | Create | Update с destination | Update с null destination и `NullDestinationHandling.Create` |
+| Метод | Create | Update с destination | Update с null destination, policy Create |
 |---|---|---|---|
-| ConstructUsing | Callback | Callback пропущен; result = previous | Callback; операция остаётся Update |
-| ResolveUsing | Callback с previous = None | Callback с исходным previous | Callback с previous = None |
+| ConstructUsing | Callback | Пропущен; result = previous | Callback, previous = None |
+| ResolveUsing | Callback, previous = None | Callback с исходным previous | Callback, previous = None |
 
-При NullDestinationHandling.Throw callback не вызывается. Ноль — имеющийся
-destination, а не отсутствие previous. Using принимает inline lambda, method
-group или delegate; контекстная форма получает полный MappingContext с Mapper.
+При NullDestinationHandling.Throw callback не вызывается. Using принимает inline
+lambda, method group или delegate; контекстная форма получает MappingContext с Mapper.
+Вызов фабрики сохраняется даже при неиспользуемом result: эффекты/исключения
+наблюдаемы, её null завершает операцию до Members. Null результата не повторяет policies.
 
-При `ConstructUsing` или `ResolveUsing` без Members выбранное по lifecycle
-значение окончательно: нет конвенции и проверки объявленности поверх него;
-coverage не анализирует тело фабрики. Null фабрики завершает операцию до Members,
-без повторных null policies. Вызов сохраняется,
-даже если Members не читает result или всегда возвращает другое значение:
-важны эффекты, исключения и terminal null.
+Result доступен только после фабрики либо из non-null Update destination.
+Без него диагностируется **чтение**, включая scalar Ignore; неиспользуемый параметр
+для доступа к Operation допустим. Нельзя подставлять ноль или запускать конвенцию
+заранее. Previous остаётся исходным destination. Замена результата через Members
+относится только к scalar mapping; порядок fluent-вызовов смысл не меняет.
 
-```csharp
-builder.Map<DomainStatus?, ApiStatus?>()
-    .MemberSelection(MemberSelection.Explicit)
-    .ResolveUsing((status, _) => LegacyConvert(status))
-    .Members((status, _, result) => status switch
-    {
-        DomainStatus.Cancelled when result == ApiStatus.Active
-            => ApiStatus.Deleted,
-        _ => result
-    });
-```
+При source = Active и фабричном result = Pending:
 
-`status` здесь non-null DomainStatus. Default null source возвращает null,
-не вызывая LegacyConvert. Явный null из правила также допустим для nullable
-destination. На Update previous остаётся исходным destination, result —
-выбранным фабрикой. В этом **source switch** без Explicit завершающее `_ => result`
-сохраняет фабричное значение только после неуспеха конвенции source → destination.
-Для корректировки результата фабрики можно выбрать `result switch`:
-
-```csharp
-.Members((status, previous, result) => result switch
-{
-    ApiStatus.Disabled => ApiStatus.Archived,
-    _ => result
-})
-```
-
-При default ByName Disabled станет Archived; Pending, Active и неназванное 123
-сохранятся независимо от status. Explicit для такой корректировки не нужен.
-При `_ => ApiStatus.Unknown` известный Pending всё ещё проходит конвенцию раньше
-fallback. Чтобы всегда вернуть Unknown, подходят прямое выражение либо Explicit.
-Прямое `Members(... => Normalize(result))` уже является полным явным правилом.
-Наличие Using и порядок fluent-вызовов не меняют смысл Members.
-
-Замена результата через Members ограничена scalar mapping.
-Result доступен только по пути, где начальное значение реально выбрано:
-фабрикой либо из имеющегося destination при Update. На Create без фабрики
-читать его нельзя; не подставлять ноль и не запускать конвенцию заранее.
-Диагностируется недоступное **чтение**, не неиспользуемый параметр:
-`(_, _, _, context) => ...` допустимо для доступа к Operation.
+| Members | Результат |
+|---|---|
+| result switch { _ => result } | Pending: конвенция result → result; неназванный result сохраняется через fallback |
+| result switch { _ => Auto() } | Pending; неназванный result бросает при строгой стратегии |
+| source switch { _ => result } | Active при Auto; Pending при Explicit |
+| Прямое Normalize(result) | Написанный результат без конвенции |
 
 ## Ошибки выполнения
 
-Для неуспеха выбора scalar-результата в поддерживаемых enum-парах используется
-один `Morphant.Exceptions.EnumMappingException : MappingException`.
-Он применяется и без Members, и при исчерпании правил, и при неуспехе выбранного
-Auto. Отдельные классы исключений для каждой причины и новые настройки реакции
-на ошибку не вводятся.
+Один `Morphant.Exceptions.EnumMappingException : MappingException` означает
+неуспех конвенции или отсутствие scalar-результата: без Members, после исчерпания
+правил (включая Explicit и вход без конвенции) либо при неуспехе выбранного Auto.
+Успешный fallback исключения не создаёт; unsupported **явный** Auto и несовместимая
+стратегия остаются ошибками конфигурации с обычными typed failure stubs.
 
-| Путь | Результат |
+| Данные ошибки | Контракт |
 |---|---|
-| Неявная конвенция неуспешна, fallback отсутствует | EnumMappingException |
-| При Explicit ни одно правило не подошло, fallback отсутствует | EnumMappingException; конвенция не запускалась |
-| Для допустимого object/tuple-входа mapping switch нет конвенции, правила не дали результата | EnumMappingException; значение не подменяется source или его компонентом |
-| Выбранный Auto()/Auto<T>() не нашёл соответствия | EnumMappingException немедленно, без другого fallback |
-| Поддерживаемый выбранный nullable/string-вход равен null | Неуспех конвенции; обычный fallback либо EnumMappingException, без повторной null source policy |
-| Неявная конвенция неуспешна, выбран обычный fallback | Его результат либо его собственное исключение |
+| Operation, SourceType, DestinationType | Из [MappingException](../../src/Morphant/Exceptions/MappingException.cs): операция и точная зарегистрированная пара, включая Nullable<T>; computed input их не заменяет |
+| Проверявшийся вход | Значение со статическим типом выражения: захваченный вход switch или текущий source вне него; у inherited Auto — его собственный вход |
+| Причина | Нет имени, недопустимое число, диапазон, неоднозначность, null либо отсутствие правила; пропущенная конвенция не описывается как неуспешная |
+| Составная попытка | Весь вход и проблемный бит/токен; исходный бит до Normalize не подставляется вместо computed mask |
+| Представление | Enum/integer — точное число и знак, необязательно имя; string — строковое значение; null — null со статическим типом; object/tuple — достаточно типа |
 
-`UnmatchedMappingSwitchException` сохраняет контракт mappings со структурным
-object/tuple destination.
-Для scalar enum-правил он не используется: switch может отсутствовать, а ветка
-с неуспешным Auto — уже совпасть. Вложенные обычные C# switch, Using и Convert
-сохраняют собственную семантику исключений.
+Сообщение не является машинным протоколом. Ради него нельзя повторять getters,
+Normalize, guards, фабрики, вызывать пользовательский ToString или исследовать поля.
+Runtime reflection не добавляется. Вложенный mapping сообщает свою пару/операцию,
+внешний не оборачивает исключение.
 
-Исключение наследует `Operation`, `SourceType` и `DestinationType` из
-[MappingException](../../src/Morphant/Exceptions/MappingException.cs).
-Типы остаются **точной зарегистрированной парой**, включая nullable; вычисленный
-тип входа конвенции их не заменяет. Для вложенного mapping это пара и операция
-того mapping, который завершился ошибкой; внешняя пара исключение не оборачивает.
-
-Сообщение указывает фактический проверявшийся вход, статический тип входного
-выражения и причину неуспеха: нет соответствия по имени, число недопустимо,
-выход за диапазон, неоднозначное соответствие, null входа конвенции либо
-отсутствие подходящего правила. Неоднозначность указывается и для enum-входа,
-и для строки; она не подменяется сообщением об отсутствии имени.
-Если неявный шаг пропущен из-за Explicit или отсутствия поддерживаемой
-конвенции, сообщение об исчерпании правил не описывает неудачную попытку
-конвенции. Выбранный явный Auto по-прежнему сообщает о своём неуспехе.
-Для enum/integer сохраняется точное число и знак; имя enum может дополнять число.
-Строка показывается как строковое значение.
-Null выбранного входа обозначается как null со статическим типом выражения;
-он не форматируется как пустая строка, ноль или содержимое исходного объекта.
-Точная формулировка сообщения не является машинным протоколом.
-
-Вход берётся из уже достигнутой точки отказа: это сохранённое значение mapping
-switch или текущее source для Auto вне switch. Для result switch им будет result;
-для унаследованного Auto — вход его собственного switch, даже после неуспеха
-локальной конвенции с другим входом. Если отказ относится к биту или токену
-внутри составного входа конвенции, сообщение указывает этот элемент вместе
-со входом попытки. Исходный бит до Normalize не подставляется вместо вычисленной
-маски. Ранее неуспешная попытка сама по себе не создаёт исключение, если
-последующее разрешённое продолжение успешно.
-
-Формирование сообщения не повторяет Normalize, getters, guards, фабрики или
-другие пользовательские вычисления. Содержимое object/tuple-входа не требуется
-форматировать: достаточно обозначить его тип; не вызывать пользовательский
-ToString и не исследовать поля ради текста. Runtime reflection не добавляется.
-
-Пользовательские исключения, включая явный throw и checked cast, передаются
-без оборачивания с исходным типом и stack trace. Ошибки конфигурации и lifecycle
-сохраняют [существующие исключения](../exceptions.md), в частности
-MappingConfigurationException, NullSourceException, NullDestinationException
-и MappingOperationNotSupportedException. Неподдерживаемый явный Auto или
-несовместимая стратегия остаются диагностикой конфигурации, а не причиной
-EnumMappingException при выполнении. Правила fallback, отсутствие частичного
-результата и сохранение уже выполненных эффектов не меняются.
-
-Тип исключения, сообщения и границы —
-[сценарии 159–163](ENUM_MAPPING_SCENARIOS.md#ошибки-enum-маппинга).
+User throw/checked cast сохраняют тип и stack trace. NullSourceException,
+NullDestinationException, MappingConfigurationException и отключённая операция
+сохраняют [общий контракт](../exceptions.md). UnmatchedMappingSwitchException
+остаётся у структурного destination; обычные C# switches, Using и Convert —
+со своими исключениями. Примеры —
+[159–163](ENUM_MAPPING_SCENARIOS.md#ошибки-enum-маппинга).
 
 ## Имена и строки
 
-ByName сравнивает имена сначала через `Ordinal`, затем, только без точного
-совпадения, через `OrdinalIgnoreCase`, независимо от culture — как при
-[подборе параметров конструктора](../api/members.md#constructor-parameters). Найденное exact
-совпадение не становится неоднозначным из-за других вариантов регистра.
-Это правило enum-конвенции, не изменение object/tuple matching или C# patterns.
+ByName не зависит от culture: **Ordinal, затем только при отсутствии точных
+соответствий — OrdinalIgnoreCase**, как при
+[подборе параметров конструктора](../api/members.md#constructor-parameters).
+Object/tuple matching и регистрозависимые C# patterns этим не меняются.
 
-| Имена destination | Source | Результат |
+У enum aliases одного числа неразличимы. Оба этапа выполняются **для всей группы**:
+на выбранном этапе одно distinct destination-число означает успех, несколько —
+неоднозначность, ни одного — отсутствие соответствия. Несовпавший alias не отменяет
+успех; ignore-case кандидат не конкурирует с найденным exact; порядок объявлений
+не влияет. Явное правило числа обрабатывает всю группу.
+
+| Source | Destination | Результат ByName |
 |---|---|---|
-| Ready = 10, READY = 20 | Ready / READY | 10 / 20 по точному имени |
-| Те же | ready | Неоднозначность второго этапа |
-| Ready = 10, READY = 10 | ready | Однозначное число 10 |
+| Ready / READY — разные числа | Ready = 10, READY = 20 | 10 / 20 по точному имени |
+| ready | Те же | Неоднозначность ignore-case этапа |
+| ready | Ready = READY = 10 | 10 |
+| Ready = ready = 1 | Ready = 10, READY = 20 | 10: точное совпадение всей группы найдено |
+| Ready = Active = 1 | Ready = 10, Active = 20 | Неоднозначность двух точных чисел |
 
-Source aliases одного числа неразличимы в runtime. Exact-first применяется
-**ко всей группе**: сначала собираются точные соответствия всех aliases;
-только если их нет, для всей группы выполняется OrdinalIgnoreCase-поиск.
-На выбранном этапе одно distinct destination-число означает успех, несколько —
-неоднозначность, ни одного — отсутствие соответствия. Не совпавший alias не
-отменяет успех; ignore-case кандидат не конкурирует с найденным exact.
-Например, source Ready = ready = 1 против destination Ready = 10, READY = 20
-даёт 10. Source Ready = Active = 1 против Ready = 10, Active = 20 неоднозначен:
-оба соответствия точные. Явная ветка числа разрешает конфликт для всех aliases.
-Порядок объявлений не влияет; обычные C# ошибки дублирующих/недостижимых веток
-сохраняются. Примеры — [сценарий 192](ENUM_MAPPING_SCENARIOS.md#192-точные-совпадения-выбираются-для-всей-группы-aliases).
+Неоднозначность — неуспех конвенции, обрабатываемый fallback/EnumMappingException.
+Статически известный конфликт на используемом автоматическом пути даёт **Warning**
+с входом и кандидатами, независимо от enum coverage. Обычный fallback warning
+не снимает; безусловное правило до конвенции устраняет его для обработанного входа.
+Explicit без Auto и прямые результаты не предупреждаются лишь из-за aliases.
+Severity повышается обычными средствами. Дублирующие/недостижимые C# cases сохраняются.
 
-Для enum- и string-входа действует единое правило: неоднозначность означает
-неуспех конвенции. Обычный fallback обрабатывает такой вход; если правила
-исчерпаны и fallback отсутствует, бросается EnumMappingException. Выбранный
-явный Auto()/Auto<T>() при таком неуспехе бросает немедленно, без перехода
-к другому fallback.
-Однозначные входы сохраняют свои результаты; первый найденный кандидат
-никогда не выбирается произвольно.
-
-Статически известный конфликт на используемом автоматическом пути даёт
-**Warning** с указанием конфликтного значения/имени и конкурирующих соответствий.
-Пара остаётся допустимой и генерируется с описанным runtime-поведением.
-Обычный fallback не устраняет конфликт конвенции и не снимает предупреждение.
-Явное правило, безусловно обрабатывающее конфликтный вход до конвенции,
-устраняет предупреждение для него. Полностью ручное преобразование, включая
-Explicit без Auto, не получает предупреждения только из-за aliases или
-различий регистра в объявлениях. Несколько имён, ведущих к одному
-конечному enum-числу, не являются конфликтом. Проверка не зависит от
-UnmappedEnumMemberValidation; отдельной настройки неоднозначностей нет.
-Warning можно повысить до Error обычными средствами настройки диагностик.
-
-Для string-входа конфликт ignore-case этапа относится только к неоднозначным
-строкам. Точные Ready и READY по-прежнему допустимы. Явное правило для строки
-"ready" обрабатывает её, но не устраняет конфликт для других вариантов регистра,
-например "rEaDy", если они по-прежнему доходят до конвенции.
+Для string правило "ready" не устраняет конфликт остальных вариантов регистра,
+например "rEaDy". Exact Ready/READY остаются допустимыми.
+Примеры группового приоритета —
+[192](ENUM_MAPPING_SCENARIOS.md#192-точные-совпадения-выбираются-для-всей-группы-aliases).
 
 | Направление | Конвенция |
 |---|---|
-| Enum → string, ByName | CLR-имя с исходным регистром; при aliases нет однозначного имени, даже если различается только регистр: явный canonical output либо неуспех конвенции; flags и их ноль — по правилам ниже |
-| Enum → string, обе числовые стратегии | Underlying integer в десятичной записи с InvariantCulture без группировки; включая неназванное число, с точной шириной и знаком |
-| String → enum | CLR-имя с exact-first/ignore-case; явные строковые patterns сохраняют обычную C# семантику |
+| Enum → string, ByName | CLR-имя с исходным регистром; aliases, даже различающиеся только регистром, требуют явного canonical output, иначе неоднозначность |
+| Enum → string, числовые стратегии | Десятичный underlying integer с InvariantCulture без группировки; неназванные числа допустимы, ширина и знак точные |
+| String → enum | CLR-имена по двум этапам выше; для обычного enum нет автоматических trim, пустоты/нуля, numeric/hex/qualified-name parsing |
 
-Active = 2 даёт `"Active"` по имени, `"2"` по числу; неизвестное 123 — `"123"`
-в обеих числовых стратегиях. Signed -1 даёт `"-1"`, ulong не сужается до long.
-При ByName неназванная единица обработки не имеет соответствия, кроме пустой
-flags-маски ниже; скрытого numeric fallback через ToString нет.
+Направления независимы; формат/culture/trim задаются выражением или callback.
+ByName не имеет скрытого numeric fallback через ToString, кроме нулевой flags-маски.
 [Enum.GetName](https://learn.microsoft.com/en-us/dotnet/api/system.enum.getname?view=net-10.0)
 не гарантирует canonical alias.
 
-```csharp
-builder.Map<ApiStatus, string>()
-    .Members(status => status switch { ApiStatus.Deleted => "removed" });
-
-builder.Map<string, ApiStatus>()
-    .Members(text => text switch
-    {
-        "removed" or "deleted" => ApiStatus.Deleted,
-        "pending" or "queued" => ApiStatus.Pending,
-        _ => ApiStatus.Unknown
-    });
-```
-
-Направления независимы. Для обычного enum пустая строка, числовой текст и пробелы
-не получают особой трактовки; общий numeric parsing потребует отдельного контракта.
-Формат/culture можно задать выражением Members или обычным callback.
-Числовой flags-to-string форматирует **всю** маску: Read = 1, Write = 2 дают
-`"3"`, неизвестные биты сохраняются; Members вызывается для маски, OR строк нет.
-
 ### Строковый ввод flags
 
-Используется FlagsMappingMode; отдельная настройка разделителей отложена.
-Разделители — `,`, `|` и `;`, в том числе смешанные; разбор обрезает whitespace
-вокруг токенов, сохраняя его внутри имени. Пробел, tab и перенос строки сами
-по себе не разделяют значения: `"Full control"` может быть явным именем.
+Разделители: `,`, `|`, `;`, включая смеси. Токены trim-ятся по whitespace;
+внутренние пробелы, tab, перенос строки и `+` не разделяют имена. Quote/escape
+протокола нет; имя с разделителем можно обработать целой строкой в ByMask.
 
-| Режим | Source callback | Конвенция при switch над этим source |
-|---|---|---|
-| ByBit (default) | Текущий обрезанный токен | CLR-имя с exact-first/ignore-case; результаты токенов объединяются OR |
-| ByMask | Полная исходная строка, один проход правил | Разбор всего списка CLR-имён и OR; пользовательские правила не применяются к отдельным токенам |
+| Режим исходной string → flags пары | Members и конвенция |
+|---|---|
+| ByBit | Правила для каждого обрезанного токена слева направо; конвенция CLR-имени; OR вкладов |
+| ByMask | Правила один раз для исходной строки до trim; конвенция разбирает весь список CLR-имён без пользовательских правил на токенах |
 
-Таблица описывает исходную string → flags пару. Для строки, выбранной из
-object/tuple, внешний Members получает целый source по
-[правилу выбранного входа](#flagsmappingmode-и-выбранный-вход).
+Повторы и пустые токены сохраняются **до Members**, включая Explicit. Composite
+имя ReadWrite даёт целое объявленное число, не повторные правила Read/Write.
+Конвенция токенов "" и "0" даёт 0 даже без None; другой numeric text не разбирается.
+Пустые токены равнозначны в любой позиции: "Read,,Write;" даёт Read \| Write,
+строка из разделителей — 0. Правила "" => throw/Unknown меняют это поведение.
+Различить пустую строку и пустой элемент списка можно проверкой целой строки.
 
-В ByBit разбиение сохраняется при Explicit. Правила и их IncludeBase выполняются
-слева направо, включая повторяющиеся токены;
-удалять повторы до Members нельзя из-за effects. `"ReadWrite"` может обозначать
-объявленный composite: его значение берётся целиком, без повторного вызова Members
-для Read и Write. Aliases и неоднозначность имён следуют общему контракту.
-Токены `"0"` и `""` по конвенции дают пустую маску даже без None; другой числовой
-текст, hex и qualified names автоматически не разбираются, но доступны явным правилам.
-
-Пустые токены сохраняются, в том числе после trim: `""` и `"   "` дают 0,
-`"Read,,Write;"` — Read | Write. Положение не меняет смысл пустого токена:
-отдельно, в начале, середине или конце списка его конвенционный вклад равен 0.
-При default это осознанно допускает лишние разделители, включая строку только
-из разделителей. Более строгую проверку формата пользователь задаёт своим кодом;
-отдельная настройка обработки пустых элементов не вводится.
-
-В ByBit каждый токен, включая пустой, сначала проходит Members:
-`"" => throw ...` запрещает пустоту, а `"" => Access.Unknown` заменяет её.
-Это правило одинаково действует для пустой строки и пустого элемента списка.
-В ByMask конвенция разбирает список с тем же нулевым вкладом пустых токенов;
-нераспознанный или неоднозначный токен означает неуспех для всей строки.
-Explicit отключает конвенцию, включая трактовку пустоты и `"0"`; явный Auto
-при неуспехе сразу бросает.
-
-Например, при `"view" => Access.Read` и `_ => Access.Unknown`:
-ByBit переводит `"view; Write"` в Read | Write, `"view|Missing"` — в Read | Unknown.
-ByMask для обеих строк даёт Unknown: whole-string rule не совпал, CLR-имени view нет.
-Без fallback неуспех любого токена завершает всю операцию исключением.
-
-Using получает исходную строку один раз по общему lifecycle; previous/result —
-полные маски, не накопитель. Null из правила завершает nullable mapping целиком.
+Explicit выключает конвенцию, включая пустоту/0, но сохраняет токенизацию.
+Неизвестный/неоднозначный токен в ByBit получает свой fallback; в ByMask отменяет
+всю попытку. Например, с "view" => Read и _ => Unknown:
+"view|Missing" даёт Read \| Unknown в ByBit, Unknown в ByMask.
+Для строки из object/tuple действует [целый внешний проход](#flagsmappingmode-и-выбранный-вход).
 
 ### Строковый вывод flags
 
-Под ByName FlagsMappingMode определяет единицу source перед Members.
-ByBit (default) обрабатывает физические биты от младшего к старшему и соединяет
-непустые строковые вклады через `", "`. Составное объявление не меняет разбиение;
-повторы сохраняются: два вклада `"access"` дают `"access, access"`.
-ByMask обрабатывает целую маску и по конвенции возвращает имя **целого объявленного
-значения**, без сборки неназванной комбинации по именам битов.
+Под ByName: ByBit соединяет непустые вклады физических битов от младшего к старшему
+через `", "`; повторы сохраняются, composite declaration не меняет разбиение.
+ByMask возвращает имя **целого объявленного значения**, без сборки неназванной маски.
 
-| Вход при Read = 1, Write = 2, ReadWrite = 3, Audit = 4 | ByBit + ByName | ByMask + ByName |
+| Вход | ByBit + ByName | ByMask + ByName |
 |---|---|---|
-| Read \| Write | `"Read, Write"` | `"ReadWrite"` |
-| Read \| Audit | `"Read, Audit"` | Fallback / исключение |
-| 0, объявлено None = 0 | `"None"` | `"None"` |
-| 0 без объявления | `"0"` | `"0"` |
+| Read \| Write, объявлен ReadWrite | "Read, Write" | "ReadWrite" |
+| Read \| Audit без целого имени | "Read, Audit" | Fallback / исключение |
+| Ноль с объявленным None | "None" | "None" |
+| Ноль без объявления | "0" | "0" |
 
-Нулевой вход проходит правила один раз; затем конвенция даёт объявленное имя нуля,
-а без объявления — `"0"`. Нулевые aliases следуют общему правилу неоднозначности:
-Warning на автоматическом пути, неуспех конвенции и обычный fallback либо
-исключение. Явное `None => "none"` или `None => ""` задаёт canonical output и
-устраняет конфликт для нуля.
-Это не общий numeric fallback: неизвестный ненулевой бит/маска попадает в fallback
-своей единицы либо вызывает исключение всей операции. Explicit отключает
-конвенцию и для нуля; явный Auto по-прежнему доступен.
+Нулевые aliases требуют canonical output: warning и неуспех конвенции, пока
+явное правило не разрешит конфликт. Нулевой source проходит правила один раз;
+Explicit выключает и нулевую конвенцию. Неизвестный ненулевой вход не становится
+числовым текстом. Пустой вклад пропускается; итог из одних пустых вкладов — "",
+без имени None или "0". Nullable null-result завершает всю операцию.
 
-`""` из Members — пустой вклад; результат из одних пустых вкладов остаётся `""`,
-без замены на `"0"`. Null из правила при nullable destination завершает всю
-операцию с null. Using получает полную source-маску один раз по lifecycle;
-previous/result — полные исходные/начальные строки, не накопитель вкладов.
-Числовые стратегии сохраняют форматирование **всей** маски одной строкой.
-Составной вычисленный flags-вход под ByBit + ByName переводится по
-[общему правилу](#составной-вычисленный-вход-в-bybit): имена его битов образуют
-один строковый вклад текущего прохода; неуспех заменяет этот вклад целиком.
+Обе числовые стратегии форматируют **всю маску** одной строкой: 3 → "3",
+включая неизвестные биты; Members вызывается для маски, FlagsMappingMode неприменим.
+Вычисленная маска ByBit + ByName образует один [составной вклад](#составной-вычисленный-вход-в-bybit).
 
 ## Числовая конвенция
 
-Для обычного enum destination `ByValue` требует объявленного значения с тем
-же числом; объявленность source не нужна. `ByValueAllowUndefined` допускает
-любое представимое число. Enum-to-integer тоже сохраняет неназванное число:
-у integer нет списка объявлений. Строгость flags описана ниже.
+ByValue требует допустимого **destination**, объявленность source не нужна:
+обычный enum — точное объявленное число, flags — правило ниже. ByValueAllowUndefined
+допускает любое представимое число; enum → integer тоже сохраняет неназванный source.
 
-**Оба режима сохраняют математическое число** независимо от checked options
-consumer: без усечения, смены знака и переполнения промежуточного типа.
-Например, 256 не становится byte 0, ulong не сужается до long.
-Явные результаты Members не получают скрытой validation; пользовательские
-checked/unchecked expressions сохраняют свою семантику.
+Оба режима сохраняют математическое число независимо от consumer checked options:
+без усечения, смены знака или промежуточного переполнения. 256 не становится byte 0,
+ulong не сужается до long. Выход за диапазон — неуспех конвенции, а не обязательно
+OverflowException. Явные checked/unchecked и готовые результаты не перевалидируются.
 
-Пример integer-to-enum с byte destination `{ Unknown = 0, Active = 1 }`
-и завершающим `_ => Unknown`:
+Для integer → byte enum { Unknown = 0, Active = 1 } с fallback Unknown:
 
-| Вход | ByValue (default) | ByValueAllowUndefined |
+| Вход | ByValue | ByValueAllowUndefined |
 |---|---|---|
 | 1 | Active | Active |
 | 42 | Unknown через fallback | Неназванное 42 |
-| 300 или -1 | Unknown через fallback | Unknown через fallback |
+| 300, -1 | Unknown через fallback | Unknown через fallback |
 
-Выход из диапазона означает отсутствие конвенционного соответствия.
-Реакция задаётся существующими ветками:
-
-| Требование | Members |
-|---|---|
-| Fallback при любом неуспехе, включая overflow | Завершающее `_ => Unknown` |
-| Исключение при любом неуспехе | Без fallback, `_ => Auto()` либо `_ => throw ...` |
-| Overflow бросает, неизвестное число в диапазоне получает fallback | Явный range guard с throw до завершающего fallback |
-
-Для ushort → byte guard может быть
-`_ when (ushort)status > byte.MaxValue => throw new OverflowException()`.
-Он выполняется до конвенции. Общая overflow policy для множества пар без
-повторения guard в принятый API не входит.
-
-Завершающий `_ => checked((StoredCode)code)` также допустим: конвенция
-обработает известные соответствия, пользовательский cast — остаток.
-Explicit Auto при неудаче всегда бросает, без перехода к fallback.
-
-E → E соблюдает стратегию, Members и Explicit. У обычного enum ByName и строгий
-ByValue не сохраняют неназванное число автоматически, ослабленный режим сохраняет.
-Identity допустимо только как реализация тех же правил, без обхода проверок.
+Без fallback/с Auto неуспех бросает. Для отдельного OverflowException нужен явный
+range guard до конвенции, например `_ when (ushort)code > byte.MaxValue => throw ...`.
+Завершающий checked/unchecked cast обрабатывает остаток после конвенции.
+E → E подчиняется стратегии и правилам: строгий обычный enum не сохраняет
+неназванное число; identity-оптимизация допустима только без изменения поведения.
 
 ## Flags
 
-`System.FlagsAttribute` распознаётся при генерации, включая metadata и nullable
-underlying enum; числа 1, 2, 4 без атрибута не делают enum flags. Ниже — правила
-flags-to-flags; [строковый ввод](#строковый-ввод-flags) и
-[вывод](#строковый-вывод-flags) описаны отдельно.
-Другие направления следуют таблице [применимости](#наследование-и-применимость).
-Runtime reflection не нужен.
+System.FlagsAttribute распознаётся при генерации, включая metadata и Nullable<T>.
+Числа 1/2/4 без атрибута не делают enum flags. Ниже — flags → flags;
+при атрибуте только с одной стороны обрабатывается целое значение.
 
 ### ByBit и ByMask
 
 | Свойство | ByBit (default) | ByMask |
 |---|---|---|
-| Source callback | Текущий установленный бит source enum | Полная исходная маска |
-| Members, locals и guards | Для каждого бита и достигнутого уровня IncludeBase | Один проход уровней над маской |
-| Fallback | Полный вклад текущего прохода исходного бита | Итог всей операции |
-| Результат | OR результатов битов | Выбранное значение целиком |
-| Composite case над неизменённым source | Не совпадает с отдельным битом | Проверяет точную маску |
+| Source в Members | Текущий установленный физический бит | Полная маска |
+| Выполнение Members/IncludeBase | Для каждого бита, уровни лениво | Один проход уровней |
+| Результат | OR вкладов | Выбранное значение целиком |
+| Fallback | Весь вклад текущего исходного прохода | Итог операции |
+| Composite case над неизменённым source | Не совпадает; доказанная недостижимость предупреждается | Проверяет точную маску |
 
-EnumMappingStrategy не меняет единицу или число проходов Members. Один effective
-FlagsMappingMode действует на все локальные и inherited rules; смешанного
-прохода «сначала маска, затем те же Members на битах» нет.
-Выражение перед mapping switch выбирает вход конвенции внутри такого прохода
-по [общему правилу](#входы-и-приоритет); оно не подменяется исходным битом или маской.
+Биты идут от младшего к старшему в точной ширине source; signed high bit —
+последним, без расширения за ширину. Неизвестные биты также проходят правила;
+aliases не добавляют проходов. Один бит может дать 0, один/несколько destination-битов;
+совпадающие вклады объединяются. Explicit отключает конвенцию, сохраняя обход и OR.
+EnumMappingStrategy не меняет единицу flags → flags Members.
 
-```csharp
-[Flags]
-enum SourceAccess
-{
-    None = 0, Read = 1, Write = 2, Delete = 4, Audit = 8,
-    ReadWrite = Read | Write
-}
+ByName в ByBit требует имён отдельных source-битов: одно Pair = 3 не даёт имён
+для 1 и 2. ByMask сопоставляет целые объявленные имена; одинаковое ReadWrite может
+связать разные числа/наборы битов. Неназванная маска не собирается по отдельным
+именам. Whole-mask overrides с побитовым переводом остальных комбинаций требуют
+явного алгоритма/Convert; скрытого второго прохода и отдельных настроек режима
+Members/конвенции нет. Object/tuple уже имеет целый внешний проход.
 
-[Flags]
-enum TargetAccess
-{
-    None = 0, View = 16, Edit = 32, Audit = 64, Unknown = 128
-}
-
-builder.Map<SourceAccess, TargetAccess>()
-    .Members(flag => flag switch
-    {
-        SourceAccess.Read => TargetAccess.View,
-        SourceAccess.Write => TargetAccess.Edit,
-        SourceAccess.Delete => TargetAccess.None,
-        _ => TargetAccess.Unknown
-    });
-```
-
-| Вход при default ByBit + ByName | Результат |
-|---|---|
-| Read | View по явному правилу |
-| Read \| Write или ReadWrite | View \| Edit; имя composite не меняет разбиение |
-| Read \| Delete | View; явный ноль удаляет Delete |
-| Read \| Audit | View \| Audit; Audit сопоставлен по имени |
-| Read \| (SourceAccess)16 | View \| Unknown; неизвестный бит дошёл до fallback |
-| (SourceAccess)16 | Unknown; совпадение числа с View не заменяет имя |
-
-Один бит может дать ноль, один или несколько destination-битов. Совпадающие
-вклады объединяются без ошибки; aliases не вызывают повторной обработки.
-Неизвестные биты тоже проходят правила, включая явный `(SourceAccess)16 => ...`.
-Без fallback непокрытый бит бросает исключение всей операции; частичный
-результат не возвращается, выполненные эффекты не откатываются.
-
-ByBit посещает физические биты от младшего к старшему в точной ширине source;
-signed high bit — последним. Порядок объявлений не влияет; знаковые биты не
-расширяются за исходную ширину. Только Pair = 3 не даёт ByName имён для 1 и 2.
-Explicit отключает неявную конвенцию, сохраняя разбиение и OR. В `flag switch`
-Auto запрашивает конвенцию текущего бита; в `Normalize(flag) switch` —
-вычисленного значения. Числовая стратегия не обходит явные правила cast-ом.
-
-```csharp
-builder.Map<SourceAccess, TargetAccess>()
-    .FlagsMappingMode(FlagsMappingMode.ByMask)
-    .Members(mask => mask switch
-    {
-        SourceAccess.ReadWrite => TargetAccess.View | TargetAccess.Edit,
-        _ => Auto()
-    });
-```
-
-В ByMask правило Read не обрабатывает Read внутри ReadWrite. ByName сопоставляет
-только **имена целых объявленных значений**, по общим правилам регистра и aliases.
-Одинаковое имя ReadWrite может связать разные числа и составы битов; сборки по
-именам отдельных битов нет. Например, source Read = 1, Write = 2 и destination
-Read = 8, Write = 16 дают для неназванного 3 результат 24 в ByBit, но отсутствие
-соответствия в ByMask. Whole-mask overrides не дополняются автоматическим
-переводом остальных неназванных комбинаций. Исключение — пустая маска ниже.
-
-Для исходной flags → flags пары отдельные настройки режима Members и конвенции
-не вводятся. Алгоритм, сочетающий особые результаты целых масок с переводом
-остальных комбинаций по битам, здесь задаётся явно, например вспомогательным
-методом или через Convert. У object/tuple → enum исходный проход уже целый;
-его [выбранная flags-конвенция](#flagsmappingmode-и-выбранный-вход) не меняет
-единицу внешних пользовательских правил.
+Непокрытый бит без fallback прерывает всю операцию: частичный результат не
+возвращается, выполненные эффекты сохраняются. Примеры —
+[51–62](ENUM_MAPPING_SCENARIOS.md#flags-между-enum).
 
 ### Составной вычисленный вход в ByBit
 
-**В ByBit вычисленная flags-маска переводится по битам встроенной конвенцией.**
-Она не запускает Members повторно для своих битов: исходные проходы ByBit
-сохраняются. В каждом достигнутом проходе выражение перед switch вычисляется
-один раз на написанном месте; patterns проверяют полное вычисленное значение,
-в том числе из Normalize(flag), local или result. Только достигнутая конвенция
-обрабатывает его физические биты от младшего к старшему, в ширине и знаковости
-фактического типа входа. Составные имена не заменяют этот обход. Ноль следует
-обычному нулевому правилу направления, без обхода битов.
+Normalize(flag), local или result может дать полную маску. Patterns проверяют
+её целиком, достигнутая конвенция ByBit переводит физические биты **этого** типа
+в его ширине/знаковости. Composite name не заменяет обход; ноль обрабатывается
+отдельно. Integer-вход остаётся целым числом. Это одинаково для Auto и неявного
+шага; пользовательские Members/IncludeBase ради компонентов не повторяются.
 
-Конвенция не возвращается в пользовательские правила Members или IncludeBase
-ради обработки компонентов этой маски. Locals, методы, guards и выбранные
-результаты не выполняются повторно из-за появления дополнительных битов во входе
-конвенции. Сохраняются обычные приоритеты, ленивое достижение базовых уровней,
-их собственные входы и контексты по [правилам IncludeBase](#includebase).
+Все биты попытки должны перевестись. При неуспехе её частичные OR/строковые вклады
+отбрасываются, fallback вычисляется один раз и задаёт весь вклад исходного прохода:
 
-Это одинаково для неявной конвенции и явного Auto, включая унаследованный.
-Формы Auto() и Auto<T>() имеют одну семантику; Explicit отключает только
-неявный шаг. Для flags destination успешные переводы объединяются через OR;
-при строковом выводе ByName — через ", " по правилам строкового вывода.
-ByMask продолжает сопоставлять целое значение. Integer → flags остаётся
-переводом целого числа: разбиение исходного flags source на проходы не меняет
-тип вычисленного входа конвенции.
+| Fallback | Вклад |
+|---|---|
+| Unknown / 0 / result | Именно указанное значение, без успешной части конвенции |
+| Ignore() | 0 для маски, пустой вклад для строки |
+| var remaining => Compute(remaining) | Полный захваченный вход собственного switch, не остаток битов |
+| Inherited Auto | Конвенция его собственного входа, без примеси неуспешной попытки |
 
-«Один раз» относится к достигнутому месту в проходе исходной единицы, а не ко
-всему mapping: следующий исходный бит имеет собственный проход. Независимые
-пользовательские вызовы сохраняются, даже если написаны одинаково. Начальный
-полный result остаётся общим; фабрика следует обычному lifecycle.
-
-**Одна попытка конвенции успешна только при переводе всех битов её входа.**
-Если хотя бы один бит не переведён, частичные результаты этой попытки
-отбрасываются. Неявная конвенция передаёт управление ближайшему fallback;
-его выражение вычисляется один раз и задаёт **весь вклад текущего прохода**.
-`_ => Unknown` даёт только Unknown, `_ => result` — полный начальный result,
-а `_ => Ignore()` пропускает весь вклад текущего прохода: ноль для маски,
-пустой вклад для строки. Успешно переведённые части не добавляются к выбранному
-fallback.
-
-Fallback сохраняет вход и контекст собственного switch: `var remaining`
-обозначает его захваченный вход, а не специально созданный остаток битов.
-Унаследованный Auto также использует свой вход; частичный результат неудачной
-локальной конвенции не добавляется к его результату.
-Без fallback либо при неуспехе выбранного явного Auto операция бросает исключение.
-Пользовательские исключения не считаются неуспехом конвенции и не перехватываются.
-
-Вклады других исходных проходов сохраняются при успешном завершении операции.
-Поэтому исходный Read | Missing с обычным `flag switch` может дать перевод Read
-OR fallback для Missing, а один исходный Read, превращённый Normalize в ту же
-маску, — только fallback. Перенос нормализации до вызова mapping не всегда
-сохраняет результат. При исключении частичный результат всей операции не
-возвращается; уже выполненные эффекты не откатываются.
-[Сценарии 150–158](ENUM_MAPPING_SCENARIOS.md#составной-вход-bybit-и-вычисления)
-показывают результаты, границы fallback и число пользовательских вычислений.
+Без результата либо при неуспехе выбранного Auto — исключение. Успешные вклады
+других исходных проходов сохраняются. Поэтому исходный Read \| Missing может дать
+Read OR fallback, а один Read, нормализованный в ту же маску, — только fallback.
+Вынос нормализации до вызова mapping способен изменить результат; local внутри
+прохода — нет. Каждый исходный бит имеет независимые вычисления; фабрика общая.
+Примеры — [150–158](ENUM_MAPPING_SCENARIOS.md#составной-вход-bybit-и-вычисления).
 
 ### Ноль, null и начальное значение
 
-Нулевой вход в **обоих** режимах проходит правила один раз с source = 0:
-явное None → Unknown может его изменить. Если вход самой конвенции равен нулю,
-она возвращает 0 даже без объявления None, независимо от имён и стратегии,
-включая ByMask + ByName.
-При Explicit нужны явное правило, Auto или fallback; иначе исключение.
-Нулевое правило не добавляется к ненулевой маске и не вызывается для её битов.
+Нулевой source в обоих режимах проходит правила **один раз**. Если вход конвенции
+равен нулю, flags → flags даёт 0 независимо от имён, объявлений и стратегии,
+включая ByMask + ByName. Явное нулевое правило приоритетно и не добавляется к
+ненулевой маске. При Explicit нужны правило, Auto или fallback.
 
-При nullable destination null из любого правила бита немедленно завершает всю
-операцию с null: следующие биты не вычисляются, прошлые эффекты не откатываются.
-Null не означает пропуск вклада; для этого нужен ноль или Ignore(). ByMask
-возвращает обычный scalar nullable результат. Null source и terminal null
-фабрики следуют общему lifecycle.
-
-Using всегда получает полную source-маску и вызывается один раз, когда этого
-требует lifecycle. Все биты/уровни видят один начальный полный result и исходный
-previous. Result не является OR-накопителем и не добавляется к нему автоматически.
-Фабрика без Members окончательна; отсутствие начального result не заменяется нулём.
+Null результата любого бита завершает nullable mapping целиком; следующие биты
+не вычисляются. Для пропуска вклада служат 0/Ignore. Null source и фабрики следуют
+lifecycle. Using получает полную исходную маску/строку один раз, когда требуется;
+previous/result — полные исходный/начальный destination, **не накопитель**.
+Initial result автоматически не добавляется, отсутствие не заменяется нулём.
 
 ### Строгая числовая маска
 
-При обработке целого значения строгая допустимость определяется destination:
-обычный enum требует точного объявления, flags enum — **OR целых объявленных
-destination-значений**, включая пустую комбинацию 0. Это действует для ByMask,
-integer → flags и обычного enum → flags; источник не меняет критерий. Сначала
-проверяется диапазон underlying type; объявленность source не требуется.
+Для целого flags destination ByValue допускает **OR целых объявленных значений**,
+включая пустую комбинацию 0, после проверки диапазона. Это правило ByMask,
+integer → flags и обычного enum → flags; source не меняет критерий.
 
-| Destination | Допустимо | Недопустимо |
+| Объявления destination | Допустимо | Недопустимо |
 |---|---|---|
 | Read = 1, Write = 2 | 0, 1, 2, 3 | 4 |
 | Только Pair = 3 | 0, 3 | 1, 2 |
 | Pair = 3, Audit = 4 | 0, 3, 4, 7 | 1, 2, 5, 6 |
 | Только All = -1 | 0, -1 | 1 |
 
-Pair можно включить целиком, но нельзя извлечь его необъявленный одиночный бит.
-All = -1 не разрешает любое число. Это отличается и от exact declared lookup,
-и от проверки «каждый бит где-то встречается»; Enum.IsDefined не заменяет контракт.
-ByValueAllowUndefined допускает любое представимое число.
+Нельзя извлечь необъявленную часть Pair; All = -1 не разрешает любое число.
+Это не Enum.IsDefined и не проверка «бит где-то встречается». Без перебора
+подмножеств: в ширине destination объединить все объявленные c, целиком
+содержащиеся в x, и сравнить OR с x. AllowUndefined разрешает представимое число.
 
-Критерий проверяется без перебора подмножеств: в ширине destination объединить
-все объявленные c, целиком содержащиеся в маске x, и сравнить OR с x.
-Форму generated code выбирает реализация.
-
-В ByBit числовая конвенция проверяет каждый бит flags-входа отдельно: Pair = 3
-не разрешает 1 и 2. Это относится и к вычисленной маске, включая
-`result switch { _ => Auto() }`: известный composite сам по себе не гарантирует
-успех E → E. ByValueAllowUndefined допускает представимые 1 и 2; ByMask проверяет
-целое 3. Итоговый OR и явные результаты Members дополнительной проверки не получают.
-Целая маска -1 из flags enum на int помещается в sbyte; при ByBit уже
-положительный бит 128 не помещается даже при AllowUndefined. Signed high bit имеет
-математическое значение в фактическом типе входа конвенции, не unsigned значение
-промежуточного типа. Неуспех обрабатывается для всей попытки по
-[правилу выше](#составной-вычисленный-вход-в-bybit); явный Auto бросает.
-E → E также соблюдает режим: ByBit может собрать неназванную комбинацию из переводимых битов.
+ByBit проверяет каждый бит отдельно: Pair = 3 не разрешает 1/2 даже у result
+switch E → E. AllowUndefined допускает их; ByMask проверяет целое 3.
+Итоговый OR/явные вклады повторно не проверяются. При narrowing int → sbyte
+целая -1 помещается, но отдельный положительный бит 128 уже нет.
+Signed high bit сохраняет математическое значение своего типа, не unsigned
+промежуточного. Неуспех computed mask отменяет всю попытку, как описано выше.
 
 ### Недостижимые composite cases
 
-В ByBit — warning только при **доказанной** недостижимости составного case.
-Это позволяет обнаружить ошибку режима и сохранить правило, наследуемое также
-для ByMask; severity повышается обычными средствами, без новой настройки.
-
-Нельзя судить только по составной константе или имени source-параметра:
-учитываются switch input, locals, изменения source и guards. Pattern над полным
-result или Normalize(flag) может быть достижимым. Анализ не выполняет методы
-при генерации; общего запрета таких patterns нет. Доказанную недостижимость
-не заменять молчаливым игнорированием. Обычные ошибки C# сохраняются.
+ByBit даёт Warning только при **доказанной** недостижимости case, сохраняя
+возможность наследовать его для ByMask. Учитываются вход, locals, mutation и guards:
+Normalize(flag) и полный result могут содержать composite. Методы при генерации
+не выполняются; общего запрета нет. Молчаливое игнорирование недостижимого case
+недопустимо; severity повышается обычными средствами, C# диагностики сохраняются.
 
 ## Проверка покрытия
 
-Используется отдельная `UnmappedEnumMemberValidation` с типом
-`UnmappedMemberValidation` и единым library default **`Source`**. Уровень —
-Warning; severity можно повышать обычными средствами. Настройка проверяет
-значения scalar enum-пар, включая flags и nullable. Проверка members в mappings
-со структурным object/tuple destination остаётся у обычной
-`UnmappedMemberValidation`: наличие enum-свойства не переключает политику
-содержащего объекта. Явный nested Map использует
-настройку своей зарегистрированной enum-пары.
+UnmappedEnumMemberValidation проверяет scalar enum-правила независимо от
+object/tuple member coverage и runtime-допустимости. Default **Source**, Warning:
+новый объявленный вход требует обработки, дополнительный destination может
+предназначаться другому источнику. Severity настраивается обычными средствами.
 
-Source выбран для раннего обнаружения необработанных объявленных входов.
-Дополнительные destination-значения могут использоваться другими источниками
-и сами по себе не делают направленное преобразование неполным. Их контроль
-включается через Destination или Strict; None отключает coverage.
+Проверяется композиция правил, конвенции и fallback, а не изолированные Members
+уровней или все возможные результаты исполнения:
 
-Coverage проверяет итоговую композицию правил, конвенции и fallback,
-не меняя runtime-допустимость и порядок. Проверяются
-связи между объявлениями и явными правилами, не множество всех возможных
-результатов исполнения. Enum-источник для coverage определяется по
-**статическому типу фактического входа правил**, а не только по TSource
-зарегистрированной пары:
-
-| Форма | Вход Source coverage |
+| Вход Source coverage | Правило |
 |---|---|
-| Mapping switch над source, свойством/элементом, local, результатом метода или result | Enum-тип выражения перед switch; nullable проверяется по underlying enum |
-| Конвенция без Members или Auto вне switch | Текущее source, как у самой конвенции |
-| Whole-object/tuple switch | Нет enum-входа; свойства, элементы и enum-константы внутри patterns автоматически не превращаются в отдельные проверки |
-| Прямое выражение результата Members | Обрабатывает текущий вход; enum-выражения внутри результата не становятся новыми входами coverage |
-| Явный nested Map/Create/Update | Правила проверяются в зарегистрированной вложенной паре с её настройкой |
+| Mapping switch над source/свойством/элементом/local/методом/result | Все объявления статического enum-типа; Nullable<T> — underlying enum, null не является member |
+| Без Members или Auto вне switch | Текущее source |
+| Whole-object/tuple switch | Enum-свойства и константы внутри patterns не становятся отдельными входами |
+| Прямой результат Members | Обрабатывает текущий вход; enum-выражения результата не создают новых Source-проверок |
+| Nested Map/Create/Update | Собственная зарегистрированная пара и настройка |
 
-Null выбранного nullable-входа не входит в объявления underlying enum;
-эта проверка не обещает обработки null без явного правила или fallback.
+Тела методов/getters не анализируются: Normalize, фактически возвращающий лишь
+часть enum, не сужает его объявления. Warning означает неполноту правил типа,
+не доказанную достижимость. Разные входы IncludeBase сохраняют собственные значения;
+scope диагностики привязан к выбранному входу, пара регистрации не меняется.
 
-Например, в Order → ApiStatus с `order.Status switch` проверяются объявления
-enum-типа Status. Вынос этого значения в local или замена входа на
-`Normalize(order.Status)` с тем же enum return type не меняет множество
-объявленных значений для проверки. Тела методов/getters не анализируются:
-правила должны обрабатывать все объявления статического enum-типа, даже если
-конкретный Normalize фактически возвращает лишь их часть. Warning означает
-неполноту правил для этого типа, а не доказанную достижимость значения.
-
-Проверка учитывает guards, конвенцию и fallback после IncludeBase-композиции;
-частичный Members каждого уровня не проверяется изолированно. При разных
-входах уровней сохраняются их собственные значения и общий контракт анализа:
-невозможность доказать покрытие отличается от доказанно непокрытого значения.
-Scope диагностики привязан к выбранному входу; зарегистрированная mapping-пара
-не заменяется на его тип. Примеры —
-[сценарии 176–178](ENUM_MAPPING_SCENARIOS.md#coverage-выбранного-enum-входа).
-
-Для enum-входа → enum неназванное source-значение не закрывает
-destination coverage: Source { Active = 1 } → Target { Active = 1, Archived = 2 }
-под ByValue с Destination/Strict предупреждает об Archived, хотя runtime-вход
-(Source)2 допустим. Default Source такого destination-warning не даёт.
-
-| Режим / случай | Проверка |
+| Режим/правило | Проверка |
 |---|---|
-| Source | Объявленные физические значения выбранного enum-входа обработаны результатом, Ignore, явным запретом или успешной конвенцией; aliases одного числа — одна группа |
-| Destination | Объявленные destination-значения участвуют в соответствиях объявлений или явных правилах; many-to-one допустим |
-| Strict / None | Обе стороны / без coverage; проверки некорректной конфигурации и диапазона сохраняются |
-| Завершающее значение или throw | Закрывает source coverage, включая новые значения, дошедшие до этой ветки |
-| Auto | Не доказывает покрытие значения без соответствия |
-| Guard | Неизвестный статически результат требует учитывать путь false |
-| Динамический результат Members | Обработку source можно доказать, множество destination часто неизвестно; если запрошенное coverage нельзя проверить — warning о границе анализа, не о недостижимости значения |
+| Source | Объявленные физические enum-значения обработаны результатом, Ignore, явным throw или успешной конвенцией; aliases — одна группа |
+| Destination | Объявленные значения участвуют в соответствиях объявлений/явных правилах; many-to-one допустим |
+| Strict / None | Обе стороны / без coverage; configuration/range checks сохраняются |
+| Общий fallback, включая throw | Закрывает Source, в том числе для будущих объявлений; отдельной проверки использования fallback нет |
+| Auto | Только успешное соответствие доказывает обработку; автоматическое исключение её не доказывает |
+| Guard | Неизвестный результат требует учитывать false-путь |
+| Динамический результат | Source может быть обработан, destination неизвестен: warning о границе анализа, а не о доказанной недостижимости |
 
-Source, включая source-часть Strict, проверяет полноту обработки объявленных
-значений выбранного enum-входа. Общий fallback — явное правило для оставшихся
-значений: добавление новой константы, которую он обрабатывает, само по себе
-не вызывает warning.
-Отдельное именованное правило для каждой константы не требуется; дополнительной
-проверки или настройки, предупреждающей об использовании fallback, нет.
-Это относится и к явно написанному throw. Автоматическое исключение из-за
-отсутствия соответствия, в том числе в Auto(), обработкой значения не считается.
+Using не анализируется и не доказывает полноту Members; _ => result обрабатывает
+Source, но не перечисляет Destination. Неназванный enum-source не закрывает
+Destination coverage через конвенцию, хотя может быть допустим в runtime;
+явное правило для него закрывает соответствие.
 
-Тело Using не анализируется; наличие фабрики не доказывает полноту Members.
-`_ => result` явно обрабатывает остаток source, но не перечисляет destination.
-Если фактический вход остаётся string/integer, на этой стороне нет объявленных
-enum-значений. Default Source их не проверяет и не превращается в Destination;
-Destination/Strict может проверить enum destination. Если string/integer source
-явно преобразован в enum-вход mapping switch, Source проверяет этот enum по
-правилу выше. Для enum-входа → string/integer Source проверяет enum source.
-Все возможные строки, числа и состояния объектов не перечисляются;
-неназванные числа — runtime-вопрос. При None непокрытый runtime-вход всё равно
-бросает без fallback.
+У string/integer-входа нет enum-объявлений: Source не превращается в Destination.
+Destination/Strict проверяет конечную enum-сторону; для enum → string/integer
+Source проверяет enum. Все строки, числа и состояния объектов не перечисляются.
+None не предотвращает runtime-исключение для входа без результата.
 
-При исходном побитовом проходе и неизменённом входе-бите source composites
-покрыты, когда обработаны их отдельные биты. Для полного выбранного входа
-в object/tuple → enum проверяются его объявления и итоговые правила:
-ветка Read не доказывает обработку Read | Write. Конвенция разбирает компоненты
-сама и не применяет к ним whole-mask overrides. При неуспехе без fallback
-объявленный composite остаётся непокрытым, даже если каждый одиночный флаг
-имеет отдельную пользовательскую ветку. Пример —
-[сценарий 184](ENUM_MAPPING_SCENARIOS.md#184-coverage-не-переносит-whole-mask-overrides-на-биты-комбинации).
-Destination coverage проверяет участие битов в соответствиях и явных вкладах:
-результат Read | Write покрывает Read, Write и ReadWrite, даже если отдельно
-Read или Write никогда не возвращаются. Все биты destination composite должны
-участвовать; доказывать достижимость каждой комбинации не нужно. Zero проверяется
-отдельно. В ByMask анализируются целые объявленные значения. Не перечислять все
-маски; отличать доказанную неполноту от невозможности завершить проверку.
+У исходного ByBit и неизменённого входа-бита Source composite покрыт через свои
+биты. У полного выбранного входа Read-ветка не покрывает Read \| Write:
+whole-mask overrides не участвуют во встроенной конвенции компонентов.
+Destination ByBit проверяет участие битов: вклад Read \| Write покрывает Read,
+Write и ReadWrite без доказательства каждой достижимой комбинации. Ноль проверяется
+отдельно; ByMask — целые объявленные значения. Все маски не перечисляются.
 
-`_ = TargetEnum.SomeMember;` в теле Members подтверждает намеренное исключение
-**только destination**, в том числе при E → E; aliases — одна физическая группа.
-Это compile-time acknowledgement: конвенцию не отключает, бит не удаляет,
-результат не меняет. Нужен настоящий discard отдельным statement верхнего уровня
-тела lambda, не присваивание переменной `_`. Для source используется явное правило,
-включая `SourceEnum.SomeMember => Ignore()`; runtime-смысл описан в [Ignore](#ignore).
-Независимые общие политики и наследование настройки показаны в
-[сценариях 167–169](ENUM_MAPPING_SCENARIOS.md#независимая-настройка-enum-coverage).
+`_ = TargetEnum.Member;` — намеренное исключение **только Destination**, включая
+E → E и всю группу aliases. Это настоящий discard отдельным statement верхнего
+уровня Members, не переменная `_`; runtime, конвенцию и биты он не меняет.
+Source исключается явным правилом, например Source.Member => Ignore().
+Примеры — [96–107](ENUM_MAPPING_SCENARIOS.md#coverage-и-намеренные-исключения),
+[167–169](ENUM_MAPPING_SCENARIOS.md#независимая-настройка-enum-coverage),
+[176–178](ENUM_MAPPING_SCENARIOS.md#coverage-выбранного-enum-входа),
+[184](ENUM_MAPPING_SCENARIOS.md#184-coverage-не-переносит-whole-mask-overrides-на-биты-комбинации).
 
 ## Вложенное использование
 
-```csharp
-builder.Map<Order, OrderDto>()
-    .Members((source, _) => new() { Status = Map(source.Status) });
-```
+[Nested mapping](../nested-mapping.md) явный: разные enum требуют Map/Create/Update
+и доступной точной пары. Auto структурного свойства/элемента требует implicit C#
+conversion и не вызывает enum mapping. Same-enum property копируется как прежде;
+IMapper, DI и get-only value members не получают обходных путей.
 
-[Nested mapping](../nested-mapping.md) остаётся явным: разные enum требуют
-Map/Create/Update. Auto для свойства/элемента структурного destination требует
-implicit C# conversion и не запускает зарегистрированную пару.
-Same-enum property может копироваться как прежде; IMapper, DI и get-only value
-members не получают обходных путей.
-Update возвращает scalar result, не изменяет переданный value type по месту.
-
-В scalar Members доступны `Value<T>(value)` и nested `Map(source)`,
-`Create(source)`, `Update(source, destination)`, включая generic формы, с обычными
-требованиями к типу и регистрации пары. Adaptive Map использует выбранный result,
-если тот доступен; иначе Create. Формы Map без source не применимы: имени
-принимающего member для вывода источника здесь нет.
+Scalar Members поддерживает Value<T>(value), Map(source), Create(source),
+Update(source, destination), включая generic формы. Adaptive Map выбирает Update
+при доступном result, иначе Create; это относится и к result фабрики на внешнем
+Create. Map без source не применим: имени принимающего member нет.
+Update возвращает scalar, не изменяет переданный value type по месту.
 
 ## Ignore
 
-`Ignore()` и `Ignore<T>()` пропускают текущую единицу обработки:
+Ignore()/Ignore<T>() пропускает **исходную единицу Members**; typed-форма меняет
+только target typing:
 
-| Исходный проход Members | Результат Ignore |
+| Исходный проход | Результат Ignore |
 |---|---|
-| По битам/токенам в ByBit, flags destination | Нулевой вклад в OR, включая отдельный строковый токен |
-| По битам в ByBit, строковый destination | Пропуск строкового вклада без разделителя |
-| Целое scalar-значение, включая ByMask и object/tuple → enum | Выбранный начальный result; без него — диагностика доступности, как при чтении result |
+| ByBit: биты/токены → flags | Нулевой вклад в OR, без чтения/необходимости initial result |
+| ByBit: биты → string | Пропуск вклада без разделителя |
+| Целый scalar, включая ByMask и object/tuple → enum | Начальный result; недоступное чтение диагностируется |
 
-При исходном ByBit начальный result не читается и не требуется, в том числе
-на Create без фабрики. Для nullable destination это non-null ноль или пустая строка,
-не null. Если все вклады пропущены, итог — 0 или `""`; начальный result,
-имя нуля и `"0"` вместо этого не подставляются. Нулевой source проходит
-правила один раз и также может быть явно проигнорирован.
+В ByBit nullable-итог из одних Ignore — **non-null** 0/"", без восстановления
+initial result, имени нуля или "0". Нулевой source тоже можно игнорировать.
+Ignore не очищает биты других вкладов и не сохраняет прежний флаг на Update;
+полный initial result добавляется только явным => result.
 
-При исходном ByBit Ignore не очищает биты, добавленные другими вкладами,
-и не сохраняет флаг из прежнего destination при Update. Чтобы добавить полный начальный destination,
-пользователь явно возвращает `result` с обычной проверкой его доступности.
-
-Выбранный Ignore окончателен для текущей единицы: поиск правил не продолжается,
-следующие биты/токены обрабатываются как обычно. Специальная ветка с Ignore
-предшествует конвенции; завершающий `_ => Ignore()` остаётся fallback после неё.
-Прямой `Members(_ => Ignore())` не запускает конвенцию. IncludeBase использует
-исходный проход текущей пары с её effective mode, включая унаследованные Ignore.
-ByBit внутри одной конвенции не меняет scalar Ignore внешнего object/tuple
-Members; примеры — [сценарий 182](ENUM_MAPPING_SCENARIOS.md#182-ignore-сохраняет-начальный-result-внешнего-scalar-прохода).
-Типизированная форма меняет только target typing, не это поведение.
-
-Null policies, terminal null фабрики и пользовательские вычисления сохраняют
-обычный порядок; Ignore не отменяет вызов Using или уже выполненные эффекты.
-Ignore подтверждает обработку source-случая, но сам не перечисляет destination.
-Примеры — [сценарии 164–166](ENUM_MAPPING_SCENARIOS.md#ignore-в-bybit).
+Выбранный Ignore завершает текущую единицу, следующие обрабатываются.
+Специальный Ignore предшествует конвенции, завершающий остаётся fallback;
+прямой Members(_ => Ignore()) не запускает конвенцию. IncludeBase использует
+исходный проход текущей пары, а ByBit-конвенция из объекта не меняет scalar Ignore.
+Lifecycle/effects сохраняются. Source обработан, Destination не перечислен.
+Примеры — [164–166](ENUM_MAPPING_SCENARIOS.md#ignore-в-bybit),
+[182](ENUM_MAPPING_SCENARIOS.md#182-ignore-сохраняет-начальный-result-внешнего-scalar-прохода).
 
 ## Реализация и проверенные предпосылки
 
 Исходный анализ: Morphant 0.5.0,
 [main b77d654](https://github.com/strangeman375/Morphant/commit/b77d654d8d255bb89c04f9b9c69cbb1a56c7d7c5).
-Enum сейчас — opaque destination; допустимость пары не означает first-class
-algorithm. Уже существующий Convert позволяет ручное преобразование.
+Enum пока opaque destination; допустимость пары не означает first-class algorithm.
+Существующий Convert позволяет ручное преобразование.
 
-| Точка интеграции | Необходимое изменение / ограничение |
+| Интеграция | Изменение/граница |
 |---|---|
 | [DestinationCapabilityPolicy](../../src/Morphant.Generator/MappingPair/DestinationCapabilityPolicy.cs), [TypeMapperModelBuilder](../../src/Morphant.Generator/TypeMapperGeneration/TypeMapperModelBuilder.cs) | Scalar algorithm вместо object construction/member plan |
-| [MemberConfigurationEmitter](../../src/Morphant.Generator/MemberSurface/PairConfiguration/MemberConfigurationEmitter.cs) | Четыре существующих delegates параметризованы результатом; нужен scalar rule kind и typed surface, без фиктивных writable enum fields |
-| [PairConfigurationEmitter](../../src/Morphant.Generator/ConstructionSurface/PairConfiguration/PairConfigurationEmitter.cs) | Using уже генерируется; расширить композицию с scalar Members, сохранив [ConstructUsing](../api/construct-using.md) / [ResolveUsing](../api/resolve-using.md) lifecycle |
-| [MappingSettings](../../src/Morphant.Generator/Settings/MappingSettings.cs), [diagnostic pipeline](../../src/Morphant.Generator/Settings/MappingSettingsDiagnosticPipeline.cs) | Общий resolver и применимость; исходные проверки: [selection](../../src/tests/Morphant.Generator.IntegrationTests/TypeMapperMemberTests/MemberSelectionTests.cs), [inheritance](../../src/tests/Morphant.Generator.IntegrationTests/TypeMapperInheritanceTests/SettingsCompositionTests.cs) |
-| [MemberTypeCompatibility](../../src/Morphant.Generator/TypeMapperGeneration/MemberTypeCompatibility.cs) | Implicit conversion; между разными enum её нет. Контракт nested Auto не менять |
+| [MemberConfigurationEmitter](../../src/Morphant.Generator/MemberSurface/PairConfiguration/MemberConfigurationEmitter.cs) | Четыре delegates с scalar result/rule kind, без фиктивных writable enum fields |
+| [PairConfigurationEmitter](../../src/Morphant.Generator/ConstructionSurface/PairConfiguration/PairConfigurationEmitter.cs) | Композиция Using с Members при прежнем lifecycle |
+| [MappingSettings](../../src/Morphant.Generator/Settings/MappingSettings.cs), [diagnostic pipeline](../../src/Morphant.Generator/Settings/MappingSettingsDiagnosticPipeline.cs) | Общий resolver/применимость; исходные [selection](../../src/tests/Morphant.Generator.IntegrationTests/TypeMapperMemberTests/MemberSelectionTests.cs) и [inheritance](../../src/tests/Morphant.Generator.IntegrationTests/TypeMapperInheritanceTests/SettingsCompositionTests.cs) tests |
+| [MemberTypeCompatibility](../../src/Morphant.Generator/TypeMapperGeneration/MemberTypeCompatibility.cs) | Прежний implicit-conversion контракт nested Auto |
 
-Enum shape хранит underlying type, constants/aliases, single-bit mask и locations;
-ulong не приводится к long. Runtime reflection, Enum.Parse и boxing не нужны.
-Open `T : Enum` без известных полей требует ручного алгоритма либо diagnostic.
-IMapper/ITypeMapper и MappingContext подходят без нового runtime API.
+Enum shape: underlying type, constants/aliases, single-bit mask, locations;
+ulong не сужается до long. Runtime reflection, Enum.Parse и boxing не нужны.
+Open T : Enum без известных полей требует ручного алгоритма или diagnostic.
+IMapper/ITypeMapper/MappingContext не требуют нового runtime API.
 
 ### Компилятор и типизация
 
-Неполный switch предупреждает уже **в Configure**: полный generated switch этого
-не устраняет, а обязательное `_ => Auto()` противоречит краткому Members.
+Неполный switch предупреждает уже в Configure: полный generated switch этого
+не устраняет; обязательный _ => Auto() противоречит краткому Members.
 
-Интеграционный прототип 2026-09-23 заменяет ранние isolated probes. Использованы
-настоящие TypeMapper/MappingBuilder, четыре Members delegates, Option, context
-и Auto markers из Morphant.dll; отдельный тестовый SG добавляет scalar marker,
-pair extensions и suppressor. Production enum planner ещё отсутствует.
+Интеграционный прототип 2026-09-23 заменяет isolated probes: настоящие
+TypeMapper/MappingBuilder, четыре Members delegates, Option/context/Auto из
+Morphant.dll; тестовый SG добавляет scalar marker, extensions и suppressor.
+Production planner отсутствует.
 
-| Проверка | Результат |
+| Проверка прототипа | Результат |
 |---|---|
-| MSBuild, SDK 10.0.100, C# 9, nullable, warnings-as-errors | Все четыре Members формы; enum/string/integer/nullable, or/guards/throw, if, switch statement, conditional expression и возвращаемый local alias собираются без предупреждений |
-| Roslyn 4.4.0, C# 9, .NET Standard 2.0 references | Те же формы проходят без исключения CS1701; suppressor убирает CS8509/CS8524/CS8846 только у mapping switches |
-| Отрицательные контроли | Ordinary/nested switch, Using и чужой Members сохраняют предупреждения; wrong type, obsolete, unreachable arm и отсутствующий return остаются ошибками при warnings-as-errors |
-| Generated Create/Update одной пары из исходного Members | Явное правило и добавленная ByName-конвенция дают четыре ожидаемых результата; два неизвестных входа бросают typed mapping exception |
-| Дополнительные MSBuild-контроли | Nested switch продолжает давать CS8509; RunAnalyzersDuringBuild=false в проверенном SDK не отключил suppressor |
+| SDK 10.0.100, MSBuild, C# 9, nullable, warnings-as-errors | Четыре формы; enum/string/integer/nullable, or/guards/throw, if, switch statement, conditional и local alias без предупреждений |
+| Roslyn 4.4.0, C# 9, .NET Standard 2.0 references | Те же формы без исключения CS1701; CS8509/CS8524/CS8846 подавляются только у mapping switches |
+| Отрицательные контроли | Ordinary/nested switch, Using, чужой Members сохраняют warnings; wrong type, obsolete, unreachable arm, missing return остаются ошибками при warnings-as-errors |
+| Generated Create/Update одной пары | Четыре ожидаемых результата explicit + ByName; два неизвестных входа дают typed mapping exception |
+| Дополнительный MSBuild | Nested switch сохраняет CS8509; RunAnalyzersDuringBuild=false в проверенном SDK не отключил suppressor |
 
-Rider в этой среде недоступен: редакторные inspections ещё не проверены.
-Прототип подтверждает compiler/MSBuild feasibility, не полную production-интеграцию,
-IncludeBase, flags, dataflow result или общую корректность классификации switch.
+Это feasibility, не проверка production, IncludeBase, flags, result dataflow или
+полной классификации switches. Rider недоступен, редакторные inspections не проверены.
 
 Nullable reference marker поддерживает natural null/default; генератор проверяет
-их по настоящему destination type. Для default рядом с Auto параметры conversions
-от AutoMarker/AutoMarker<T> должны допускать null, иначе возникает CS8604.
-Struct marker ломает natural null. Промежуточному
-`var x = ... switch` со смесью enum и bare Auto может не хватить target type;
-помогает существующий `Auto<T>()`. Голое `=> 0` не конвертируется в generic scalar
-marker: работают `Target.None`, `default` и `(Target)0`. Эти ограничения приняты;
-не расширять implicit numeric conversions и не обходить типизацию через object/dynamic.
+их по настоящему destination. Conversions AutoMarker/AutoMarker<T> должны принимать
+null для default рядом с Auto, иначе CS8604; struct marker ломает natural null.
+У var со смесью enum/bare Auto может не хватить target type — нужен Auto<T>().
+Bare => 0 не конвертируется в generic scalar marker: подходят Target.None,
+default, (Target)0. Эти ограничения приняты; numeric conversions/object/dynamic
+ради обхода типизации не добавляются.
 
 [Suppressor](https://learn.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis.diagnostics.diagnosticsuppressor?view=roslyn-dotnet-4.4.0)
-должен распознавать настоящий DSL symbol, enum rule kind и только switch, который
-planner дополняет. Одного имени Members недостаточно. Не подавлять warnings
-глобально, в Members структурного object/tuple destination, Construct, Using,
-Convert или nested switch. Object/tuple source не исключает scalar enum Members;
-сохранить wrong-type, unreachable, obsolete и прочую диагностику. В generated
-switch покрытие должно быть явным; enum coverage остаётся отдельной проверкой.
+распознаёт настоящий DSL symbol, enum rule kind и только дополняемый planner switch,
+а не имя Members. Не подавлять глобально, в структурном Members/Construct,
+Using/Convert или nested switch; wrong-type/unreachable/obsolete сохраняются.
+Object/tuple source допустим у scalar enum Members. Generated switch должен быть
+явно полным; enum coverage — отдельная проверка.
 
 ### Generated code и критерии готовности
 
-Простой случай должен оставаться простым switch: explicit arms → синтезированные
-соответствия → fallback. Не добавлять недостижимые arms после явных patterns.
-Guards, IncludeBase и другой switch input могут требовать вложенного продолжения:
-сохранить единичное вычисление входа каждого switch, его использование конвенцией
-и условность результатов.
-Нет local на каждый case, ранней конвенции ради result или catch вокруг user code.
-Соблюдать [generator contracts](GENERATOR_CONTRACTS.md): читаемость, scopes,
-форматирование, failure stubs, settings diagnostics, compatibility manifest,
-incrementality, cancellation/recovery; path структурного object/tuple destination
-не менять.
+Простой случай: explicit arms → синтезированные соответствия → fallback, без
+недостижимых arms. Guards/IncludeBase/смена входа могут требовать вложенного
+продолжения; сохраняются единичное вычисление входов и условность результатов.
+Нет local на каждый case, конвенции заранее ради result или catch вокруг user code.
+Соблюдаются [generator contracts](GENERATOR_CONTRACTS.md): читаемость, scopes,
+форматирование, stubs/diagnostics, compatibility manifest, incrementality,
+cancellation/recovery; структурный mapping сохраняет контракт.
 
-Реализация проверяет все контракты выше по [testing guidelines](TESTING_GUIDELINES.md).
-Проверки production-реализации, которые прототип не заменяет:
+Production проверяется по [testing guidelines](TESTING_GUIDELINES.md) и всему
+[каталогу сценариев](ENUM_MAPPING_SCENARIOS.md); прототип его не заменяет:
 
-| Область | Проверки |
+| Область | Обязательные сочетания |
 |---|---|
-| API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; class/struct/ValueTuple/System.Tuple → enum через scalar Members, явный выбор входа и whole-source patterns; Create/Update, включая Update без Create; все null policies; null выбранного свойства/элемента/local/результата метода без повторных guards, неуспех конвенции против явного null-result, string null против пустоты, Auto и обычный fallback, effects фабрики и Nullable.Value/Trim; доступное/недоступное чтение result и неиспользуемый параметр; прежний API структурного object/tuple destination |
-| Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
-| Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
-| Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; независимая UnmappedEnumMemberValidation, default Source, общий enum типа настройки, pair/IncludeBase/mapper/MSBuild precedence без перехода к обычной validation; coverage всех режимов и статического enum-типа выбранного входа, свойства/элементы/locals/результаты методов без анализа тел, whole-object patterns и nested Map без скрытых проверок; guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
-| Стратегия и тип входа | Library default для фактического входа; смена enum/string/integer и result → result; разные типы в путях Members и IncludeBase; явная совместимая/несовместимая стратегия, унаследованный выбор и Default; общие defaults без повторного поиска; неявная конвенция и Auto/Auto<T>, Explicit и отсутствие автоматических путей; диагностика конфигурации до runtime; неподдерживаемое преобразование без расширения API |
-| Ошибки enum | Единый EnumMappingException для отсутствия результата; точная зарегистрированная пара и операция; фактический вход, причина, проблемный бит/токен; Explicit без фиктивной попытки конвенции, result и inherited Auto; отсутствие повторных вычислений и пользовательского ToString; успешный fallback без исключения, исходные user/lifecycle/configuration exceptions |
-| Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; применимость к исходному проходу и выбранной конвенции, object/tuple → flags с одним проходом и цельным fallback, whole-mask overrides и scalar Ignore, projected string list в обоих режимах, coverage composite без повторения overrides; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; побитовая конвенция вычисленной маски без повторного Members/IncludeBase; неуспех всей попытки и полный вклад fallback, 0/result/Ignore/remaining, собственный вход inherited Auto; ByBit Ignore/Ignore<T> без initial result, nullable ноль, все вклады пропущены, приоритет и наследование режима; исходная и вычисленная комбинации, сохранение других вкладов и однократных независимых вычислений; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
-| Строковые flags | Три входных разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null; вывод ByBit/ByMask, порядок/повторы, ноль с именем/aliases и без объявления, пустые вклады и пустой итог |
-| Toolchain | Реальная nullable marker/delegate типизация и доступность result; C# 9, minimum Roslyn, MSBuild и IDE; suppressor diagnostic families, guards, отключённые анализаторы и warnings-as-errors; nested switch/wrong types/obsolete; edit settings/enum/callback, recovery и cancellation |
+| API/lifecycle | Bare и четыре Members формы; scalar/object/tuple/nullable; Create/Update, Update-only; все null policies, terminal null; available/unavailable/unused result; Using method groups/delegates/context и effects |
+| Правила/композиция | Auto/Explicit, guards/throws/fallback, direct results, locals/mutation; все IncludeBase уровни/настройки, собственные inputs/bindings, ленивые scopes, общий result, конфликты Convert/Using |
+| Стратегии/значения | Фактические типы и разные defaults путей; совместимые неактивные настройки; signed/ulong/range/checked; E → E; ordinal/culture/aliases и групповой exact-first; конечные стороны coverage, guards/dynamic results/discards |
+| Flags/строки | ByBit/ByMask, исходный/вычисленный/проектируемый вход; whole fallback и отсутствие повторных правил; OR, ноль/null/Ignore, aliases/composites/Pair/All/signed high bit; separators/trim/empty/repeated tokens, canonical output и порядок effects |
+| Ошибки/toolchain | EnumMappingException с исходной парой и фактическим входом без повторных вычислений/ToString; C# 9/minimum Roslyn/MSBuild/IDE, suppressor families/disabled analyzers/warnings-as-errors; edits settings/enums/callbacks, recovery/cancellation |
 
 ## Отложенное и проверки реализации
 
-- Настройка разделителей отложена: вход принимает `,`, `|`, `;`, вывод использует
-  `", "`. Пробел и `+` автоматически не разделяют имена.
-- Техническая проверка: Rider и production-интеграция. Compiler/MSBuild прототип
-  выполнен; ограничения bare 0 и var со смешанным bare Auto приняты.
+- Настройка разделителей: сейчас вход `,`, `|`, `;`, выход `", "`.
+- Rider и production-интеграция; compiler/MSBuild прототип не подтверждает их.
