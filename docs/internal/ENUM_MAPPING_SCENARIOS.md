@@ -58,6 +58,7 @@
 - [Coverage выбранного enum-входа](#coverage-выбранного-enum-входа) — 176–178
 - [Flags-конвенция для выбранного входа](#flags-конвенция-для-выбранного-входа) — 179–184
 - [Null выбранного входа конвенции](#null-выбранного-входа-конвенции) — 185–189
+- [Совместимые настройки и aliases](#совместимые-настройки-и-aliases) — 190–192
 
 ## Обычные enum
 
@@ -728,8 +729,8 @@ builder.Map<WireCode, byte>();
 | `(WireCode)255` | byte 255 |
 | `Large = 300` | Исключение маппинга |
 
-У byte нет списка объявлений. EnumMappingStrategy для этого преобразования
-неприменима; задавать её явно не нужно.
+У byte нет списка объявлений. Явные ByValue и ByValueAllowUndefined допустимы
+и дают те же результаты; ByName несовместима с enum → integer.
 
 ### 28. Знак и широкий ulong не теряются
 
@@ -2640,8 +2641,8 @@ Construct применим. Для scalar enum → enum, enum ↔ string и enum
 | Пара | Явная pair-настройка | Ожидаемый результат конфигурации |
 |---|---|---|
 | `int → StoredCode` | `.EnumMappingStrategy(EnumMappingStrategy.ByName)` | MORPH0023 |
-| `DomainStatus → int` | `.EnumMappingStrategy(EnumMappingStrategy.ByValue)` | MORPH0023 |
-| `string → DomainStatus` | `.EnumMappingStrategy(EnumMappingStrategy.ByName)` | MORPH0023 |
+| `DomainStatus → int` | `.EnumMappingStrategy(EnumMappingStrategy.ByName)` | MORPH0023 |
+| `string → DomainStatus` | `.EnumMappingStrategy(EnumMappingStrategy.ByValue)` | MORPH0023 |
 | `DomainStatus → ApiStatus`, оба без Flags | `.FlagsMappingMode(FlagsMappingMode.ByBit)` | MORPH0023 |
 | `int → Access` | `.FlagsMappingMode(FlagsMappingMode.ByMask)` | MORPH0023 |
 | `Access → string` с ByValue | `.FlagsMappingMode(FlagsMappingMode.ByBit)` | MORPH0023 |
@@ -3519,9 +3520,9 @@ NormalizeText возвращает string и вызывается один ра�
 При замене fallback на `_ => Auto()` последние три строки бросают. Существующий
 `Auto<ApiStatus>()` выбирает тот же вход и ту же конвенцию.
 
-Добавление к паре любой конкретной EnumMappingStrategy — ByName, ByValue или
-ByValueAllowUndefined — даёт MORPH0023: для string → enum этот выбор неприменим.
-В частности, ByValue не заменяется на поиск имени и не включает numeric parsing.
+Явный ByName допустим и сохраняет результаты. ByValue или ByValueAllowUndefined
+даёт MORPH0023: числовая стратегия для string → enum неприменима.
+ByValue не заменяется на поиск имени и не включает numeric parsing.
 Fallback не скрывает ошибку настройки; это диагностика конфигурации до runtime.
 
 ### 145. Совместимая явная стратегия сохраняется при смене типа
@@ -3550,7 +3551,8 @@ ByValueAllowUndefined даёт ту же строку; ByName и отсутст�
 | string → StoredCode | int 1 | ByValue | Pending = 1 |
 | int → StoredCode | WireCode.Active = 1 | ByName | Active = 2 |
 | WireCode → byte | StoredCode.Active = 2 | Не задана | byte 2 |
-| WireCode → byte | StoredCode.Active = 2 | ByValue | MORPH0023: enum → integer не выбирает стратегию |
+| WireCode → byte | StoredCode.Active = 2 | ByValue / ByValueAllowUndefined | byte 2 |
+| WireCode → byte | StoredCode.Active = 2 | ByName | MORPH0023: enum → integer требует числовую стратегию |
 
 Выбор может быть применим только после пользовательского преобразования входа:
 string → StoredCode с вычисленным int допускает ByValue. Исходные типы регистрации
@@ -4644,8 +4646,9 @@ builder.Map<AccessRequest, ApiAccess>()
 64, а не 72. Его выражение выполняется один раз.
 
 Замена fallback на `_ => Auto()` или отсутствие fallback приводят к исключению
-вместо Unknown. При MemberSelection.Explicit без явной pair-настройки режима
-обычный fallback всегда даёт Unknown; явный Auto запрашивает конвенцию и при Explicit.
+вместо Unknown. При MemberSelection.Explicit обычный fallback всегда даёт Unknown;
+совместимая pair-настройка режима допустима, но неактивна. Явный Auto запрашивает
+конвенцию и при Explicit.
 Типизированный Auto<ApiAccess>()
 имеет то же поведение. Для tuple с явно выбранным RequestAccess-элементом
 действуют те же правила.
@@ -4709,8 +4712,8 @@ Text читается один раз, patterns видят исходную вы
 Для повторения пользовательских правил на токенах нужен nested Map в отдельную
 string → ApiAccess пару с ByBit.
 
-При Explicit без явной pair-настройки режима обычный fallback даёт Unknown
-для списка и пустоты. Замена его на Auto возвращает встроенный разбор;
+При Explicit обычный fallback даёт Unknown для списка и пустоты; совместимая
+pair-настройка режима остаётся допустимой. Замена fallback на Auto возвращает встроенный разбор;
 "Read|Missing" при этом бросает.
 
 ### 182. Ignore сохраняет начальный result внешнего scalar-прохода
@@ -4733,7 +4736,7 @@ Ignore — fallback после неуспеха конвенции. Частич
 к initial result. На Create фабрика вызывается один раз; на Update с non-null
 destination пропускается. Ignore<ApiAccess>() имеет ту же семантику.
 При Explicit конвенция пропускается и Ignore сохраняет initial result для всех
-входов; режим в таком варианте не задаётся на паре, поскольку ему нечего обрабатывать.
+входов; совместимый режим можно оставить на паре неактивным.
 
 Без фабрики такой путь на Create диагностируется как недоступный initial result.
 При MappingMode.Update с non-nullable destination previous доступен, включая 0.
@@ -4971,6 +4974,70 @@ builder.Map<RequestAccess, ApiAccess?>()
 без фабрики. Явный null-result имеет отдельный terminal-контракт; ранее
 выполненные эффекты не откатываются. Non-null Unknown из fallback не становится
 новым source и повторно не проходит правила.
+
+## Совместимые настройки и aliases
+
+### 190. Явная стратегия может подтверждать стандартное поведение
+
+Каждая строка — отдельная регистрация; используются DomainStatus и WireCode.
+
+| Пара | Явная EnumMappingStrategy | Вход → результат |
+|---|---|---|
+| string → DomainStatus | ByName | `"active"` → Active; `"2"` → EnumMappingException |
+| WireCode → byte | ByValue | Active → 1; `(WireCode)42` → 42; Large = 300 → EnumMappingException |
+| WireCode → byte | ByValueAllowUndefined | Те же результаты, включая проверку диапазона |
+| string → DomainStatus | ByValue / ByValueAllowUndefined | MORPH0023; numeric parsing не добавляется |
+| WireCode → byte | ByName | MORPH0023 |
+
+Первые три строки совпадают с регистрацией без настройки. Обычный fallback
+обрабатывает неуспех допустимой конвенции; явный Auto бросает. Правило действует
+также для выбранного входа и унаследованной настройки.
+
+### 191. Explicit сохраняет совместимую настройку неактивной
+
+```csharp
+builder.Map<AccessRequest, ApiAccess>()
+    .FlagsMappingMode(FlagsMappingMode.ByBit)
+    .MemberSelection(MemberSelection.Explicit)
+    .Members(request => request.Access switch { _ => ApiAccess.Unknown });
+```
+
+| Вариант | Результат для Access = ReadWrite |
+|---|---|
+| Как выше | Unknown = 64; MORPH0023 нет |
+| Заменить ByBit на ByMask | Unknown = 64; настройка также неактивна |
+| Удалить Explicit, сохранив ByBit | Read \| Write = 24 |
+| Сохранить Explicit и заменить fallback на Auto | 24 с ByBit; EnumMappingException с ByMask |
+| Настройка ByBit и Members унаследованы; локально только Explicit | Unknown = 64; удалять настройку базы не требуется |
+
+Для CoverageEnvelope → CoverageTarget аналогично допустим ByName при Explicit
+и `source.Status switch { _ => CoverageTarget.Internal }`: результат Internal,
+стратегия неактивна. Если заменить fallback на Auto, Active переводится в Active,
+New бросает. Без автоматических путей подходит зарегистрированная пара **либо**
+один из выбранных статических входов; наличие реальных Auto требует совместимости
+каждого из них. Явный ByName для int-входа Auto остаётся MORPH0023.
+Прямой результат/Using у object → enum без подходящего выбранного входа не
+создаёт применимость настройки; исходные flags-пары сохраняют собственный режим.
+
+### 192. Точные совпадения выбираются для всей группы aliases
+
+Все source-имена в строке имеют число 1; меняются только объявления enum.
+Регистрация без Members, default ByName:
+
+| Source aliases | Destination | Результат для 1 |
+|---|---|---|
+| Ready, ready | Ready = 10, READY = 20 | 10; точное Ready исключает ignore-case этап |
+| Ready, ACTIVE | Ready = 10, Active = 20 | 10; ignore-case ACTIVE не конкурирует с exact Ready |
+| Ready, READY | Ready = 10, READY = 20 | Неоднозначность двух точных чисел |
+| ready, rEaDy | Ready = 10, READY = 20 | Неоднозначность ignore-case этапа: точных нет |
+| Ready, Active | Ready = 10, Active = 10 | 10; несколько точных имён дают одно число |
+| Missing, ready | Ready = 10 | 10; отсутствие соответствия для Missing не отменяет успех |
+
+Перестановка объявлений ничего не меняет. Неоднозначность означает Warning и
+неуспех конвенции: обычный fallback даёт свой результат, отсутствие fallback
+или выбранный Auto — EnumMappingException. Явное правило для числа 1 разрешает
+конфликт всей группы. Canonical enum → string по-прежнему требует явного выбора
+при нескольких aliases; этот поиск относится к enum → enum.
 
 ## Статус проверки каталога
 
