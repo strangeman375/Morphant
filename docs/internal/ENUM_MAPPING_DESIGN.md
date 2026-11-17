@@ -955,14 +955,42 @@ Source выбран для раннего обнаружения необраб�
 Coverage проверяет итоговую композицию правил, конвенции и fallback,
 не меняя runtime-допустимость и порядок. Проверяются
 связи между объявлениями и явными правилами, не множество всех возможных
-результатов исполнения. Для enum → enum неназванный source не закрывает
+результатов исполнения. Enum-источник для coverage определяется по
+**статическому типу фактического входа правил**, а не только по TSource
+зарегистрированной пары:
+
+| Форма | Вход Source coverage |
+|---|---|
+| Mapping switch над source, свойством/элементом, local, результатом метода или result | Enum-тип выражения перед switch; nullable проверяется по underlying enum |
+| Конвенция без Members или Auto вне switch | Текущее source, как у самой конвенции |
+| Whole-object/tuple switch | Нет enum-входа; свойства, элементы и enum-константы внутри patterns автоматически не превращаются в отдельные проверки |
+| Прямое выражение результата Members | Обрабатывает текущий вход; enum-выражения внутри результата не становятся новыми входами coverage |
+| Явный nested Map/Create/Update | Правила проверяются в зарегистрированной вложенной паре с её настройкой |
+
+Например, в Order → ApiStatus с `order.Status switch` проверяются объявления
+enum-типа Status. Вынос этого значения в local или замена входа на
+`Normalize(order.Status)` с тем же enum return type не меняет множество
+объявленных значений для проверки. Тела методов/getters не анализируются:
+правила должны обрабатывать все объявления статического enum-типа, даже если
+конкретный Normalize фактически возвращает лишь их часть. Warning означает
+неполноту правил для этого типа, а не доказанную достижимость значения.
+
+Проверка учитывает guards, конвенцию и fallback после IncludeBase-композиции;
+частичный Members каждого уровня не проверяется изолированно. При разных
+входах уровней сохраняются их собственные значения и общий контракт анализа:
+невозможность доказать покрытие отличается от доказанно непокрытого значения.
+Scope диагностики привязан к выбранному входу; зарегистрированная mapping-пара
+не заменяется на его тип. Примеры —
+[сценарии 176–178](ENUM_MAPPING_SCENARIOS.md#coverage-выбранного-enum-входа).
+
+Для enum-входа → enum неназванное source-значение не закрывает
 destination coverage: Source { Active = 1 } → Target { Active = 1, Archived = 2 }
 под ByValue с Destination/Strict предупреждает об Archived, хотя runtime-вход
 (Source)2 допустим. Default Source такого destination-warning не даёт.
 
 | Режим / случай | Проверка |
 |---|---|
-| Source | Объявленные физические source-значения обработаны результатом, Ignore, явным запретом или успешной конвенцией; aliases одного числа — одна группа |
+| Source | Объявленные физические значения выбранного enum-входа обработаны результатом, Ignore, явным запретом или успешной конвенцией; aliases одного числа — одна группа |
 | Destination | Объявленные destination-значения участвуют в соответствиях объявлений или явных правилах; many-to-one допустим |
 | Strict / None | Обе стороны / без coverage; проверки некорректной конфигурации и диапазона сохраняются |
 | Завершающее значение или throw | Закрывает source coverage, включая новые значения, дошедшие до этой ветки |
@@ -971,8 +999,9 @@ destination coverage: Source { Active = 1 } → Target { Active = 1, Archived = 
 | Динамический результат Members | Обработку source можно доказать, множество destination часто неизвестно; если запрошенное coverage нельзя проверить — warning о границе анализа, не о недостижимости значения |
 
 Source, включая source-часть Strict, проверяет полноту обработки объявленных
-значений. Общий fallback — явное правило для оставшихся значений: добавление
-новой константы, которую он обрабатывает, само по себе не вызывает warning.
+значений выбранного enum-входа. Общий fallback — явное правило для оставшихся
+значений: добавление новой константы, которую он обрабатывает, само по себе
+не вызывает warning.
 Отдельное именованное правило для каждой константы не требуется; дополнительной
 проверки или настройки, предупреждающей об использовании fallback, нет.
 Это относится и к явно написанному throw. Автоматическое исключение из-за
@@ -980,11 +1009,12 @@ Source, включая source-часть Strict, проверяет полнот
 
 Тело Using не анализируется; наличие фабрики не доказывает полноту Members.
 `_ => result` явно обрабатывает остаток source, но не перечисляет destination.
-Для string/integer нет списка объявленных enum-значений на соответствующей
-стороне. Проверяется только выбранная enum-сторона: default Source ничего
-не проверяет для string/integer → enum и не превращается в Destination;
-Destination/Strict может проверить enum destination. Для enum → string/integer
-Source проверяет enum source. Все возможные строки и числа не перечисляются;
+Если фактический вход остаётся string/integer, на этой стороне нет объявленных
+enum-значений. Default Source их не проверяет и не превращается в Destination;
+Destination/Strict может проверить enum destination. Если string/integer source
+явно преобразован в enum-вход mapping switch, Source проверяет этот enum по
+правилу выше. Для enum-входа → string/integer Source проверяет enum source.
+Все возможные строки, числа и состояния объектов не перечисляются;
 неназванные числа — runtime-вопрос. При None непокрытый runtime-вход всё равно
 бросает без fallback.
 
@@ -1137,7 +1167,7 @@ incrementality, cancellation/recovery; path структурного object/tupl
 | API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; class/struct/ValueTuple/System.Tuple → enum через scalar Members, явный выбор входа и whole-source patterns; Create/Update, включая Update без Create; все null policies; доступное/недоступное чтение result и неиспользуемый параметр; прежний API структурного object/tuple destination |
 | Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
-| Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; независимая UnmappedEnumMemberValidation, default Source, общий enum типа настройки, pair/IncludeBase/mapper/MSBuild precedence без перехода к обычной validation; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
+| Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; независимая UnmappedEnumMemberValidation, default Source, общий enum типа настройки, pair/IncludeBase/mapper/MSBuild precedence без перехода к обычной validation; coverage всех режимов и статического enum-типа выбранного входа, свойства/элементы/locals/результаты методов без анализа тел, whole-object patterns и nested Map без скрытых проверок; guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
 | Стратегия и тип входа | Library default для фактического входа; смена enum/string/integer и result → result; разные типы в путях Members и IncludeBase; явная совместимая/несовместимая стратегия, унаследованный выбор и Default; общие defaults без повторного поиска; неявная конвенция и Auto/Auto<T>, Explicit и отсутствие автоматических путей; диагностика конфигурации до runtime; неподдерживаемое преобразование без расширения API |
 | Ошибки enum | Единый EnumMappingException для отсутствия результата; точная зарегистрированная пара и операция; фактический вход, причина, проблемный бит/токен; Explicit без фиктивной попытки конвенции, result и inherited Auto; отсутствие повторных вычислений и пользовательского ToString; успешный fallback без исключения, исходные user/lifecycle/configuration exceptions |
 | Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; побитовая конвенция вычисленной маски без повторного Members/IncludeBase; неуспех всей попытки и полный вклад fallback, 0/result/Ignore/remaining, собственный вход inherited Auto; ByBit Ignore/Ignore<T> без initial result, nullable ноль, все вклады пропущены, приоритет и наследование режима; исходная и вычисленная комбинации, сохранение других вкладов и однократных независимых вычислений; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
@@ -1146,10 +1176,6 @@ incrementality, cancellation/recovery; path структурного object/tupl
 
 ## Отложенное и проверки реализации
 
-- Перед реализацией уточнить границу Source coverage для object/tuple → enum:
-  проверять ли объявленные значения явно выбранного enum-выражения, если сам
-  зарегистрированный source не enum. Доступность Members согласована; полного
-  контракта такого анализа пока нет. Nested Map проверяется своей enum-парой.
 - Перед реализацией уточнить применение FlagsMappingMode к enum/string-входу,
   выбранному из object/tuple в mapping switch. Сам object/tuple не разбивается
   на биты/токены и Members не повторяется для его полей. Прямой результат-маска

@@ -55,6 +55,7 @@
 - [Ignore в ByBit](#ignore-в-bybit) — 164–166
 - [Независимая настройка enum coverage](#независимая-настройка-enum-coverage) — 167–169
 - [Members для object/tuple → enum](#members-для-objecttuple--enum) — 170–175
+- [Coverage выбранного enum-входа](#coverage-выбранного-enum-входа) — 176–178
 
 ## Обычные enum
 
@@ -4274,9 +4275,10 @@ Source проверяет объявленные enum source-значения, �
 ## Members для object/tuple → enum
 
 Согласованный API — в [дизайне](ENUM_MAPPING_DESIGN.md#objecttuple--enum).
-Здесь показаны ожидаемые результаты и доступность DSL. Граница Source coverage
-для выбранного enum-выражения и режим прямой конвенции flags/string-входа
-из объекта отмечены как [вопросы перед реализацией](ENUM_MAPPING_DESIGN.md#отложенное-и-проверки-реализации).
+Здесь показаны ожидаемые результаты и доступность DSL. Source coverage выбранного
+enum-входа рассмотрен в [сценариях 176–178](#coverage-выбранного-enum-входа).
+Режим прямой конвенции flags/string-входа из объекта остаётся
+[вопросом перед реализацией](ENUM_MAPPING_DESIGN.md#отложенное-и-проверки-реализации).
 
 ### 170. Конвенция для явно выбранного enum-свойства
 
@@ -4302,6 +4304,8 @@ builder.Map<StatusCarrier, ApiStatus>()
 DomainStatus → ApiStatus не требуется и, если она есть, автоматически не вызывается.
 Exception сохраняет SourceType = StatusCarrier, DestinationType = ApiStatus;
 проблемный вход — выбранный DomainStatus, без повторного чтения свойства.
+Default Source coverage предупреждает о Suspended, Corrupt и Legacy:
+проверяется DomainStatus выбранного входа, несмотря на class source регистрации.
 
 При MemberSelection.Explicit Active бросает, Cancelled по-прежнему даёт Deleted.
 Добавление `_ => Auto()` возвращает конвенцию для Active и при Explicit.
@@ -4395,6 +4399,8 @@ builder.Map<StatusCarrier, ApiStatus>()
 Включается та же пара StatusCarrier → ApiStatus. Два написанных обращения
 source.Status остаются независимыми вычислениями; базовый уровень достигается
 лениво, как в обычных enum-парах. Локальный Cancelled не читает свойство в базе.
+Default Source coverage закрыт общим унаследованным fallback; локальный
+неполный switch не получает отдельного предупреждения за отсутствие остальных cases.
 
 ### 174. Nullable object, previous, result и Operation сохраняют lifecycle
 
@@ -4466,6 +4472,133 @@ Adaptive Map выбирает nested Create или Update по доступно�
 Create/Update сохраняют свои обычные контракты. Enum coverage вложенной пары
 проверяется независимо от внешнего объекта. Прямая сборка маски без nested Map
 показана в сценарии 123.
+
+## Coverage выбранного enum-входа
+
+Контракт — в [дизайне](ENUM_MAPPING_DESIGN.md#проверка-покрытия).
+Используются CoverageSource { Active = 1, Cancelled = 2, New = 3 } и
+CoverageTarget { Active = 10, Deleted = 20, Internal = 30 } из сценария 97.
+Диагностики относятся к конфигурации и не зависят от фактического runtime-вызова.
+
+### 176. Source проверяет enum-свойство и сохраняет обычные правила покрытия
+
+```csharp
+class CoverageEnvelope
+{
+    public CoverageSource Status { get; set; }
+    public string Note { get; set; } = "";
+}
+
+builder.Map<CoverageEnvelope, CoverageTarget>()
+    .Members(source => source.Status switch
+    {
+        CoverageSource.Cancelled => CoverageTarget.Deleted
+    });
+```
+
+| Status | Runtime |
+|---|---|
+| Active | Active = 10 по конвенции |
+| Cancelled | Deleted = 20 по явному правилу |
+| New | EnumMappingException |
+| `(CoverageSource)123` | EnumMappingException; неназванное число не входит в coverage |
+
+| UnmappedEnumMemberValidation | Warnings |
+|---|---|
+| Не задан / Source | CoverageSource.New не обработан |
+| Destination | CoverageTarget.Internal не используется |
+| Strict | New и Internal |
+| None | Нет coverage warnings; runtime тот же |
+
+Source проверяет объявления CoverageSource, хотя TSource пары — CoverageEnvelope.
+Note не анализируется этой enum-проверкой. Для struct или tuple с явно выбранным
+элементом CoverageSource результаты проверки те же.
+
+Каждая строка ниже — отдельное дополнение к исходному switch при default Source:
+
+| Добавленная ветка | Source coverage New |
+|---|---|
+| `CoverageSource.New => CoverageTarget.Internal` | Закрыт |
+| `CoverageSource.New when IsEnabled() => CoverageTarget.Internal` | Warning: false-путь не обработан |
+| `_ => CoverageTarget.Internal` | Закрыт обычным fallback |
+| `_ => throw new InvalidOperationException()` | Закрыт явным запретом |
+| `_ => Auto()` | Warning: у New нет конвенционного соответствия |
+
+Унаследованный общий fallback также закрывает покрытие, как в сценарии 173.
+Warnings не вычисляются отдельно для неполного Members каждого уровня.
+
+### 177. Local и Normalize не сужают набор объявлений enum для проверки
+
+Normalize всегда возвращает CoverageSource.Active и считает вызовы:
+
+```csharp
+builder.Map<CoverageEnvelope, CoverageTarget>()
+    .Members(source =>
+    {
+        var status = Normalize(source.Status);
+        return status switch
+        {
+            CoverageSource.Cancelled => CoverageTarget.Deleted
+        };
+    });
+```
+
+Каждая строка — отдельный вариант того же Members при source.Status = New:
+
+| Выбор входа switch | Runtime | Default Source coverage |
+|---|---|---|
+| `source.Status switch` | Исключение | Warning для New |
+| `var status = source.Status; return status switch ...` | Исключение | Warning для New |
+| `Normalize(source.Status) switch` | Active | Warning для New |
+| Normalize через local, как выше | Active | Warning для New |
+
+В двух последних строках Normalize вызывается один раз. Его return type —
+CoverageSource; проверяются все объявления этого типа. Генератор не анализирует
+тело метода, чтобы исключить New, и не утверждает, что Normalize вернёт New.
+Добавление обычного fallback закрывает Source coverage; None отключает его.
+Оба изменения сохраняют фактический Active в этих двух строках.
+
+То же правило действует, если enum-результат метода выбран внутри регистрации
+string/integer → enum: отсутствие enum в TSource не отключает проверку выбранного
+enum-входа. При самом string/integer-входе остаётся контракт сценария 169.
+
+### 178. Whole-object switch и nested Map не запускают скрытую проверку свойств
+
+Whole-object вариант:
+
+```csharp
+builder.Map<CoverageEnvelope, CoverageTarget>()
+    .Members(source => source switch
+    {
+        { Status: CoverageSource.Cancelled } => CoverageTarget.Deleted,
+        _ => CoverageTarget.Internal
+    });
+```
+
+Default Source не перебирает Status: вход switch — CoverageEnvelope.
+New возвращает Internal; прямое enum-значение справа от ветки не создаёт
+дополнительной Source-проверки. Без fallback New бросит, но warning о
+CoverageSource.New не появится: enum-свойства whole-object patterns не сканируются.
+Для whole-tuple switch действует та же граница.
+
+Отдельный вариант с зарегистрированной enum-парой:
+
+```csharp
+builder.Map<CoverageSource, CoverageTarget>()
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.Source)
+    .Members(value => value switch
+    {
+        CoverageSource.Cancelled => CoverageTarget.Deleted
+    });
+builder.Map<CoverageEnvelope, CoverageTarget>()
+    .UnmappedEnumMemberValidation(UnmappedMemberValidation.None)
+    .Members(source => Map<CoverageTarget>(source.Status));
+```
+
+Warning для New принадлежит вложенной CoverageSource → CoverageTarget.
+Внешний None его не отключает и дополнительный warning для того же свойства
+не создаётся. Если у вложенной пары тоже выбрать None, coverage warnings исчезнут,
+но source.Status = New по-прежнему бросит исключение вложенного mapping.
 
 ## Статус проверки каталога
 
