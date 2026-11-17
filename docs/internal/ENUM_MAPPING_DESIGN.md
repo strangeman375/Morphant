@@ -56,7 +56,7 @@ builder.Map<DomainStatus, ApiStatus>()
 | Настройка | Вопрос | Значения и library default |
 |---|---|---|
 | `EnumMappingStrategy` | Что считать соответствием? | `Default`, **`ByName`**, `ByValue`, `ByValueAllowUndefined`; для integer-to-enum default — строгий `ByValue` |
-| `FlagsMappingMode` | Обрабатывать единицу или полную маску? | `Default`, **`ByBit`**, `ByMask`; flags-to-flags, string-to-flags и flags-to-string под ByName; единица — бит или строковый токен |
+| `FlagsMappingMode` | Как обрабатывать исходные flags и выбранный вход конвенции? | `Default`, **`ByBit`**, `ByMask`; применимость к исходному проходу и фактическому входу конвенции определяется отдельно [ниже](#flagsmappingmode-и-выбранный-вход) |
 | `UnmappedEnumMemberValidation` | Какие enum-значения должны быть обработаны? | Существующий enum `UnmappedMemberValidation`: `Default`, `None`, **`Source`**, `Destination`, `Strict`; compile-time warnings |
 
 ```csharp
@@ -109,6 +109,11 @@ builder.Map<WireCode, StoredCode>()
 | Integer → enum | `ByValue` / `ByValueAllowUndefined`; default `ByValue` | Неприменима; целое число, для flags destination — допустимость маски |
 | Enum → integer | Неприменима; перенос числа с проверкой диапазона | Неприменима |
 | String → enum | Неприменима; конвенция CLR-имён | Для flags destination: ByBit — токены, ByMask — исходная строка; иначе неприменима |
+
+Для FlagsMappingMode таблица определяет исходную единицу Members по
+зарегистрированной паре и способ обработки фактического входа конвенции.
+Object/tuple source остаётся целым; извлечённое значение подчиняется
+[правилу выбранного входа](#flagsmappingmode-и-выбранный-вход).
 
 Явную неприменимую pair-настройку, включая унаследованную через IncludeBase,
 диагностировать по общему контракту `MORPH0023`; неприменимый общий default
@@ -173,6 +178,53 @@ fallback и guard не скрывают несовместимость суще�
 описана [ниже](#составной-вычисленный-вход-в-bybit).
 Примеры смены типа, настроек и наследования —
 [сценарии 143–149](ENUM_MAPPING_SCENARIOS.md#стратегия-и-тип-входа-конвенции).
+
+### FlagsMappingMode и выбранный вход
+
+Один effective FlagsMappingMode выбирается обычным precedence; library default
+для применимого flags-преобразования — ByBit. Он определяет две части алгоритма:
+
+- Исходный проход Members — по зарегистрированной паре, как в таблице выше.
+  Object/tuple → enum получает целый объект/кортеж один раз; извлечение свойства
+  не создаёт дополнительных проходов Members или IncludeBase.
+- Способ встроенной конвенции — по статическому типу её фактического входа
+  и destination. Flags-маска под ByBit переводится по физическим битам;
+  под ByMask — целиком. Integer-вход остаётся целым числом.
+
+Явная pair-настройка, в том числе унаследованная, допустима, если она применима
+к исходному проходу или хотя бы к одной flags-конвенции после композиции.
+Если таких применений нет, действует MORPH0023; неприменимый общий default
+игнорируется. Автоматические пути анализируются как конфигурация, независимо
+от конкретного runtime-входа. Если их нет, остаётся применимость исходной пары.
+Наличие integer/обычного enum-входа рядом с flags-путём не превращает его
+в побитовый: режим действует там, где применим, включая inherited Auto.
+
+В `request.Access switch`, где Access — flags enum, patterns проверяют одну
+полную маску. `Read => ...` не обрабатывает Read внутри Read | Write.
+Если достигнута ByBit-конвенция, она переводит биты встроенными правилами,
+без повторного запуска пользовательских веток. Явные whole-mask результаты
+окончательны. Для пользовательских правил на каждом бите служит явный nested
+Map в зарегистрированную flags-пару.
+
+Для `request.Text switch` с string-входом patterns видят полную выбранную
+строку. Встроенная конвенция разбирает список CLR-имён с обычными разделителями,
+trim и нулевыми токенами. ByMask сохраняет существующий разбор всего списка;
+он не требует одного имени вместо списка. Поскольку внешний Members не
+повторяется для токенов, оба режима здесь дают одинаковый результат встроенного
+разбора и одну общую границу fallback. Правила для каждого токена доступны
+через nested Map в string → flags пару с ByBit.
+
+Выражение входа вычисляется один раз при достижении switch. Любой
+непереведённый бит/токен означает неуспех **всей** попытки конвенции; частичный
+OR отбрасывается, обычный fallback вычисляется один раз и задаёт весь результат.
+Явный Auto/Auto<T> при неуспехе сразу бросает. Explicit отключает только неявную
+конвенцию; пользовательские вычисления сохраняют свой порядок.
+
+Внешний Ignore сохраняет смысл исходного прохода: для object/tuple → enum
+это scalar Ignore с доступным initial result, даже когда сама конвенция
+использует ByBit. Фабрика, null policies, previous/result и Create/Update
+следуют общему lifecycle. Примеры —
+[сценарии 179–184](ENUM_MAPPING_SCENARIOS.md#flags-конвенция-для-выбранного-входа).
 
 ## Members: правила и конвенция
 
@@ -610,6 +662,10 @@ builder.Map<string, ApiStatus>()
 | ByBit (default) | Текущий обрезанный токен | CLR-имя с exact-first/ignore-case; результаты токенов объединяются OR |
 | ByMask | Полная исходная строка, один проход правил | Разбор всего списка CLR-имён и OR; пользовательские правила не применяются к отдельным токенам |
 
+Таблица описывает исходную string → flags пару. Для строки, выбранной из
+object/tuple, внешний Members получает целый source по
+[правилу выбранного входа](#flagsmappingmode-и-выбранный-вход).
+
 В ByBit разбиение сохраняется при Explicit. Правила и их IncludeBase выполняются
 слева направо, включая повторяющиеся токены;
 удалять повторы до Members нельзя из-за effects. `"ReadWrite"` может обозначать
@@ -808,10 +864,12 @@ Read = 8, Write = 16 дают для неназванного 3 результа
 соответствия в ByMask. Whole-mask overrides не дополняются автоматическим
 переводом остальных неназванных комбинаций. Исключение — пустая маска ниже.
 
-Это принятая граница текущего объёма: смешанный режим и отдельный выбор режима
-для Members и конвенции не вводятся. Алгоритм, сочетающий особые результаты
-целых масок с переводом остальных комбинаций по битам, пользователь может
-задать явно, например вспомогательным методом или через Convert.
+Для исходной flags → flags пары отдельные настройки режима Members и конвенции
+не вводятся. Алгоритм, сочетающий особые результаты целых масок с переводом
+остальных комбинаций по битам, здесь задаётся явно, например вспомогательным
+методом или через Convert. У object/tuple → enum исходный проход уже целый;
+его [выбранная flags-конвенция](#flagsmappingmode-и-выбранный-вход) не меняет
+единицу внешних пользовательских правил.
 
 ### Составной вычисленный вход в ByBit
 
@@ -1018,7 +1076,14 @@ Destination/Strict может проверить enum destination. Если stri
 неназванные числа — runtime-вопрос. При None непокрытый runtime-вход всё равно
 бросает без fallback.
 
-В ByBit source composites покрыты, когда обработаны их отдельные биты.
+При исходном побитовом проходе и неизменённом входе-бите source composites
+покрыты, когда обработаны их отдельные биты. Для полного выбранного входа
+в object/tuple → enum проверяются его объявления и итоговые правила:
+ветка Read не доказывает обработку Read | Write. Конвенция разбирает компоненты
+сама и не применяет к ним whole-mask overrides. При неуспехе без fallback
+объявленный composite остаётся непокрытым, даже если каждый одиночный флаг
+имеет отдельную пользовательскую ветку. Пример —
+[сценарий 184](ENUM_MAPPING_SCENARIOS.md#184-coverage-не-переносит-whole-mask-overrides-на-биты-комбинации).
 Destination coverage проверяет участие битов в соответствиях и явных вкладах:
 результат Read | Write покрывает Read, Write и ReadWrite, даже если отдельно
 Read или Write никогда не возвращаются. Все биты destination composite должны
@@ -1059,27 +1124,29 @@ Update возвращает scalar result, не изменяет передан�
 
 `Ignore()` и `Ignore<T>()` пропускают текущую единицу обработки:
 
-| Режим | Результат Ignore |
+| Исходный проход Members | Результат Ignore |
 |---|---|
-| ByBit, flags destination | Нулевой вклад в OR, включая отдельный строковый токен |
-| ByBit, строковый destination | Пропуск строкового вклада без разделителя |
-| Scalar mapping вне ByBit, включая ByMask | Выбранный начальный result; без него — диагностика доступности, как при чтении result |
+| По битам/токенам в ByBit, flags destination | Нулевой вклад в OR, включая отдельный строковый токен |
+| По битам в ByBit, строковый destination | Пропуск строкового вклада без разделителя |
+| Целое scalar-значение, включая ByMask и object/tuple → enum | Выбранный начальный result; без него — диагностика доступности, как при чтении result |
 
-В ByBit начальный result не читается и не требуется, в том числе на Create
-без фабрики. Для nullable destination это non-null ноль или пустая строка,
+При исходном ByBit начальный result не читается и не требуется, в том числе
+на Create без фабрики. Для nullable destination это non-null ноль или пустая строка,
 не null. Если все вклады пропущены, итог — 0 или `""`; начальный result,
 имя нуля и `"0"` вместо этого не подставляются. Нулевой source проходит
 правила один раз и также может быть явно проигнорирован.
 
-В ByBit Ignore не очищает биты, добавленные другими вкладами, и не сохраняет флаг
-из прежнего destination при Update. Чтобы добавить полный начальный destination,
+При исходном ByBit Ignore не очищает биты, добавленные другими вкладами,
+и не сохраняет флаг из прежнего destination при Update. Чтобы добавить полный начальный destination,
 пользователь явно возвращает `result` с обычной проверкой его доступности.
 
 Выбранный Ignore окончателен для текущей единицы: поиск правил не продолжается,
 следующие биты/токены обрабатываются как обычно. Специальная ветка с Ignore
 предшествует конвенции; завершающий `_ => Ignore()` остаётся fallback после неё.
 Прямой `Members(_ => Ignore())` не запускает конвенцию. IncludeBase использует
-единый effective FlagsMappingMode текущей пары, включая унаследованные Ignore.
+исходный проход текущей пары с её effective mode, включая унаследованные Ignore.
+ByBit внутри одной конвенции не меняет scalar Ignore внешнего object/tuple
+Members; примеры — [сценарий 182](ENUM_MAPPING_SCENARIOS.md#182-ignore-сохраняет-начальный-result-внешнего-scalar-прохода).
 Типизированная форма меняет только target typing, не это поведение.
 
 Null policies, terminal null фабрики и пользовательские вычисления сохраняют
@@ -1170,17 +1237,12 @@ incrementality, cancellation/recovery; path структурного object/tupl
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; независимая UnmappedEnumMemberValidation, default Source, общий enum типа настройки, pair/IncludeBase/mapper/MSBuild precedence без перехода к обычной validation; coverage всех режимов и статического enum-типа выбранного входа, свойства/элементы/locals/результаты методов без анализа тел, whole-object patterns и nested Map без скрытых проверок; guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
 | Стратегия и тип входа | Library default для фактического входа; смена enum/string/integer и result → result; разные типы в путях Members и IncludeBase; явная совместимая/несовместимая стратегия, унаследованный выбор и Default; общие defaults без повторного поиска; неявная конвенция и Auto/Auto<T>, Explicit и отсутствие автоматических путей; диагностика конфигурации до runtime; неподдерживаемое преобразование без расширения API |
 | Ошибки enum | Единый EnumMappingException для отсутствия результата; точная зарегистрированная пара и операция; фактический вход, причина, проблемный бит/токен; Explicit без фиктивной попытки конвенции, result и inherited Auto; отсутствие повторных вычислений и пользовательского ToString; успешный fallback без исключения, исходные user/lifecycle/configuration exceptions |
-| Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; побитовая конвенция вычисленной маски без повторного Members/IncludeBase; неуспех всей попытки и полный вклад fallback, 0/result/Ignore/remaining, собственный вход inherited Auto; ByBit Ignore/Ignore<T> без initial result, nullable ноль, все вклады пропущены, приоритет и наследование режима; исходная и вычисленная комбинации, сохранение других вкладов и однократных независимых вычислений; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
+| Flags | Metadata/nullable attributes; ByBit/ByMask и единый inherited mode; применимость к исходному проходу и выбранной конвенции, object/tuple → flags с одним проходом и цельным fallback, whole-mask overrides и scalar Ignore, projected string list в обоих режимах, coverage composite без повторения overrides; именованные/неназванные whole-mask ByName; Pair-only, Pair/Audit, All = -1; signed high bit и разные ширины; zero/Explicit/Auto/fallback, null short-circuit, неизвестные биты, aliases, OR вкладов; побитовая конвенция вычисленной маски без повторного Members/IncludeBase; неуспех всей попытки и полный вклад fallback, 0/result/Ignore/remaining, собственный вход inherited Auto; ByBit Ignore/Ignore<T> без initial result, nullable ноль, все вклады пропущены, приоритет и наследование режима; исходная и вычисленная комбинации, сохранение других вкладов и однократных независимых вычислений; предупреждение с учётом mutation/result/computed input; неприменимая pair setting и общий default |
 | Строковые flags | Три входных разделителя и их смеси; trim без split по whitespace; пустые/повторяющиеся токены и effects; composite names без рекурсивных правил; 0 и отказ от прочего numeric parsing; поэлементный/целый fallback, Explicit/Auto, IncludeBase, Using один раз и terminal null; вывод ByBit/ByMask, порядок/повторы, ноль с именем/aliases и без объявления, пустые вклады и пустой итог |
 | Toolchain | Реальная nullable marker/delegate типизация и доступность result; C# 9, minimum Roslyn, MSBuild и IDE; suppressor diagnostic families, guards, отключённые анализаторы и warnings-as-errors; nested switch/wrong types/obsolete; edit settings/enum/callback, recovery и cancellation |
 
 ## Отложенное и проверки реализации
 
-- Перед реализацией уточнить применение FlagsMappingMode к enum/string-входу,
-  выбранному из object/tuple в mapping switch. Сам object/tuple не разбивается
-  на биты/токены и Members не повторяется для его полей. Прямой результат-маска
-  и явный nested Map уже следуют общим правилам; автоматический путь требует
-  отдельного уточнения режима конвенции.
 - Настройка разделителей отложена: вход принимает `,`, `|`, `;`, вывод использует
   `", "`. Пробел и `+` автоматически не разделяют имена.
 - Техническая проверка: Rider и production-интеграция. Compiler/MSBuild прототип

@@ -56,6 +56,7 @@
 - [Независимая настройка enum coverage](#независимая-настройка-enum-coverage) — 167–169
 - [Members для object/tuple → enum](#members-для-objecttuple--enum) — 170–175
 - [Coverage выбранного enum-входа](#coverage-выбранного-enum-входа) — 176–178
+- [Flags-конвенция для выбранного входа](#flags-конвенция-для-выбранного-входа) — 179–184
 
 ## Обычные enum
 
@@ -4277,8 +4278,8 @@ Source проверяет объявленные enum source-значения, �
 Согласованный API — в [дизайне](ENUM_MAPPING_DESIGN.md#objecttuple--enum).
 Здесь показаны ожидаемые результаты и доступность DSL. Source coverage выбранного
 enum-входа рассмотрен в [сценариях 176–178](#coverage-выбранного-enum-входа).
-Режим прямой конвенции flags/string-входа из объекта остаётся
-[вопросом перед реализацией](ENUM_MAPPING_DESIGN.md#отложенное-и-проверки-реализации).
+Прямая конвенция flags/string-входа из объекта показана в
+[сценариях 179–184](#flags-конвенция-для-выбранного-входа).
 
 ### 170. Конвенция для явно выбранного enum-свойства
 
@@ -4599,6 +4600,212 @@ Warning для New принадлежит вложенной CoverageSource → 
 Внешний None его не отключает и дополнительный warning для того же свойства
 не создаётся. Если у вложенной пары тоже выбрать None, coverage warnings исчезнут,
 но source.Status = New по-прежнему бросит исключение вложенного mapping.
+
+## Flags-конвенция для выбранного входа
+
+Контракт — в [дизайне](ENUM_MAPPING_DESIGN.md#flagsmappingmode-и-выбранный-вход).
+Общие типы:
+
+```csharp
+[Flags]
+enum RequestAccess
+{
+    None = 0, Read = 1, Write = 2, Legacy = 4, ReadWrite = Read | Write
+}
+
+[Flags]
+enum ApiAccess { None = 0, Read = 8, Write = 16, Special = 32, Unknown = 64 }
+
+class AccessRequest
+{
+    public RequestAccess Access { get; set; }
+    public string Text { get; set; } = "";
+}
+```
+
+### 179. Маска из объекта: режим конвенции и общий fallback
+
+```csharp
+builder.Map<AccessRequest, ApiAccess>()
+    .Members(request => request.Access switch { _ => ApiAccess.Unknown });
+```
+
+| Access | Default ByBit | Добавить FlagsMappingMode.ByMask |
+|---|---|---|
+| None | None = 0 | None = 0 |
+| Read | Read = 8 | Read = 8 |
+| ReadWrite = 3 | Read \| Write = 24 | Unknown = 64: у destination нет имени ReadWrite |
+| Read \| Legacy = 5 | Unknown = 64 | Unknown = 64 |
+
+Результаты одинаковы для Create и Update с previous = Special. Внешний Members
+получает объект один раз; Access читается один раз. В последней строке
+переведённый Read отбрасывается вместе с неуспешной попыткой: fallback возвращает
+64, а не 72. Его выражение выполняется один раз.
+
+Замена fallback на `_ => Auto()` или отсутствие fallback приводят к исключению
+вместо Unknown. При MemberSelection.Explicit без явной pair-настройки режима
+обычный fallback всегда даёт Unknown; явный Auto запрашивает конвенцию и при Explicit.
+Типизированный Auto<ApiAccess>()
+имеет то же поведение. Для tuple с явно выбранным RequestAccess-элементом
+действуют те же правила.
+
+### 180. Whole-mask override не становится правилом для каждого бита
+
+```csharp
+builder.Map<AccessRequest, ApiAccess>()
+    .Members(request => request.Access switch
+    {
+        RequestAccess.Read => ApiAccess.Special,
+        _ => ApiAccess.Unknown
+    });
+```
+
+Для сравнения отдельная конфигурация регистрирует RequestAccess → ApiAccess
+с теми же ветками над flag и вызывает её через
+`.Members(request => Map<ApiAccess>(request.Access))`:
+
+| Access | Whole-mask switch выше | Явный nested Map в flags-пару с ByBit |
+|---|---|---|
+| Read | Special = 32 | Special = 32 |
+| Write | Write = 16 | Write = 16 |
+| ReadWrite | Read \| Write = 24 | Special \| Write = 48 |
+| Read \| Legacy | Unknown = 64 | Special \| Unknown = 96 |
+
+В первой конфигурации Read-ветка не совпадает с полной комбинацией. ByBit-конвенция
+переводит Read по имени и не возвращается в эту ветку. Во второй конфигурации
+вложенная пара вызывает свои правила на каждом исходном бите.
+
+Добавление явного `RequestAccess.ReadWrite => ApiAccess.Special` в первую
+конфигурацию даёт Special для ReadWrite при обоих режимах: whole-mask case
+достижим и окончателен, warning о недостижимости по одному ByBit недопустим.
+Read | Legacy по-прежнему даёт только Unknown.
+
+### 181. Строка из объекта разбирается целиком без повторения Members
+
+```csharp
+builder.Map<AccessRequest, ApiAccess>()
+    .Members(request => request.Text switch
+    {
+        "Read" => ApiAccess.Special,
+        _ => ApiAccess.Unknown
+    });
+```
+
+| Text | Результат при ByBit и ByMask |
+|---|---|
+| `"Read"` | Special = 32 по whole-string ветке |
+| `"Read, Write"` | Read \| Write = 24 по встроенному разбору |
+| `" Read ; Write "` | Read \| Write = 24; trim выполняет конвенция |
+| `"Read,,Write;"` | Read \| Write = 24; пустые токены дают 0 |
+| `"Read\|Missing"` | Unknown = 64, а не Read \| Unknown |
+| `""`, `"   "`, `"0"` | None = 0 |
+| `"8"` | Unknown: произвольный numeric parsing не включён |
+
+Text читается один раз, patterns видят исходную выбранную строку. Whole-string
+ветка "Read" не применяется к токену списка. В обоих режимах конвенция разбирает
+список CLR-имён; ByMask не ограничивает её единственным именем. Любой неизвестный
+токен отменяет всю попытку, после чего внешний fallback выполняется один раз.
+Для повторения пользовательских правил на токенах нужен nested Map в отдельную
+string → ApiAccess пару с ByBit.
+
+При Explicit без явной pair-настройки режима обычный fallback даёт Unknown
+для списка и пустоты. Замена его на Auto возвращает встроенный разбор;
+"Read|Missing" при этом бросает.
+
+### 182. Ignore сохраняет начальный result внешнего scalar-прохода
+
+```csharp
+builder.Map<AccessRequest, ApiAccess>()
+    .FlagsMappingMode(FlagsMappingMode.ByBit)
+    .ConstructUsing(request => ApiAccess.Special)
+    .Members(request => request.Access switch { _ => Ignore() });
+```
+
+| Access / mode | Create | Update с previous = Unknown |
+|---|---|---|
+| Read / ByBit | Read = 8 | Read = 8 |
+| ReadWrite / ByBit | Read \| Write = 24 | Read \| Write = 24 |
+| Read \| Legacy / ByBit | Special = 32 | Unknown = 64 |
+| ReadWrite / ByMask | Special = 32 | Unknown = 64 |
+
+Ignore — fallback после неуспеха конвенции. Частичный перевод Read не добавляется
+к initial result. На Create фабрика вызывается один раз; на Update с non-null
+destination пропускается. Ignore<ApiAccess>() имеет ту же семантику.
+При Explicit конвенция пропускается и Ignore сохраняет initial result для всех
+входов; режим в таком варианте не задаётся на паре, поскольку ему нечего обрабатывать.
+
+Без фабрики такой путь на Create диагностируется как недоступный initial result.
+При MappingMode.Update с non-nullable destination previous доступен, включая 0.
+Nullable destination с фабрикой сохраняет non-null Special при неуспехе; при
+Update с null destination default Create policy вызывает фабрику, операция
+остаётся Update. Прямой `.Members(_ => Ignore())` без pair-настройки режима
+сохраняет доступный initial result без запуска конвенции.
+
+### 183. Режим применим к выбранному входу и наследуется обычным способом
+
+База регистрирует AccessRequest → ApiAccess с ByMask и Members из сценария 179.
+Текущий mapper после base.Configure включает ту же пару:
+
+```csharp
+builder.Map<AccessRequest, ApiAccess>()
+    .IncludeBase<AccessRequest, ApiAccess>()
+    .FlagsMappingMode(FlagsMappingMode.ByBit);
+```
+
+| Локальная настройка | Access = ReadWrite |
+|---|---|
+| ByBit, как выше | 24: применяется к унаследованному входу request.Access |
+| Default или отсутствует | 64: inherited ByMask |
+| ByMask | 64 |
+
+Если базовый fallback заменить на Auto, ByBit по-прежнему даёт 24, а ByMask
+бросает вместо 64. Inherited Auto использует собственный вход и effective mode
+текущей пары; дополнительных проходов Members не появляется.
+
+Отдельные варианты без IncludeBase:
+
+| Конфигурация AccessRequest → ApiAccess | Применимость FlagsMappingMode.ByBit |
+|---|---|
+| `request.Access switch { _ => Auto() }` | Применима к flags-входу |
+| `request.Text switch { _ => Auto() }` | Применима к string → flags конвенции |
+| `((int)request.Access) switch { _ => Auto() }` | Явная pair-настройка даёт MORPH0023; общий default игнорируется, число переводится целиком |
+| Прямой `ApiAccess.Special`, либо Using без Members | Явная pair-настройка даёт MORPH0023: нет применимого исходного прохода или flags-конвенции |
+| Один путь Members выбирает flags-вход, другой — int-вход | Режим применим к flags-пути; int переводится целиком |
+
+Для исходной RequestAccess → ApiAccess пары режим остаётся применимым к её
+собственному проходу, даже если Auto внутри Members получает int-вход или
+конвенция вообще не вызывается. Это прежний контракт, включая сценарий 157.
+
+### 184. Coverage не переносит whole-mask overrides на биты комбинации
+
+```csharp
+[Flags]
+enum RenamedAccess { None = 0, View = 8, Write = 16 }
+
+builder.Map<AccessRequest, RenamedAccess>()
+    .Members(request => request.Access switch
+    {
+        RequestAccess.Read => RenamedAccess.View
+    });
+```
+
+| Access | Runtime при default ByBit | Source coverage |
+|---|---|---|
+| None | 0 | Покрыт нулевой конвенцией |
+| Read | View = 8 | Покрыт явным результатом |
+| Write | Write = 16 | Покрыт конвенцией |
+| Legacy | Исключение | Warning для Legacy |
+| ReadWrite | Исключение | Warning для объявленного composite ReadWrite |
+
+ReadWrite проверяется как полный выбранный вход. Read-ветка ему не подходит,
+а встроенная конвенция не знает имени Read в RenamedAccess. Наличие отдельных
+успешных правил Read и Write не закрывает coverage комбинации, поскольку
+внешний Members не выполняется для каждого бита.
+
+Общий fallback `RenamedAccess.None` закрывает оба warnings. Явная ReadWrite-ветка
+закрывает только ReadWrite. Перенос правил в отдельную RequestAccess → RenamedAccess
+пару с ByBit и вызов через nested Map дают ReadWrite → View | Write = 24;
+во вложенной паре непокрытым остаётся Legacy.
 
 ## Статус проверки каталога
 
