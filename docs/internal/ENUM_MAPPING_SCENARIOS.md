@@ -54,6 +54,7 @@
 - [Ошибки enum-маппинга](#ошибки-enum-маппинга) — 159–163
 - [Ignore в ByBit](#ignore-в-bybit) — 164–166
 - [Независимая настройка enum coverage](#независимая-настройка-enum-coverage) — 167–169
+- [Members для object/tuple → enum](#members-для-objecttuple--enum) — 170–175
 
 ## Обычные enum
 
@@ -2767,10 +2768,11 @@ Active тоже даст Unrecognized с одним вызовом. Если ж�
 | Enum → System.Tuple / System.Tuple → enum | 128 / 127 |
 
 Для обычного объекта или кортежа на входе выражение пользователя определяет,
-какие поля участвуют в результате. Примеры ниже используют существующие
+какие поля участвуют в результате. Scalar Members поддерживает такой source
+и enum destination; выбор входа конвенции показан в [сценариях 170–175](#members-для-objecttuple--enum).
 [ResolveUsing](../api/resolve-using.md), [ConstructUsing](../api/construct-using.md)
-и [Convert](../api/convert.md). Их тела — обычный C#: switch не дополняется
-enum-конвенцией, а DSL Auto/Map внутри callback не используется.
+и [Convert](../api/convert.md) также доступны. Их тела — обычный C#: switch
+не дополняется enum-конвенцией, а DSL Auto/Map внутри этих callback не используется.
 
 Примеры с вложенным преобразованием дополнительно используют эти регистрации:
 
@@ -2787,8 +2789,8 @@ builder.Map<DomainStatus, string>();
 должны быть доступны mapper. Результат такого вызова подчиняется настройкам
 вложенной пары. Готовое enum-значение, возвращённое самим callback, не получает
 скрытой проверки имён или объявленности. Автоматический выбор свойства DTO,
-элемента кортежа либо scalar Members для произвольного object/tuple source
-этими примерами не вводится: отдельного такого контракта в дизайне пока нет.
+элемента кортежа или вложенной пары не выполняется: пользователь задаёт
+нужное выражение и явно вызывает вложенный mapping.
 
 ### 119. Класс → enum: явно выбрать свойство
 
@@ -2812,6 +2814,8 @@ builder.Map<StatusCarrier, DomainStatus>()
 
 Поле Comment не участвует в вычислении. ResolveUsing повторно выбирает enum и
 на Update; содержимое source не сопоставляется destination по названию Status.
+То же поведение даёт `.Members(source => source.Status)`: прямой enum-результат
+окончателен, включая неназванное 123.
 
 ### 120. Класс → другой enum через зарегистрированную пару
 
@@ -2819,10 +2823,7 @@ builder.Map<StatusCarrier, DomainStatus>()
 
 ```csharp
 builder.Map<StatusCarrier, ApiStatus>()
-    .ResolveUsing((source, previous, context) =>
-        previous.TryGetValue(out var old)
-            ? context.Mapper.Map<DomainStatus, ApiStatus>(source.Status, old)
-            : context.Mapper.Map<DomainStatus, ApiStatus>(source.Status));
+    .Members(source => Map<ApiStatus>(source.Status));
 ```
 
 | Вход / операция | Вложенная операция | Результат |
@@ -2832,10 +2833,12 @@ builder.Map<StatusCarrier, ApiStatus>()
 | Update, Status = Cancelled, previous = Archived | Update с Archived | Deleted: в общей enum-паре нет правила сохранения previous |
 | Create или Update, Status = Legacy | Соответствующая операция | Исключение вложенного mapping |
 
-Так передаётся previous во вложенный Update. Если вложенная пара позднее
-получит правило сохранения Archived, оно начнёт действовать и здесь.
-Один вызов `context.Mapper.Map<DomainStatus, ApiStatus>(source.Status)` без
-destination всегда запросил бы вложенный Create, даже при внешнем Update.
+Adaptive Map использует доступный result для вложенного Update; без него
+вызывает Create. Если вложенная пара позднее получит правило сохранения Archived,
+оно начнёт действовать и здесь. Non-null результат Using также передаётся
+во вложенный Update при внешнем Create.
+Явный `Create<ApiStatus>(source.Status)` всегда запросил бы вложенный Create,
+даже при внешнем Update.
 
 ### 121. Обычная структура → enum по нескольким признакам
 
@@ -2911,7 +2914,7 @@ builder.Map<Access, PermissionDto>()
     });
 
 builder.Map<PermissionDto, Access>()
-    .ResolveUsing((source, previous) =>
+    .Members(source =>
         (source.CanRead ? Access.Read : Access.None) |
         (source.CanWrite ? Access.Write : Access.None));
 ```
@@ -3219,7 +3222,8 @@ builder.Map<DomainStatus, ApiStatus>()
 GetDetails вызывается один раз. Object → ApiStatus не имеет конвенции:
 ни исходный status, ни свойство Status не подставляются вместо object-входа.
 Явный Auto здесь требует диагностики. Это switch внутри уже поддерживаемой
-enum-пары, а не новый scalar Members API для регистрации object → enum.
+enum-пары; тот же принцип действует для whole-object switch в регистрации
+object → enum из сценария 172.
 
 ### 135. Нормализация бита меняет вход конвенции, сохраняя проходы Members
 
@@ -4266,6 +4270,202 @@ Deleted. Default Source не подменяется на Destination из-за �
 возможные числа и не даёт coverage warnings. Строгий ByValue по умолчанию
 принимает 10, 20 и 30; 123 бросает. В обратном направлении enum → string/integer
 Source проверяет объявленные enum source-значения, как в сценарии 107.
+
+## Members для object/tuple → enum
+
+Согласованный API — в [дизайне](ENUM_MAPPING_DESIGN.md#objecttuple--enum).
+Здесь показаны ожидаемые результаты и доступность DSL. Граница Source coverage
+для выбранного enum-выражения и режим прямой конвенции flags/string-входа
+из объекта отмечены как [вопросы перед реализацией](ENUM_MAPPING_DESIGN.md#отложенное-и-проверки-реализации).
+
+### 170. Конвенция для явно выбранного enum-свойства
+
+Используется StatusCarrier из сценария 119:
+
+```csharp
+builder.Map<StatusCarrier, ApiStatus>()
+    .Members(source => source.Status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted
+    });
+```
+
+| Source.Status | Create и Update с previous = Archived |
+|---|---|
+| Active | Active = 20 по имени |
+| Cancelled | Deleted = 30 по явному правилу |
+| Legacy | EnumMappingException |
+| `(DomainStatus)20` | EnumMappingException: число destination не заменяет имя source |
+
+Свойство Status читается один раз при входе в switch; patterns и конвенция
+используют это значение. Comment не участвует. Отдельная регистрация
+DomainStatus → ApiStatus не требуется и, если она есть, автоматически не вызывается.
+Exception сохраняет SourceType = StatusCarrier, DestinationType = ApiStatus;
+проблемный вход — выбранный DomainStatus, без повторного чтения свойства.
+
+При MemberSelection.Explicit Active бросает, Cancelled по-прежнему даёт Deleted.
+Добавление `_ => Auto()` возвращает конвенцию для Active и при Explicit.
+Тот же Members применим к обычному struct с DomainStatus-свойством Status.
+
+### 171. Tuple выбирает enum-вход и учитывает дополнительное условие
+
+```csharp
+builder.Map<(DomainStatus Status, bool IsArchived), ApiStatus>()
+    .Members(source => source.Status switch
+    {
+        _ when source.IsArchived => ApiStatus.Archived,
+        DomainStatus.Cancelled => ApiStatus.Deleted
+    });
+```
+
+| Tuple | Create и Update |
+|---|---|
+| `(Active, false)` | Active |
+| `(Cancelled, false)` | Deleted |
+| `(Legacy, false)` | EnumMappingException |
+| `(Active, true)` или `(Legacy, true)` | Archived: специальная ветка до конвенции |
+
+Конвенция получает Status, guard читает исходный IsArchived. Для безымянного
+ValueTuple и System.Tuple<DomainStatus, bool> явно используются Item1 и Item2;
+выбор элемента по позиции или типу автоматически не добавляется.
+
+В варианте `(int Code, bool IsArchived)` с `source.Code switch`, тем же guard
+и `_ => Auto()` вместо Cancelled-ветки default определяется по int-входу:
+`(20, false)` → Active, `(30, false)` → Deleted, `(2, false)` → исключение,
+`(2, true)` → Archived. Это строгий ByValue, а не ByName из-за enum destination.
+
+### 172. Whole-object patterns возвращают enum без выбора скрытого входа
+
+Используется StatusDetails из сценария 134:
+
+```csharp
+builder.Map<StatusDetails, ApiStatus>()
+    .Members(source => source switch
+    {
+        { IsBlocked: true } => ApiStatus.Disabled,
+        { Status: DomainStatus.Cancelled } => ApiStatus.Deleted,
+        _ => ApiStatus.Unknown
+    });
+```
+
+| Status / IsBlocked | Результат |
+|---|---|
+| Active / false | Unknown: у целого объекта нет enum-конвенции |
+| Cancelled / false | Deleted |
+| Cancelled / true | Disabled: первая специальная ветка |
+| Legacy / false | Unknown |
+
+Убрать fallback — исключение для Active/Legacy при IsBlocked = false.
+Заменить его на `_ => Auto()` — диагностика неподдерживаемого входа конвенции.
+Сам Members и property patterns допустимы. То же правило действует для
+whole-tuple switch с явными tuple patterns.
+
+### 173. IncludeBase композиционно дополняет object → enum
+
+Базовая конфигурация:
+
+```csharp
+builder.Map<StatusCarrier, ApiStatus>()
+    .Members(source => source.Status switch
+    {
+        DomainStatus.Suspended => ApiStatus.Disabled,
+        _ => ApiStatus.Unknown
+    });
+```
+
+В текущем mapper:
+
+```csharp
+base.Configure(builder);
+builder.Map<StatusCarrier, ApiStatus>()
+    .IncludeBase<StatusCarrier, ApiStatus>()
+    .Members(source => source.Status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted
+    });
+```
+
+| Source.Status | Результат |
+|---|---|
+| Cancelled | Deleted по локальному правилу |
+| Suspended | Disabled по базовому правилу |
+| Active | Active по конвенции после специальных веток |
+| Legacy | Unknown по унаследованному fallback |
+
+Включается та же пара StatusCarrier → ApiStatus. Два написанных обращения
+source.Status остаются независимыми вычислениями; базовый уровень достигается
+лениво, как в обычных enum-парах. Локальный Cancelled не читает свойство в базе.
+
+### 174. Nullable object, previous, result и Operation сохраняют lifecycle
+
+```csharp
+builder.Map<StatusCarrier?, ApiStatus?>()
+    .ResolveUsing((source, previous) => ApiStatus.Pending)
+    .Members((source, previous, result, context) =>
+    {
+        if (context.Operation == MappingOperation.Update &&
+            previous.TryGetValue(out var old))
+            return old;
+
+        return source.Status switch
+        {
+            DomainStatus.Cancelled => ApiStatus.Deleted,
+            _ => result
+        };
+    });
+```
+
+| Операция / source / previous | Результат |
+|---|---|
+| Create / Active | Active по конвенции, а не фабричный Pending |
+| Create / Legacy | Pending через fallback |
+| Create / Cancelled | Deleted |
+| Update / Cancelled / Archived | Archived через явный return old |
+| Update / Cancelled / null | Deleted; Operation остаётся Update |
+| Update / Legacy / null | Pending через fallback |
+| Create / null | null, фабрика и Members пропущены |
+| Update / null / Archived | null по default ReturnNull; фабрика и Members пропущены |
+
+Non-null source доступен Members без дополнительного null guard. ResolveUsing
+вызывается один раз при каждом non-null source, даже если Members возвращает old.
+Вариант с `_ => Ignore()` вместо `_ => result` сохраняет те же результаты:
+это scalar mapping вне ByBit, initial result выбран фабрикой.
+Без Using чтение result или такой Ignore на Create диагностируется.
+
+### 175. Объект передаёт полную flags-маску явному nested Map
+
+Используются SourceAccess и TargetAccess из раздела «Flags между enum».
+
+```csharp
+class AccessCarrier
+{
+    public SourceAccess Permissions { get; set; }
+}
+
+builder.Map<SourceAccess, TargetAccess>()
+    .Members(flag => flag switch
+    {
+        SourceAccess.Read => TargetAccess.View,
+        SourceAccess.Write => TargetAccess.Edit,
+        _ => TargetAccess.Unknown
+    });
+builder.Map<AccessCarrier, TargetAccess>()
+    .Members(source => Map<TargetAccess>(source.Permissions));
+```
+
+| Permissions | Create и Update с previous = Unknown |
+|---|---|
+| None | None = 0 |
+| ReadWrite | View \| Edit = 48 |
+| Read \| Audit | View \| Audit = 80 |
+| Read \| Delete | View \| Unknown = 144 |
+
+Внешний Members читает Permissions один раз и передаёт полную маску вложенной
+паре. Уже вложенная пара применяет свой default ByBit и обрабатывает биты.
+Adaptive Map выбирает nested Create или Update по доступности result; явные
+Create/Update сохраняют свои обычные контракты. Enum coverage вложенной пары
+проверяется независимо от внешнего объекта. Прямая сборка маски без nested Map
+показана в сценарии 123.
 
 ## Статус проверки каталога
 

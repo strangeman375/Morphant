@@ -13,6 +13,8 @@
 Поддерживаются enum ↔ enum, enum ↔ integer, enum ↔ string, flags, aliases,
 nullable, Create/Update и IncludeBase. Целые типы: `sbyte`, `byte`, `short`,
 `ushort`, `int`, `uint`, `long`, `ulong`.
+Scalar Members также доступен для class/struct и кортежей → enum, включая
+nullable: пользователь явно выбирает вход конвенции или вычисляет результат.
 
 Вне объёма: автоматический reverse, общий числовой string-to-enum parsing,
 wire attributes, naming policies, коллекции и проекции. Строковые списки flags
@@ -26,8 +28,9 @@ wire attributes, naming policies, коллекции и проекции. Стр
 | [Convert](../api/convert.md) | Обычный callback, владеющий всем алгоритмом, включая null handling |
 | `Map`, settings, `IncludeBase` | Существующие контракты с уточнениями ниже |
 
-При default `MemberSelection.Auto` регистрация `Map<TSource, TDestination>()`
-уже сопоставляет значения по конвенции, без вызова `Members`.
+Для enum/string/integer-направлений выше при default `MemberSelection.Auto`
+регистрация `Map<TSource, TDestination>()` уже сопоставляет значения по конвенции,
+без вызова `Members`. У object/tuple нет неявного выбора enum-свойства или элемента.
 Граница определяется видом mapping: enum-to-DTO не теряет object construction
 из-за enum source. Отдельных `Values`, `Flags`, `MapValue`, `Inherited` не нужно.
 
@@ -177,6 +180,39 @@ Members — декларативный DSL, не runtime delegate из Configure
 конвенцией дополняется только switch, непосредственно задающий enum-правила.
 Вложенные switch справа от `=>`, пользовательские методы и Using/Convert остаются C#.
 
+### Object/tuple → enum
+
+При enum destination Members возвращает scalar-результат и для обычного
+object/tuple source. Поддерживаются class, struct, ValueTuple и System.Tuple,
+включая nullable формы и все четыре callback-формы ниже. Source после обычной
+null policy доступен целиком; Members не повторяется для его свойств или элементов.
+
+```csharp
+builder.Map<Order, ApiStatus>()
+    .Members(order => order.Status switch
+    {
+        DomainStatus.Cancelled => ApiStatus.Deleted
+    });
+```
+
+Здесь patterns и конвенция получают одно значение order.Status. Active
+сопоставляется по имени, Cancelled — явным правилом; необработанный Legacy
+бросает EnumMappingException. Отдельная регистрация DomainStatus → ApiStatus
+для этой конвенции не требуется. Выбор стратегии следует
+[статическому типу выбранного входа](#стратегия-для-входа-конвенции).
+
+Whole-object/tuple switch допускает property/tuple patterns и явные результаты.
+Конвенция не выбирает компонент за пользователя; Auto для неподдерживаемого
+целого object/tuple-входа диагностируется. Для вызова зарегистрированной пары
+подходит `.Members(order => Map<ApiStatus>(order.Status))`: это обычный
+[nested Map](#вложенное-использование), включая выбор Create/Update по result.
+
+Прямое enum-выражение, в том числе собранная flags-маска, задаёт готовый результат.
+Using, previous/result, Ignore, IncludeBase той же пары и null handling сохраняют
+общие scalar-контракты. Enum → object/tuple по-прежнему использует структурный
+destination и обычные Construct/Resolve/Members. Примеры —
+[сценарии 170–175](ENUM_MAPPING_SCENARIOS.md#members-для-objecttuple--enum).
+
 ### Где применяется конвенция
 
 | Форма | Автоматическое поведение |
@@ -237,7 +273,7 @@ mapping switch**. Оно вычисляется один раз на своём 
 У tuple/object не выбирается первый, enum-типизированный или названный source
 компонент. Если условию нужны другие значения, они доступны в `when`, а перед
 switch остаётся значение для конвенции. Явные результаты tuple/object switch
-допустимы; это не расширяет scalar Members на произвольные object-to-enum пары.
+допустимы, в том числе в [object/tuple → enum](#objecttuple--enum).
 
 Например, при source = Active и фабричном result = Pending:
 `result switch { _ => Auto() }` даёт Pending, как и `_ => result`.
@@ -434,7 +470,8 @@ Auto. Отдельные классы исключений для каждой �
 | Выбранный Auto()/Auto<T>() не нашёл соответствия | EnumMappingException немедленно, без другого fallback |
 | Неявная конвенция неуспешна, выбран обычный fallback | Его результат либо его собственное исключение |
 
-`UnmatchedMappingSwitchException` сохраняет контракт обычных object/tuple mappings.
+`UnmatchedMappingSwitchException` сохраняет контракт mappings со структурным
+object/tuple destination.
 Для scalar enum-правил он не используется: switch может отсутствовать, а ветка
 с неуспешным Auto — уже совпасть. Вложенные обычные C# switch, Using и Convert
 сохраняют собственную семантику исключений.
@@ -904,9 +941,10 @@ result или Normalize(flag) может быть достижимым. Анал
 Используется отдельная `UnmappedEnumMemberValidation` с типом
 `UnmappedMemberValidation` и единым library default **`Source`**. Уровень —
 Warning; severity можно повышать обычными средствами. Настройка проверяет
-значения scalar enum-пар, включая flags и nullable. Проверка object/tuple
-members остаётся у обычной `UnmappedMemberValidation`: наличие enum-свойства
-не переключает политику содержащего объекта. Явный nested Map использует
+значения scalar enum-пар, включая flags и nullable. Проверка members в mappings
+со структурным object/tuple destination остаётся у обычной
+`UnmappedMemberValidation`: наличие enum-свойства не переключает политику
+содержащего объекта. Явный nested Map использует
 настройку своей зарегистрированной enum-пары.
 
 Source выбран для раннего обнаружения необработанных объявленных входов.
@@ -975,9 +1013,10 @@ builder.Map<Order, OrderDto>()
 ```
 
 [Nested mapping](../nested-mapping.md) остаётся явным: разные enum требуют
-Map/Create/Update. Auto внутри object/tuple Members требует implicit C# conversion
-и не запускает зарегистрированную пару. Same-enum property может копироваться
-как прежде; IMapper, DI и get-only value members не получают обходных путей.
+Map/Create/Update. Auto для свойства/элемента структурного destination требует
+implicit C# conversion и не запускает зарегистрированную пару.
+Same-enum property может копироваться как прежде; IMapper, DI и get-only value
+members не получают обходных путей.
 Update возвращает scalar result, не изменяет переданный value type по месту.
 
 В scalar Members доступны `Value<T>(value)` и nested `Map(source)`,
@@ -1072,7 +1111,8 @@ marker: работают `Target.None`, `default` и `(Target)0`. Эти огр�
 [Suppressor](https://learn.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis.diagnostics.diagnosticsuppressor?view=roslyn-dotnet-4.4.0)
 должен распознавать настоящий DSL symbol, enum rule kind и только switch, который
 planner дополняет. Одного имени Members недостаточно. Не подавлять warnings
-глобально, в object/tuple Members, Construct, Using, Convert или nested switch;
+глобально, в Members структурного object/tuple destination, Construct, Using,
+Convert или nested switch. Object/tuple source не исключает scalar enum Members;
 сохранить wrong-type, unreachable, obsolete и прочую диагностику. В generated
 switch покрытие должно быть явным; enum coverage остаётся отдельной проверкой.
 
@@ -1086,14 +1126,15 @@ Guards, IncludeBase и другой switch input могут требовать �
 Нет local на каждый case, ранней конвенции ради result или catch вокруг user code.
 Соблюдать [generator contracts](GENERATOR_CONTRACTS.md): читаемость, scopes,
 форматирование, failure stubs, settings diagnostics, compatibility manifest,
-incrementality, cancellation/recovery; ordinary object/tuple path не менять.
+incrementality, cancellation/recovery; path структурного object/tuple destination
+не менять.
 
 Реализация проверяет все контракты выше по [testing guidelines](TESTING_GUIDELINES.md).
 Проверки production-реализации, которые прототип не заменяет:
 
 | Область | Проверки |
 |---|---|
-| API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; Create/Update, включая Update без Create; все null policies; доступное/недоступное чтение result и неиспользуемый параметр; прежний object/tuple API |
+| API и lifecycle | Bare registration; четыре Members формы; enum/string/integer/nullable; class/struct/ValueTuple/System.Tuple → enum через scalar Members, явный выбор входа и whole-source patterns; Create/Update, включая Update без Create; все null policies; доступное/недоступное чтение result и неиспользуемый параметр; прежний API структурного object/tuple destination |
 | Правила и эффекты | Partial switch; Auto/Explicit; source/result/Normalize/Trim/local как вход конвенции; tuple/object без неявного выбора компонента и диагностика Auto; mutation до switch и внутри false guard; Auto вне switch; computed fallback/throw; один автоматический путь одного switch; явные checked/unchecked; method group/delegate/context Using, пропуск ConstructUsing, terminal null и эффекты неиспользованной фабрики |
 | Композиция | Все уровни и порядок settings, Default и последняя запись; несколько IncludeBase, local/inherited fallback, приоритет уровня; выбор входа одной неявной конвенции, отсутствие локального Members, неподдерживаемый локальный вход без подбора базового; inherited Auto со своим входом и немедленным throw; ленивые locals/scopes, однократные вычисления входов и сохранение fallback bindings; один initial result; Convert/destination-method conflicts; фабрика после наследования |
 | Значения | Перестановка кодов, mixed-case/culture/aliases и canonical string; signed/ulong/range; declared/unnamed source и destination; E → E; integer default, явный ByName diagnostic, общий ByName поверх нижнего numeric setting; независимая UnmappedEnumMemberValidation, default Source, общий enum типа настройки, pair/IncludeBase/mapper/MSBuild precedence без перехода к обычной validation; coverage всех режимов, guards, dynamic results, finite/infinite sides, destination-only discard, scalar/ByMask Ignore с доступным/недоступным result и scalar nested helpers |
@@ -1105,6 +1146,15 @@ incrementality, cancellation/recovery; ordinary object/tuple path не меня�
 
 ## Отложенное и проверки реализации
 
+- Перед реализацией уточнить границу Source coverage для object/tuple → enum:
+  проверять ли объявленные значения явно выбранного enum-выражения, если сам
+  зарегистрированный source не enum. Доступность Members согласована; полного
+  контракта такого анализа пока нет. Nested Map проверяется своей enum-парой.
+- Перед реализацией уточнить применение FlagsMappingMode к enum/string-входу,
+  выбранному из object/tuple в mapping switch. Сам object/tuple не разбивается
+  на биты/токены и Members не повторяется для его полей. Прямой результат-маска
+  и явный nested Map уже следуют общим правилам; автоматический путь требует
+  отдельного уточнения режима конвенции.
 - Настройка разделителей отложена: вход принимает `,`, `|`, `;`, вывод использует
   `", "`. Пробел и `+` автоматически не разделяют имена.
 - Техническая проверка: Rider и production-интеграция. Compiler/MSBuild прототип
