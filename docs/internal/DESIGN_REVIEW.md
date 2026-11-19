@@ -648,6 +648,22 @@ Entity → DTO destination обычно подмножество source, и пр
   в существующих проектах ломают сборку только при `TreatWarningsAsErrors`;
 - оставить `None`.
 
+Как поступают другие мапперы (по их документации, проверено 2026-11-19):
+
+| Маппер | Вид | Несмапленный destination | Несмапленный source |
+|---|---|---|---|
+| Mapperly | C#, compile-time | warning `RMG012` | warning `RMG020` |
+| MapStruct | Java, compile-time | `WARN` | `IGNORE` |
+| AutoMapper | C#, runtime | молча; opt-in `AssertConfigurationIsValid` проверяет destination | только с `MemberList.Source` |
+| Mapster | C#, runtime | молча; opt-in `RequireDestinationMemberSource` и `Compile()` | не проверяется |
+
+Compile-time мапперы по умолчанию предупреждают о несмапленном destination;
+runtime-мапперы молчат при маппинге, но их проверка, если её включить, по
+умолчанию тоже смотрит на destination. `Destination` по умолчанию совпадает с
+MapStruct и мягче Mapperly; `None` слабее всех compile-time аналогов. Шум
+ограничивают `Ignore()`, настройки маппинга, маппера и сборки и severity в
+`.editorconfig`.
+
 Предложение ревью: первый вариант.
 
 ### 6.3. Конвенции не запускают вложенный маппинг — Отложено
