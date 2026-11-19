@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/19/2026 - 09:05:40 |
-| Coverage date: | 11/19/2026 - 08:55:06 - 11/19/2026 - 09:05:36 |
+| Generated on: | 11/19/2026 - 10:49:01 |
+| Coverage date: | 11/19/2026 - 10:38:11 - 11/19/2026 - 10:48:57 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
-| Classes: | 399 |
-| Files: | 221 |
-| **Line coverage:** | 90.9% (41584 of 45719) |
-| Covered lines: | 41584 |
-| Uncovered lines: | 4135 |
-| Coverable lines: | 45719 |
-| Total lines: | 76301 |
-| **Branch coverage:** | 79% (16228 of 20525) |
-| Covered branches: | 16228 |
-| Total branches: | 20525 |
+| Classes: | 400 |
+| Files: | 222 |
+| **Line coverage:** | 90.9% (41634 of 45768) |
+| Covered lines: | 41634 |
+| Uncovered lines: | 4134 |
+| Coverable lines: | 45768 |
+| Total lines: | 76402 |
+| **Branch coverage:** | 79% (16248 of 20545) |
+| Covered branches: | 16248 |
+| Total branches: | 20545 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -53,14 +53,14 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 92.8%</summary>
+<details><summary>Morphant.Build.Tasks - 93%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**92.8%**|**79.5%**|
+|**Morphant.Build.Tasks**|**93%**|**79.5%**|
 |Morphant.Build.Tasks.GitSnapshotContext|95.5%|87.5%|
 |Morphant.Build.Tasks.GitSnapshotLifecycle|93%|92.6%|
-|Morphant.Build.Tasks.GitSnapshotStorage|98.3%|90.6%|
+|Morphant.Build.Tasks.GitSnapshotStorage|100%|90.6%|
 |Morphant.Build.Tasks.ManageMorphantGitSnapshot|100%|90%|
 |Morphant.Build.Tasks.MorphantBuildTask|97.7%|50%|
 |Morphant.Build.Tasks.PhysicalDirectory|78.3%|62.9%|
@@ -76,7 +76,8 @@
 |Morphant.Generator.CodeWriter|100%|96.6%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
-|Morphant.Generator.Compatibility.CompilationCompatibilityDetector|97.5%|86%|
+|Morphant.Generator.Compatibility.CompilationCompatibilityDetector|97.7%|86.5%|
+|Morphant.Generator.Compatibility.LibraryCompatibilityDetector|100%|100%|
 |Morphant.Generator.Compatibility.RuntimeContractCompatibility|100%||
 |Morphant.Generator.Compatibility.RuntimeContractManifest|100%|67.1%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanModelBuilder|100%|90%|
@@ -191,7 +192,7 @@
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanTypeParameterModel|100%||
 |Morphant.Generator.MemberSurface.MemberSurfacePipeline|100%||
 |Morphant.Generator.MemberSurface.PairConfiguration.MemberConfigurationEmitt<br/>er|100%|83.3%|
-|Morphant.Generator.MorphantGenerator|100%||
+|Morphant.Generator.MorphantGenerator|100%|100%|
 |Morphant.Generator.ObsoleteTypeWarning|100%||
 |Morphant.Generator.ObsoleteTypeWarnings|97.9%|83.6%|
 |Morphant.Generator.PairConfiguration.BoundConfigurationExpression|90%||
@@ -445,4 +446,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #738](https://github.com/strangeman375/Morphant/actions/runs/44490805033).
+Full HTML report: download the **coverage** artifact from [CI run #744](https://github.com/strangeman375/Morphant/actions/runs/44506466738).
