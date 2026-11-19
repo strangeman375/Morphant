@@ -800,8 +800,8 @@ Update не действует.
   [#1484](https://github.com/riok/mapperly/issues/1484) и
   [#1865](https://github.com/riok/mapperly/issues/1865): замена вложенных
   сущностей ломает отслеживание изменений EF Core;
-- у AutoMapper те же жалобы были до появления текущего поведения
-  (`UseDestinationValue`, вопросы на Stack Overflow про EF).
+- у AutoMapper 5.x были такие же вопросы о вложенных объектах и EF
+  (Stack Overflow, 2016); когда поведение изменилось, не установлено.
 
 Выводы: пользователи ожидают, что Update обновляет существующие вложенные
 объекты на месте, — текущий Morphant это делает, в отличие от Mapperly. Для
