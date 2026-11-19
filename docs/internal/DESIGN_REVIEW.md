@@ -894,8 +894,9 @@ Patch/merge-политика для `null`-значений исследован
 - по умолчанию `ReturnDestination`: Create возвращает `default`, Update —
   переданный destination. Вложенный Update с `null` source тоже оставляет
   текущее значение члена; очистить член можно явно:
-  `Address = source.Address is null ? null : Map()`. Смену значения по
-  умолчанию отметить в changelog;
+  `Address = source.Address is null ? null : Map()`. Эта форма работает, но
+  даёт ложное `CS8604` про `Member<Address?>` — ещё один случай 3.1. Смену
+  значения по умолчанию отметить в changelog;
 - оставить `ReturnNull` и подчеркнуть в документации.
 
 Предложение ревью: первый вариант.
