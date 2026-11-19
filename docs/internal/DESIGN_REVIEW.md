@@ -867,3 +867,71 @@ Create привычная модель AutoMapper — вложенный объ�
 **Решение.** Третья редакция: поведение адаптивного `Map()` не меняется,
 ошибка `MappingMode` и warning о creation-only членах вложенной пары делают
 неоднозначность явной.
+
+## 8. Null-семантика
+
+Сильные стороны: null source и null destination настраиваются раздельно, с
+понятными значениями и `Throw` для строгих сценариев. Flattening через
+nullable-путь даёт `null`, а не выдуманное значение. Конвенция не использует
+конверсии с предупреждением nullability. `Convert` сам отвечает за `null`.
+Patch/merge-политика для `null`-значений исследована и отложена
+(`NULL_ASSIGNMENT_HANDLING_RESEARCH.md`).
+
+### 8.1. Update с `null` source по умолчанию возвращает `null` — Открыто
+
+`NullSourceHandling` по умолчанию `ReturnNull`, поэтому и Update возвращает
+`default`. Проверено запуском (2026-11-19): `Update(null, existing)` вернул
+`null`. Документированный шаблон `order = mapper.Map(dto, order)` при
+`dto == null` теряет ссылку на существующий объект.
+
+Как поступают другие: AutoMapper (`ExpressionBuilder.NullCheckSource`) при
+`null` source и переданном destination возвращает этот destination
+(коллекцию — очищенной); Mapperly для existing-target в документации этот
+случай не описывает.
+
+Варианты:
+
+- по умолчанию `ReturnDestination`: Create возвращает `default`, Update —
+  переданный destination. Вложенный Update с `null` source тоже оставляет
+  текущее значение члена; очистить член можно явно:
+  `Address = source.Address is null ? null : Map()`. Смену значения по
+  умолчанию отметить в changelog;
+- оставить `ReturnNull` и подчеркнуть в документации.
+
+Предложение ревью: первый вариант.
+
+### 8.2. Вложенный `Map()` молча записывает `null` в non-nullable член — Открыто
+
+Проверено запуском (2026-11-19): при `null` вложенном source `Map()` записал
+`null` в non-nullable член `Address Address { get; set; } = new()`, заменив
+подготовленный экземпляр. Предупреждений нет ни для source `AddressDto?`, ни
+для non-nullable source, равного `null` во время выполнения. Конвенция при этом
+отказывается от конверсии `string?` в `string`, так что поведение
+непоследовательно.
+
+Как поступают другие: AutoMapper по умолчанию записывает `null`
+(`AllowNullDestinationValues`); Mapperly для nullable source и non-nullable
+target-свойства по умолчанию пропускает присваивание, а с
+`ThrowOnPropertyMappingNullMismatch` бросает `ArgumentNullException`.
+
+Варианты:
+
+- warning nullability, если вложенный source по NRT может быть `null`, а
+  член non-nullable; не выдаётся, если вложенная пара текущего маппера
+  использует `NullSourceHandling.Throw`. Исправление — nullable-член, `Throw`,
+  `source.Address is null ? Ignore() : Map()` или явное значение по умолчанию;
+- как Mapperly, молча пропускать присваивание при `null` source для
+  non-nullable члена. Скрытое поведение, и для required/init-членов
+  неприменимо;
+- оставить.
+
+Предложение ревью: первый вариант. Source, non-nullable по аннотации, но
+`null` во время выполнения — нарушение NRT на стороне пользователя, его не
+диагностируем.
+
+### 8.3. `ReturnNull` для значимого типа возвращает `default` — Открыто
+
+Название говорит `null`, а для non-nullable значимого destination результат —
+нулевое значение. Это описано в документации; destination обычно ссылочный.
+
+Предложение ревью: не проблема.
