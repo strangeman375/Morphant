@@ -112,6 +112,9 @@ Morphant follows Semantic Versioning. Patch releases within a `0.x` minor
 line preserve compatibility. Until `1.0`, minor releases may contain
 documented breaking changes. See the
 [changelog](https://github.com/strangeman375/Morphant/blob/main/CHANGELOG.md).
+Libraries that use Morphant must be built with a version compatible with the
+application; see
+[Version compatibility](https://github.com/strangeman375/Morphant/blob/main/docs/compatibility.md).
 
 ## License
 

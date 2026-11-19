@@ -29,6 +29,8 @@ mapping, register it with DI, and call Create or Update.
 - [Dependency injection and `IMapper`](runtime-dispatch.md)
 - [Testing mappings](testing.md)
 - [Generated code and Git snapshots](generated-code.md)
+- [Version compatibility](compatibility.md) — Morphant versions for libraries
+  and applications.
 
 ## Reference
 
