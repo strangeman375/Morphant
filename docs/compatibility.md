@@ -18,3 +18,11 @@ the library was built with.
 
 A library built with an incompatible version can fail at run time with
 `TypeLoadException` or `MissingMethodException`.
+
+## Build-time check
+
+In a project that references Morphant directly, Morphant checks the referenced
+libraries that use Morphant and reports [MORPH0063](diagnostics/MORPH0063.md)
+for a library built with an incompatible version. A project that receives
+Morphant only transitively is not checked; to check an application, add a
+direct reference to the `Morphant` package.

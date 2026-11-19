@@ -30,6 +30,19 @@ internal sealed class RuntimeContractFixture
 
     public RuntimeContractFixture WithDuplicateRevision(string revision)
     {
+        return WithAssemblyAttribute(
+            $"[assembly: AssemblyMetadata(\"{ContractMetadata}\", " +
+            $"\"{revision}\")]");
+    }
+
+    public RuntimeContractFixture WithAssemblyVersion(string version)
+    {
+        return WithAssemblyAttribute(
+            $"[assembly: AssemblyVersion(\"{version}\")]");
+    }
+
+    private RuntimeContractFixture WithAssemblyAttribute(string attribute)
+    {
         const string namespaceMarker = "namespace Morphant";
         var insertionIndex = _source.IndexOf(
             namespaceMarker,
@@ -41,10 +54,7 @@ internal sealed class RuntimeContractFixture
                 "The runtime fixture does not contain its root namespace.");
         }
 
-        _source = _source.Insert(
-            insertionIndex,
-            $"[assembly: AssemblyMetadata(\"{ContractMetadata}\", " +
-            $"\"{revision}\")]\n\n");
+        _source = _source.Insert(insertionIndex, attribute + "\n\n");
         return this;
     }
 

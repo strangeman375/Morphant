@@ -8,6 +8,13 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ## [Unreleased]
 
+### Added
+
+- Report `MORPH0063` at compile time when a referenced library was built with
+  an incompatible Morphant version, instead of failing at run time with
+  `TypeLoadException` or `MissingMethodException`. See
+  [Version compatibility](docs/compatibility.md).
+
 ## [0.5.0]
 
 ### Added

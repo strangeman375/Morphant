@@ -116,6 +116,37 @@ internal sealed class CompatibilityDiagnosticsTests
     }
 
     [Test]
+    public async Task Library_built_with_an_older_runtime_reports_MORPH0063()
+    {
+        using var workspace = new ConsumerBuildWorkspace();
+        var legacyRuntime = await workspace.BuildRuntimeCandidate(
+            "LegacyRuntime",
+            "Morphant");
+        AssertSucceeded(legacyRuntime.Process);
+
+        var library = await workspace.BuildRuntimeCandidate(
+            "LegacyLibrary",
+            "LegacyLibrary",
+            "LegacyRuntimePath=" + legacyRuntime.AssemblyPath);
+        AssertSucceeded(library.Process);
+
+        var build = await workspace.BuildConsumer(
+            "IncompatibleLibrary",
+            libraryPath: library.AssemblyPath);
+        var runtimeVersion = typeof(TypeMapper<>).Assembly.GetName().Version!;
+
+        AssertFailedWith(
+            build.Process,
+            "MORPH0063",
+            "Assembly 'LegacyLibrary' was built with Morphant 0.1, which is " +
+            "incompatible with Morphant " +
+            $"{runtimeVersion.Major}.{runtimeVersion.Minor} used by this project.");
+        Assert.That(
+            build.GetGeneratedFiles("Morphant.Generated.TypeMapper.*"),
+            Has.Length.EqualTo(1));
+    }
+
+    [Test]
     public async Task CSharp8_reports_MORPH0001_and_generates_nothing()
     {
         using var workspace = new ConsumerBuildWorkspace();

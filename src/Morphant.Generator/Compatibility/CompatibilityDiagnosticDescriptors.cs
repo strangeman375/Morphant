@@ -33,6 +33,12 @@ internal static class CompatibilityDiagnosticDescriptors
             "Incompatible Morphant runtime",
             "The Morphant runtime is incompatible with this generator: {0}.");
 
+    public static readonly DiagnosticDescriptor IncompatibleLibrary =
+        Create(
+            "MORPH0063",
+            "Incompatible Morphant library",
+            "Assembly '{0}' was built with Morphant {1}, which is incompatible with Morphant {2} used by this project.");
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

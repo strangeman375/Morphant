@@ -3,8 +3,11 @@
     <PropertyGroup>
         <Version>0.5.0</Version>
 
-        <!-- Keep patch releases in the 0.5 line binary-compatible. -->
-        <AssemblyVersion>0.5.0.0</AssemblyVersion>
+        <!--
+          The assembly version is the binary-compatibility line: patch releases
+          keep it, and MORPH0063 compares the line that libraries reference.
+        -->
+        <AssemblyVersion>$([System.Text.RegularExpressions.Regex]::Match('$(Version)', '^\d+\.\d+').Value).0.0</AssemblyVersion>
 
         <Authors>strangeman375</Authors>
         <Company>strangeman375</Company>

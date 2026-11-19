@@ -17,6 +17,14 @@ internal static class CompilationCompatibilityDetector
         CSharpCompilation compilation,
         LanguageVersion languageVersion)
     {
+        return Detect(compilation, languageVersion, out _);
+    }
+
+    public static CompilationCompatibility Detect(
+        CSharpCompilation compilation,
+        LanguageVersion languageVersion,
+        out IAssemblySymbol? compatibleRuntime)
+    {
         var isLanguageCompatible =
             languageVersion >= LanguageVersion.CSharp9;
         var runtimeContract = DetectRuntimeContract(
@@ -36,6 +44,11 @@ internal static class CompilationCompatibilityDetector
             runtimeContract = Incompatible(
                 "the runtime API does not match this generator");
         }
+
+        compatibleRuntime =
+            runtimeContract.Kind == RuntimeContractCompatibilityKind.Compatible
+                ? compatibleAssembly
+                : null;
 
         return new CompilationCompatibility(
             isLanguageCompatible,

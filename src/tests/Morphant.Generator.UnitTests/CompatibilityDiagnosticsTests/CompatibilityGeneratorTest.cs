@@ -19,7 +19,8 @@ internal static class CompatibilityGeneratorTest
         IReadOnlyCollection<string>? sources = null,
         IReadOnlyCollection<MetadataReference>? references = null,
         IReadOnlyDictionary<string, ReportDiagnostic>? diagnosticOptions = null,
-        GeneratorDriver? driver = null)
+        GeneratorDriver? driver = null,
+        string assemblyName = "CompatibilityConsumer")
     {
         var parseOptions = new CSharpParseOptions(
             languageVersion,
@@ -35,7 +36,7 @@ internal static class CompatibilityGeneratorTest
             ? ImmutableDictionary<string, ReportDiagnostic>.Empty
             : diagnosticOptions.ToImmutableDictionary(StringComparer.Ordinal);
         var compilation = CSharpCompilation.Create(
-            "CompatibilityConsumer",
+            assemblyName,
             syntaxTrees,
             FrameworkReferences.AddRange(references ?? []),
             new CSharpCompilationOptions(
@@ -83,7 +84,8 @@ internal static class CompatibilityGeneratorTest
 
     public static PortableExecutableReference CreateReference(
         string assemblyName,
-        string source)
+        string source,
+        IReadOnlyCollection<MetadataReference>? references = null)
     {
         var parseOptions = new CSharpParseOptions(
             LanguageVersion.CSharp9,
@@ -96,11 +98,17 @@ internal static class CompatibilityGeneratorTest
                     parseOptions,
                     assemblyName + ".cs")
             ],
-            FrameworkReferences,
+            FrameworkReferences.AddRange(references ?? []),
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: NullableContextOptions.Enable));
 
+        return EmitReference(compilation);
+    }
+
+    public static PortableExecutableReference EmitReference(
+        Compilation compilation)
+    {
         using var stream = new MemoryStream();
         var emitResult = compilation.Emit(stream);
         var failures = emitResult.Diagnostics
@@ -114,7 +122,8 @@ internal static class CompatibilityGeneratorTest
         Assert.That(
             failures,
             Is.Empty,
-            $"Reference '{assemblyName}' must compile without diagnostics." +
+            $"Reference '{compilation.AssemblyName}' must compile without " +
+            "diagnostics." +
             Environment.NewLine +
             string.Join(Environment.NewLine, failures));
 

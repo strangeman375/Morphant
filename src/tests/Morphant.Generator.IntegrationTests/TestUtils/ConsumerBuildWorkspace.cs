@@ -22,7 +22,8 @@ internal sealed class ConsumerBuildWorkspace : IDisposable
 
     public async Task<ConsumerBuild> BuildConsumer(
         string fixtureName,
-        string? runtimeCandidatePath = null)
+        string? runtimeCandidatePath = null,
+        string? libraryPath = null)
     {
         var paths = CreateBuildPaths(fixtureName);
         var arguments = BuildArguments(
@@ -40,21 +41,29 @@ internal sealed class ConsumerBuildWorkspace : IDisposable
             arguments.Add($"-p:RuntimeCandidatePath={runtimeCandidatePath}");
         }
 
+        if (libraryPath is not null)
+        {
+            arguments.Add($"-p:LibraryPath={libraryPath}");
+        }
+
         var process = await DotNetCli.Run(_repositoryRoot, arguments);
         return new ConsumerBuild(process, paths.GeneratedDirectory);
     }
 
     public async Task<RuntimeCandidateBuild> BuildRuntimeCandidate(
         string fixtureName,
-        string assemblyName)
+        string assemblyName,
+        params string[] properties)
     {
         var paths = CreateBuildPaths(fixtureName);
-        var process = await DotNetCli.Run(
-            _repositoryRoot,
-            BuildArguments(
-                "build",
-                GetFixtureProject(fixtureName),
-                paths));
+        var arguments = BuildArguments(
+            "build",
+            GetFixtureProject(fixtureName),
+            paths);
+
+        arguments.AddRange(properties.Select(static property => "-p:" + property));
+
+        var process = await DotNetCli.Run(_repositoryRoot, arguments);
         var assemblyPath = Path.Combine(
             paths.OutputDirectory,
             _configuration,

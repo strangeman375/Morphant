@@ -49,9 +49,17 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
                 var compatibility =
                     CompilationCompatibilityDetector.Detect(
                         compilation,
-                        languageVersion);
+                        languageVersion,
+                        out var runtime);
+                var diagnostics =
+                    compatibility.CreateDiagnostics(languageVersion);
 
-                return compatibility.CreateDiagnostics(languageVersion);
+                return runtime is null
+                    ? diagnostics
+                    : diagnostics.AddRange(
+                        LibraryCompatibilityDetector.Detect(
+                            compilation,
+                            runtime));
             },
             ImmutableArray<Diagnostic>.Empty);
         DiagnosticPipeline.Register(

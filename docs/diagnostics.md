@@ -73,6 +73,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0060](diagnostics/MORPH0060.md) | Registration | Error | A reusable mapper-family parameter is absent from a declared mapping pair. |
 | [MORPH0061](diagnostics/MORPH0061.md) | Polymorphism | Error | Relative specificity of ForDerived source types depends on unknown generic arguments. |
 | [MORPH0062](diagnostics/MORPH0062.md) | Construction | Error | `Construct` or `Resolve` returns an arbitrary destination instead of a supported construction or reuse expression. |
+| [MORPH0063](diagnostics/MORPH0063.md) | Compatibility | Error | A referenced library was built with an incompatible Morphant version. |
 
 ## Configure severity
 
