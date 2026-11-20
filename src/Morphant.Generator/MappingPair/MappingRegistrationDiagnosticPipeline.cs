@@ -37,6 +37,7 @@ internal static class MappingRegistrationDiagnosticPipeline
         var conflicts = ImmutableDictionary.CreateBuilder<string, ImmutableHashSet<string>>(StringComparer.Ordinal);
         var candidates = ImmutableArray.CreateBuilder<DiagnosticCandidate>();
         var surfaces = new List<CanonicalMappingPairCandidate>();
+        var interfaceConflicts = new HashSet<(Location, Location)>();
         var openRegistrations = new List<CanonicalMappingPairCandidate>();
         var reported = new HashSet<(SyntaxTree Tree, int Start, string Pair)>();
         var seenMappers = new HashSet<ISymbol>(
@@ -196,6 +197,8 @@ internal static class MappingRegistrationDiagnosticPipeline
 
             foreach (var conflict in analysis.GeneratedConflicts)
             {
+                interfaceConflicts.Add((GetMapIdentifierLocation(conflict.EarlierRegistration.Syntax),
+                    GetMapIdentifierLocation(conflict.LaterRegistration.Syntax)));
                 candidates.Add(new DiagnosticCandidate(
                     IdOrder: 14,
                     declaration.MapperIdentity,
@@ -217,7 +220,7 @@ internal static class MappingRegistrationDiagnosticPipeline
             }
         }
 
-        AddOpenExtensionDiagnostics(openRegistrations, candidates, conflicts, cancellationToken);
+        AddOpenExtensionDiagnostics(openRegistrations, interfaceConflicts, candidates, conflicts, cancellationToken);
         var reportedPresentations = new HashSet<(Location, Location)>();
         AddPresentationDiagnostics(openRegistrations, declared: true, candidates, conflicts, reportedPresentations, cancellationToken);
         AddPresentationDiagnostics(surfaces, declared: false, candidates, conflicts, reportedPresentations, cancellationToken);
@@ -247,6 +250,7 @@ internal static class MappingRegistrationDiagnosticPipeline
 
     private static void AddOpenExtensionDiagnostics(
         List<CanonicalMappingPairCandidate> registrations,
+        HashSet<(Location, Location)> interfaceConflicts,
         ImmutableArray<DiagnosticCandidate>.Builder diagnostics,
         ImmutableDictionary<string, ImmutableHashSet<string>>.Builder conflicts,
         CancellationToken cancellationToken)
@@ -274,7 +278,13 @@ internal static class MappingRegistrationDiagnosticPipeline
                     right = rightGroup.First();
                     left = leftGroup.FirstOrDefault(item => item.DeclaringMapperIdentity != right.DeclaringMapperIdentity);
                     if (left.DeclaringMapperIdentity is null)
-                        continue; // Interface conflicts within one declaration are reported by MORPH0014.
+                    {
+                        left = leftGroup.First();
+                        var first = GetMapIdentifierLocation(left.Pair.Registration.Syntax);
+                        var second = GetMapIdentifierLocation(right.Pair.Registration.Syntax);
+                        if (interfaceConflicts.Contains((first, second)) || interfaceConflicts.Contains((second, first)))
+                            continue;
+                    }
                 }
 
                 if (!MappingTypeIdentityPolicy.ExtensionsCanBeAmbiguous(left.Pair, right.Pair))

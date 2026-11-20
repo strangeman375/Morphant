@@ -170,8 +170,27 @@ internal static class CanonicalMappingPairPipeline
 
         // Inheritance selects which signatures are needed. All declarations
         // of each selected signature take part in choosing its presentation.
-        return effective.Values.Select(static c => c.DeclaredPairKey)
-            .Distinct(StringComparer.Ordinal).OrderBy(static key => key, StringComparer.Ordinal)
+        var required = new HashSet<string>(effective.Values.Select(static c => c.DeclaredPairKey), StringComparer.Ordinal);
+        // A closed redeclaration normally reuses its inherited open extension.
+        // Keep it when two open overloads would tie at that concrete call.
+        foreach (var owner in owners)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (required.Contains(owner.Key) || !needsLocalExtension.Contains(owner.Key) ||
+                !ConstructionSurface.GeneratedTypeNameBuilder.CollectTypeParameters(
+                    owner.Value.Pair.SourceType, owner.Value.Pair.DestinationType).IsEmpty)
+                continue;
+
+            var pair = owner.Value.Pair;
+            var applicable = required.Where(needsLocalExtension.Contains).Select(key => owners[key].Pair)
+                .Where(open => MappingTypeIdentityPolicy.CanPairsUnify(
+                    open.SourceType, open.DestinationType, pair.SourceType, pair.DestinationType)).ToArray();
+            if (applicable.Length > 1 && !applicable.Any(best => applicable.All(other =>
+                    best.Equals(other) || MappingTypeIdentityPolicy.IsMoreSpecificExtension(best, other))))
+                required.Add(owner.Key);
+        }
+
+        return required.OrderBy(static key => key, StringComparer.Ordinal)
             .Select(key => owners[key] with { EmitLocalExtension = needsLocalExtension.Contains(key) })
             .ToImmutableArray();
     }

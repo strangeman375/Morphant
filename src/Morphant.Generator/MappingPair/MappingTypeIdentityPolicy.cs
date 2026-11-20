@@ -115,42 +115,36 @@ internal static class MappingTypeIdentityPolicy
     }
 
     public static bool CanTypesUnify(ITypeSymbol left, ITypeSymbol right) =>
-        TryUnify(left, right,
-            new Dictionary<ITypeParameterSymbol, ITypeSymbol>(TypeParameterComparer.Instance));
+        new Unifier().Match(new(left, false), new(right, false));
 
     public static bool CanPairsUnify(
-        ITypeSymbol leftSource,
-        ITypeSymbol leftDestination,
-        ITypeSymbol rightSource,
-        ITypeSymbol rightDestination)
+        ITypeSymbol leftSource, ITypeSymbol leftDestination,
+        ITypeSymbol rightSource, ITypeSymbol rightDestination)
     {
-        var substitutions =
-            new Dictionary<ITypeParameterSymbol, ITypeSymbol>(
-                TypeParameterComparer.Instance);
-
-        return TryUnify(
-                   leftSource,
-                   rightSource,
-                   substitutions) &&
-               TryUnify(
-                   leftDestination,
-                   rightDestination,
-                   substitutions);
+        var unifier = new Unifier();
+        return unifier.Match(new(leftSource, false), new(rightSource, false)) &&
+               unifier.Match(new(leftDestination, false), new(rightDestination, false));
     }
 
     public static bool ExtensionsCanBeAmbiguous(MappingPairModel left, MappingPairModel right)
     {
-        if (!CanPairsUnify(left.SourceType, left.DestinationType, right.SourceType, right.DestinationType))
+        // Each extension declares its own method type parameters, even when
+        // both registrations refer to the same mapper or containing type.
+        var unifier = new Unifier();
+        if (!unifier.Match(new(left.SourceType, false), new(right.SourceType, true)) ||
+            !unifier.Match(new(left.DestinationType, false), new(right.DestinationType, true)))
             return false;
 
         // C# compares positions in the unsubstituted parameter types. Reusing
         // a type parameter restricts applicability but does not break a tie.
-        var leftMoreSpecific = HasMoreSpecificPosition(left.SourceType, right.SourceType) ||
-                               HasMoreSpecificPosition(left.DestinationType, right.DestinationType);
-        var rightMoreSpecific = HasMoreSpecificPosition(right.SourceType, left.SourceType) ||
-                                HasMoreSpecificPosition(right.DestinationType, left.DestinationType);
-        return leftMoreSpecific == rightMoreSpecific;
+        return !IsMoreSpecificExtension(left, right) && !IsMoreSpecificExtension(right, left);
     }
+
+    internal static bool IsMoreSpecificExtension(MappingPairModel left, MappingPairModel right) =>
+        (HasMoreSpecificPosition(left.SourceType, right.SourceType) ||
+         HasMoreSpecificPosition(left.DestinationType, right.DestinationType)) &&
+        !HasMoreSpecificPosition(right.SourceType, left.SourceType) &&
+        !HasMoreSpecificPosition(right.DestinationType, left.DestinationType);
 
     private static bool HasMoreSpecificPosition(ITypeSymbol left, ITypeSymbol right)
     {
@@ -444,184 +438,88 @@ internal static class MappingTypeIdentityPolicy
         left.MetadataName == right.MetadataName && left.ContainingAssembly.Identity.Equals(right.ContainingAssembly.Identity) &&
         SymbolNameHelper.GetFullMetadataName(left) == SymbolNameHelper.GetFullMetadataName(right);
 
-    private static bool TryUnify(
-        ITypeSymbol left,
-        ITypeSymbol right,
-        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions)
+    private readonly record struct TypeTerm(ITypeSymbol Type, bool RightScope)
     {
-        left = Resolve(left, substitutions);
-        right = Resolve(right, substitutions);
+        public TypeTerm Child(ITypeSymbol type) => new(type, RightScope);
 
-        if (left is ITypeParameterSymbol leftTypeParameter)
+        public bool Equals(TypeTerm other) => RightScope == other.RightScope &&
+            SymbolEqualityComparer.Default.Equals(Type, other.Type);
+
+        public override int GetHashCode() =>
+            unchecked(SymbolEqualityComparer.Default.GetHashCode(Type) * 31 + RightScope.GetHashCode());
+    }
+
+    private sealed class Unifier
+    {
+        private readonly Dictionary<TypeTerm, TypeTerm> _bindings = new();
+
+        public bool Match(TypeTerm left, TypeTerm right)
         {
-            return TryBind(
-                leftTypeParameter,
-                right,
-                substitutions);
-        }
+            left = Resolve(left);
+            right = Resolve(right);
+            if (left.Type is ITypeParameterSymbol)
+                return Bind(left, right);
+            if (right.Type is ITypeParameterSymbol)
+                return Bind(right, left);
 
-        if (right is ITypeParameterSymbol rightTypeParameter)
-        {
-            return TryBind(
-                rightTypeParameter,
-                left,
-                substitutions);
-        }
+            if (IsObjectLike(left.Type) || IsObjectLike(right.Type))
+                return IsObjectLike(left.Type) && IsObjectLike(right.Type);
 
-        if (IsObjectLike(left) || IsObjectLike(right))
-        {
-            return IsObjectLike(left) && IsObjectLike(right);
-        }
+            if (left.Type is IArrayTypeSymbol la && right.Type is IArrayTypeSymbol ra)
+                return la.Rank == ra.Rank && la.IsSZArray == ra.IsSZArray &&
+                       Match(left.Child(la.ElementType), right.Child(ra.ElementType));
 
-        var leftArray = left as IArrayTypeSymbol;
-        var rightArray = right as IArrayTypeSymbol;
-
-        if (leftArray is not null || rightArray is not null)
-        {
-            return leftArray is not null &&
-                   rightArray is not null &&
-                   leftArray.Rank == rightArray.Rank &&
-                   leftArray.IsSZArray == rightArray.IsSZArray &&
-                   TryUnify(
-                       leftArray.ElementType,
-                       rightArray.ElementType,
-                       substitutions);
-        }
-
-        if (left is not INamedTypeSymbol leftNamed ||
-            right is not INamedTypeSymbol rightNamed)
-        {
-            return false;
-        }
-
-        leftNamed = Normalize(leftNamed);
-        rightNamed = Normalize(rightNamed);
-
-        if (!SameDefinition(leftNamed, rightNamed) ||
-            leftNamed.TypeArguments.Length !=
-                rightNamed.TypeArguments.Length ||
-            !TryUnifyContainingTypes(
-                leftNamed.ContainingType,
-                rightNamed.ContainingType,
-                substitutions))
-        {
-            return false;
-        }
-
-        for (var index = 0;
-             index < leftNamed.TypeArguments.Length;
-             index++)
-        {
-            if (!TryUnify(
-                    leftNamed.TypeArguments[index],
-                    rightNamed.TypeArguments[index],
-                    substitutions))
-            {
+            if (left.Type is not INamedTypeSymbol ln || right.Type is not INamedTypeSymbol rn)
                 return false;
+
+            ln = Normalize(ln);
+            rn = Normalize(rn);
+            if (!SameDefinition(ln, rn))
+                return false;
+            if (ln.ContainingType is { } lc && rn.ContainingType is { } rc &&
+                !Match(left.Child(lc), right.Child(rc)))
+                return false;
+
+            for (var i = 0; i < ln.TypeArguments.Length; i++)
+            {
+                if (!Match(left.Child(ln.TypeArguments[i]), right.Child(rn.TypeArguments[i])))
+                    return false;
             }
-        }
 
-        return true;
-    }
-
-    private static bool TryBind(
-        ITypeParameterSymbol typeParameter,
-        ITypeSymbol type,
-        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions)
-    {
-        type = Resolve(type, substitutions);
-
-        if (type is ITypeParameterSymbol otherTypeParameter &&
-            SymbolEqualityComparer.Default.Equals(
-                typeParameter,
-                otherTypeParameter))
-        {
             return true;
         }
 
-        if (Contains(type, typeParameter, substitutions))
+        private bool Bind(TypeTerm variable, TypeTerm value)
         {
-            return false;
-        }
+            if (variable.Equals(value))
+                return true;
+            if (Contains(value, variable))
+                return false;
 
-        substitutions.Add(typeParameter, type);
-        return true;
-    }
-
-    private static ITypeSymbol Resolve(
-        ITypeSymbol type,
-        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
-            substitutions)
-    {
-        while (type is ITypeParameterSymbol typeParameter &&
-               substitutions.TryGetValue(
-                   typeParameter,
-                   out var replacement))
-        {
-            type = replacement;
-        }
-
-        return type;
-    }
-
-    private static bool Contains(
-        ITypeSymbol type,
-        ITypeParameterSymbol searchedTypeParameter,
-        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
-            substitutions)
-    {
-        type = Resolve(type, substitutions);
-
-        if (type is ITypeParameterSymbol typeParameter)
-        {
-            return SymbolEqualityComparer.Default.Equals(
-                typeParameter,
-                searchedTypeParameter);
-        }
-
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            return Contains(
-                arrayType.ElementType,
-                searchedTypeParameter,
-                substitutions);
-        }
-
-        if (type is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        namedType = Normalize(namedType);
-
-        if (namedType.ContainingType is { } containingType &&
-            Contains(
-                containingType,
-                searchedTypeParameter,
-                substitutions))
-        {
+            _bindings.Add(variable, value);
             return true;
         }
 
-        return namedType.TypeArguments.Any(
-            typeArgument =>
-                Contains(
-                    typeArgument,
-                    searchedTypeParameter,
-                    substitutions));
-    }
-
-    private static bool TryUnifyContainingTypes(
-        INamedTypeSymbol? left,
-        INamedTypeSymbol? right,
-        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions)
-    {
-        if (left is null || right is null)
+        private TypeTerm Resolve(TypeTerm term)
         {
-            return left is null && right is null;
+            while (term.Type is ITypeParameterSymbol && _bindings.TryGetValue(term, out var replacement))
+                term = replacement;
+
+            return term;
         }
 
-        return TryUnify(left, right, substitutions);
+        private bool Contains(TypeTerm term, TypeTerm variable)
+        {
+            term = Resolve(term);
+            if (term.Type is ITypeParameterSymbol)
+                return term.Equals(variable);
+            if (term.Type is IArrayTypeSymbol array)
+                return Contains(term.Child(array.ElementType), variable);
+
+            return term.Type is INamedTypeSymbol named &&
+                   (named.ContainingType is { } container && Contains(term.Child(container), variable) ||
+                    named.TypeArguments.Any(argument => Contains(term.Child(argument), variable)));
+        }
     }
 
     private static bool IsObjectLike(ITypeSymbol type)

@@ -2,8 +2,9 @@
 
 ## Cause
 
-Two generic mappers register different open pairs that can become the same
-pair for some type arguments, and C# cannot select a more specific extension.
+Different registrations produce open extensions that can match the same pair
+for some type arguments, and C# cannot select a more specific extension.
+Each extension has its own type parameters, even within one mapper.
 For example, `Box<T, T>` and `Box<U, V>` both match `Box<int, int>`.
 Repeating a type parameter does not give the first extension priority.
 
