@@ -112,8 +112,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_2d3cf7ab0ac7e86f199eceec78b98b8f.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -125,8 +126,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::ExternalModels.Destination, global::Morphant.Generated.N_2d3cf7ab0ac7e86f199eceec78b98b8f.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -138,8 +140,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::ExternalModels.Destination, global::ExternalModels.Destination, global::Morphant.Generated.N_2d3cf7ab0ac7e86f199eceec78b98b8f.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -151,8 +154,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::ExternalModels.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::ExternalModels.Destination, global::ExternalModels.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_2d3cf7ab0ac7e86f199eceec78b98b8f.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

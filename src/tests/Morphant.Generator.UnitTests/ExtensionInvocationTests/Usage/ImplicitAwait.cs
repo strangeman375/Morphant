@@ -85,8 +85,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::System.Threading.Tasks.Task<int
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, global::System.Threading.Tasks.Task<int>?> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -102,8 +103,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::System.Threading.Tasks.Task<int
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>?> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -119,8 +121,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::System.Threading.Tasks.Task<int
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, global::System.Threading.Tasks.Task<int>, global::System.Threading.Tasks.Task<int>?> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -136,8 +139,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::System.Threading.Tasks.Task<int
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, global::System.Threading.Tasks.Task<int>, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>?> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -153,8 +157,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::System.Threading.Tasks.Task<int
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::System.Threading.Tasks.Task<int>?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -170,8 +175,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::System.Threading.Tasks.Task<int
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::System.Threading.Tasks.Task<int>, global::System.Threading.Tasks.Task<int>?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -187,8 +193,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::System.Threading.Tasks.Task<int
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::System.Threading.Tasks.Task<int>, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }

@@ -129,8 +129,8 @@ internal static class PairConfigurationModelBuilder
         AppendType(source, sourceName);
         line += ", ";
         AppendType(destination, destinationName);
+        SetContext(true);
         lines.Add(line + suffix);
-        if (enabled == false) lines.Add("#nullable enable annotations");
         return string.Join("\n", lines);
 
         void SetContext(bool next)

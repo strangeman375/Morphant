@@ -70,8 +70,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> ConstructUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, string?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -83,8 +84,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> ConstructUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, global::Morphant.Context.MappingContext, string?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -96,8 +98,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> ResolveUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, string, string?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -109,8 +112,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> ResolveUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, string, global::Morphant.Context.MappingContext, string?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -122,8 +126,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, string?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -135,8 +140,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, string, string?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -148,8 +154,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, string, global::Morphant.Context.MappingContext, string?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -232,8 +239,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
     public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> ConstructUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, string?> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -245,8 +253,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
     public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> ConstructUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, global::Morphant.Context.MappingContext, string?> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -258,8 +267,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
     public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> ResolveUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, string, string?> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -271,8 +281,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
     public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> ResolveUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, string, global::Morphant.Context.MappingContext, string?> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -284,8 +295,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, string?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -297,8 +309,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, string, string?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -310,8 +323,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string> builder,
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, string
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, string, global::Morphant.Context.MappingContext, string?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }

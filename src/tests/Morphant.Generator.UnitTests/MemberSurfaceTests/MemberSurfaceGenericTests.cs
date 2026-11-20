@@ -88,8 +88,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<string
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<string>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<string>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -106,8 +107,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<string
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<string>, global::TestCase.Destination<string>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<string>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -124,8 +126,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<string
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<string>, global::TestCase.Destination<string>, global::TestCase.Destination<string>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<string>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -142,8 +145,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<string
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<string>, global::TestCase.Destination<string>, global::TestCase.Destination<string>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<string>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -173,8 +177,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<int>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<int>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -191,8 +196,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<int>, global::TestCase.Destination<int>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<int>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -209,8 +215,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<int>, global::TestCase.Destination<int>, global::TestCase.Destination<int>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<int>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -227,8 +234,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<int>, global::TestCase.Destination<int>, global::TestCase.Destination<int>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<int>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -339,8 +347,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<T>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -358,8 +367,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<T>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -377,8 +387,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<T>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -396,8 +407,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<T>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -428,8 +440,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<T>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -447,8 +460,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<T>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -466,8 +480,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<T>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -485,8 +500,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_44357adb1d8d62d938f9f3f63376f435.DestinationMembers<T>> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -611,8 +627,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<TValue>, global::Morphant.Generated.N_60682802995f3765fb783994a88689c6.DestinationMembers<global::TestCase.IContract, TValue>> members)
             where TValue : global::TestCase.IContract
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -631,8 +648,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<TValue>, global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue>, global::Morphant.Generated.N_60682802995f3765fb783994a88689c6.DestinationMembers<global::TestCase.IContract, TValue>> members)
             where TValue : global::TestCase.IContract
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -651,8 +669,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<TValue>, global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue>, global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue>, global::Morphant.Generated.N_60682802995f3765fb783994a88689c6.DestinationMembers<global::TestCase.IContract, TValue>> members)
             where TValue : global::TestCase.IContract
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -671,8 +690,9 @@ namespace Morphant
         #nullable enable annotations
                 global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<TValue>, global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue>, global::TestCase.Outer<global::TestCase.IContract>.Destination<TValue>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_60682802995f3765fb783994a88689c6.DestinationMembers<global::TestCase.IContract, TValue>> members)
             where TValue : global::TestCase.IContract
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();

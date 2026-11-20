@@ -75,8 +75,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Construct(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::QueryNames.Source, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -88,8 +89,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Construct(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::QueryNames.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -101,8 +103,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Resolve(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::QueryNames.Source, global::QueryNames.Destination, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -114,8 +117,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Resolve(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::QueryNames.Source, global::QueryNames.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -127,8 +131,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> ConstructUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::QueryNames.Source, global::QueryNames.Destination?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -140,8 +145,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> ConstructUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::QueryNames.Source, global::Morphant.Context.MappingContext, global::QueryNames.Destination?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -153,8 +159,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> ResolveUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::QueryNames.Source, global::QueryNames.Destination, global::QueryNames.Destination?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -166,8 +173,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> ResolveUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::QueryNames.Source, global::QueryNames.Destination, global::Morphant.Context.MappingContext, global::QueryNames.Destination?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -179,8 +187,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::QueryNames.Source?, global::QueryNames.Destination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -192,8 +201,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::QueryNames.Source?, global::QueryNames.Destination, global::QueryNames.Destination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -205,8 +215,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::QueryNames.Source?, global::QueryNames.Destination, global::Morphant.Context.MappingContext, global::QueryNames.Destination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -254,8 +265,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::QueryNames.Source, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -267,8 +279,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::QueryNames.Source, global::QueryNames.Destination, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -280,8 +293,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::QueryNames.Source, global::QueryNames.Destination, global::QueryNames.Destination, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -293,8 +307,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
+            this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::QueryNames.Source, global::QueryNames.Destination, global::QueryNames.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

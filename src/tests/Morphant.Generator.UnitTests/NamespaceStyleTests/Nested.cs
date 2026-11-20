@@ -122,8 +122,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::Example.@namespace.Source<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationConstruction<T>> construct)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -142,8 +143,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::Example.@namespace.Source<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationConstruction<T>> construct)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -162,8 +164,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationConstruction<T>> resolve)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -182,8 +185,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationConstruction<T>> resolve)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -202,8 +206,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>?> construct)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -222,8 +227,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::Example.@namespace.Source<T>, global::Morphant.Context.MappingContext, global::Example.@namespace.Destination<T>?> construct)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -242,8 +248,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Example.@namespace.Destination<T>?> resolve)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -262,8 +269,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContext, global::Example.@namespace.Destination<T>?> resolve)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -282,8 +290,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::Example.@namespace.Source<T>?, global::Example.@namespace.Destination<T>?> mapping)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -302,8 +311,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::Example.@namespace.Source<T>?, global::Example.@namespace.Destination<T>, global::Example.@namespace.Destination<T>?> mapping)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -322,8 +332,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::Example.@namespace.Source<T>?, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContext, global::Example.@namespace.Destination<T>?> mapping)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -379,8 +390,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::Example.@namespace.Source<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationMembers<T>> members)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -399,8 +411,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationMembers<T>> members)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -419,8 +432,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Example.@namespace.Destination<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationMembers<T>> members)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -439,8 +453,9 @@ namespace Morphant
         #nullable enable annotations
                 global::Example.@namespace.Destination<T
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationMembers<T>> members)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -600,8 +615,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Construct<global::Example.@namespace.Source<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationConstruction<T>> construct)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -620,8 +636,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Construct<global::Example.@namespace.Source<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationConstruction<T>> construct)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -640,8 +657,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Resolve<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationConstruction<T>> resolve)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -660,8 +678,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Resolve<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationConstruction<T>> resolve)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -680,8 +699,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>?> construct)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -700,8 +720,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::Example.@namespace.Source<T>, global::Morphant.Context.MappingContext, global::Example.@namespace.Destination<T>?> construct)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -720,8 +741,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Example.@namespace.Destination<T>?> resolve)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -740,8 +762,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContext, global::Example.@namespace.Destination<T>?> resolve)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -760,8 +783,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Example.@namespace.Source<T>?, global::Example.@namespace.Destination<T>?> mapping)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -780,8 +804,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Example.@namespace.Source<T>?, global::Example.@namespace.Destination<T>, global::Example.@namespace.Destination<T>?> mapping)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -800,8 +825,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Example.@namespace.Source<T>?, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContext, global::Example.@namespace.Destination<T>?> mapping)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -855,8 +881,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Members<global::Example.@namespace.Source<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationMembers<T>> members)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -875,8 +902,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Members<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationMembers<T>> members)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -895,8 +923,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Members<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Example.@namespace.Destination<T>, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationMembers<T>> members)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -915,8 +944,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             global::Example.@namespace.Destination<T
     #nullable disable annotations
-            >> builder,
+            >
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Members<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_9b2024749e0d3ac643ea0a896e4eae01.DestinationMembers<T>> members)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();

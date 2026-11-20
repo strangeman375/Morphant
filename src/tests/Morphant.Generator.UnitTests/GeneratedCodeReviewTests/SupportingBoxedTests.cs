@@ -162,8 +162,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Construct(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Generated.N_26c64cb5bb709c47900e883bb20ee435.BoxedDestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -175,8 +176,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Construct(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_26c64cb5bb709c47900e883bb20ee435.BoxedDestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -188,8 +190,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Resolve(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.BoxedDestination, global::Morphant.Generated.N_26c64cb5bb709c47900e883bb20ee435.BoxedDestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -201,8 +204,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Resolve(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.BoxedDestination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_26c64cb5bb709c47900e883bb20ee435.BoxedDestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -214,8 +218,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> ConstructUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.BoxedDestination?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -227,8 +232,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> ConstructUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.BoxedDestination?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -240,8 +246,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> ResolveUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.BoxedDestination, global::TestCase.BoxedDestination?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -253,8 +260,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> ResolveUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.BoxedDestination, global::Morphant.Context.MappingContext, global::TestCase.BoxedDestination?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -266,8 +274,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.BoxedDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -279,8 +288,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.BoxedDestination, global::TestCase.BoxedDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -292,8 +302,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.BoxedDestination, global::Morphant.Context.MappingContext, global::TestCase.BoxedDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -350,8 +361,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_26c64cb5bb709c47900e883bb20ee435.BoxedDestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -363,8 +375,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.BoxedDestination, global::Morphant.Generated.N_26c64cb5bb709c47900e883bb20ee435.BoxedDestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -376,8 +389,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.BoxedDestination, global::TestCase.BoxedDestination, global::Morphant.Generated.N_26c64cb5bb709c47900e883bb20ee435.BoxedDestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -389,8 +403,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.BoxedDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.BoxedDestination, global::TestCase.BoxedDestination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_26c64cb5bb709c47900e883bb20ee435.BoxedDestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

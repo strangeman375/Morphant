@@ -77,8 +77,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Construct(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Construct<global::Fixture.Source, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -90,8 +91,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Construct(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Construct<global::Fixture.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -103,8 +105,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Resolve(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Resolve<global::Fixture.Source, global::Fixture.Target, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -116,8 +119,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Resolve(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Resolve<global::Fixture.Source, global::Fixture.Target, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -129,8 +133,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ConstructUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::Fixture.Source, global::Fixture.Target?> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -142,8 +147,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ConstructUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::Fixture.Source, global::Morphant.Context.MappingContext, global::Fixture.Target?> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -155,8 +161,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ResolveUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::Fixture.Source, global::Fixture.Target, global::Fixture.Target?> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -168,8 +175,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ResolveUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::Fixture.Source, global::Fixture.Target, global::Morphant.Context.MappingContext, global::Fixture.Target?> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -181,8 +189,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -194,8 +203,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target, global::Fixture.Target?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -207,8 +217,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target, global::Morphant.Context.MappingContext, global::Fixture.Target?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }
@@ -231,8 +242,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Construct(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Construct<global::Fixture.Source, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -244,8 +256,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Construct(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Construct<global::Fixture.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -257,8 +270,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Resolve(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Resolve<global::Fixture.Source, global::Fixture.Target, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -270,8 +284,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Resolve(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Resolve<global::Fixture.Source, global::Fixture.Target, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -283,8 +298,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ConstructUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::Fixture.Source, global::Fixture.Target?> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -296,8 +312,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ConstructUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ConstructUsing<global::Fixture.Source, global::Morphant.Context.MappingContext, global::Fixture.Target?> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -309,8 +326,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ResolveUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::Fixture.Source, global::Fixture.Target, global::Fixture.Target?> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -322,8 +340,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ResolveUsing(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.ResolveUsing<global::Fixture.Source, global::Fixture.Target, global::Morphant.Context.MappingContext, global::Fixture.Target?> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -335,8 +354,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -348,8 +368,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target, global::Fixture.Target?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -361,8 +382,9 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
     public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
     #nullable disable annotations
-        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target
     #nullable enable annotations
+            > builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target, global::Morphant.Context.MappingContext, global::Fixture.Target?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }

@@ -51,8 +51,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> ConstructUsing(
             this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<int, global::System.Threading.Tasks.Task<int>?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -65,8 +66,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> ConstructUsing(
             this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<int, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -79,8 +81,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> ResolveUsing(
             this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<int, global::System.Threading.Tasks.Task<int>, global::System.Threading.Tasks.Task<int>?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -93,8 +96,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> ResolveUsing(
             this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<int, global::System.Threading.Tasks.Task<int>, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -107,8 +111,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> Convert(
             this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<int, global::System.Threading.Tasks.Task<int>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -121,8 +126,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> Convert(
             this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<int, global::System.Threading.Tasks.Task<int>, global::System.Threading.Tasks.Task<int>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -135,8 +141,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> Convert(
             this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<int, global::System.Threading.Tasks.Task<int>, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

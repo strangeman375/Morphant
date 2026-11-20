@@ -1155,8 +1155,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<object[], int> ConstructUsing(
             this global::Morphant.MappingBuilder<object[
         #nullable disable annotations
-                ], int> builder,
+                ], int
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<object[], int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1169,8 +1170,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<object[], int> ConstructUsing(
             this global::Morphant.MappingBuilder<object[
         #nullable disable annotations
-                ], int> builder,
+                ], int
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<object[], global::Morphant.Context.MappingContext, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1183,8 +1185,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<object[], int> ResolveUsing(
             this global::Morphant.MappingBuilder<object[
         #nullable disable annotations
-                ], int> builder,
+                ], int
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<object[], int, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1197,8 +1200,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<object[], int> ResolveUsing(
             this global::Morphant.MappingBuilder<object[
         #nullable disable annotations
-                ], int> builder,
+                ], int
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<object[], int, global::Morphant.Context.MappingContext, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1211,8 +1215,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<object[], int> Convert(
             this global::Morphant.MappingBuilder<object[
         #nullable disable annotations
-                ], int> builder,
+                ], int
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<object[]?, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1225,8 +1230,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<object[], int> Convert(
             this global::Morphant.MappingBuilder<object[
         #nullable disable annotations
-                ], int> builder,
+                ], int
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<object[]?, int, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1239,8 +1245,9 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<object[], int> Convert(
             this global::Morphant.MappingBuilder<object[
         #nullable disable annotations
-                ], int> builder,
+                ], int
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<object[]?, int, global::Morphant.Context.MappingContext, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

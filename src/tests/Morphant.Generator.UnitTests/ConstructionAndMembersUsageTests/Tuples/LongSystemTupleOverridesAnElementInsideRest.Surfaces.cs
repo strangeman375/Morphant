@@ -136,8 +136,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Generated.N_70f5ab6c7d9be25dc2b03f33fbc18d6a.TupleConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -153,8 +154,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_70f5ab6c7d9be25dc2b03f33fbc18d6a.TupleConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -170,8 +172,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::Morphant.Generated.N_70f5ab6c7d9be25dc2b03f33fbc18d6a.TupleConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -187,8 +190,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_70f5ab6c7d9be25dc2b03f33fbc18d6a.TupleConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -204,8 +208,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -221,8 +226,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -238,8 +244,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -255,8 +262,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::Morphant.Context.MappingContext, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -272,8 +280,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -289,8 +298,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -306,8 +316,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::Morphant.Context.MappingContext, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -431,8 +442,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_70f5ab6c7d9be25dc2b03f33fbc18d6a.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -448,8 +460,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::Morphant.Generated.N_70f5ab6c7d9be25dc2b03f33fbc18d6a.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -465,8 +478,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::Morphant.Generated.N_70f5ab6c7d9be25dc2b03f33fbc18d6a.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -482,8 +496,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::System.Tuple<int, int, int, int, int, int, int, global::System.Tuple<int, int>>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_70f5ab6c7d9be25dc2b03f33fbc18d6a.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

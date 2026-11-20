@@ -113,8 +113,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Construct(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::TestCase.ChildSource, global::Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e.ChildDestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -126,8 +127,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Construct(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::TestCase.ChildSource, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e.ChildDestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -139,8 +141,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Resolve(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::TestCase.ChildSource, global::TestCase.ChildDestination, global::Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e.ChildDestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -152,8 +155,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Resolve(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::TestCase.ChildSource, global::TestCase.ChildDestination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e.ChildDestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -165,8 +169,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> ConstructUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.ChildSource, global::TestCase.ChildDestination?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -178,8 +183,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> ConstructUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.ChildSource, global::Morphant.Context.MappingContext, global::TestCase.ChildDestination?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -191,8 +197,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> ResolveUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.ChildSource, global::TestCase.ChildDestination, global::TestCase.ChildDestination?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -204,8 +211,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> ResolveUsing(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.ChildSource, global::TestCase.ChildDestination, global::Morphant.Context.MappingContext, global::TestCase.ChildDestination?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -217,8 +225,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.ChildSource?, global::TestCase.ChildDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -230,8 +239,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.ChildSource?, global::TestCase.ChildDestination, global::TestCase.ChildDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -243,8 +253,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Convert(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.ChildSource?, global::TestCase.ChildDestination, global::Morphant.Context.MappingContext, global::TestCase.ChildDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -272,8 +283,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Generated.N_3e0a23cbdd408bf28b29b7275af80d52.TupleConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -289,8 +301,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_3e0a23cbdd408bf28b29b7275af80d52.TupleConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -306,8 +319,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::System.Tuple<global::TestCase.ChildDestination, int>, global::Morphant.Generated.N_3e0a23cbdd408bf28b29b7275af80d52.TupleConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -323,8 +337,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::System.Tuple<global::TestCase.ChildDestination, int>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_3e0a23cbdd408bf28b29b7275af80d52.TupleConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -340,8 +355,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::System.Tuple<global::TestCase.ChildDestination, int>?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -357,8 +373,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::System.Tuple<global::TestCase.ChildDestination, int>?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -374,8 +391,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::System.Tuple<global::TestCase.ChildDestination, int>, global::System.Tuple<global::TestCase.ChildDestination, int>?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -391,8 +409,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::System.Tuple<global::TestCase.ChildDestination, int>, global::Morphant.Context.MappingContext, global::System.Tuple<global::TestCase.ChildDestination, int>?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -408,8 +427,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Tuple<global::TestCase.ChildDestination, int>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -425,8 +445,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Tuple<global::TestCase.ChildDestination, int>, global::System.Tuple<global::TestCase.ChildDestination, int>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -442,8 +463,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Tuple<global::TestCase.ChildDestination, int>, global::Morphant.Context.MappingContext, global::System.Tuple<global::TestCase.ChildDestination, int>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -524,8 +546,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.ChildSource, global::Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e.ChildDestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -537,8 +560,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.ChildSource, global::TestCase.ChildDestination, global::Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e.ChildDestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -550,8 +574,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.ChildSource, global::TestCase.ChildDestination, global::TestCase.ChildDestination, global::Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e.ChildDestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -563,8 +588,9 @@ namespace Morphant
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> Members(
         #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.ChildSource, global::TestCase.ChildDestination, global::TestCase.ChildDestination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_84787c77b0a7ad9c72dc5a9ea98c202e.ChildDestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -592,8 +618,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_3e0a23cbdd408bf28b29b7275af80d52.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -609,8 +636,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::System.Tuple<global::TestCase.ChildDestination, int>, global::Morphant.Generated.N_3e0a23cbdd408bf28b29b7275af80d52.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -626,8 +654,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::System.Tuple<global::TestCase.ChildDestination, int>, global::System.Tuple<global::TestCase.ChildDestination, int>, global::Morphant.Generated.N_3e0a23cbdd408bf28b29b7275af80d52.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -643,8 +672,9 @@ namespace Morphant
         #nullable enable annotations
                 global::System.Tuple<global::TestCase.ChildDestination, int
         #nullable disable annotations
-                >> builder,
+                >
         #nullable enable annotations
+                > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::System.Tuple<global::TestCase.ChildDestination, int>, global::System.Tuple<global::TestCase.ChildDestination, int>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_3e0a23cbdd408bf28b29b7275af80d52.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
