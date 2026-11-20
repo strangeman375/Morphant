@@ -18,18 +18,19 @@ internal sealed class SharedExtensionTests
 #nullable enable
 using Morphant;
 internal sealed class Box<A,B> { }
+internal sealed class Destination { }
 internal partial class Container
 {
     [MorphantMapper]
     private partial class First<T> : TypeMapper
     {
-        protected override void Configure(MapperBuilder builder) => builder.Map<{{first}}, int>();
+        protected override void Configure(MapperBuilder builder) => builder.Map<{{first}}, Destination>();
     }
 
     [MorphantMapper]
     private partial class Second<U, TUnused> : TypeMapper
     {
-        protected override void Configure(MapperBuilder builder) => builder.Map<{{second}}, int>();
+        protected override void Configure(MapperBuilder builder) => builder.Map<{{second}}, Destination>();
     }
 }
 """;
@@ -51,17 +52,18 @@ internal partial class Container
 #nullable enable
 using Morphant;
 internal sealed class Box<T> { }
+internal sealed class Destination { }
 
 [MorphantMapper]
 internal partial class First : TypeMapper
 {
-    protected override void Configure(MapperBuilder builder) => builder.Map<{{first}}, string?>();
+    protected override void Configure(MapperBuilder builder) => builder.Map<{{first}}, Destination?>();
 }
 
 [MorphantMapper]
 internal partial class Second : TypeMapper
 {
-    protected override void Configure(MapperBuilder builder) => builder.Map<{{second}}, string>();
+    protected override void Configure(MapperBuilder builder) => builder.Map<{{second}}, Destination>();
 }
 """;
         var result = MappingRegistrationGeneratorTest.Run(source);
@@ -83,7 +85,7 @@ using Morphant;
 [MorphantMapper]
 internal partial class LibraryMapper : TypeMapper
 {
-    protected override void Configure(MapperBuilder builder) => builder.Map<string, int>();
+    protected override void Configure(MapperBuilder builder) => builder.Map<string, int>().Convert(s => s?.Length ?? 0);
 }
 """;
         const string consumer = """

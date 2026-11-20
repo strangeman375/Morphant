@@ -138,7 +138,7 @@ internal static class PairConfigurationModelBuilder
             if (enabled == next) return;
             if (enabled.HasValue)
             {
-                lines.Add(line);
+                lines.Add(line.TrimEnd());
                 line = "        ";
             }
 
