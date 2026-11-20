@@ -21,15 +21,21 @@ internal sealed class ProjectReferenceTests
             : "public sealed class Destination { public int Value { get; internal set; } }";
         workspace.Apply(workspace.Solution
             .AddDocument(DocumentId.CreateNewId(models), "Models.cs", SourceText.From(
-                ModelsSource.Replace("public sealed class Destination { public int Value { get; set; } }", destination,
-                    StringComparison.Ordinal)), filePath: "Models.cs")
+                $$"""
+#nullable enable
+namespace ExternalModels
+{
+    public sealed class Source { public int Value { get; set; } }
+    {{destination}}
+}
+"""), filePath: "Models.cs")
             .AddDocument(assembly, "AssemblyInfo.cs", SourceText.From(""), filePath: "AssemblyInfo.cs")
             .AddDocument(DocumentId.CreateNewId(consumer), "Mapper.cs", SourceText.From(ConsumerSource), filePath: "Mapper.cs")
             .AddProjectReference(consumer, new ProjectReference(models)));
         string[] inaccessibleHints =
         [
             "Morphant.Generated.Construction.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
-            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__696dc98d7025f5b2b6c1cb46f14d8870.g.cs",
+            "Morphant.Generated.MappingExtension.SourceToDestination__17c94969546aa4837809d2e4e101f635.g.cs",
             "Morphant.Generated.TypeMapper.TestMapper__34eeba5c4c0622cda3036b677bc2b836.g.cs"
         ];
         var initial = await workspace.AssertProjectAsync(consumer, inaccessibleHints);
@@ -46,7 +52,7 @@ internal sealed class ProjectReferenceTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public async Task Actualizes_two_generator_projects_without_DSL_conflicts(bool friendAssembly)
+    public async Task Actualizes_a_referenced_mapper_with_and_without_friend_access(bool friendAssembly)
     {
         using var workspace = new GeneratorWorkspaceTest();
         var models = workspace.AddProject("ExternalModels");
@@ -61,7 +67,14 @@ internal sealed class ProjectReferenceTests
             .AddDocument(consumerDocument, "Mapper.cs", SourceText.From(ConsumerUsage), filePath: "Mapper.cs")
             .AddProjectReference(consumer, new ProjectReference(models)));
 
-        var initial = await workspace.AssertProjectAsync(consumer, ConsumerHints);
+        string[] expectedHints = friendAssembly
+            ? [ConsumerHints[0], ConsumerHints[2], ConsumerHints[4]]
+            : ConsumerHints;
+        ExpectedCompilerDiagnostic[] expectedDiagnostics = friendAssembly
+            ? [CompilerDiagnostic("MORPH0065", DiagnosticSeverity.Error, "Mapper.cs",
+                ConsumerUsage.IndexOf("Map<", StringComparison.Ordinal), 3)]
+            : [];
+        var initial = await workspace.AssertProjectAsync(consumer, expectedHints, expectedDiagnostics);
         await workspace.AssertProjectAsync(models, ModelHints);
         var compilation = (await workspace.Solution.GetProject(consumer)!.GetCompilationAsync())!;
         Assert.That(compilation.References.OfType<CompilationReference>()
@@ -70,12 +83,12 @@ internal sealed class ProjectReferenceTests
 
         workspace.Apply(workspace.Solution.WithDocumentText(modelsDocument,
             SourceText.From(initialModels.Replace("int Value", "long Value", StringComparison.Ordinal))));
-        var changed = await workspace.AssertProjectAsync(consumer, ConsumerHints);
+        var changed = await workspace.AssertProjectAsync(consumer, expectedHints, expectedDiagnostics);
         await workspace.AssertProjectAsync(models, ModelHints);
         Assert.That(changed.ToArray(), Is.Not.EqualTo(initial.ToArray()));
 
         workspace.Apply(workspace.Solution.WithDocumentText(modelsDocument, SourceText.From(initialModels)));
-        var restored = await workspace.AssertProjectAsync(consumer, ConsumerHints);
+        var restored = await workspace.AssertProjectAsync(consumer, expectedHints, expectedDiagnostics);
         Assert.That(restored.ToArray(), Is.EqualTo(initial.ToArray()));
         await workspace.AssertProjectAsync(models, ModelHints);
     }
@@ -111,18 +124,18 @@ internal sealed class ProjectReferenceTests
     private static readonly string[] ModelHints =
     [
         "Morphant.Generated.Construction.Destination__c759c59f9bc873a2e85ff505d7f16127.g.cs",
-        "Morphant.Generated.MappingExtension.ExternalMapper.SourceToDestination__2a1effbdc2853825f2684b80889a3b3b.g.cs",
+        "Morphant.Generated.MappingExtension.SourceToDestination__7b2e1fc5f07386fdf7ef5612332a805c.g.cs",
         "Morphant.Generated.Member.Destination__c759c59f9bc873a2e85ff505d7f16127.g.cs",
-        "Morphant.Generated.MemberExtension.ExternalMapper.SourceToDestination__2a1effbdc2853825f2684b80889a3b3b.g.cs",
+        "Morphant.Generated.MemberExtension.SourceToDestination__7b2e1fc5f07386fdf7ef5612332a805c.g.cs",
         "Morphant.Generated.TypeMapper.ExternalMapper__35e60aa8d9590156b630789e2a72d31e.g.cs"
     ];
 
     private static readonly string[] ConsumerHints =
     [
         "Morphant.Generated.Construction.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
-        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__696dc98d7025f5b2b6c1cb46f14d8870.g.cs",
+        "Morphant.Generated.MappingExtension.SourceToDestination__17c94969546aa4837809d2e4e101f635.g.cs",
         "Morphant.Generated.Member.Destination__810e478cf158aee1d66e7bd808738fc5.g.cs",
-        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__696dc98d7025f5b2b6c1cb46f14d8870.g.cs",
+        "Morphant.Generated.MemberExtension.SourceToDestination__17c94969546aa4837809d2e4e101f635.g.cs",
         "Morphant.Generated.TypeMapper.TestMapper__34eeba5c4c0622cda3036b677bc2b836.g.cs"
     ];
 

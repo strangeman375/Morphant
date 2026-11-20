@@ -24,9 +24,9 @@ internal sealed class ConfigurationLifecycleActualizationTests
     [
         .. PrimaryGeneratedFiles,
         "Morphant.Generated.Construction.SecondDestination__0a6bfb7a68eff48a657f8d1b5be8ccad.g.cs",
-        "Morphant.Generated.MappingExtension.TestMapper.SecondSourceToSecondDestination__1fc24daf1ff8c0e20bca352f213a53eb.g.cs",
+        "Morphant.Generated.MappingExtension.SecondSourceToSecondDestination__48152aeae1836abfb2f1e7a5cc3f923f.g.cs",
         "Morphant.Generated.Member.SecondDestination__0a6bfb7a68eff48a657f8d1b5be8ccad.g.cs",
-        "Morphant.Generated.MemberExtension.TestMapper.SecondSourceToSecondDestination__1fc24daf1ff8c0e20bca352f213a53eb.g.cs"
+        "Morphant.Generated.MemberExtension.SecondSourceToSecondDestination__48152aeae1836abfb2f1e7a5cc3f923f.g.cs"
     ];
 
     [Test]

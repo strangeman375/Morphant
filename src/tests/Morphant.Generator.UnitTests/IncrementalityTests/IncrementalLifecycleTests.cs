@@ -276,11 +276,11 @@ internal sealed class IncrementalLifecycleTests
         const string nonNullableMapping =
             "Morphant.Generated.MappingExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
         const string nullableMapping =
-            "Morphant.Generated.MappingExtension.NullablePresentationMapper.SurfaceSourceToSurfaceDestination__6967be8c085cdd530e9cf2d4333e8151.g.cs";
+            "Morphant.Generated.MappingExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
         const string nonNullableMember =
             "Morphant.Generated.MemberExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
         const string nullableMember =
-            "Morphant.Generated.MemberExtension.NullablePresentationMapper.SurfaceSourceToSurfaceDestination__6967be8c085cdd530e9cf2d4333e8151.g.cs";
+            "Morphant.Generated.MemberExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
         const string nonNullableMapper =
             "Morphant.Generated.TypeMapper.NonNullableMapper__4d62945fd92434a26b8c7253a0724aff.g.cs";
         const string nullableMapper =

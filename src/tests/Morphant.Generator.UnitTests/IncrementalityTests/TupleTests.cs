@@ -23,13 +23,13 @@ internal sealed class TupleTests
         "Morphant.Generated.MappingExtension.TupleSourceToValueTuple2__aa2853039d60ebad1dfb93f13938bcc1.g.cs";
 
     private const string NewTupleMappingExtension =
-        "Morphant.Generated.MappingExtension.TupleMapper.TupleSourceToValueTuple2__0709fac8e537bea4f858c2174a5b0226.g.cs";
+        "Morphant.Generated.MappingExtension.TupleSourceToValueTuple2__5fcfd052a2158cf6cb3e5545f9f26536.g.cs";
 
     private const string OldTupleMemberExtension =
         "Morphant.Generated.MemberExtension.TupleSourceToValueTuple2__aa2853039d60ebad1dfb93f13938bcc1.g.cs";
 
     private const string NewTupleMemberExtension =
-        "Morphant.Generated.MemberExtension.TupleMapper.TupleSourceToValueTuple2__0709fac8e537bea4f858c2174a5b0226.g.cs";
+        "Morphant.Generated.MemberExtension.TupleSourceToValueTuple2__5fcfd052a2158cf6cb3e5545f9f26536.g.cs";
 
     private const string TupleMapper =
         "Morphant.Generated.TypeMapper.TupleMapper__d3f34444739964258f945f6b73ecca58.g.cs";
@@ -49,16 +49,13 @@ internal sealed class TupleTests
     private const string StableMapper =
         "Morphant.Generated.TypeMapper.StableMapper__3251a87cd2d93d3948a4f1646b88e0d3.g.cs";
 
-    private const string FirstScopedMappingExtension =
+    private const string SharedTupleExtension =
         "Morphant.Generated.MappingExtension.ValueTuple2ToInt32__20b3de42e67b0b11483f1bb4dd3387dd.g.cs";
 
-    private const string SecondScopedMappingExtension =
-        "Morphant.Generated.MappingExtension.SecondMapper.ValueTuple2ToInt32__c894737b18825758ea16d72c3ab6e065.g.cs";
-
-    private const string FirstScopedMapper =
+    private const string FirstTupleMapper =
         "Morphant.Generated.TypeMapper.FirstMapper__4d569664dcc0275de3ba45ccfd799fe1.g.cs";
 
-    private const string SecondScopedMapper =
+    private const string SecondTupleMapper =
         "Morphant.Generated.TypeMapper.SecondMapper__1bdb3890185e1d22ec23681d67d25e87.g.cs";
 
     [Test]
@@ -198,67 +195,60 @@ internal sealed class TupleTests
     }
 
     [Test]
-    public void Adding_an_unrelated_tuple_presentation_keeps_existing_scope_cached()
+    public void An_independent_mapper_reuses_the_cached_tuple_extension()
     {
-        var first = SourceFile("FirstMapper.cs", FirstScopedMapperSource);
-        var second = SourceFile("SecondMapper.cs", SecondScopedMapperSource);
+        var first = SourceFile("FirstMapper.cs", FirstTupleMapperSource);
+        var second = SourceFile("SecondMapper.cs", SecondTupleMapperSource);
         var firstHints = new[]
         {
-            FirstScopedMappingExtension,
-            FirstScopedMapper
+            SharedTupleExtension,
+            FirstTupleMapper
         };
         var bothHints = firstHints.Concat(new[]
         {
-            SecondScopedMappingExtension,
-            SecondScopedMapper
+            SecondTupleMapper
         }).ToArray();
 
         RunAndAssert(
             LanguageVersion.CSharp9,
             static () => new MorphantGenerator(),
             Step(
-                "first tuple scope",
+                "first tuple mapper",
                 [first],
                 firstHints),
             Step(
-                "unrelated tuple presentation added",
+                "independent tuple mapper added",
                 [first, second],
                 bothHints,
                 Stage(
                     "BuildMappingExtensionRequests",
                     Expected(
-                        FirstScopedMappingExtension,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        SecondScopedMappingExtension,
-                        IncrementalStepRunReason.New)),
+                        SharedTupleExtension,
+                        IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildTypeMapperRequests",
                     Expected(
-                        FirstScopedMapper,
+                        FirstTupleMapper,
                         IncrementalStepRunReason.Cached),
                     Expected(
-                        SecondScopedMapper,
+                        SecondTupleMapper,
                         IncrementalStepRunReason.New))),
             Step(
-                "unrelated tuple presentation removed",
+                "independent tuple mapper removed",
                 [first],
                 firstHints,
                 Stage(
                     "BuildMappingExtensionRequests",
                     Expected(
-                        FirstScopedMappingExtension,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        SecondScopedMappingExtension,
-                        IncrementalStepRunReason.Removed)),
+                        SharedTupleExtension,
+                        IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildTypeMapperRequests",
                     Expected(
-                        FirstScopedMapper,
+                        FirstTupleMapper,
                         IncrementalStepRunReason.Cached),
                     Expected(
-                        SecondScopedMapper,
+                        SecondTupleMapper,
                         IncrementalStepRunReason.Removed))));
     }
 
@@ -333,7 +323,7 @@ namespace TestCase
 """;
 
     // lang=c#
-    private const string FirstScopedMapperSource =
+    private const string FirstTupleMapperSource =
 """
 #nullable enable
 #pragma warning disable CS1591
@@ -353,7 +343,7 @@ namespace TestCase
 """;
 
     // lang=c#
-    private const string SecondScopedMapperSource =
+    private const string SecondTupleMapperSource =
 """
 #nullable enable
 #pragma warning disable CS1591
@@ -366,8 +356,8 @@ namespace TestCase
     public partial class SecondMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<(int A, int B), int>()
-                .Convert(source => source.A * source.B);
+            builder.Map<(int X, int Y), int>()
+                .Convert(source => source.X * source.Y);
     }
 }
 """;

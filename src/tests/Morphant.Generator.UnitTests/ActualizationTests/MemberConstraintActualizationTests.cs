@@ -152,7 +152,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : class
+            where T : struct
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -173,7 +173,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : class
+            where T : struct
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : class
+            where T : struct
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -215,7 +215,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : class
+            where T : struct
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -249,7 +249,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : class
+            where T : struct
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -270,7 +270,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : class
+            where T : struct
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -291,7 +291,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : class
+            where T : struct
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -312,7 +312,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : class
+            where T : struct
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -321,7 +321,7 @@ namespace Morphant
         const string membersHint =
             "Morphant.Generated.Member.Destination__d4ed98c91d72688835548ac8f46ba748.g.cs";
         const string extensionHint =
-            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2a3df31a98345f6eaa2ba0ea127c4b3f.g.cs";
+            "Morphant.Generated.MemberExtension.SourceToDestination__ac2a66eb28e58a96f099cc24a4de62f0.g.cs";
 
         RunAndAssert(
             LanguageVersion.CSharp9,

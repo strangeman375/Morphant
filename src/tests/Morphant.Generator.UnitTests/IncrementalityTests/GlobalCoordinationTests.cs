@@ -39,7 +39,7 @@ internal sealed class GlobalCoordinationTests
         "Morphant.Generated.MemberExtension.SourceToURL__c8bbe30fb9a6909b8cd32689a7b044d2.g.cs";
 
     private const string TitleMemberExtension =
-        "Morphant.Generated.MemberExtension.CollisionMapper.SourceToUrl__2460e2b8dd3b03db2a1ce0f542feaf31.g.cs";
+        "Morphant.Generated.MemberExtension.SourceToUrl__535880a501b7a0238a10707fe0808e5a.g.cs";
 
     private const string StableMemberExtension =
         "Morphant.Generated.MemberExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";

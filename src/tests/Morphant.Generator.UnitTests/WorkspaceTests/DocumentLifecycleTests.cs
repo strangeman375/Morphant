@@ -33,9 +33,9 @@ internal sealed class DocumentLifecycleTests
         await workspace.AssertProjectAsync(project,
         [
             "Morphant.Generated.Construction.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
-            "Morphant.Generated.MappingExtension.RenamedMapper.SourceToDestination__f77e41c2b3335cb2698888e4944b555c.g.cs",
+            "Morphant.Generated.MappingExtension.SourceToDestination__0ce1ae18e7f934e5ada1e9737286850d.g.cs",
             "Morphant.Generated.Member.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
-            "Morphant.Generated.MemberExtension.RenamedMapper.SourceToDestination__f77e41c2b3335cb2698888e4944b555c.g.cs",
+            "Morphant.Generated.MemberExtension.SourceToDestination__0ce1ae18e7f934e5ada1e9737286850d.g.cs",
             "Morphant.Generated.TypeMapper.RenamedMapper__146e6c78c86fb8a97251b2d9ca9b04c2.g.cs"
         ]);
 
@@ -77,9 +77,9 @@ internal sealed class DocumentLifecycleTests
     private static readonly string[] InitialHints =
     [
         "Morphant.Generated.Construction.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
-        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__6ffaed10d427445da9aa38b698065b47.g.cs",
+        "Morphant.Generated.MappingExtension.SourceToDestination__0ce1ae18e7f934e5ada1e9737286850d.g.cs",
         "Morphant.Generated.Member.Destination__83703cc96fe84bc1ac409085c81feefc.g.cs",
-        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__6ffaed10d427445da9aa38b698065b47.g.cs",
+        "Morphant.Generated.MemberExtension.SourceToDestination__0ce1ae18e7f934e5ada1e9737286850d.g.cs",
         "Morphant.Generated.TypeMapper.TestMapper__34eeba5c4c0622cda3036b677bc2b836.g.cs"
     ];
 
