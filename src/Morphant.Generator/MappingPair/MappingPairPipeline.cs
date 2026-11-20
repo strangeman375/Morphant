@@ -151,7 +151,8 @@ internal static class MappingPairPipeline
                     registration.SourceType,
                     registration.DestinationType,
                     compilation,
-                    cancellationToken)));
+                    cancellationToken),
+                FriendMappingExtensions.Find(compilation, registration.SourceType, registration.DestinationType)));
         }
 
         var immutablePairs = pairs.ToImmutable();

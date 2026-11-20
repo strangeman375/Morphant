@@ -28,6 +28,7 @@ internal readonly record struct MappingPairModel(
     MappingPairRegistrationModel Registration,
     MappingPairIdentity Identity,
     MappingPairCapabilities Capabilities,
+    string? FriendAssembly = null,
     bool HasUnifiableConflict = false)
 {
     public ITypeSymbol SourceType =>

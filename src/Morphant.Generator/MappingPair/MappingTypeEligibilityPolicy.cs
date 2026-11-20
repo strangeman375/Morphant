@@ -246,7 +246,7 @@ internal static class MappingTypeEligibilityPolicy
         return result;
     }
 
-    private static bool IsAvailableThroughGlobalAlias(
+    internal static bool IsAvailableThroughGlobalAlias(
         IAssemblySymbol assembly,
         Compilation compilation)
     {

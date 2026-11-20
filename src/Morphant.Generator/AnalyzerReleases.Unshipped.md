@@ -5,6 +5,8 @@
 Rule ID | Category | Severity | Notes
 --------|----------|----------|------
 MORPH0063 | Morphant.Compatibility | Error | Incompatible Morphant library
+MORPH0064 | Morphant.Registration | Error | Ambiguous open mapping extensions
+MORPH0065 | Morphant.Registration | Error | Mapping extensions visible from a friend assembly
 
 ### Removed Rules
 

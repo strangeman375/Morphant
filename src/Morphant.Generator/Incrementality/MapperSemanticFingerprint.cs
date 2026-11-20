@@ -254,6 +254,12 @@ internal static class MapperSemanticFingerprintBuilder
                     .Append(symbol.ToDisplayString(
                         SymbolDisplayFormat.CSharpErrorMessageFormat));
                 AddSymbolDependencies(symbol, dependencyTypes);
+                if (symbol is IMethodSymbol { Name: "Map", TypeArguments.Length: 2 } map &&
+                    SymbolNameHelper.GetFullMetadataName(map.ContainingType.OriginalDefinition) == MetadataNames.MapperBuilder)
+                {
+                    result.Append('|').Append(MappingPair.FriendMappingExtensions.Find(
+                        compilation, map.TypeArguments[0], map.TypeArguments[1]));
+                }
             }
 
             if (operation is IConversionOperation conversion)

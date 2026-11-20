@@ -57,7 +57,7 @@ internal static class GeneratedMappingExtensionNaming
         });
     }
 
-    private static bool HasGeneratedSignature(IMethodSymbol method)
+    internal static bool HasGeneratedSignature(IMethodSymbol method)
     {
         if (method.MethodKind != MethodKind.Ordinary ||
             method.DeclaredAccessibility != Accessibility.Public ||

@@ -136,6 +136,18 @@ internal static class MappingTypeIdentityPolicy
                    substitutions);
     }
 
+    // A specialization is ordered by overload resolution. Only variables in
+    // the broader pattern can be bound when testing this direction.
+    public static bool AcceptsPair(MappingPairModel pattern, MappingPairModel candidate)
+    {
+        var variables = new HashSet<ITypeParameterSymbol>(
+            ConstructionSurface.GeneratedTypeNameBuilder.CollectTypeParameters(
+                pattern.SourceType, pattern.DestinationType), TypeParameterComparer.Instance);
+        var substitutions = new Dictionary<ITypeParameterSymbol, ITypeSymbol>(TypeParameterComparer.Instance);
+        return TryUnify(pattern.SourceType, candidate.SourceType, substitutions, variables) &&
+               TryUnify(pattern.DestinationType, candidate.DestinationType, substitutions, variables);
+    }
+
     private static void Append(
         ITypeSymbol type,
         StringBuilder key,
@@ -394,12 +406,13 @@ internal static class MappingTypeIdentityPolicy
     private static bool TryUnify(
         ITypeSymbol left,
         ITypeSymbol right,
-        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions)
+        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions,
+        ISet<ITypeParameterSymbol>? variables = null)
     {
         left = Resolve(left, substitutions);
         right = Resolve(right, substitutions);
 
-        if (left is ITypeParameterSymbol leftTypeParameter)
+        if (left is ITypeParameterSymbol leftTypeParameter && (variables is null || variables.Contains(leftTypeParameter)))
         {
             return TryBind(
                 leftTypeParameter,
@@ -407,13 +420,16 @@ internal static class MappingTypeIdentityPolicy
                 substitutions);
         }
 
-        if (right is ITypeParameterSymbol rightTypeParameter)
+        if (right is ITypeParameterSymbol rightTypeParameter && (variables is null || variables.Contains(rightTypeParameter)))
         {
             return TryBind(
                 rightTypeParameter,
                 left,
                 substitutions);
         }
+
+        if (left is ITypeParameterSymbol || right is ITypeParameterSymbol)
+            return SymbolEqualityComparer.Default.Equals(left, right);
 
         if (IsObjectLike(left) || IsObjectLike(right))
         {
@@ -432,7 +448,7 @@ internal static class MappingTypeIdentityPolicy
                    TryUnify(
                        leftArray.ElementType,
                        rightArray.ElementType,
-                       substitutions);
+                       substitutions, variables);
         }
 
         if (left is not INamedTypeSymbol leftNamed ||
@@ -452,7 +468,7 @@ internal static class MappingTypeIdentityPolicy
             !TryUnifyContainingTypes(
                 leftNamed.ContainingType,
                 rightNamed.ContainingType,
-                substitutions))
+                substitutions, variables))
         {
             return false;
         }
@@ -464,7 +480,7 @@ internal static class MappingTypeIdentityPolicy
             if (!TryUnify(
                     leftNamed.TypeArguments[index],
                     rightNamed.TypeArguments[index],
-                    substitutions))
+                    substitutions, variables))
             {
                 return false;
             }
@@ -563,14 +579,15 @@ internal static class MappingTypeIdentityPolicy
     private static bool TryUnifyContainingTypes(
         INamedTypeSymbol? left,
         INamedTypeSymbol? right,
-        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions)
+        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions,
+        ISet<ITypeParameterSymbol>? variables)
     {
         if (left is null || right is null)
         {
             return left is null && right is null;
         }
 
-        return TryUnify(left, right, substitutions);
+        return TryUnify(left, right, substitutions, variables);
     }
 
     private static bool IsObjectLike(ITypeSymbol type)

@@ -33,6 +33,8 @@ internal static class MappingRegistrationDiagnosticPipeline
         var candidates = ImmutableArray.CreateBuilder<DiagnosticCandidate>();
         var presentations =
             ImmutableArray.CreateBuilder<PresentationRegistration>();
+        var openRegistrations = new Dictionary<string, (MappingPairModel Pair, string Mapper)>(StringComparer.Ordinal);
+        var reported = new HashSet<(SyntaxTree Tree, int Start, string Pair)>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
 
@@ -61,6 +63,24 @@ internal static class MappingRegistrationDiagnosticPipeline
             foreach (var surfaceCandidate in surfaceCandidates)
             {
                 var pair = surfaceCandidate.Pair;
+
+                var physicalPair = MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(
+                    pair.SourceType, pair.DestinationType);
+                if (pair.FriendAssembly is { } friend &&
+                    reported.Add((pair.Registration.Syntax.SyntaxTree, pair.Registration.Syntax.SpanStart, physicalPair)))
+                {
+                    candidates.Add(new DiagnosticCandidate(
+                        65, declaration.MapperIdentity, physicalPair, 0, pair.Registration.Syntax.SpanStart, friend,
+                        Diagnostic.Create(MappingRegistrationDiagnosticDescriptors.FriendExtensionConflict,
+                            GetMapIdentifierLocation(pair.Registration.Syntax),
+                            MapperContractDisplay.Create(pair.SourceType, pair.DestinationType), friend)));
+                }
+
+                if (!ConstructionSurface.GeneratedTypeNameBuilder.CollectTypeParameters(
+                        pair.SourceType, pair.DestinationType).IsEmpty && !openRegistrations.ContainsKey(physicalPair))
+                {
+                    openRegistrations.Add(physicalPair, (pair, model.MapperIdentity));
+                }
 
                 presentations.Add(
                     new PresentationRegistration(
@@ -203,6 +223,7 @@ internal static class MappingRegistrationDiagnosticPipeline
             }
         }
 
+        AddOpenExtensionDiagnostics(openRegistrations, candidates, cancellationToken);
         AddPresentationDiagnostics(
             presentations.ToImmutable(),
             candidates,
@@ -220,6 +241,37 @@ internal static class MappingRegistrationDiagnosticPipeline
             .ThenBy(static candidate => candidate.Position)
             .Select(static candidate => candidate.Diagnostic)
             .ToImmutableArray();
+    }
+
+    private static void AddOpenExtensionDiagnostics(
+        Dictionary<string, (MappingPairModel Pair, string Mapper)> registrations,
+        ImmutableArray<DiagnosticCandidate>.Builder diagnostics,
+        CancellationToken cancellationToken)
+    {
+        var ordered = registrations.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray();
+        for (var later = 1; later < ordered.Length; later++)
+        {
+            var (right, rightMapper) = ordered[later].Value;
+            for (var earlier = 0; earlier < later; earlier++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var (left, leftMapper) = ordered[earlier].Value;
+                if (leftMapper == rightMapper ||
+                    !MappingTypeIdentityPolicy.CanPairsUnify(left.SourceType, left.DestinationType,
+                        right.SourceType, right.DestinationType) ||
+                    MappingTypeIdentityPolicy.AcceptsPair(left, right) ||
+                    MappingTypeIdentityPolicy.AcceptsPair(right, left))
+                    continue;
+
+                diagnostics.Add(new DiagnosticCandidate(
+                    64, rightMapper, ordered[later].Key, 0, right.Registration.Syntax.SpanStart, ordered[earlier].Key,
+                    Diagnostic.Create(MappingRegistrationDiagnosticDescriptors.AmbiguousOpenExtensions,
+                        GetMapIdentifierLocation(right.Registration.Syntax),
+                        [GetMapIdentifierLocation(left.Registration.Syntax)], properties: null,
+                        MapperContractDisplay.Create(left.SourceType, left.DestinationType),
+                        MapperContractDisplay.Create(right.SourceType, right.DestinationType))));
+            }
+        }
     }
 
     private static void AddPresentationDiagnostics(
