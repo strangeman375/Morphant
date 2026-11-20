@@ -98,10 +98,9 @@ namespace Fixture
         Assert.That(result.Exception, Is.Null);
         Assert.That(diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0057" }));
         var reportName = AssertFailure(diagnostics.Single(), stage);
-        var expected = ExpectedSources.Where(source => source.Name != FirstMapperHint &&
-            (stage != "FindMorphantMapperDeclarations" || source.Name != FirstExtensionHint));
+        var expected = ExpectedSources.Where(source => source.Name != FirstMapperHint);
         AssertSources(result, expected.Append((reportName, FailureReport(stage))));
-        AssertCompiler(failedOutput, stage == "FindMorphantMapperDeclarations" ? [("CS1929", 600, 29)] : []);
+        AssertCompiler(failedOutput);
 
         generator.Armed = false;
         // Change a transferred expression so the final output request also
@@ -157,7 +156,7 @@ namespace Fixture
         Assert.That(result.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0057" }));
         var reportName = AssertFailure(result.Diagnostics.Single(), "Initialize");
         AssertSources(result, [(reportName, FailureReport("Initialize"))]);
-        AssertCompiler(output, [("CS1061", 630, 7), ("CS1061", 1230, 7)]);
+        AssertCompiler(output, [("CS1061", 617, 7), ("CS1061", 1202, 7)]);
     }
 
     private static string AssertFailure(Diagnostic diagnostic, string stage)
@@ -165,7 +164,7 @@ namespace Fixture
         var (reportName, start, length) = stage switch
         {
             "FindMorphantMapperDeclarations" =>
-                ("Morphant.Generated.GeneratorFailure.FindMorphantMapperDeclarations__a63e53ba321adfd41779c866be368ec7.g.cs", 427, 590),
+                ("Morphant.Generated.GeneratorFailure.FindMorphantMapperDeclarations__a63e53ba321adfd41779c866be368ec7.g.cs", 427, 577),
             "BuildTypeMapperModels" =>
                 ("Morphant.Generated.GeneratorFailure.BuildTypeMapperModels__d21eba6826beb85b658b2e32679805b6.g.cs", 469, 11),
             "AddTypeMapperSource" =>
