@@ -71,9 +71,9 @@ internal static class BclTupleShapePolicy
             new Dictionary<ITypeParameterSymbol, int>(
                 TypeParameterComparer.Instance);
 
-        AppendPresentation(sourceType, result, typeParameters);
+        AppendPresentation(MappingTypeNormalization.WithoutOuterAnnotation(sourceType), result, typeParameters);
         result.Append("->");
-        AppendPresentation(destinationType, result, typeParameters);
+        AppendPresentation(MappingTypeNormalization.WithoutOuterAnnotation(destinationType), result, typeParameters);
 
         return result.ToString();
     }

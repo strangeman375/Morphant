@@ -31,10 +31,10 @@ internal readonly record struct MappingPairModel(
     bool HasUnifiableConflict = false)
 {
     public ITypeSymbol SourceType =>
-        Registration.SourceType;
+        MappingTypeNormalization.WithoutOuterAnnotation(Registration.SourceType);
 
     public ITypeSymbol DestinationType =>
-        Registration.DestinationType;
+        MappingTypeNormalization.WithoutOuterAnnotation(Registration.DestinationType);
 }
 
 internal readonly record struct UnsupportedMappingPairModel(

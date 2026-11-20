@@ -20,9 +20,6 @@ internal static class MetadataNames
     public const string PairMapperBuilder =
         "Morphant.MappingBuilder`2";
 
-    public const string PairMapperBuilderInterface =
-        "Morphant.IMappingBuilder`3";
-
     public const string MapperDeclaration =
         "Morphant.IMapperDeclaration";
 

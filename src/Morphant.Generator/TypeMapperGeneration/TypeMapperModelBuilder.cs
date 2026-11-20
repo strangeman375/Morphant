@@ -399,7 +399,7 @@ internal static class TypeMapperModelBuilder
         return new TypeMapperMappingModel(
             SourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                    registration.SourceType),
+                    MappingTypeNormalization.WithoutOuterAnnotation(registration.SourceType)),
             SourceRuntimeTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
                     registration.SourceType),
@@ -415,7 +415,7 @@ internal static class TypeMapperModelBuilder
             NonNullSourceName: nonNullSourceName,
             DestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                    registration.DestinationType),
+                    MappingTypeNormalization.WithoutOuterAnnotation(registration.DestinationType)),
             DestinationRuntimeTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
                     registration.DestinationType),

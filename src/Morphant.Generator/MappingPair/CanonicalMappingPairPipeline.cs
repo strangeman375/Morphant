@@ -83,8 +83,7 @@ internal static class CanonicalMappingPairPipeline
             var constructedDeclaringMapperType =
                 FindConstructedMapperType(
                     targetMapperType,
-                    declaringMapperType,
-                    out var declaringMapperDepth);
+                    declaringMapperType);
 
             if (constructedDeclaringMapperType is null)
             {
@@ -111,7 +110,6 @@ internal static class CanonicalMappingPairPipeline
                         new CanonicalMappingPairCandidate(
                             candidateIdentity,
                             targetMapperIdentity,
-                            targetMapperType,
                             MapperTypeSubstitution.Substitute(
                                 pair.SourceType,
                                 substitutions,
@@ -120,10 +118,7 @@ internal static class CanonicalMappingPairPipeline
                                 pair.DestinationType,
                                 substitutions,
                                 compilation),
-                            declaringMapperDepth,
                             pair,
-                            MappingSurfacePolicy.Create(
-                                declaringMapperType),
                             compilation));
                 }
             }
@@ -149,7 +144,7 @@ internal static class CanonicalMappingPairPipeline
         ImmutableArray<CanonicalMappingPairCandidate> candidates,
         CancellationToken cancellationToken)
     {
-        var effective = new Dictionary<
+        var selected = new Dictionary<
             string,
             CanonicalMappingPairCandidate>(StringComparer.Ordinal);
 
@@ -157,35 +152,10 @@ internal static class CanonicalMappingPairPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var key = candidate.TargetMapperIdentity + "|" +
-                MappingTypeIdentityPolicy
-                .CreateAlphaEquivalentPairKey(
-                    candidate.EffectiveSourceType,
-                    candidate.EffectiveDestinationType) + "|" +
-                BclTupleShapePolicy.BuildPairPresentationKey(
-                    candidate.EffectiveSourceType,
-                    candidate.EffectiveDestinationType);
-
-            if (!effective.TryGetValue(key, out var current) ||
-                CompareForTarget(candidate, current) < 0)
-            {
-                effective[key] = candidate;
-            }
-        }
-
-        var selected = new Dictionary<
-            string,
-            CanonicalMappingPairCandidate>(StringComparer.Ordinal);
-
-        foreach (var candidate in effective.Values)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
             var key = MappingTypeIdentityPolicy
                     .CreateAlphaEquivalentPairKey(
                         candidate.Pair.SourceType,
-                        candidate.Pair.DestinationType) + "|" +
-                candidate.Surface.CoordinationIdentity;
+                        candidate.Pair.DestinationType);
 
             if (!selected.TryGetValue(key, out var current) ||
                 Compare(candidate, current) < 0)
@@ -231,25 +201,10 @@ internal static class CanonicalMappingPairPipeline
                 right.CandidateIdentity);
     }
 
-    private static int CompareForTarget(
-        CanonicalMappingPairCandidate left,
-        CanonicalMappingPairCandidate right)
-    {
-        var depthComparison = right.DeclaringMapperDepth.CompareTo(
-            left.DeclaringMapperDepth);
-
-        return depthComparison != 0
-            ? depthComparison
-            : Compare(left, right);
-    }
-
     private static INamedTypeSymbol? FindConstructedMapperType(
         INamedTypeSymbol targetMapperType,
-        INamedTypeSymbol declaringMapperType,
-        out int depth)
+        INamedTypeSymbol declaringMapperType)
     {
-        depth = 0;
-
         for (var current = targetMapperType;
              current is not null;
              current = current.BaseType)
@@ -260,8 +215,6 @@ internal static class CanonicalMappingPairPipeline
             {
                 return current;
             }
-
-            depth++;
         }
 
         return null;
@@ -325,10 +278,7 @@ internal static class CanonicalMappingPairPipeline
 internal readonly record struct CanonicalMappingPairCandidate(
     string CandidateIdentity,
     string TargetMapperIdentity,
-    INamedTypeSymbol TargetMapperType,
     ITypeSymbol EffectiveSourceType,
     ITypeSymbol EffectiveDestinationType,
-    int DeclaringMapperDepth,
     MappingPairModel Pair,
-    MappingSurfaceModel Surface,
     CSharpCompilation Compilation);

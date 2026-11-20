@@ -8,10 +8,10 @@ internal static class PairConfigurationModelBuilder
 {
     public static PairConfigurationModel Build(
         MappingPairModel pair,
-        MappingSurfaceModel surface,
         Compilation compilation)
     {
-        var typeParameters = CollectTypeParameters(pair, surface);
+        var typeParameters = GeneratedTypeNameBuilder.CollectTypeParameters(
+            pair.SourceType, pair.DestinationType);
         var typeParameterNames =
             GeneratedTypeNameBuilder.AllocateTypeParameterNames(
                 typeParameters);
@@ -40,27 +40,8 @@ internal static class PairConfigurationModelBuilder
             destinationType,
             typeParameterNames,
             normalizeDynamic: false);
-        var mapperTypeName = GeneratedTypeNameBuilder.Build(
-            surface.MapperSelfType,
-            typeParameterNames,
-            normalizeDynamic: false);
         var builderTypeName =
-            "global::Morphant.MappingBuilder<" +
-            mapperTypeName +
-            ", " +
-            sourceTypeName +
-            ", " +
-            destinationTypeName +
-            ">";
-        var receiverTypeName =
-            surface.Kind == MappingSurfaceKind.MapperFamilyScoped
-            ? "global::Morphant.IMappingBuilder<" +
-              GeneratedTypeNameBuilder.Build(
-                  surface.DeclaringMapperType,
-                  typeParameterNames,
-                  normalizeDynamic: false) +
-              ", " + sourceTypeName + ", " + destinationTypeName + ">"
-            : builderTypeName;
+            $"global::Morphant.MappingBuilder<{sourceTypeName}, {destinationTypeName}>";
         var tupleShape = BclTupleShapePolicy.TryCreate(
             previousDestinationType);
         var typeParameterModels = PairTypeParameterModelBuilder.Build(
@@ -68,13 +49,11 @@ internal static class PairConfigurationModelBuilder
             destinationType,
             typeParameters,
             typeParameterNames,
-            compilation,
-            includeDeclarationConstraints: true);
+            compilation);
 
         return new PairConfigurationModel(
             GeneratedMappingExtensionNaming.CommonContainerTypeName,
             builderTypeName,
-            receiverTypeName,
             GeneratedTypeNameBuilder.Build(
                 declarativeSourceType,
                 typeParameterNames,
@@ -83,7 +62,10 @@ internal static class PairConfigurationModelBuilder
                 manualSourceType,
                 typeParameterNames,
                 normalizeDynamic: false),
-            destinationTypeName,
+            GeneratedTypeNameBuilder.Build(
+                MappingTypeNormalization.NormalizeManualSource(destinationType, compilation, normalizeDynamic: false),
+                typeParameterNames,
+                normalizeDynamic: false),
             GeneratedTypeNameBuilder.Build(
                 previousDestinationType,
                 typeParameterNames,
@@ -120,19 +102,8 @@ internal static class PairConfigurationModelBuilder
             typeParameterModels)
         {
             ObsoleteWarnings = ObsoleteTypeWarnings.Collect(
-                sourceType, destinationType, surface.MapperSelfType, surface.DeclaringMapperType)
+                sourceType, destinationType)
         };
-    }
-
-    private static ImmutableArray<ITypeParameterSymbol> CollectTypeParameters(
-        MappingPairModel pair,
-        MappingSurfaceModel surface)
-    {
-        return GeneratedTypeNameBuilder.CollectTypeParameters(
-            surface.DeclaringMapperType,
-            surface.MapperSelfType,
-            pair.SourceType,
-            pair.DestinationType);
     }
 
     private static string BuildPlanTypeName(

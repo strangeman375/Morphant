@@ -34,8 +34,8 @@ generated-source expectations. Follow the general principles in
   original line endings inside multiline interpolated strings so formatting
   cannot change their values.
 - Construction and member files reuse their destination namespace ID. Mapper
-  files identify the mapper; extension files identify the mapper/family scope
-  and the complete source/destination pair. Share identity calculation with
+  files identify the mapper. Extension files identify the source/destination
+  pair in the generating assembly. Share identity calculation with
   generated namespaces, but keep namespace and filename rendering independent.
   Preserve existing namespace IDs, including tuple contract/presentation
   fingerprints. Retain destination ownership coordination and verify final
@@ -66,6 +66,19 @@ generated-source expectations. Follow the general principles in
   not add automatic type-name shortening for this case.
 - DSL extensions stay in `Morphant`; partial mapper declarations stay in the
   user's namespace.
+- All mappers in an assembly share the DSL extensions for a CLR pair. Tuple
+  element names, nested nullable annotations and `dynamic` must agree. Generate
+  open extensions with the type parameters and constraints needed by the pair.
+  Report conflicting presentations, ambiguous open extensions and collisions
+  with extensions made visible by a friend assembly at the registration. Omit
+  a conflicting local extension when a friend already supplies it. If several
+  friends supply it, the compiler can also report ambiguity between them.
+- Ignore the outer nullable reference annotation of both registration types.
+  The mapper implements the unannotated `ITypeMapper<,>` and the invariant
+  extension receiver accepts both spellings without a nullable warning. Keep
+  nested annotations and `Nullable<T>` intact. Reference results of `Convert`,
+  `ConstructUsing` and `ResolveUsing` are nullable. Keep declarative and
+  factory sources non-null and the reference source of `Convert` nullable.
 - Preserve record member-plan types and `with` expressions. A destination
   member whose name conflicts with the generated record, its type parameters
   or its required record members uses a readable configuration alias: append

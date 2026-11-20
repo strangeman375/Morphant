@@ -70,7 +70,7 @@ internal static class GeneratedMappingExtensionNaming
                 parameter.HasExplicitDefaultValue) ||
             method.ReturnType is not INamedTypeSymbol returnBuilder ||
             !HasMetadataName(returnBuilder, MetadataNames.PairMapperBuilder) ||
-            !HasMatchingReceiver(method.Parameters[0].Type, returnBuilder) ||
+            !SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, returnBuilder) ||
             method.Parameters[1].Type is not INamedTypeSymbol callback ||
             callback.TypeKind != TypeKind.Delegate)
         {
@@ -106,31 +106,6 @@ internal static class GeneratedMappingExtensionNaming
                 "Morphant.Delegates.Members`5",
             _ => false
         };
-    }
-
-    private static bool HasMatchingReceiver(
-        ITypeSymbol receiver,
-        INamedTypeSymbol returnBuilder)
-    {
-        if (SymbolEqualityComparer.IncludeNullability.Equals(
-                receiver, returnBuilder))
-        {
-            return true;
-        }
-
-        return receiver is INamedTypeSymbol familyReceiver &&
-               HasMetadataName(
-                   familyReceiver, MetadataNames.PairMapperBuilderInterface) &&
-               familyReceiver.TypeArguments[0] is INamedTypeSymbol owner &&
-               SymbolEqualityComparer.Default.Equals(
-                   MappingSurfacePolicy.FindMapperSelfType(owner),
-                   returnBuilder.TypeArguments[0]) &&
-               SymbolEqualityComparer.IncludeNullability.Equals(
-                   familyReceiver.TypeArguments[1],
-                   returnBuilder.TypeArguments[1]) &&
-               SymbolEqualityComparer.IncludeNullability.Equals(
-                   familyReceiver.TypeArguments[2],
-                   returnBuilder.TypeArguments[2]);
     }
 
     private static bool HasMetadataName(

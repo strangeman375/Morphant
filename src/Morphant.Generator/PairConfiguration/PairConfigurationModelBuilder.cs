@@ -143,8 +143,6 @@ internal static class PairConfigurationModelBuilder
                             declaringMapperType,
                             level.ConstructedMapperType,
                             levelOrder,
-                            GeneratedMappingExtensionBinding.FindAssignedSurface(
-                                pair, assignedSurfaces),
                             flowBreaks,
                             cancellationToken));
                 }
@@ -1172,7 +1170,6 @@ internal static class PairConfigurationModelBuilder
         INamedTypeSymbol declaringMapperType,
         INamedTypeSymbol constructedMapperType,
         int levelOrder,
-        MappingSurfaceModel? assignedSurface,
         ImmutableArray<BuilderFlowBreakModel>.Builder flowBreaks,
         CancellationToken cancellationToken)
     {
@@ -1220,13 +1217,10 @@ internal static class PairConfigurationModelBuilder
             if (invocationName?.Identifier.ValueText is
                     "Construct" or "Resolve" or "ConstructUsing" or
                     "ResolveUsing" or "Members" or "Convert" &&
-                (boundMethod is not null ||
-                 assignedSurface?.Kind == MappingSurfaceKind.MapperFamilyScoped) &&
+                boundMethod is not null &&
                 !GeneratedMappingExtensionBinding.IsAssignedMethod(
                     boundMethod,
                     pair.Registration.Syntax,
-                    assignedSurface,
-                    declaringMapperType,
                     semanticModel,
                     cancellationToken))
             {

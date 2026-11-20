@@ -32,7 +32,7 @@ internal static class MappingExtensionPipeline
             candidate.Pair.Capabilities.Members
                 ? MappingExtensionNaming.BuildHintName("MemberExtension", candidate)
                 : null,
-            PairConfigurationModelBuilder.Build(candidate.Pair, candidate.Surface, compilation));
+            PairConfigurationModelBuilder.Build(candidate.Pair, compilation));
     }
 
     public static void RegisterConstruction(

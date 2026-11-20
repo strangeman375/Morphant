@@ -4,6 +4,11 @@ namespace Morphant.Generator.MappingPair;
 
 internal static class MappingTypeNormalization
 {
+    public static ITypeSymbol WithoutOuterAnnotation(ITypeSymbol type) =>
+        type.IsReferenceType
+            ? type.WithNullableAnnotation(NullableAnnotation.NotAnnotated)
+            : type;
+
     public static ITypeSymbol NormalizeDynamic(
         ITypeSymbol type,
         Compilation compilation)
