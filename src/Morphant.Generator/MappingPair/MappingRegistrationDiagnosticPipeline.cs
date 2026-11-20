@@ -287,7 +287,9 @@ internal static class MappingRegistrationDiagnosticPipeline
                     }
                 }
 
-                if (!MappingTypeIdentityPolicy.ExtensionsCanBeAmbiguous(left.Pair, right.Pair, right.Compilation, cancellationToken))
+                var compilation = right.Compilation.ContainsSyntaxTree(left.Pair.Registration.Syntax.SyntaxTree)
+                    ? right.Compilation : left.Compilation;
+                if (!MappingTypeIdentityPolicy.ExtensionsCanBeAmbiguous(left.Pair, right.Pair, compilation, cancellationToken))
                     continue;
 
                 foreach (var owner in leftGroup.Concat(rightGroup))

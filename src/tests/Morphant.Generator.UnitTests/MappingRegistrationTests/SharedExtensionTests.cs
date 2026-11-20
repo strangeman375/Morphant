@@ -265,6 +265,8 @@ internal partial class ConsumerMapper : TypeMapper
         var localFile = new GeneratorTestSourceFile("B_Local.cs", consumer);
         var importedFile = new GeneratorTestSourceFile("A_Imported.cs", consumer.Replace("ConsumerMapper", "ImportedMapper")
             .Replace("using Morphant;", "extern alias LibraryOnly;\nusing Morphant;\nusing LibraryOnly::Morphant;"));
+        var localOnly = GeneratorTestDriver.Run("FriendConsumer", [localFile], LanguageVersion.CSharp9,
+            additionalReferences: [aliased]);
         var mixed = GeneratorTestDriver.Run("FriendConsumer", [localFile, importedFile], LanguageVersion.CSharp9,
             driver: imported.Driver, additionalReferences: [aliased]);
         var mixedReordered = GeneratorTestDriver.Run("FriendConsumer", [importedFile with { Name = "Z_Imported.cs" }, localFile],
@@ -289,6 +291,8 @@ internal partial class ConsumerMapper : TypeMapper
             Assert.That(importedStatic.CompilerWarningsAndErrors, Is.Empty);
             foreach (var (state, path) in new[] { (mixed, "A_Imported.cs"), (mixedReordered, "Z_Imported.cs") })
             {
+                Assert.That(localOnly.GeneratedSources.Select(f => (f.HintName, f.SourceText.ToString())),
+                    Is.SubsetOf(state.GeneratedSources.Select(f => (f.HintName, f.SourceText.ToString()))));
                 Assert.That(state.Diagnostics.Select(d => (d.Id, d.Location.SourceTree!.FilePath)),
                     Is.EqualTo(new[] { ("MORPH0065", path) }));
                 Assert.That(state.CompilerWarningsAndErrors.Select(d => (d.Id, d.Location.SourceTree!.FilePath)),

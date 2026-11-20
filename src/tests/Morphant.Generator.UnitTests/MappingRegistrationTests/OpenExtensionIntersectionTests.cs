@@ -8,6 +8,45 @@ namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 [TestFixture]
 internal sealed class OpenExtensionIntersectionTests
 {
+    [Test]
+    public void Adding_a_constrained_type_to_a_new_file_uses_the_current_compilation()
+    {
+        const string existing = """
+#nullable enable
+using Morphant;
+internal sealed class Triple<A, B, C> { }
+internal sealed class Dto { }
+[MorphantMapper] internal partial class Existing<T, U> : TypeMapper
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<T, int, U>, Dto>();
+}
+""";
+        const string added = """
+#nullable enable
+using Morphant;
+internal sealed class Ref<T> where T : class { }
+[MorphantMapper] internal partial class Added<X> : TypeMapper where X : class
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<int, X, Ref<X>>, Dto>();
+}
+""";
+        var oldFile = new RegistrationSourceFile("Existing.cs", existing);
+        var newFile = new RegistrationSourceFile("Added.cs", added);
+        var initial = MappingRegistrationGeneratorTest.Run([oldFile], LanguageVersion.CSharp9);
+        var driver = initial.Driver;
+        var input = initial.OutputCompilation.RemoveSyntaxTrees(driver.GetRunResult().GeneratedTrees);
+        var addedTree = CSharpSyntaxTree.ParseText(SourceText.From(added, Encoding.UTF8),
+            (CSharpParseOptions)input.SyntaxTrees.Single().Options, newFile.Name);
+        var fresh = MappingRegistrationGeneratorTest.Run([oldFile, newFile], LanguageVersion.CSharp9);
+        Assert.That(fresh.Diagnostics, Is.Empty);
+        Assert.That(fresh.CompilerWarningsAndErrors, Is.Empty);
+        driver = driver.RunGeneratorsAndUpdateCompilation(input.AddSyntaxTrees(addedTree), out var output, out var diagnostics);
+        Assert.That(diagnostics, Is.Empty);
+        Assert.That(output.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning), Is.Empty);
+        Assert.That(driver.GetRunResult().Results.Single().GeneratedSources.Select(f => (f.HintName, f.SourceText.ToString())),
+            Is.EquivalentTo(fresh.GeneratedSources.Select(f => (f.HintName, f.SourceText.ToString()))));
+    }
+
     [TestCase("class", "int", false)]
     [TestCase("class", "string", true)]
     [TestCase("struct", "string", false)]

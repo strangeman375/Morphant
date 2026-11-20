@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Morphant.Generator.MappingPair;
 
@@ -127,7 +129,7 @@ internal static class MappingTypeIdentityPolicy
     }
 
     public static bool ExtensionsCanBeAmbiguous(MappingPairModel left, MappingPairModel right,
-        Microsoft.CodeAnalysis.CSharp.CSharpCompilation compilation, CancellationToken cancellationToken)
+        CSharpCompilation compilation, CancellationToken cancellationToken)
     {
         // Each extension declares its own method type parameters, even when
         // both registrations refer to the same mapper or containing type.
@@ -507,7 +509,10 @@ internal static class MappingTypeIdentityPolicy
             if (term.Type is ITypeParameterSymbol)
             {
                 if (!parameters.TryGetValue(term, out var name))
-                    parameters.Add(term, name = "T" + parameters.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                {
+                    name = "T" + parameters.Count.ToString(CultureInfo.InvariantCulture);
+                    parameters.Add(term, name);
+                }
                 return name;
             }
 
