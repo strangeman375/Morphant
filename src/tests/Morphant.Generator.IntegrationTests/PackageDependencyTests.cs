@@ -50,6 +50,15 @@ internal sealed class PackageDependencyTests
                 "Morphant.Generated.TypeMapper.TestMapper__e9b66789e0c72a543aadf11f76b58d5d.g.cs"
             }));
 
+            consumerXml.Root.Element("PropertyGroup")!.Add(new XElement("AssemblyName", "FriendConsumer"));
+            consumerXml.Save(consumer);
+            var friendBuild = await Run("build", consumer);
+            Assert.Multiple(() =>
+            {
+                Assert.That(friendBuild.ExitCode, Is.Not.Zero);
+                Assert.That(friendBuild.Output, Does.Contain("error MORPH0065:").And.Not.Contain("CS0121"));
+            });
+
             string CreateProject(string name, string source, string project)
             {
                 var directory = Path.Combine(root, name);
@@ -129,7 +138,7 @@ internal sealed class PackageDependencyTests
 """
 #nullable enable
 using Morphant;
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Consumer")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("FriendConsumer")]
 namespace MappingLibrary
 {
     public sealed class Source { public int Value { get; set; } public int Other { get; set; } }
