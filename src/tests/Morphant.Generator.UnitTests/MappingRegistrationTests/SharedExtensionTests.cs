@@ -38,6 +38,9 @@ internal partial class Mapper<TFirst, TSecond> : TypeMapper
     [TestCase("Box<T, int>", "Box<U, long>", false)]
     [TestCase("Box<T, int>", "Box<U, int>", false)]
     [TestCase("Box<T, int>", "Box<Box<U, int>, int>", false)]
+    [TestCase("Box<T, T>", "Box<U, TUnused>", true)]
+    [TestCase("Box<T, T[]>", "Box<U, TUnused[]>", true)]
+    [TestCase("Box<T, T>", "Box<Box<U, int>, TUnused>", false)]
     public void Open_pairs_only_conflict_at_an_ambiguous_intersection(
         string first, string second, bool ambiguous)
     {
@@ -68,6 +71,66 @@ internal partial class Container
                 Is.EqualTo(ambiguous ? new[] { "MORPH0064" } : Array.Empty<string>()));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
+    }
+
+    [Test]
+    public void Removing_an_intersection_repairs_all_mappers_sharing_the_open_pair()
+    {
+        const string source = """
+#nullable enable
+#pragma warning disable MORPH0064
+using Morphant;
+internal sealed class Box<X, Y> { }
+internal sealed class Destination { }
+[MorphantMapper]
+internal partial class First<T> : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder) => builder.Map<Box<T, int>, Destination>();
+}
+[MorphantMapper]
+internal partial class Shared<T> : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder) => builder.Map<Box<T, int>, Destination>();
+}
+[MorphantMapper]
+internal partial class Third<U> : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder) => builder.Map<Box<string, U>, Destination>();
+}
+internal static class Scenario
+{
+    public static void Verify()
+    {
+        Check(new First<string>());
+        Check(new Shared<string>());
+    }
+
+    private static bool Repaired => false;
+
+    private static void Check(ITypeMapper<Box<string, int>, Destination> mapper)
+    {
+        try
+        {
+            if (mapper.Create(new Box<string, int>()) is Destination && Repaired) return;
+        }
+        catch (Morphant.Exceptions.MappingConfigurationException) when (!Repaired) { return; }
+        throw new System.Exception("Unexpected mapper behavior.");
+    }
+}
+""";
+        var initial = GeneratorTestDriver.Run("SharedOpenRepair", source, LanguageVersion.CSharp9);
+        var repaired = source.Replace("Box<string, U>", "Box<U, long>").Replace("Repaired => false", "Repaired => true");
+        var updated = GeneratorTestDriver.Run("SharedOpenRepair", repaired, LanguageVersion.CSharp9, driver: initial.Driver);
+        var clean = GeneratorTestDriver.Run("SharedOpenRepair", repaired, LanguageVersion.CSharp9);
+
+        Assert.That(initial.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0064" }));
+        Assert.That(initial.CompilerWarningsAndErrors, Is.Empty);
+        Assert.That(updated.Diagnostics, Is.Empty);
+        Assert.That(updated.CompilerWarningsAndErrors, Is.Empty);
+        Assert.That(updated.GeneratedSources.Select(file => (file.HintName, file.SourceText.ToString())),
+            Is.EquivalentTo(clean.GeneratedSources.Select(file => (file.HintName, file.SourceText.ToString()))));
+        GeneratedCodeExecution.AssertScenario("intersection", initial.OutputCompilation, "Scenario");
+        GeneratedCodeExecution.AssertScenario("repair", updated.OutputCompilation, "Scenario");
     }
 
     [TestCase("Box<string>", "Box<string?>", true)]

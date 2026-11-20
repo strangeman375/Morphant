@@ -138,16 +138,44 @@ internal static class MappingTypeIdentityPolicy
                    substitutions);
     }
 
-    // A specialization is ordered by overload resolution. Only variables in
-    // the broader pattern can be bound when testing this direction.
-    public static bool AcceptsPair(MappingPairModel pattern, MappingPairModel candidate)
+    public static bool ExtensionsCanBeAmbiguous(MappingPairModel left, MappingPairModel right)
     {
-        var variables = new HashSet<ITypeParameterSymbol>(
-            ConstructionSurface.GeneratedTypeNameBuilder.CollectTypeParameters(
-                pattern.SourceType, pattern.DestinationType), TypeParameterComparer.Instance);
-        var substitutions = new Dictionary<ITypeParameterSymbol, ITypeSymbol>(TypeParameterComparer.Instance);
-        return TryUnify(pattern.SourceType, candidate.SourceType, substitutions, variables) &&
-               TryUnify(pattern.DestinationType, candidate.DestinationType, substitutions, variables);
+        if (!CanPairsUnify(left.SourceType, left.DestinationType, right.SourceType, right.DestinationType))
+            return false;
+
+        // C# compares positions in the unsubstituted parameter types. Reusing
+        // a type parameter restricts applicability but does not break a tie.
+        var leftMoreSpecific = HasMoreSpecificPosition(left.SourceType, right.SourceType) ||
+                               HasMoreSpecificPosition(left.DestinationType, right.DestinationType);
+        var rightMoreSpecific = HasMoreSpecificPosition(right.SourceType, left.SourceType) ||
+                                HasMoreSpecificPosition(right.DestinationType, left.DestinationType);
+        return leftMoreSpecific == rightMoreSpecific;
+    }
+
+    private static bool HasMoreSpecificPosition(ITypeSymbol left, ITypeSymbol right)
+    {
+        if (right is ITypeParameterSymbol)
+            return left is not ITypeParameterSymbol;
+
+        if (left is IArrayTypeSymbol leftArray && right is IArrayTypeSymbol rightArray)
+            return HasMoreSpecificPosition(leftArray.ElementType, rightArray.ElementType);
+
+        if (left is not INamedTypeSymbol leftNamed || right is not INamedTypeSymbol rightNamed)
+            return false;
+
+        leftNamed = Normalize(leftNamed);
+        rightNamed = Normalize(rightNamed);
+        if (leftNamed.ContainingType is { } leftContainer && rightNamed.ContainingType is { } rightContainer &&
+            HasMoreSpecificPosition(leftContainer, rightContainer))
+            return true;
+
+        for (var i = 0; i < leftNamed.TypeArguments.Length; i++)
+        {
+            if (HasMoreSpecificPosition(leftNamed.TypeArguments[i], rightNamed.TypeArguments[i]))
+                return true;
+        }
+
+        return false;
     }
 
     private static void Append(
@@ -413,13 +441,12 @@ internal static class MappingTypeIdentityPolicy
     private static bool TryUnify(
         ITypeSymbol left,
         ITypeSymbol right,
-        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions,
-        ISet<ITypeParameterSymbol>? variables = null)
+        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions)
     {
         left = Resolve(left, substitutions);
         right = Resolve(right, substitutions);
 
-        if (left is ITypeParameterSymbol leftTypeParameter && (variables is null || variables.Contains(leftTypeParameter)))
+        if (left is ITypeParameterSymbol leftTypeParameter)
         {
             return TryBind(
                 leftTypeParameter,
@@ -427,16 +454,13 @@ internal static class MappingTypeIdentityPolicy
                 substitutions);
         }
 
-        if (right is ITypeParameterSymbol rightTypeParameter && (variables is null || variables.Contains(rightTypeParameter)))
+        if (right is ITypeParameterSymbol rightTypeParameter)
         {
             return TryBind(
                 rightTypeParameter,
                 left,
                 substitutions);
         }
-
-        if (left is ITypeParameterSymbol || right is ITypeParameterSymbol)
-            return SymbolEqualityComparer.Default.Equals(left, right);
 
         if (IsObjectLike(left) || IsObjectLike(right))
         {
@@ -455,7 +479,7 @@ internal static class MappingTypeIdentityPolicy
                    TryUnify(
                        leftArray.ElementType,
                        rightArray.ElementType,
-                       substitutions, variables);
+                       substitutions);
         }
 
         if (left is not INamedTypeSymbol leftNamed ||
@@ -475,7 +499,7 @@ internal static class MappingTypeIdentityPolicy
             !TryUnifyContainingTypes(
                 leftNamed.ContainingType,
                 rightNamed.ContainingType,
-                substitutions, variables))
+                substitutions))
         {
             return false;
         }
@@ -487,7 +511,7 @@ internal static class MappingTypeIdentityPolicy
             if (!TryUnify(
                     leftNamed.TypeArguments[index],
                     rightNamed.TypeArguments[index],
-                    substitutions, variables))
+                    substitutions))
             {
                 return false;
             }
@@ -586,15 +610,14 @@ internal static class MappingTypeIdentityPolicy
     private static bool TryUnifyContainingTypes(
         INamedTypeSymbol? left,
         INamedTypeSymbol? right,
-        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions,
-        ISet<ITypeParameterSymbol>? variables)
+        Dictionary<ITypeParameterSymbol, ITypeSymbol> substitutions)
     {
         if (left is null || right is null)
         {
             return left is null && right is null;
         }
 
-        return TryUnify(left, right, substitutions, variables);
+        return TryUnify(left, right, substitutions);
     }
 
     private static bool IsObjectLike(ITypeSymbol type)

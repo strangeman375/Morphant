@@ -111,6 +111,7 @@ internal static class CanonicalMappingPairPipeline
                         new CanonicalMappingPairCandidate(
                             candidateIdentity,
                             targetMapperIdentity,
+                            mapperModel.MapperIdentity,
                             MapperTypeSubstitution.Substitute(
                                 pair.SourceType,
                                 substitutions,
@@ -325,6 +326,7 @@ internal static class CanonicalMappingPairPipeline
 internal readonly record struct CanonicalMappingPairCandidate(
     string CandidateIdentity,
     string TargetMapperIdentity,
+    string DeclaringMapperIdentity,
     ITypeSymbol EffectiveSourceType,
     ITypeSymbol EffectiveDestinationType,
     int DeclaringMapperDepth,

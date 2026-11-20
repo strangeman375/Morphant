@@ -38,7 +38,7 @@ internal static class MappingRegistrationDiagnosticPipeline
         var candidates = ImmutableArray.CreateBuilder<DiagnosticCandidate>();
         var presentations =
             ImmutableArray.CreateBuilder<PresentationRegistration>();
-        var openRegistrations = new Dictionary<string, (MappingPairModel Pair, string Mapper)>(StringComparer.Ordinal);
+        var openRegistrations = new List<CanonicalMappingPairCandidate>();
         var reported = new HashSet<(SyntaxTree Tree, int Start, string Pair)>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
@@ -69,22 +69,24 @@ internal static class MappingRegistrationDiagnosticPipeline
             {
                 var pair = surfaceCandidate.Pair;
 
-                var physicalPair = MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(
-                    pair.SourceType, pair.DestinationType);
-                if (pair.FriendAssembly is { } friend &&
-                    reported.Add((pair.Registration.Syntax.SyntaxTree, pair.Registration.Syntax.SpanStart, physicalPair)))
+                if (pair.FriendAssembly is { } friend)
                 {
-                    candidates.Add(new DiagnosticCandidate(
-                        65, declaration.MapperIdentity, physicalPair, 0, pair.Registration.Syntax.SpanStart, friend,
-                        Diagnostic.Create(MappingRegistrationDiagnosticDescriptors.FriendExtensionConflict,
-                            GetMapIdentifierLocation(pair.Registration.Syntax),
-                            MapperContractDisplay.Create(pair.SourceType, pair.DestinationType), friend)));
+                    var physicalPair = MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(
+                        pair.SourceType, pair.DestinationType);
+                    if (reported.Add((pair.Registration.Syntax.SyntaxTree, pair.Registration.Syntax.SpanStart, physicalPair)))
+                    {
+                        candidates.Add(new DiagnosticCandidate(
+                            65, declaration.MapperIdentity, physicalPair, 0, pair.Registration.Syntax.SpanStart, friend,
+                            Diagnostic.Create(MappingRegistrationDiagnosticDescriptors.FriendExtensionConflict,
+                                GetMapIdentifierLocation(pair.Registration.Syntax),
+                                MapperContractDisplay.Create(pair.SourceType, pair.DestinationType), friend)));
+                    }
                 }
 
                 if (!ConstructionSurface.GeneratedTypeNameBuilder.CollectTypeParameters(
-                        pair.SourceType, pair.DestinationType).IsEmpty && !openRegistrations.ContainsKey(physicalPair))
+                        pair.SourceType, pair.DestinationType).IsEmpty)
                 {
-                    openRegistrations.Add(physicalPair, (pair, model.MapperIdentity));
+                    openRegistrations.Add(surfaceCandidate);
                 }
 
                 presentations.Add(
@@ -259,35 +261,53 @@ internal static class MappingRegistrationDiagnosticPipeline
     }
 
     private static void AddOpenExtensionDiagnostics(
-        Dictionary<string, (MappingPairModel Pair, string Mapper)> registrations,
+        List<CanonicalMappingPairCandidate> registrations,
         ImmutableArray<DiagnosticCandidate>.Builder diagnostics,
         ImmutableDictionary<string, ImmutableHashSet<string>>.Builder conflicts,
         CancellationToken cancellationToken)
     {
-        var ordered = registrations.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray();
-        for (var later = 1; later < ordered.Length; later++)
+        var groups = registrations
+            .OrderBy(static candidate => candidate.Pair.Registration.Syntax.SyntaxTree.FilePath, StringComparer.Ordinal)
+            .ThenBy(static candidate => candidate.Pair.Registration.Syntax.SpanStart)
+            .ThenBy(static candidate => candidate.TargetMapperIdentity, StringComparer.Ordinal)
+            .GroupBy(static candidate => MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(
+                candidate.Pair.SourceType, candidate.Pair.DestinationType), StringComparer.Ordinal)
+            .OrderBy(static group => group.Key, StringComparer.Ordinal)
+            .ToArray();
+
+        for (var later = 1; later < groups.Length; later++)
         {
-            var (right, rightMapper) = ordered[later].Value;
             for (var earlier = 0; earlier < later; earlier++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var (left, leftMapper) = ordered[earlier].Value;
-                if (leftMapper == rightMapper ||
-                    !MappingTypeIdentityPolicy.CanPairsUnify(left.SourceType, left.DestinationType,
-                        right.SourceType, right.DestinationType) ||
-                    MappingTypeIdentityPolicy.AcceptsPair(left, right) ||
-                    MappingTypeIdentityPolicy.AcceptsPair(right, left))
+                var leftGroup = groups[earlier];
+                var rightGroup = groups[later];
+                var left = leftGroup.First();
+                var right = rightGroup.FirstOrDefault(item => item.DeclaringMapperIdentity != left.DeclaringMapperIdentity);
+                if (right.DeclaringMapperIdentity is null)
+                {
+                    right = rightGroup.First();
+                    left = leftGroup.FirstOrDefault(item => item.DeclaringMapperIdentity != right.DeclaringMapperIdentity);
+                    if (left.DeclaringMapperIdentity is null)
+                        continue; // Interface conflicts within one declaration are reported by MORPH0014.
+                }
+
+                if (!MappingTypeIdentityPolicy.ExtensionsCanBeAmbiguous(left.Pair, right.Pair))
                     continue;
 
-                MarkConflict(conflicts, rightMapper, ordered[later].Key);
-                MarkConflict(conflicts, leftMapper, ordered[earlier].Key);
+                foreach (var owner in leftGroup.Concat(rightGroup))
+                {
+                    MarkConflict(conflicts, owner.TargetMapperIdentity,
+                        MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(owner.EffectiveSourceType, owner.EffectiveDestinationType));
+                }
+
                 diagnostics.Add(new DiagnosticCandidate(
-                    64, rightMapper, ordered[later].Key, 0, right.Registration.Syntax.SpanStart, ordered[earlier].Key,
+                    64, right.TargetMapperIdentity, rightGroup.Key, 0, right.Pair.Registration.Syntax.SpanStart, leftGroup.Key,
                     Diagnostic.Create(MappingRegistrationDiagnosticDescriptors.AmbiguousOpenExtensions,
-                        GetMapIdentifierLocation(right.Registration.Syntax),
-                        [GetMapIdentifierLocation(left.Registration.Syntax)], properties: null,
-                        MapperContractDisplay.Create(left.SourceType, left.DestinationType),
-                        MapperContractDisplay.Create(right.SourceType, right.DestinationType))));
+                        GetMapIdentifierLocation(right.Pair.Registration.Syntax),
+                        [GetMapIdentifierLocation(left.Pair.Registration.Syntax)], properties: null,
+                        MapperContractDisplay.Create(left.Pair.SourceType, left.Pair.DestinationType),
+                        MapperContractDisplay.Create(right.Pair.SourceType, right.Pair.DestinationType))));
             }
         }
     }
