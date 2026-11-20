@@ -438,6 +438,12 @@ internal static class MappingTypeIdentityPolicy
         return AreEquivalent(left, right);
     }
 
+    // Incremental analyses may retain source symbols from a previous compilation.
+    private static bool SameDefinition(INamedTypeSymbol left, INamedTypeSymbol right) =>
+        SymbolEqualityComparer.Default.Equals(left.OriginalDefinition, right.OriginalDefinition) ||
+        left.MetadataName == right.MetadataName && left.ContainingAssembly.Identity.Equals(right.ContainingAssembly.Identity) &&
+        SymbolNameHelper.GetFullMetadataName(left) == SymbolNameHelper.GetFullMetadataName(right);
+
     private static bool TryUnify(
         ITypeSymbol left,
         ITypeSymbol right,
@@ -491,9 +497,7 @@ internal static class MappingTypeIdentityPolicy
         leftNamed = Normalize(leftNamed);
         rightNamed = Normalize(rightNamed);
 
-        if (!SymbolEqualityComparer.Default.Equals(
-                leftNamed.OriginalDefinition,
-                rightNamed.OriginalDefinition) ||
+        if (!SameDefinition(leftNamed, rightNamed) ||
             leftNamed.TypeArguments.Length !=
                 rightNamed.TypeArguments.Length ||
             !TryUnifyContainingTypes(
