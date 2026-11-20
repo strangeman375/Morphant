@@ -89,7 +89,7 @@ internal sealed class GateAndActualizationTests
 
         var incompatibleReference =
             RuntimeContractFixture.Compatible()
-                .WithRevision("1")
+                .WithRevision("2")
                 .CreateReference();
         var incompatible = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,

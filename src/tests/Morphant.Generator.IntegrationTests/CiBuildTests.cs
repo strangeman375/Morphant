@@ -66,9 +66,9 @@ internal sealed class CiBuildTests
         string[] expected = detail == "Mappers" ? [renamedMapper] :
         [
             "Morphant.Generated.Construction.Destination__724eef46cc4551a451b1b5e7c43d2974.g.cs",
-            "Morphant.Generated.MappingExtension.TESTMapper.SourceToDestination__4f136cc854d3f15530b228414b3a3f6a.g.cs",
+            "Morphant.Generated.MappingExtension.SourceToDestination__ada20e06cf104a1bfe19a7504095f0cd.g.cs",
             "Morphant.Generated.Member.Destination__724eef46cc4551a451b1b5e7c43d2974.g.cs",
-            "Morphant.Generated.MemberExtension.TESTMapper.SourceToDestination__4f136cc854d3f15530b228414b3a3f6a.g.cs",
+            "Morphant.Generated.MemberExtension.SourceToDestination__ada20e06cf104a1bfe19a7504095f0cd.g.cs",
             renamedMapper
         ];
         Assert.That(consumer.Snapshot().Keys,
@@ -221,9 +221,9 @@ internal sealed class CiBuildTests
         string[] expected =
         [
             "Morphant.Generated.Construction.Destination__724eef46cc4551a451b1b5e7c43d2974.g.cs",
-            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__ae6c2d5d300f6b42b5d6c5406457e479.g.cs",
+            "Morphant.Generated.MappingExtension.SourceToDestination__ada20e06cf104a1bfe19a7504095f0cd.g.cs",
             "Morphant.Generated.Member.Destination__724eef46cc4551a451b1b5e7c43d2974.g.cs",
-            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__ae6c2d5d300f6b42b5d6c5406457e479.g.cs",
+            "Morphant.Generated.MemberExtension.SourceToDestination__ada20e06cf104a1bfe19a7504095f0cd.g.cs",
             MapperFile
         ];
         Assert.That(consumer.Snapshot().Keys.Order(StringComparer.Ordinal),

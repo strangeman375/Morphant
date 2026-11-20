@@ -81,9 +81,9 @@ internal sealed partial class PackageConsumptionTests
     private static readonly string[] PrimaryFullGeneratedFiles =
     [
         "Morphant.Generated.Construction.Destination__8178863269c5aa3285fa9684f4ebcf69.g.cs",
-        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__7d2e9d5139c36ceb1a54369c508fedbb.g.cs",
+        "Morphant.Generated.MappingExtension.SourceToDestination__1a51697cb013cdbd9ff645c322006fa0.g.cs",
         "Morphant.Generated.Member.Destination__8178863269c5aa3285fa9684f4ebcf69.g.cs",
-        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__7d2e9d5139c36ceb1a54369c508fedbb.g.cs",
+        "Morphant.Generated.MemberExtension.SourceToDestination__1a51697cb013cdbd9ff645c322006fa0.g.cs",
         "Morphant.Generated.TypeMapper.TestMapper__7e86e73f6eb648062a5781f4afc22623.g.cs"
     ];
 
@@ -91,9 +91,9 @@ internal sealed partial class PackageConsumptionTests
     [
         .. PrimaryFullGeneratedFiles,
         "Morphant.Generated.Construction.SecondDestination__c628102412d6f474062e97b9d407b734.g.cs",
-        "Morphant.Generated.MappingExtension.TestMapper.SecondSourceToSecondDestination__559079e44ffdc362d732d75a6db5c428.g.cs",
+        "Morphant.Generated.MappingExtension.SecondSourceToSecondDestination__d55a0f62cf0eb80185ab9e05a2f4651d.g.cs",
         "Morphant.Generated.Member.SecondDestination__c628102412d6f474062e97b9d407b734.g.cs",
-        "Morphant.Generated.MemberExtension.TestMapper.SecondSourceToSecondDestination__559079e44ffdc362d732d75a6db5c428.g.cs"
+        "Morphant.Generated.MemberExtension.SecondSourceToSecondDestination__d55a0f62cf0eb80185ab9e05a2f4651d.g.cs"
     ];
 
     private static void AssertGeneratedFileSet(
