@@ -374,7 +374,7 @@ public partial interface InterfaceContainer
     }
 
     [Test]
-    public void Inaccessible_nested_mappers_report_MORPH0059_without_CS0122()
+    public void Private_and_protected_mappers_can_declare_mappings()
     {
         // lang=c#
         const string source =
@@ -413,42 +413,14 @@ public partial class Container
 
         Assert.Multiple(() =>
         {
-            Assert.That(
-                result.Diagnostics.Select(diagnostic => diagnostic.Id),
-                Is.EqualTo(new[]
-                {
-                    "MORPH0059",
-                    "MORPH0059",
-                    "MORPH0059"
-                }));
-            Assert.That(
-                result.Diagnostics.Select(diagnostic =>
-                    MapperDeclarationGeneratorTest.SourceText(
-                        diagnostic.Location)),
-                Is.EqualTo(new[] { "private", "protected", "private" }));
-            Assert.That(
-                result.Diagnostics.Select(diagnostic =>
-                    diagnostic.GetMessage()),
-                Is.EqualTo(new[]
-                {
-                    "Type 'TestCase.Container.PrivateMapper' cannot declare " +
-                    "or contain a Morphant mapper because it is not " +
-                    "accessible to generated namespace-level code.",
-                    "Type 'TestCase.Container.ProtectedMapper' cannot " +
-                    "declare or contain a Morphant mapper because it is " +
-                    "not accessible to generated namespace-level code.",
-                    "Type 'TestCase.Container.PrivateProtectedMapper' " +
-                    "cannot declare or contain a Morphant mapper because " +
-                    "it is not accessible to generated namespace-level " +
-                    "code."
-                }));
+            Assert.That(result.Diagnostics, Is.Empty);
             Assert.That(result.CompilerErrors, Is.Empty);
-            Assert.That(result.GeneratedSources, Is.Empty);
+            Assert.That(result.GeneratedSources, Is.Not.Empty);
         });
     }
 
     [Test]
-    public void Inaccessible_container_reports_MORPH0059_on_the_container()
+    public void Private_partial_containers_can_hold_mappers()
     {
         // lang=c#
         const string source =
@@ -472,20 +444,12 @@ public partial class Outer
 """;
 
         var result = MapperDeclarationGeneratorTest.Run(source);
-        var diagnostic = result.Diagnostics.Single();
 
         Assert.Multiple(() =>
         {
-            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0059"));
-            Assert.That(
-                MapperDeclarationGeneratorTest.SourceText(
-                    diagnostic.Location),
-                Is.EqualTo("private"));
-            Assert.That(
-                diagnostic.GetMessage(),
-                Does.StartWith("Type 'TestCase.Outer.Hidden'"));
+            Assert.That(result.Diagnostics, Is.Empty);
             Assert.That(result.CompilerErrors, Is.Empty);
-            Assert.That(result.GeneratedSources, Is.Empty);
+            Assert.That(result.GeneratedSources, Is.Not.Empty);
         });
     }
 

@@ -1086,7 +1086,8 @@ internal static class TypeMapperEmitter
         if (mapping.CreatePostMemberMappings.IsEmpty && mapping.PostMemberControlFlow is null &&
             !factory.RequiresNullGuard)
         {
-            writer.Line($"return {factory.ValueExpression};");
+            var suffix = mapping.AnalysisContext.DestinationType.IsReferenceType ? "!" : string.Empty;
+            writer.Line($"return {factory.ValueExpression}{suffix};");
             return;
         }
 
@@ -1095,7 +1096,7 @@ internal static class TypeMapperEmitter
 
         writer.Line(
             TransferredCodeWarnings.AnnotateTechnicalType(
-                mapping.DestinationTypeName + " ", mapping.AnalysisContext.DestinationType) +
+                mapping.MaybeNullDestinationTypeName + " ", mapping.AnalysisContext.DestinationType) +
             $"{destinationLocalName} = " +
             factory.ValueExpression +
             ";");
@@ -1353,12 +1354,14 @@ internal static class TypeMapperEmitter
             throw new InvalidOperationException(
                 "A Convert helper method name is required.");
 
+        var callEnd = mapping.AnalysisContext.DestinationType.IsReferenceType ? ")!;" : ");";
+
         if (manualMapping.Form ==
             PairConfiguration.ConvertConfigurationForm.Source)
         {
             writer.Line(
                 (asStatement ? "return " : "=> ") +
-                $"{helperMethodName}(source);");
+                $"{helperMethodName}(source{callEnd}");
             return;
         }
 
@@ -1370,7 +1373,7 @@ internal static class TypeMapperEmitter
         var hasContext = manualMapping.Form ==
             PairConfiguration.ConvertConfigurationForm
                 .SourcePreviousAndContext;
-        var previousSuffix = hasContext ? "," : ");";
+        var previousSuffix = hasContext ? "," : callEnd;
 
         if (!update)
         {
@@ -1406,7 +1409,7 @@ internal static class TypeMapperEmitter
 
         if (hasContext)
         {
-            writer.Line("context);");
+            writer.Line("context" + callEnd);
         }
         else
         {

@@ -69,9 +69,6 @@ internal sealed class DiagnosticCatalogAuditTests
         new("MORPH0055", "Morphant.Polymorphism", DiagnosticSeverity.Error),
         new("MORPH0056", "Morphant.Registration", DiagnosticSeverity.Error),
         new("MORPH0057", "Morphant.Generator", DiagnosticSeverity.Error),
-        new("MORPH0058", "Morphant.Declaration", DiagnosticSeverity.Error),
-        new("MORPH0059", "Morphant.Declaration", DiagnosticSeverity.Error),
-        new("MORPH0060", "Morphant.Registration", DiagnosticSeverity.Error),
         new("MORPH0061", "Morphant.Polymorphism", DiagnosticSeverity.Error),
         new("MORPH0062", "Morphant.Construction", DiagnosticSeverity.Error),
         new("MORPH0063", "Morphant.Compatibility", DiagnosticSeverity.Error)

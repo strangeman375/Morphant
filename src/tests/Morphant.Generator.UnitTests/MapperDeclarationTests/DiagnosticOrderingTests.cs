@@ -93,8 +93,7 @@ public partial class AccessibilityContainer
                 "MORPH0008",
                 "MORPH0009",
                 "MORPH0010",
-                "MORPH0034",
-                "MORPH0059"
+                "MORPH0034"
             }));
     }
 }

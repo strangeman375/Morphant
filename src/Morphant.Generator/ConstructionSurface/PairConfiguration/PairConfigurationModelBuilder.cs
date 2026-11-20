@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.ConstructionSurface.PairConfiguration;
@@ -54,6 +56,7 @@ internal static class PairConfigurationModelBuilder
         return new PairConfigurationModel(
             GeneratedMappingExtensionNaming.CommonContainerTypeName,
             builderTypeName,
+            BuildReceiverParameter(sourceType, sourceTypeName, destinationType, destinationTypeName),
             GeneratedTypeNameBuilder.Build(
                 declarativeSourceType,
                 typeParameterNames,
@@ -104,6 +107,75 @@ internal static class PairConfigurationModelBuilder
             ObsoleteWarnings = ObsoleteTypeWarnings.Collect(
                 sourceType, destinationType)
         };
+    }
+
+    private static string BuildReceiverParameter(
+        ITypeSymbol source, string sourceName,
+        ITypeSymbol destination, string destinationName)
+    {
+        const string prefix = "    this global::Morphant.MappingBuilder<";
+        const string suffix = "> builder,";
+        if (!source.IsReferenceType && !destination.IsReferenceType)
+        {
+            return prefix + sourceName + ", " + destinationName + suffix;
+        }
+
+        // Nullable context is read at a named type's last token or an
+        // array's outer rank. Keep nested type arguments in enabled context.
+        var lines = new List<string>();
+        var line = prefix;
+        bool? enabled = null;
+
+        AppendType(source, sourceName);
+        line += ", ";
+        AppendType(destination, destinationName);
+        lines.Add(line + suffix);
+        if (enabled == false) lines.Add("#nullable enable annotations");
+        return string.Join("\n", lines);
+
+        void SetContext(bool next)
+        {
+            if (enabled == next) return;
+            if (enabled.HasValue)
+            {
+                lines.Add(line);
+                line = "        ";
+            }
+
+            if (enabled.HasValue || !next)
+            {
+                lines.Add(next ? "#nullable enable annotations" : "#nullable disable annotations");
+            }
+
+            enabled = next;
+        }
+
+        void AppendType(ITypeSymbol type, string name)
+        {
+            if (type is INamedTypeSymbol { IsGenericType: false } && !type.IsReferenceType)
+            {
+                line += name;
+                return;
+            }
+
+            if (type.IsReferenceType && (type is IArrayTypeSymbol || name.Contains('<')))
+            {
+                var syntax = SyntaxFactory.ParseTypeName(name);
+                var token = syntax is ArrayTypeSyntax array
+                    ? array.RankSpecifiers[0].CloseBracketToken
+                    : syntax.GetLastToken();
+                SetContext(true);
+                line += name.Substring(0, token.SpanStart);
+                SetContext(false);
+                line += token.Text;
+                if (token.Span.End < name.Length) SetContext(true);
+                line += name.Substring(token.Span.End);
+                return;
+            }
+
+            SetContext(!type.IsReferenceType);
+            line += name;
+        }
     }
 
     private static string BuildPlanTypeName(
