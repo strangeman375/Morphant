@@ -244,7 +244,7 @@ internal static class PairConfigurationModelBuilder
         ImmutableArray<CanonicalMappingPairCandidate> candidates,
         CancellationToken cancellationToken)
     {
-        var extensionModels = candidates.Select(candidate =>
+        var extensionModels = candidates.Where(static candidate => candidate.EmitLocalExtension).Select(candidate =>
         {
             cancellationToken.ThrowIfCancellationRequested();
             return MappingExtensionPipeline.BuildModel(candidate, compilation);

@@ -76,9 +76,10 @@ generated-source expectations. Follow the general principles in
   typed failure stubs. For distinct open pairs, report an intersection when C#
   cannot select a more specific receiver and invalidate all affected mappings.
   Report collisions with extensions made visible by a friend assembly at the
-  registration. Omit
-  a conflicting local extension when a friend already supplies it. If several
-  friends supply it, the compiler can also report ambiguity between them.
+  registration, including imports through an extern alias. Omit the local
+  extension if every registration sees a friend. Otherwise keep the ordinary
+  signature for callers without the import. The compiler can also report
+  ambiguity at an importing call in that case or between multiple friends.
 - Ignore the outer nullable reference annotation of both registration types.
   The mapper implements the unannotated `ITypeMapper<,>` and the invariant
   extension receiver accepts both spellings without a nullable warning. Keep

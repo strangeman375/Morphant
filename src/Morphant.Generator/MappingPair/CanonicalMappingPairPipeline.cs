@@ -29,16 +29,12 @@ internal static class CanonicalMappingPairPipeline
                 "BuildCanonicalMappingPairCoordination",
                 static (values, cancellationToken) =>
                     BuildCoordination(values, cancellationToken),
-                new CanonicalPairCoordination(
-                    ImmutableArray<string>.Empty))
+                new CanonicalPairCoordination(ImmutableSortedDictionary<string, bool>.Empty))
             .WithComparer(CanonicalPairCoordinationComparer.Instance);
 
         return candidates
             .Combine(coordination)
-            .Select(static (source, _) =>
-                source.Right.Contains(source.Left.CandidateIdentity)
-                    ? source.Left
-                    : (CanonicalMappingPairCandidate?)null)
+            .Select(static (source, _) => source.Right.Select(source.Left))
             .WhereHasValue();
     }
 
@@ -151,6 +147,7 @@ internal static class CanonicalMappingPairPipeline
             string,
             CanonicalMappingPairCandidate>(StringComparer.Ordinal);
 
+        var needsLocalExtension = new HashSet<string>(StringComparer.Ordinal);
         var owners = new Dictionary<string, CanonicalMappingPairCandidate>(StringComparer.Ordinal);
 
         foreach (var candidate in candidates)
@@ -173,18 +170,17 @@ internal static class CanonicalMappingPairPipeline
             }
 
             var declaredKey = candidate.DeclaredPairKey;
+            if (candidate.Pair.FriendAssembly is null)
+                needsLocalExtension.Add(declaredKey);
             if (!owners.TryGetValue(declaredKey, out var owner) || Compare(candidate, owner) < 0)
                 owners[declaredKey] = candidate;
         }
 
         // Inheritance selects which signatures are needed. All declarations
         // of each selected signature take part in choosing its presentation.
-        return new CanonicalPairCoordination(
-            effective.Values
-                .Select(candidate => owners[candidate.DeclaredPairKey].CandidateIdentity)
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(static identity => identity, StringComparer.Ordinal)
-                .ToImmutableArray());
+        return new CanonicalPairCoordination(effective.Values
+            .Select(static candidate => candidate.DeclaredPairKey).Distinct(StringComparer.Ordinal)
+            .ToImmutableSortedDictionary(key => owners[key].CandidateIdentity, needsLocalExtension.Contains, StringComparer.Ordinal));
     }
 
     internal static ImmutableArray<CanonicalMappingPairCandidate>
@@ -197,8 +193,9 @@ internal static class CanonicalMappingPairPipeline
             cancellationToken);
 
         return candidates
-            .Where(candidate => coordination.Contains(
-                candidate.CandidateIdentity))
+            .Select(coordination.Select)
+            .Where(static candidate => candidate.HasValue)
+            .Select(static candidate => candidate!.Value)
             .ToImmutableArray();
     }
 
@@ -274,14 +271,12 @@ internal static class CanonicalMappingPairPipeline
     }
 
     private readonly record struct CanonicalPairCoordination(
-        ImmutableArray<string> CandidateIdentities)
+        ImmutableSortedDictionary<string, bool> Owners)
     {
-        public bool Contains(string identity)
-        {
-            return CandidateIdentities.BinarySearch(
-                       identity,
-                       StringComparer.Ordinal) >= 0;
-        }
+        public CanonicalMappingPairCandidate? Select(CanonicalMappingPairCandidate candidate) =>
+            Owners.TryGetValue(candidate.CandidateIdentity, out var needsLocal)
+                ? candidate with { EmitLocalExtension = needsLocal }
+                : null;
     }
 
     private sealed class CanonicalPairCoordinationComparer :
@@ -294,20 +289,18 @@ internal static class CanonicalMappingPairPipeline
             CanonicalPairCoordination left,
             CanonicalPairCoordination right)
         {
-            return left.CandidateIdentities.SequenceEqual(
-                right.CandidateIdentities,
-                StringComparer.Ordinal);
+            return left.Owners.SequenceEqual(right.Owners);
         }
 
         public int GetHashCode(CanonicalPairCoordination value)
         {
             var hash = 17;
 
-            foreach (var identity in value.CandidateIdentities)
+            foreach (var owner in value.Owners)
             {
                 hash = unchecked(
                     hash * 31 +
-                    StringComparer.Ordinal.GetHashCode(identity));
+                    owner.GetHashCode());
             }
 
             return hash;
@@ -323,7 +316,8 @@ internal readonly record struct CanonicalMappingPairCandidate(
     ITypeSymbol EffectiveDestinationType,
     int DeclaringMapperDepth,
     MappingPairModel Pair,
-    CSharpCompilation Compilation)
+    CSharpCompilation Compilation,
+    bool EmitLocalExtension = true)
 {
     public string DeclaredPairKey => MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(Pair.SourceType, Pair.DestinationType);
     public string EffectivePairKey => MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(EffectiveSourceType, EffectiveDestinationType);

@@ -15,7 +15,7 @@ internal static class MappingExtensionPipeline
     {
         return GeneratorStageGuard.Select(
                 context,
-                candidates.Where(static candidate => candidate.Pair.FriendAssembly is null),
+                candidates.Where(static candidate => candidate.EmitLocalExtension),
                 MorphantGeneratorStageNames.BuildMappingExtensionModels,
                 static (candidate, _) => BuildModel(candidate, candidate.Compilation),
                 static candidate => candidate.Pair.Registration.Syntax.GetLocation())

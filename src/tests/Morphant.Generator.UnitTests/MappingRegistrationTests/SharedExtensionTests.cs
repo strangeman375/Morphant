@@ -262,6 +262,13 @@ internal partial class ConsumerMapper : TypeMapper
         var importedStatic = GeneratorTestDriver.Run("FriendConsumer",
             consumer.Replace("using Morphant;", "extern alias LibraryOnly;\nusing Morphant;\nusing static LibraryOnly::Morphant.MorphantGeneratedMappingExtensions;"),
             LanguageVersion.CSharp9, driver: imported.Driver, additionalReferences: [aliased]);
+        var localFile = new GeneratorTestSourceFile("B_Local.cs", consumer);
+        var importedFile = new GeneratorTestSourceFile("A_Imported.cs", consumer.Replace("ConsumerMapper", "ImportedMapper")
+            .Replace("using Morphant;", "extern alias LibraryOnly;\nusing Morphant;\nusing LibraryOnly::Morphant;"));
+        var mixed = GeneratorTestDriver.Run("FriendConsumer", [localFile, importedFile], LanguageVersion.CSharp9,
+            driver: imported.Driver, additionalReferences: [aliased]);
+        var mixedReordered = GeneratorTestDriver.Run("FriendConsumer", [importedFile with { Name = "Z_Imported.cs" }, localFile],
+            LanguageVersion.CSharp9, driver: mixed.Driver, additionalReferences: [aliased]);
         var recovered = GeneratorTestDriver.Run("FriendConsumer", consumer, LanguageVersion.CSharp9,
             driver: importedStatic.Driver);
         var other = GeneratorTestDriver.Run("OtherConsumer", consumer, LanguageVersion.CSharp9,
@@ -280,6 +287,13 @@ internal partial class ConsumerMapper : TypeMapper
             Assert.That(imported.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(importedStatic.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0065" }));
             Assert.That(importedStatic.CompilerWarningsAndErrors, Is.Empty);
+            foreach (var (state, path) in new[] { (mixed, "A_Imported.cs"), (mixedReordered, "Z_Imported.cs") })
+            {
+                Assert.That(state.Diagnostics.Select(d => (d.Id, d.Location.SourceTree!.FilePath)),
+                    Is.EqualTo(new[] { ("MORPH0065", path) }));
+                Assert.That(state.CompilerWarningsAndErrors.Select(d => (d.Id, d.Location.SourceTree!.FilePath)),
+                    Is.EqualTo(new[] { ("CS0121", path) }));
+            }
             Assert.That(recovered.Diagnostics, Is.Empty);
             Assert.That(recovered.GeneratedSources.Select(file => (file.HintName, file.SourceText.ToString())),
                 Is.EquivalentTo(clean.GeneratedSources.Select(file => (file.HintName, file.SourceText.ToString()))));
