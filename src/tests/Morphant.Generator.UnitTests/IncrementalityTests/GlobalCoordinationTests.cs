@@ -240,14 +240,10 @@ internal sealed class GlobalCoordinationTests
             "Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs"
         };
         var initialHints = surfaceHints
-            .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
-            .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
             .Append(upperHint)
             .Append(stableHint)
             .ToArray();
         var collisionHints = initialHints
-            .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
-            .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
             .Append(titleHint)
             .ToArray();
 
@@ -330,10 +326,6 @@ internal sealed class GlobalCoordinationTests
                 "colliding mapper hints",
                 [models, stable, upper, title],
                 surfaceHints
-                    .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
-                    .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
-                    .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
-                    .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
                     .Append(upperHint)
                     .Append(titleHint)
                     .Append(stableHint)
@@ -342,8 +334,6 @@ internal sealed class GlobalCoordinationTests
                 "similar mapper removed",
                 [models, stable, title],
                 surfaceHints
-                    .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
-                    .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
                     .Append(titleHint)
                     .Append(stableHint)
                     .ToArray()));

@@ -41,7 +41,7 @@ public sealed class Destination
 public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
-        builder.Map<LocalSource, Destination>()
+        builder.Map<Source, Destination>()
             .Construct(s => new DestinationConstruction(s.Id))
             .Members(s => new DestinationMembers { Id = s.Id });
 }
@@ -115,7 +115,7 @@ public partial class ConsumerMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
-        builder.Map<Source, Destination>()
+        builder.Map<LocalSource, Destination>()
             .Construct(s => new DestinationConstruction(s.Id))
             .Members(s => new DestinationMembers { Id = s.Id });
         builder.Map<LocalSource, (int Id, int Count)>();

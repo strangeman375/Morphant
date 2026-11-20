@@ -101,7 +101,7 @@ namespace TestCase
         #pragma warning restore CS0618
         {
             #pragma warning disable CS0618
-            global::TestCase.Destination result = __ResolveUsing(global::Morphant.Option<global::TestCase.Destination>.None);
+            global::TestCase.Destination? result = __ResolveUsing(global::Morphant.Option<global::TestCase.Destination>.None);
             #pragma warning restore CS0618
 
             if (result is null)
@@ -121,7 +121,7 @@ namespace TestCase
         #pragma warning restore CS0618
         {
             #pragma warning disable CS0618
-            global::TestCase.Destination result = __ResolveUsing(global::Morphant.Option<global::TestCase.Destination>.Some(destination));
+            global::TestCase.Destination? result = __ResolveUsing(global::Morphant.Option<global::TestCase.Destination>.Some(destination));
             #pragma warning restore CS0618
 
             if (result is null)
@@ -135,7 +135,7 @@ namespace TestCase
         }
 
         #pragma warning disable CS0618
-        private global::TestCase.Destination __ResolveUsing(global::Morphant.Option<global::TestCase.Destination> previous) => previous.HasValue ? previous.Value : new global::TestCase.Destination();
+        private global::TestCase.Destination? __ResolveUsing(global::Morphant.Option<global::TestCase.Destination> previous) => previous.HasValue ? previous.Value : new global::TestCase.Destination();
         #pragma warning restore CS0618
     }
 }

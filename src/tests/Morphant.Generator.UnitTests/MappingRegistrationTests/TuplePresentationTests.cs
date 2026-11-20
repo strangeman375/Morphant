@@ -21,14 +21,14 @@ namespace TestCase;
 public partial class FirstMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
-        builder.Map<(int X, int Y), (int Left, int Top)>();
+        builder.Map<(int X, int Y), (int Left, int Top)>().Convert(s => (s.Item1, s.Item2));
 }
 
 [MorphantMapper]
 public partial class SecondMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
-        builder.Map<(int A, int B), (int Width, int Height)>();
+        builder.Map<(int A, int B), (int Width, int Height)>().Convert(s => (s.Item1, s.Item2));
 }
 """;
 

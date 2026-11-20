@@ -275,11 +275,7 @@ internal sealed class IncrementalLifecycleTests
             "Morphant.Generated.Member.SurfaceDestination__08333ce1cf99bfc02b89cde9e06a0b49.g.cs";
         const string nonNullableMapping =
             "Morphant.Generated.MappingExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
-        const string nullableMapping =
-            "Morphant.Generated.MappingExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
         const string nonNullableMember =
-            "Morphant.Generated.MemberExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
-        const string nullableMember =
             "Morphant.Generated.MemberExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
         const string nonNullableMapper =
             "Morphant.Generated.TypeMapper.NonNullableMapper__4d62945fd92434a26b8c7253a0724aff.g.cs";
@@ -304,10 +300,8 @@ internal sealed class IncrementalLifecycleTests
         {
             construction,
             nonNullableMapping,
-            nullableMapping,
             member,
             nonNullableMember,
-            nullableMember,
             nonNullableMapper,
             nullableMapper
         };
@@ -320,45 +314,33 @@ internal sealed class IncrementalLifecycleTests
                 [models, nonNullable],
                 sharedHints),
             Step(
-                "nullable mapper scope added",
+                "nullable mapper added",
                 [models, nonNullable, nullable],
                 bothHints,
                 Stage(
                     "BuildMappingExtensionRequests",
                     Expected(
                         nonNullableMapping,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        nullableMapping,
-                        IncrementalStepRunReason.New)),
+                        IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberExtensionRequests",
                     Expected(
                         nonNullableMember,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        nullableMember,
-                        IncrementalStepRunReason.New))),
+                        IncrementalStepRunReason.Cached))),
             Step(
-                "nullable mapper scope removed",
+                "nullable mapper removed",
                 [models, nonNullable],
                 sharedHints,
                 Stage(
                     "BuildMappingExtensionRequests",
                     Expected(
                         nonNullableMapping,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        nullableMapping,
-                        IncrementalStepRunReason.Removed)),
+                        IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberExtensionRequests",
                     Expected(
                         nonNullableMember,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        nullableMember,
-                        IncrementalStepRunReason.Removed))));
+                        IncrementalStepRunReason.Cached))));
     }
 
     // lang=c#

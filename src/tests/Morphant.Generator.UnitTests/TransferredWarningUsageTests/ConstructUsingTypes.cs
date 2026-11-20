@@ -101,7 +101,7 @@ namespace TestCase
         #pragma warning restore CS0618
         {
             #pragma warning disable CS0618
-            global::TestCase.Destination result = __ConstructUsing();
+            global::TestCase.Destination? result = __ConstructUsing();
             #pragma warning restore CS0618
 
             if (result is null)
@@ -126,7 +126,7 @@ namespace TestCase
         }
 
         #pragma warning disable CS0618
-        private global::TestCase.Destination __ConstructUsing() => new global::TestCase.Destination();
+        private global::TestCase.Destination? __ConstructUsing() => new global::TestCase.Destination();
         #pragma warning restore CS0618
     }
 }

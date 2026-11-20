@@ -154,7 +154,7 @@ namespace TestCase
         "Morphant.Generated.MappingExtension.SystemTuple1ToInt32__d0836a08294859deb6676a5a9992a81c.g.cs";
 
     private const string TupleHintName =
-        "Morphant.Generated.MappingExtension.ValueTuple2ToInt32__8f6eb1be775ade78e19d49c7c1ff3ff2.g.cs";
+        "Morphant.Generated.MappingExtension.ValueTuple2ToInt32__93c9bbeb0e1819a269c99342ae7550b0.g.cs";
 
 
     // lang=c#

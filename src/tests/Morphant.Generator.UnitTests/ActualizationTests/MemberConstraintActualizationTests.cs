@@ -152,7 +152,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : struct
+            where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -173,7 +173,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : struct
+            where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : struct
+            where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -215,7 +215,7 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : struct
+            where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

@@ -21,8 +21,8 @@ internal sealed class CompilationBoundaryTests
     [
         "Morphant.Generated.Construction.Destination__5922229893d00b089d666c239ec2b1b0.g.cs",
         "Morphant.Generated.Construction.Destination__8ee05995dd9094f3e70bf0f7c0a6baa1.g.cs",
-        "Morphant.Generated.MappingExtension.FirstMapper.SourceToDestination__ac0501f16e94748795bd8e9af42a414f.g.cs",
-        "Morphant.Generated.MappingExtension.SecondMapper.SourceToDestination__02742474f7a51f524265dc5ede7f7758.g.cs",
+        "Morphant.Generated.MappingExtension.SourceToDestination__1136dff43f92ee3fa039814b215196b0.g.cs",
+        "Morphant.Generated.MappingExtension.SourceToDestination__7dd3d1ea846e948a92e8e2e5be581a3c.g.cs",
         "Morphant.Generated.TypeMapper.FirstMapper__29796a8377d78c922212687ea45e9969.g.cs",
         "Morphant.Generated.TypeMapper.SecondMapper__955140c4d572867922f378f0e01f2a82.g.cs"
     ];
