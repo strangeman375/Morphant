@@ -190,7 +190,9 @@ internal static class CanonicalMappingPairPipeline
                 required.Add(owner.Key);
         }
 
-        return required.OrderBy(static key => key, StringComparer.Ordinal)
+        // Emit in the incremental input order so adding another mapping does
+        // not move previously selected signatures to new output positions.
+        return candidates.Select(static c => c.DeclaredPairKey).Where(required.Remove)
             .Select(key => owners[key] with { EmitLocalExtension = needsLocalExtension.Contains(key) })
             .ToImmutableArray();
     }
