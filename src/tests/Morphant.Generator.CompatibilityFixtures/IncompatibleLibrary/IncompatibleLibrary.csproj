@@ -15,10 +15,7 @@
             <HintPath>$(MorphantRuntimePath)</HintPath>
             <Private>false</Private>
         </Reference>
-        <Reference Include="LegacyLibrary">
-            <HintPath>$(LibraryPath)</HintPath>
-            <Private>false</Private>
-        </Reference>
+        <ProjectReference Include="../LegacyLibrary/LegacyLibrary.csproj" />
         <Analyzer Include="$(MorphantGeneratorPath)" />
     </ItemGroup>
 

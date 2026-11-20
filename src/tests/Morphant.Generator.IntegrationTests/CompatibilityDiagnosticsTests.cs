@@ -116,7 +116,7 @@ internal sealed class CompatibilityDiagnosticsTests
     }
 
     [Test]
-    public async Task Library_built_with_an_older_runtime_reports_MORPH0063()
+    public async Task Project_reference_reports_a_body_only_dependency_from_the_implementation_DLL()
     {
         using var workspace = new ConsumerBuildWorkspace();
         var legacyRuntime = await workspace.BuildRuntimeCandidate(
@@ -124,25 +124,22 @@ internal sealed class CompatibilityDiagnosticsTests
             "Morphant");
         AssertSucceeded(legacyRuntime.Process);
 
-        var library = await workspace.BuildRuntimeCandidate(
-            "LegacyLibrary",
-            "LegacyLibrary",
-            "LegacyRuntimePath=" + legacyRuntime.AssemblyPath);
-        AssertSucceeded(library.Process);
+        var reference = await workspace.BuildLegacyLibraryConsumer(
+            legacyRuntime.AssemblyPath, useImplementationAssembly: false);
+        AssertSucceeded(reference.Process);
 
-        var build = await workspace.BuildConsumer(
-            "IncompatibleLibrary",
-            libraryPath: library.AssemblyPath);
+        var implementation = await workspace.BuildLegacyLibraryConsumer(
+            legacyRuntime.AssemblyPath, useImplementationAssembly: true);
         var runtimeVersion = typeof(TypeMapper<>).Assembly.GetName().Version!;
 
         AssertFailedWith(
-            build.Process,
+            implementation.Process,
             "MORPH0063",
             "Assembly 'LegacyLibrary' was built with Morphant 0.1, which is " +
             "incompatible with Morphant " +
             $"{runtimeVersion.Major}.{runtimeVersion.Minor} used by this project.");
         Assert.That(
-            build.GetGeneratedFiles("Morphant.Generated.TypeMapper.*"),
+            implementation.GetGeneratedFiles("Morphant.Generated.TypeMapper.*"),
             Has.Length.EqualTo(1));
     }
 

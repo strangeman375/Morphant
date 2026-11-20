@@ -22,8 +22,7 @@ internal sealed class ConsumerBuildWorkspace : IDisposable
 
     public async Task<ConsumerBuild> BuildConsumer(
         string fixtureName,
-        string? runtimeCandidatePath = null,
-        string? libraryPath = null)
+        string? runtimeCandidatePath = null)
     {
         var paths = CreateBuildPaths(fixtureName);
         var arguments = BuildArguments(
@@ -41,27 +40,46 @@ internal sealed class ConsumerBuildWorkspace : IDisposable
             arguments.Add($"-p:RuntimeCandidatePath={runtimeCandidatePath}");
         }
 
-        if (libraryPath is not null)
-        {
-            arguments.Add($"-p:LibraryPath={libraryPath}");
-        }
-
         var process = await DotNetCli.Run(_repositoryRoot, arguments);
         return new ConsumerBuild(process, paths.GeneratedDirectory);
     }
 
+    public async Task<ConsumerBuild> BuildLegacyLibraryConsumer(
+        string legacyRuntimePath,
+        bool useImplementationAssembly)
+    {
+        var artifacts = Path.Combine(_testDirectory,
+            useImplementationAssembly ? "with-implementation" : "with-reference");
+        var generated = Path.Combine(artifacts, "generated");
+        List<string> arguments =
+        [
+            "build", GetFixtureProject("IncompatibleLibrary"),
+            "--configuration", _configuration, "--artifacts-path", artifacts,
+            "-m:1", "-nodeReuse:false", "--nologo",
+            $"-p:MorphantGeneratorPath={GetGeneratorAssemblyPath()}",
+            $"-p:MorphantRuntimePath={GetRuntimeAssemblyPath()}",
+            $"-p:LegacyRuntimePath={legacyRuntimePath}",
+            $"-p:MorphantGeneratedFilesPath={generated}",
+            $"-p:RestoreSources={PackageFeed}", "-p:NuGetAudit=false"
+        ];
+        if (useImplementationAssembly)
+        {
+            arguments.Add("-p:ProduceReferenceAssembly=false");
+        }
+
+        var process = await DotNetCli.Run(_repositoryRoot, arguments);
+        return new ConsumerBuild(process, generated);
+    }
+
     public async Task<RuntimeCandidateBuild> BuildRuntimeCandidate(
         string fixtureName,
-        string assemblyName,
-        params string[] properties)
+        string assemblyName)
     {
         var paths = CreateBuildPaths(fixtureName);
         var arguments = BuildArguments(
             "build",
             GetFixtureProject(fixtureName),
             paths);
-
-        arguments.AddRange(properties.Select(static property => "-p:" + property));
 
         var process = await DotNetCli.Run(_repositoryRoot, arguments);
         var assemblyPath = Path.Combine(

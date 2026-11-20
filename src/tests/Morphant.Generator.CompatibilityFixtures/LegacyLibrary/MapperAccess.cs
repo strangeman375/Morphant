@@ -2,5 +2,5 @@ namespace LegacyLibrary;
 
 public static class MapperAccess
 {
-    public static Morphant.IMapper? Mapper { get; set; }
+    public static bool IsMapper(object value) => value is Morphant.IMapper;
 }
