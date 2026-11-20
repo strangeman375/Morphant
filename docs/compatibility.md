@@ -22,6 +22,13 @@ A library built with an incompatible version can fail at run time with
 
 In a project that references Morphant directly, Morphant checks the referenced
 libraries that use Morphant and reports [MORPH0063](diagnostics/MORPH0063.md)
-for a library built with an incompatible version. A project that receives
-Morphant only transitively is not checked; to check an application, add a
-direct reference to the `Morphant` package.
+for a library built with an incompatible version. The check sees a library's
+dependency on Morphant only in the references passed to the compiler:
+
+- A project that receives Morphant only transitively is not checked. To check
+  an application, add a direct reference to the `Morphant` package.
+- A project reference is usually compiled against the library's reference
+  assembly, which contains only its API. If that API does not use Morphant
+  types, for example because the library's mappers are internal, the
+  dependency is not visible. Keep the projects of one solution on the same
+  Morphant version, for example with central package management.

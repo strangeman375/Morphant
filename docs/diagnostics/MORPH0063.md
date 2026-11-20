@@ -19,4 +19,9 @@ Rebuild the library with the Morphant version used by this project. For a
 library you do not maintain, use a release of it built with a compatible
 Morphant version, or keep this project on the library's Morphant version.
 
+An IDE can report the diagnostic for a project reference while the
+command-line build does not. The build compiles against the library's reference
+assembly, which can omit a dependency used only inside the library. The
+library still fails at run time; align the Morphant versions of both projects.
+
 [All diagnostics](../diagnostics.md)

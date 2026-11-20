@@ -112,6 +112,10 @@ generated-source expectations. Follow the general principles in
   runtime: before 1.0 it must equal the runtime line; from 1.0 the major must
   match and the library minor must not exceed the runtime minor. The runtime
   `AssemblyVersion` is `major.minor.0.0` of the package version.
+- A Roslyn project reference counts only the runtime references its code uses,
+  as its compiled assembly would. A reference assembly can omit a dependency
+  used only in implementation code; the generator does not look for
+  implementation assemblies.
 - `Morphant.GeneratorContractVersion` pairs the generator only with the runtime
   of the same compilation (`MORPH0004`). Raise it when the runtime contract
   used by generated code changes.
