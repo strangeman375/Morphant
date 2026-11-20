@@ -71,10 +71,14 @@ generated-source expectations. Follow the general principles in
 - All mappers in an assembly share the DSL extensions for a CLR pair. Tuple
   element names, nested nullable annotations and `dynamic` must agree. Generate
   open extensions with the type parameters and constraints needed by the pair.
+  Include indirect constraints from variant conversions and unmanaged storage.
+  Omit constraints imposed only by an individual mapper.
   For conflicting presentations, the first registration by source path and
   position owns the shared extension. Later conflicting registrations retain
   typed failure stubs. For distinct open pairs, report an intersection when C#
-  cannot select a more specific receiver and invalidate all affected mappings.
+  cannot select a more specific receiver for a constructible pair and invalidate
+  all affected mappings. Each extension has its own type parameters, even when
+  both registrations use one mapper parameter.
   Report collisions with extensions made visible by a friend assembly at the
   registration, including imports through an extern alias. Omit the local
   extension if every registration sees a friend. Otherwise keep the ordinary

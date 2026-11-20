@@ -8,6 +8,64 @@ namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 [TestFixture]
 internal sealed class OpenExtensionIntersectionTests
 {
+    [TestCase("class", "int", false)]
+    [TestCase("class", "string", true)]
+    [TestCase("struct", "string", false)]
+    [TestCase("struct", "int", true)]
+    [TestCase("unmanaged", "Cell<string>", false)]
+    [TestCase("unmanaged", "Cell<int>", true)]
+    [TestCase("System.IDisposable", "int", false)]
+    [TestCase("System.IDisposable", "System.IO.MemoryStream", true)]
+    [TestCase("new()", "string", false)]
+    [TestCase("new()", "object", true)]
+    public void Only_constructible_intersections_conflict(string requirement, string argument, bool conflicts)
+    {
+        var source = $$"""
+#nullable enable
+using Morphant;
+internal sealed class Triple<A, B, C> { }
+internal sealed class Bound<T> where T : {{requirement}} { }
+internal struct Cell<T> { public T Value { get; set; } }
+internal sealed class Dto { }
+[MorphantMapper] internal partial class First<T> : TypeMapper where T : {{requirement}}
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<T, int, Bound<T>>, Dto>();
+}
+[MorphantMapper] internal partial class Second<U, V> : TypeMapper
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<{{argument}}, U, V>, Dto>();
+}
+""";
+        var result = MappingRegistrationGeneratorTest.Run(source, LanguageVersion.CSharp9);
+        Assert.That(result.Diagnostics.Select(d => d.Id), Is.EqualTo(conflicts ? new[] { "MORPH0064" } : Array.Empty<string>()));
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
+    [TestCase("struct", false)]
+    [TestCase("System.IDisposable", true)]
+    public void A_remaining_free_parameter_must_satisfy_both_definitions(string requirement, bool conflicts)
+    {
+        var source = $$"""
+#nullable enable
+using Morphant;
+internal sealed class Triple<A, B, C> { }
+internal sealed class Ref<T> where T : class { }
+internal sealed class Bound<T> where T : {{requirement}} { }
+internal sealed class Dto { }
+[MorphantMapper] internal partial class First<T, X> : TypeMapper where T : class
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<T, Ref<T>, X>, Dto>();
+}
+[MorphantMapper] internal partial class Second<U, Y> : TypeMapper where U : {{requirement}}
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<U, Y, Bound<U>>, Dto>();
+}
+""";
+        var result = MappingRegistrationGeneratorTest.Run(source, LanguageVersion.CSharp9);
+        Assert.That(result.Diagnostics.Select(d => d.Id), Is.EqualTo(conflicts ? new[] { "MORPH0064" } : Array.Empty<string>()));
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public void Extensions_from_the_same_mapper_or_enclosing_type_have_independent_parameters(bool sameMapper)

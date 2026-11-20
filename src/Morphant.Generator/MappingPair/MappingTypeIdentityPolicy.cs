@@ -126,7 +126,8 @@ internal static class MappingTypeIdentityPolicy
                unifier.Match(new(leftDestination, false), new(rightDestination, false));
     }
 
-    public static bool ExtensionsCanBeAmbiguous(MappingPairModel left, MappingPairModel right)
+    public static bool ExtensionsCanBeAmbiguous(MappingPairModel left, MappingPairModel right,
+        Microsoft.CodeAnalysis.CSharp.CSharpCompilation compilation, CancellationToken cancellationToken)
     {
         // Each extension declares its own method type parameters, even when
         // both registrations refer to the same mapper or containing type.
@@ -137,7 +138,18 @@ internal static class MappingTypeIdentityPolicy
 
         // C# compares positions in the unsubstituted parameter types. Reusing
         // a type parameter restricts applicability but does not break a tie.
-        return !IsMoreSpecificExtension(left, right) && !IsMoreSpecificExtension(right, left);
+        if (IsMoreSpecificExtension(left, right) || IsMoreSpecificExtension(right, left))
+            return false;
+        if (!OpenExtensionConstraintCheck.HasConstraints(left.SourceType) &&
+            !OpenExtensionConstraintCheck.HasConstraints(left.DestinationType) &&
+            !OpenExtensionConstraintCheck.HasConstraints(right.SourceType) &&
+            !OpenExtensionConstraintCheck.HasConstraints(right.DestinationType))
+            return true;
+
+        var parameters = new Dictionary<TypeTerm, string>();
+        var source = unifier.Format(new(left.SourceType, false), parameters);
+        var destination = unifier.Format(new(left.DestinationType, false), parameters);
+        return OpenExtensionConstraintCheck.CanConstruct(source, destination, parameters.Values, compilation, cancellationToken);
     }
 
     internal static bool IsMoreSpecificExtension(MappingPairModel left, MappingPairModel right) =>
@@ -487,6 +499,21 @@ internal static class MappingTypeIdentityPolicy
             }
 
             return true;
+        }
+
+        public string Format(TypeTerm term, Dictionary<TypeTerm, string> parameters)
+        {
+            term = Resolve(term);
+            if (term.Type is ITypeParameterSymbol)
+            {
+                if (!parameters.TryGetValue(term, out var name))
+                    parameters.Add(term, name = "T" + parameters.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                return name;
+            }
+
+            return string.Concat(term.Type.ToDisplayParts(SymbolDisplayFormat.FullyQualifiedFormat)
+                .Select(part => part.Symbol is ITypeParameterSymbol parameter
+                    ? Format(term.Child(parameter), parameters) : part.ToString()));
         }
 
         private bool Bind(TypeTerm variable, TypeTerm value)

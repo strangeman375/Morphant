@@ -287,7 +287,7 @@ internal static class MappingRegistrationDiagnosticPipeline
                     }
                 }
 
-                if (!MappingTypeIdentityPolicy.ExtensionsCanBeAmbiguous(left.Pair, right.Pair))
+                if (!MappingTypeIdentityPolicy.ExtensionsCanBeAmbiguous(left.Pair, right.Pair, right.Compilation, cancellationToken))
                     continue;
 
                 foreach (var owner in leftGroup.Concat(rightGroup))

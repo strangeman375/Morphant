@@ -121,15 +121,20 @@ internal static class PairTypeParameterModelBuilder
         {
             // Ask Roslyn about the constructed layout. A phantom parameter or
             // a static field does not contribute to unmanagedness.
-            foreach (var parameter in GeneratedTypeNameBuilder.CollectTypeParameters(argument))
+            var parameters = GeneratedTypeNameBuilder.CollectTypeParameters(argument);
+            var value = compilation.GetSpecialType(SpecialType.System_Int32);
+            var reference = compilation.GetSpecialType(SpecialType.System_Object);
+            var replacements = new Dictionary<ITypeParameterSymbol, ITypeSymbol>(SymbolEqualityComparer.Default);
+            foreach (var parameter in parameters)
+                replacements.Add(parameter, value);
+
+            foreach (var parameter in parameters)
             {
-                var replacement = new Dictionary<ITypeParameterSymbol, ITypeSymbol>(SymbolEqualityComparer.Default)
-                {
-                    [parameter] = compilation.GetSpecialType(SpecialType.System_Object)
-                };
-                if (!MapperTypeSubstitution.Substitute(argument, replacement, compilation).IsUnmanagedType &&
+                replacements[parameter] = reference;
+                if (!MapperTypeSubstitution.Substitute(argument, replacements, compilation).IsUnmanagedType &&
                     constraints.TryGetValue(parameter, out var required))
                     required.RequireUnmanaged();
+                replacements[parameter] = value;
             }
         }
 
@@ -173,11 +178,11 @@ internal static class PairTypeParameterModelBuilder
             if (source.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, target)))
                 return;
 
+            var matches = source.AllInterfaces.Where(i =>
+                SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, target.OriginalDefinition));
             var implementation = SymbolEqualityComparer.Default.Equals(source.OriginalDefinition, target.OriginalDefinition)
                 ? source
-                : source.AllInterfaces.FirstOrDefault(i =>
-                    SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, target.OriginalDefinition) &&
-                    compilation.ClassifyCommonConversion(i, target).IsImplicit);
+                : matches.FirstOrDefault(i => compilation.ClassifyCommonConversion(i, target).IsImplicit) ?? matches.FirstOrDefault();
             if (implementation is null)
                 return;
 
