@@ -12,7 +12,7 @@ internal sealed class LibraryCompatibilityTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void Reports_an_older_mapper_when_its_compiled_reference_arrives(
+    public void Reports_an_older_internal_mapper_when_its_compiled_reference_arrives(
         bool referenceAssembly)
     {
         var runtime = Runtime("0.6.0.0");
@@ -408,7 +408,7 @@ namespace MappingLibrary
     }
 
     [MorphantMapper]
-    public partial class LibraryMapper : TypeMapper<LibraryMapper>
+    internal partial class LibraryMapper : TypeMapper<LibraryMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
