@@ -225,18 +225,18 @@ namespace TestCase
         global::System.Threading.Tasks.Task<int> global::Morphant.ITypeMapper<int, global::System.Threading.Tasks.Task<int>>.Create(
             int source,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination(source);
+            => __ConvertDestination(source)!;
 
         /// <inheritdoc/>
         global::System.Threading.Tasks.Task<int> global::Morphant.ITypeMapper<int, global::System.Threading.Tasks.Task<int>>.Update(
             int source,
             global::System.Threading.Tasks.Task<int>? destination,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination(source);
+            => __ConvertDestination(source)!;
 
-        private global::System.Threading.Tasks.Task<int> __ConvertDestination(int source)
+        private global::System.Threading.Tasks.Task<int>? __ConvertDestination(int source)
         {
-            global::Morphant.Delegates.Convert<int, global::System.Threading.Tasks.Task<int>> callback = async delegate (int source)
+            global::Morphant.Delegates.Convert<int, global::System.Threading.Tasks.Task<int>?> callback = async delegate (int source)
             {
                 return source;
             };
