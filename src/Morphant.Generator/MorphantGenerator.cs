@@ -41,7 +41,7 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
             context.CompilationProvider.Combine(
                 context.ParseOptionsProvider),
             "DetectCompilationCompatibility",
-            static (source, _) =>
+            static (source, cancellationToken) =>
             {
                 var compilation = (CSharpCompilation)source.Left;
                 var languageVersion =
@@ -59,7 +59,8 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
                     : diagnostics.AddRange(
                         LibraryCompatibilityDetector.Detect(
                             compilation,
-                            runtime));
+                            runtime,
+                            cancellationToken));
             },
             ImmutableArray<Diagnostic>.Empty);
         DiagnosticPipeline.Register(

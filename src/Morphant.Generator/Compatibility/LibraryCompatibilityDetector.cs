@@ -10,7 +10,8 @@ internal static class LibraryCompatibilityDetector
     // assembly reference; the runtime assembly version is major.minor.0.0.
     public static ImmutableArray<Diagnostic> Detect(
         Compilation compilation,
-        IAssemblySymbol runtime)
+        IAssemblySymbol runtime,
+        CancellationToken cancellationToken)
     {
         var runtimeIdentity = runtime.Identity;
         var incompatible = new List<(string Library, Version Version)>();
@@ -25,10 +26,15 @@ internal static class LibraryCompatibilityDetector
             var reference = library.Modules
                 .SelectMany(static module => module.ReferencedAssemblies)
                 .FirstOrDefault(identity =>
-                    IsRuntimeReference(identity, runtimeIdentity) &&
-                    !IsCompatible(identity.Version, runtimeIdentity.Version));
+                    IsIncompatibleRuntime(identity, runtimeIdentity));
 
-            if (reference is not null)
+            if (reference is not null &&
+                (compilation.GetMetadataReference(library) is not
+                     CompilationReference project ||
+                 UsesIncompatibleRuntime(
+                     project.Compilation,
+                     runtimeIdentity,
+                     cancellationToken)))
             {
                 incompatible.Add((library.Identity.Name, reference.Version));
             }
@@ -45,7 +51,21 @@ internal static class LibraryCompatibilityDetector
             .ToImmutableArray();
     }
 
-    private static bool IsRuntimeReference(
+    // A project reference lists every reference passed to its compilation.
+    // Like a compiled library, count only the references its code uses.
+    private static bool UsesIncompatibleRuntime(
+        Compilation project,
+        AssemblyIdentity runtime,
+        CancellationToken cancellationToken)
+    {
+        return project.GetUsedAssemblyReferences(cancellationToken)
+            .Any(reference =>
+                project.GetAssemblyOrModuleSymbol(reference) is
+                    IAssemblySymbol assembly &&
+                IsIncompatibleRuntime(assembly.Identity, runtime));
+    }
+
+    private static bool IsIncompatibleRuntime(
         AssemblyIdentity reference,
         AssemblyIdentity runtime)
     {
@@ -53,7 +73,8 @@ internal static class LibraryCompatibilityDetector
                    reference.Name,
                    runtime.Name,
                    StringComparison.OrdinalIgnoreCase) &&
-               reference.PublicKeyToken.SequenceEqual(runtime.PublicKeyToken);
+               reference.PublicKeyToken.SequenceEqual(runtime.PublicKeyToken) &&
+               !IsCompatible(reference.Version, runtime.Version);
     }
 
     // Before 1.0 the minor line must match. From 1.0 the major version must

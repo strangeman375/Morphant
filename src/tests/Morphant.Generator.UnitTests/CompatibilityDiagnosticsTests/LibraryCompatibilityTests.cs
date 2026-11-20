@@ -113,6 +113,67 @@ namespace Unrelated
             Incompatible("Beta", "0.4", "0.6"));
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Ignores_a_library_that_references_but_does_not_use_the_runtime(
+        bool projectReference)
+    {
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+namespace UnusedRuntime
+{
+    public sealed class Library
+    {
+    }
+}
+""";
+        MetadataReference[] libraryReferences = [Runtime("0.5.0.0")];
+        var library = projectReference
+            ? (MetadataReference)CompatibilityGeneratorTest.CreateProjectReference(
+                "UnusedRuntimeLibrary",
+                source,
+                libraryReferences)
+            : CompatibilityGeneratorTest.CreateReference(
+                "UnusedRuntimeLibrary",
+                source,
+                libraryReferences);
+        var result = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9,
+            references: [Runtime("0.6.0.0"), library]);
+
+        CompatibilityGeneratorTest.AssertDiagnostics(result);
+    }
+
+    [Test]
+    public void Reports_a_project_that_uses_the_runtime_only_in_a_method_body()
+    {
+        var library = CompatibilityGeneratorTest.CreateProjectReference(
+            "BodyUsageLibrary",
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+namespace BodyUsage
+{
+    public static class MapperCheck
+    {
+        public static bool IsMapper(object value) => value is Morphant.IMapper;
+    }
+}
+""",
+            [Runtime("0.5.0.0")]);
+        var result = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9,
+            references: [Runtime("0.6.0.0"), library]);
+
+        CompatibilityGeneratorTest.AssertDiagnostics(
+            result,
+            Incompatible("BodyUsageLibrary", "0.5", "0.6"));
+    }
+
     [Test]
     public void Checks_libraries_only_against_a_compatible_runtime()
     {

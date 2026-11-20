@@ -87,10 +87,41 @@ internal static class CompatibilityGeneratorTest
         string source,
         IReadOnlyCollection<MetadataReference>? references = null)
     {
+        return EmitReference(
+            CreateCompilation(assemblyName, source, references));
+    }
+
+    public static CompilationReference CreateProjectReference(
+        string assemblyName,
+        string source,
+        IReadOnlyCollection<MetadataReference>? references = null)
+    {
+        var compilation = CreateCompilation(assemblyName, source, references);
+
+        AssertNoFailures(compilation, compilation.GetDiagnostics());
+        return compilation.ToMetadataReference();
+    }
+
+    public static PortableExecutableReference EmitReference(
+        Compilation compilation)
+    {
+        using var stream = new MemoryStream();
+        var emitResult = compilation.Emit(stream);
+
+        AssertNoFailures(compilation, emitResult.Diagnostics);
+        return MetadataReference.CreateFromImage(stream.ToArray());
+    }
+
+    private static CSharpCompilation CreateCompilation(
+        string assemblyName,
+        string source,
+        IReadOnlyCollection<MetadataReference>? references)
+    {
         var parseOptions = new CSharpParseOptions(
             LanguageVersion.CSharp9,
             DocumentationMode.Diagnose);
-        var compilation = CSharpCompilation.Create(
+
+        return CSharpCompilation.Create(
             assemblyName,
             [
                 CSharpSyntaxTree.ParseText(
@@ -102,16 +133,13 @@ internal static class CompatibilityGeneratorTest
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: NullableContextOptions.Enable));
-
-        return EmitReference(compilation);
     }
 
-    public static PortableExecutableReference EmitReference(
-        Compilation compilation)
+    private static void AssertNoFailures(
+        Compilation compilation,
+        IEnumerable<Diagnostic> diagnostics)
     {
-        using var stream = new MemoryStream();
-        var emitResult = compilation.Emit(stream);
-        var failures = emitResult.Diagnostics
+        var failures = diagnostics
             .Where(static diagnostic =>
                 diagnostic.Severity is
                     DiagnosticSeverity.Warning or
@@ -126,8 +154,6 @@ internal static class CompatibilityGeneratorTest
             "diagnostics." +
             Environment.NewLine +
             string.Join(Environment.NewLine, failures));
-
-        return MetadataReference.CreateFromImage(stream.ToArray());
     }
 
     public static void AssertDiagnostics(

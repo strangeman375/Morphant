@@ -1,10 +1,9 @@
 # Version compatibility
 
 Code compiled with Morphant, including generated mappers, depends on the
-Morphant runtime. NuGet gives an application one runtime version: the highest
-version requested by the application and its dependencies. A library therefore
-runs with the runtime the application selects, which can be newer than the one
-the library was built with.
+Morphant runtime. An application loads one runtime version, which NuGet selects
+for the whole application. A library therefore runs with that version, which
+can differ from the one the library was built with.
 
 ## Which versions work together
 
