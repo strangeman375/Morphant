@@ -78,16 +78,13 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
             configureDeclarations);
         var pairConfigurations =
             PairConfigurationPipeline.Build(context, configureInfos);
-        var contractAnalyses =
-            MapperContractPipeline.Build(context, pairConfigurations);
+        var contractAnalyses = MappingRegistrationDiagnosticPipeline.CheckRegistrations(context,
+            MapperContractPipeline.Build(context, pairConfigurations), reportDiagnostics: true);
         var contractAnalysisCollection = contractAnalyses.Collect();
 
         MapperDeclarationDiagnosticPipeline.Register(
             context,
             mapperDeclarations,
-            contractAnalysisCollection);
-        MappingRegistrationDiagnosticPipeline.Register(
-            context,
             contractAnalysisCollection);
         ConfigurationFlowDiagnosticPipeline.Register(
             context,

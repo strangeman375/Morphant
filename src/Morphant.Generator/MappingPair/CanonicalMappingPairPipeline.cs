@@ -216,9 +216,13 @@ internal static class CanonicalMappingPairPipeline
         CanonicalMappingPairCandidate left,
         CanonicalMappingPairCandidate right)
     {
-        var comparison = CanonicalMappingPairSelector.CompareRepresentation(
-            left.Pair,
-            right.Pair);
+        var leftSyntax = left.Pair.Registration.Syntax;
+        var rightSyntax = right.Pair.Registration.Syntax;
+        var comparison = StringComparer.Ordinal.Compare(leftSyntax.SyntaxTree.FilePath, rightSyntax.SyntaxTree.FilePath);
+        if (comparison == 0)
+        {
+            comparison = leftSyntax.SpanStart.CompareTo(rightSyntax.SpanStart);
+        }
 
         return comparison != 0
             ? comparison

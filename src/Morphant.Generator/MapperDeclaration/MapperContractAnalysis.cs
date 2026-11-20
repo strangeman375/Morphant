@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
@@ -8,8 +9,13 @@ namespace Morphant.Generator.MapperDeclaration;
 internal readonly record struct MapperContractAnalysis(
     MapperPairConfigurationModel Configuration,
     ImmutableArray<MapperContractConflict> Conflicts,
-    ImmutableArray<GeneratedMapperContractConflict> GeneratedConflicts)
+    ImmutableArray<GeneratedMapperContractConflict> GeneratedConflicts,
+    ImmutableHashSet<string>? ConflictingSurfaces = null)
 {
+    public bool HasConflictingSurface(ITypeSymbol source, ITypeSymbol destination) =>
+        ConflictingSurfaces is not null &&
+        ConflictingSurfaces.Contains(MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(source, destination));
+
     public bool Excludes(MappingPairIdentity identity)
     {
         return HasDeclaredConflict(identity) ||

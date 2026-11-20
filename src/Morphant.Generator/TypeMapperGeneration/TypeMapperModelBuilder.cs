@@ -192,13 +192,16 @@ internal static class TypeMapperModelBuilder
             configuredPairKeys.Add(MappingIdentityKey.Create(
                 pairConfiguration.Pair));
 
-            if (pairConfiguration.Pair.FriendAssembly is { } friend)
+            var friend = pairConfiguration.Pair.FriendAssembly;
+            if (friend is not null || analysis.HasConflictingSurface(pairConfiguration.Pair.SourceType, pairConfiguration.Pair.DestinationType))
             {
                 var pair = pairConfiguration.Pair;
                 mappings.Add(new OrderedMapping(pair.Registration.Syntax.SpanStart,
                     BuildFailedMapping(pair.Registration, pair.Identity, compilation, mapperType,
                         MappingFailureReason.UnsupportedMappingContract,
-                        $"Assembly '{friend}' already exposes configuration methods for this mapping.",
+                        friend is null
+                            ? "The mapping configuration conflicts with another registration."
+                            : $"Assembly '{friend}' already exposes configuration methods for this mapping.",
                         MappingObservationOriginKind.Registration), TransferredCodePolicy.Empty));
                 continue;
             }

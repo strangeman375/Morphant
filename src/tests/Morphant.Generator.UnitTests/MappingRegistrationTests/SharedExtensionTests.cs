@@ -103,6 +103,56 @@ internal partial class Second : TypeMapper
     }
 
     [Test]
+    public void Matching_the_first_tuple_presentation_repairs_only_the_conflicting_mapper()
+    {
+        const string source = """
+#nullable enable
+using Morphant;
+#pragma warning disable MORPH0056
+[MorphantMapper]
+internal partial class First : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<(int Value, int Count), int>().Convert(s => s.Value);
+}
+[MorphantMapper]
+internal partial class Second : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<(int Alias, int Count), int>().Convert(s => s.Count);
+}
+internal static class Scenario
+{
+    public static void Verify()
+    {
+        ITypeMapper<(int, int), int> first = new First();
+        ITypeMapper<(int, int), int> second = new Second();
+        if (first.Create((1, 2)) != 1) throw new System.Exception("First registration changed.");
+        try
+        {
+            int value = second.Create((1, 2));
+            if (value == 2 && Repaired) return;
+        }
+        catch (Morphant.Exceptions.MappingConfigurationException) when (!Repaired) { return; }
+        throw new System.Exception("Unexpected second mapper behavior.");
+    }
+
+    private static bool Repaired => false;
+}
+""";
+        var initial = GeneratorTestDriver.Run("SharedTupleRepair", source, LanguageVersion.CSharp9);
+        var updated = GeneratorTestDriver.Run("SharedTupleRepair",
+            source.Replace("int Alias", "int Value").Replace("Repaired => false", "Repaired => true"),
+            LanguageVersion.CSharp9, driver: initial.Driver);
+
+        Assert.That(initial.CompilerWarningsAndErrors, Is.Empty);
+        Assert.That(updated.Diagnostics, Is.Empty);
+        Assert.That(updated.CompilerWarningsAndErrors, Is.Empty);
+        GeneratedCodeExecution.AssertScenario("conflict", initial.OutputCompilation, "Scenario");
+        GeneratedCodeExecution.AssertScenario("repair", updated.OutputCompilation, "Scenario");
+    }
+
+    [Test]
     public void Adding_and_removing_friend_access_replaces_the_local_extension_and_diagnostic()
     {
         const string librarySource = """

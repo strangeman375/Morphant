@@ -130,6 +130,7 @@ internal static class ConfigurationFlowDiagnosticPipeline
                     IsDiscardedDuplicate(
                         configuration,
                         registration) ||
+                    analysis.HasConflictingSurface(registration.SourceType, registration.DestinationType) ||
                     FriendMappingExtensions.Find(declaration.Compilation, registration.SourceType, registration.DestinationType) is not null ||
                     IsCompilerOwned(registration, configuration))
                 {

@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.Incrementality;
 using Morphant.Generator.MapperDeclaration;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
 
@@ -19,7 +20,8 @@ internal static class TypeMapperPipeline
         Register(
             context,
             assemblySettings,
-            MapperContractPipeline.Build(context, mapperConfigurations));
+            MappingRegistrationDiagnosticPipeline.CheckRegistrations(context,
+                MapperContractPipeline.Build(context, mapperConfigurations), reportDiagnostics: false));
     }
 
     public static void Register(

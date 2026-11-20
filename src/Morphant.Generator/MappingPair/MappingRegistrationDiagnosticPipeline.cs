@@ -7,29 +7,38 @@ namespace Morphant.Generator.MappingPair;
 
 internal static class MappingRegistrationDiagnosticPipeline
 {
-    public static void Register(
+    public static IncrementalValuesProvider<MapperContractAnalysis> CheckRegistrations(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
-            contractAnalyses)
+        IncrementalValuesProvider<MapperContractAnalysis> analyses,
+        bool reportDiagnostics)
     {
-        var diagnostics = GeneratorStageGuard.Select(
-            context,
-            contractAnalyses,
-            "BuildMappingRegistrationDiagnostics",
-            static (analyses, cancellationToken) =>
-                BuildDiagnostics(analyses, cancellationToken),
-            ImmutableArray<Diagnostic>.Empty);
+        var checks = GeneratorStageGuard.Select(
+            context, analyses.Collect(), "BuildMappingRegistrationDiagnostics",
+            static (all, token) => CheckRegistrations(all, token),
+            new RegistrationChecks(ImmutableArray<Diagnostic>.Empty,
+                ImmutableDictionary<string, ImmutableHashSet<string>>.Empty));
+        if (reportDiagnostics)
+        {
+            DiagnosticPipeline.Register(context, checks.Select(static (result, _) => result.Diagnostics),
+                "MappingRegistrationDiagnostics");
+        }
 
-        DiagnosticPipeline.Register(
-            context,
-            diagnostics,
-            "MappingRegistrationDiagnostics");
+        var conflicts = checks.Select(static (result, _) => result.Conflicts);
+        return analyses.Combine(conflicts).Select(static (input, _) =>
+            input.Right.TryGetValue(input.Left.Configuration.Declaration.MapperIdentity, out var pairs)
+                ? input.Left with { ConflictingSurfaces = pairs }
+                : input.Left);
     }
 
-    private static ImmutableArray<Diagnostic> BuildDiagnostics(
+    private sealed record RegistrationChecks(
+        ImmutableArray<Diagnostic> Diagnostics,
+        ImmutableDictionary<string, ImmutableHashSet<string>> Conflicts);
+
+    private static RegistrationChecks CheckRegistrations(
         ImmutableArray<MapperContractAnalysis> analyses,
         CancellationToken cancellationToken)
     {
+        var conflicts = ImmutableDictionary.CreateBuilder<string, ImmutableHashSet<string>>(StringComparer.Ordinal);
         var candidates = ImmutableArray.CreateBuilder<DiagnosticCandidate>();
         var presentations =
             ImmutableArray.CreateBuilder<PresentationRegistration>();
@@ -223,13 +232,14 @@ internal static class MappingRegistrationDiagnosticPipeline
             }
         }
 
-        AddOpenExtensionDiagnostics(openRegistrations, candidates, cancellationToken);
+        AddOpenExtensionDiagnostics(openRegistrations, candidates, conflicts, cancellationToken);
         AddPresentationDiagnostics(
             presentations.ToImmutable(),
             candidates,
+            conflicts,
             cancellationToken);
 
-        return candidates
+        var diagnostics = candidates
             .OrderBy(static candidate => candidate.IdOrder)
             .ThenBy(static candidate => candidate.MapperIdentity,
                 StringComparer.Ordinal)
@@ -241,11 +251,21 @@ internal static class MappingRegistrationDiagnosticPipeline
             .ThenBy(static candidate => candidate.Position)
             .Select(static candidate => candidate.Diagnostic)
             .ToImmutableArray();
+        return new RegistrationChecks(diagnostics, conflicts.Count == 0
+            ? ImmutableDictionary<string, ImmutableHashSet<string>>.Empty
+            : conflicts.ToImmutable());
+    }
+
+    private static void MarkConflict(
+        ImmutableDictionary<string, ImmutableHashSet<string>>.Builder conflicts, string mapper, string pair)
+    {
+        conflicts[mapper] = (conflicts.TryGetValue(mapper, out var pairs) ? pairs : ImmutableHashSet<string>.Empty).Add(pair);
     }
 
     private static void AddOpenExtensionDiagnostics(
         Dictionary<string, (MappingPairModel Pair, string Mapper)> registrations,
         ImmutableArray<DiagnosticCandidate>.Builder diagnostics,
+        ImmutableDictionary<string, ImmutableHashSet<string>>.Builder conflicts,
         CancellationToken cancellationToken)
     {
         var ordered = registrations.OrderBy(entry => entry.Key, StringComparer.Ordinal).ToArray();
@@ -263,6 +283,8 @@ internal static class MappingRegistrationDiagnosticPipeline
                     MappingTypeIdentityPolicy.AcceptsPair(right, left))
                     continue;
 
+                MarkConflict(conflicts, rightMapper, ordered[later].Key);
+                MarkConflict(conflicts, leftMapper, ordered[earlier].Key);
                 diagnostics.Add(new DiagnosticCandidate(
                     64, rightMapper, ordered[later].Key, 0, right.Registration.Syntax.SpanStart, ordered[earlier].Key,
                     Diagnostic.Create(MappingRegistrationDiagnosticDescriptors.AmbiguousOpenExtensions,
@@ -277,6 +299,7 @@ internal static class MappingRegistrationDiagnosticPipeline
     private static void AddPresentationDiagnostics(
         ImmutableArray<PresentationRegistration> registrations,
         ImmutableArray<DiagnosticCandidate>.Builder candidates,
+        ImmutableDictionary<string, ImmutableHashSet<string>>.Builder conflicts,
         CancellationToken cancellationToken)
     {
         foreach (var physicalPair in registrations
@@ -314,6 +337,7 @@ internal static class MappingRegistrationDiagnosticPipeline
                     continue;
                 }
 
+                MarkConflict(conflicts, registration.MapperIdentity, physicalPair.Key);
                 candidates.Add(new DiagnosticCandidate(
                     IdOrder: 56,
                     registration.MapperIdentity,
