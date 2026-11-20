@@ -258,7 +258,7 @@ internal static class MapperSemanticFingerprintBuilder
                     SymbolNameHelper.GetFullMetadataName(map.ContainingType.OriginalDefinition) == MetadataNames.MapperBuilder)
                 {
                     result.Append('|').Append(MappingPair.FriendMappingExtensions.Find(
-                        compilation, map.TypeArguments[0], map.TypeArguments[1]));
+                        compilation, map.TypeArguments[0], map.TypeArguments[1], operation.Syntax, cancellationToken));
                 }
             }
 

@@ -255,8 +255,15 @@ internal partial class ConsumerMapper : TypeMapper
             driver: conflict.Driver, additionalReferences: [reference, Library("SecondLibrary")]);
         var hidden = GeneratorTestDriver.Run("FriendConsumer", consumer, LanguageVersion.CSharp9,
             driver: both.Driver, additionalReferences: [reference.WithAliases(["LibraryOnly"])]);
+        var aliased = reference.WithAliases(["LibraryOnly"]);
+        var imported = GeneratorTestDriver.Run("FriendConsumer",
+            consumer.Replace("using Morphant;", "extern alias LibraryOnly;\nusing Morphant;\nusing LibraryOnly::Morphant;"),
+            LanguageVersion.CSharp9, driver: hidden.Driver, additionalReferences: [aliased]);
+        var importedStatic = GeneratorTestDriver.Run("FriendConsumer",
+            consumer.Replace("using Morphant;", "extern alias LibraryOnly;\nusing Morphant;\nusing static LibraryOnly::Morphant.MorphantGeneratedMappingExtensions;"),
+            LanguageVersion.CSharp9, driver: imported.Driver, additionalReferences: [aliased]);
         var recovered = GeneratorTestDriver.Run("FriendConsumer", consumer, LanguageVersion.CSharp9,
-            driver: conflict.Driver);
+            driver: importedStatic.Driver);
         var other = GeneratorTestDriver.Run("OtherConsumer", consumer, LanguageVersion.CSharp9,
             additionalReferences: [reference]);
 
@@ -269,6 +276,10 @@ internal partial class ConsumerMapper : TypeMapper
             Assert.That(both.CompilerWarningsAndErrors.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "CS0121" }));
             Assert.That(hidden.Diagnostics, Is.Empty);
             Assert.That(hidden.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(imported.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0065" }));
+            Assert.That(imported.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(importedStatic.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0065" }));
+            Assert.That(importedStatic.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(recovered.Diagnostics, Is.Empty);
             Assert.That(recovered.GeneratedSources.Select(file => (file.HintName, file.SourceText.ToString())),
                 Is.EquivalentTo(clean.GeneratedSources.Select(file => (file.HintName, file.SourceText.ToString()))));

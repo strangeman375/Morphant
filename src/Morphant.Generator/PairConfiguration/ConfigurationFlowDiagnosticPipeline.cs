@@ -131,7 +131,8 @@ internal static class ConfigurationFlowDiagnosticPipeline
                         configuration,
                         registration) ||
                     analysis.HasConflictingSurface(registration.SourceType, registration.DestinationType) ||
-                    FriendMappingExtensions.Find(declaration.Compilation, registration.SourceType, registration.DestinationType) is not null ||
+                    FriendMappingExtensions.Find(declaration.Compilation, registration.SourceType, registration.DestinationType,
+                    registration.Syntax, cancellationToken) is not null ||
                     IsCompilerOwned(registration, configuration))
                 {
                     continue;
