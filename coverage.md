@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/19/2026 - 10:49:01 |
-| Coverage date: | 11/19/2026 - 10:38:11 - 11/19/2026 - 10:48:57 |
+| Generated on: | 11/20/2026 - 12:00:29 |
+| Coverage date: | 11/20/2026 - 11:45:21 - 11/20/2026 - 12:00:23 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 400 |
 | Files: | 222 |
-| **Line coverage:** | 90.9% (41634 of 45768) |
-| Covered lines: | 41634 |
+| **Line coverage:** | 90.9% (41646 of 45780) |
+| Covered lines: | 41646 |
 | Uncovered lines: | 4134 |
-| Coverable lines: | 45768 |
-| Total lines: | 76402 |
-| **Branch coverage:** | 79% (16248 of 20545) |
-| Covered branches: | 16248 |
-| Total branches: | 20545 |
+| Coverable lines: | 45780 |
+| Total lines: | 76424 |
+| **Branch coverage:** | 79% (16253 of 20551) |
+| Covered branches: | 16253 |
+| Total branches: | 20551 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -77,7 +77,7 @@
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
 |Morphant.Generator.Compatibility.CompilationCompatibilityDetector|97.7%|86.5%|
-|Morphant.Generator.Compatibility.LibraryCompatibilityDetector|100%|100%|
+|Morphant.Generator.Compatibility.LibraryCompatibilityDetector|100%|95.4%|
 |Morphant.Generator.Compatibility.RuntimeContractCompatibility|100%||
 |Morphant.Generator.Compatibility.RuntimeContractManifest|100%|67.1%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanModelBuilder|100%|90%|
@@ -446,4 +446,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #744](https://github.com/strangeman375/Morphant/actions/runs/44506466738).
+Full HTML report: download the **coverage** artifact from [CI run #746](https://github.com/strangeman375/Morphant/actions/runs/44729026819).
