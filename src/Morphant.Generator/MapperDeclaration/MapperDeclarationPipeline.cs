@@ -157,8 +157,6 @@ internal static class MapperDeclarationPipeline
         var allContainingDeclarationsPartial = true;
         var fileLocalIssues =
             ImmutableArray.CreateBuilder<MapperContainingTypeIssue>();
-        var inaccessibleTypeIssues =
-            ImmutableArray.CreateBuilder<MapperContainingTypeIssue>();
 
         for (var current = mapperType;
              current is not null;
@@ -179,17 +177,6 @@ internal static class MapperDeclarationPipeline
                     new MapperContainingTypeIssue(
                         current,
                         fileLocalDeclaration));
-            }
-
-            if (!IsAccessibleFromNamespaceLevel(
-                    current.DeclaredAccessibility) &&
-                declarations.FirstOrDefault() is
-                    { } inaccessibleDeclaration)
-            {
-                inaccessibleTypeIssues.Add(
-                    new MapperContainingTypeIssue(
-                        current,
-                        inaccessibleDeclaration));
             }
 
             if (SymbolEqualityComparer.Default.Equals(
@@ -216,22 +203,12 @@ internal static class MapperDeclarationPipeline
             mapperType,
             knownSymbols.TypeMapper);
         var derivesFromTypeMapper = typeMapperBase is not null;
-        var invalidSelfTypeIssue = derivesFromTypeMapper
-            ? FindInvalidSelfTypeIssue(
-                mapperType,
-                knownSymbols.TypeMapper,
-                syntaxTrees,
-                compilation,
-                input.AttributedDeclaration.Identifier.GetLocation(),
-                cancellationToken)
-            : null;
 
         return new MapperDeclarationInfo(
             input.AttributedDeclaration,
             input.Attribute,
             mapperType,
             derivesFromTypeMapper,
-            invalidSelfTypeIssue,
             !derivesFromTypeMapper && HasMalformedBaseDeclaration(
                 mapperDeclarations,
                 compilation,
@@ -241,96 +218,12 @@ internal static class MapperDeclarationPipeline
             containingPartialIssues.ToImmutable(),
             allContainingDeclarationsPartial,
             fileLocalIssues.ToImmutable(),
-            inaccessibleTypeIssues.ToImmutable(),
             FindConflictingSupportsMethods(
                 mapperType,
                 knownSymbols.SystemType,
                 syntaxTrees,
                 cancellationToken),
             compilation);
-    }
-
-    private static MapperSelfTypeIssue? FindInvalidSelfTypeIssue(
-        INamedTypeSymbol mapperType,
-        INamedTypeSymbol typeMapper,
-        SyntaxTreeOrdering syntaxTrees,
-        CSharpCompilation compilation,
-        Location fallbackLocation,
-        CancellationToken cancellationToken)
-    {
-        var seenTypes = new HashSet<ISymbol>(
-            SymbolEqualityComparer.Default);
-
-        for (var current = mapperType;
-             current is not null;
-             current = current.BaseType)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var configurationType = current.OriginalDefinition;
-
-            if (!seenTypes.Add(configurationType) ||
-                SymbolEqualityComparer.Default.Equals(
-                    configurationType,
-                    typeMapper.OriginalDefinition))
-            {
-                continue;
-            }
-
-            var configurationTypeMapper = FindBaseType(
-                configurationType,
-                typeMapper);
-
-            if (configurationTypeMapper is null)
-            {
-                continue;
-            }
-
-            var selfType = configurationTypeMapper.TypeArguments[0];
-            var isEffectiveMapper = SymbolEqualityComparer.Default.Equals(
-                current,
-                mapperType);
-            var requiresRecursiveConstraint =
-                isEffectiveMapper || selfType is ITypeParameterSymbol;
-
-            if (!requiresRecursiveConstraint ||
-                IsValidMapperSelfType(configurationType, selfType))
-            {
-                continue;
-            }
-
-            return new MapperSelfTypeIssue(
-                configurationType,
-                selfType,
-                FindMapperSelfTypeLocation(
-                    configurationType,
-                    selfType,
-                    typeMapper,
-                    syntaxTrees,
-                    compilation,
-                    cancellationToken) ??
-                fallbackLocation);
-        }
-
-        return null;
-    }
-
-    private static bool IsValidMapperSelfType(
-        INamedTypeSymbol mapperType,
-        ITypeSymbol mapperSelfType)
-    {
-        if (SymbolEqualityComparer.Default.Equals(
-                mapperSelfType,
-                mapperType))
-        {
-            return true;
-        }
-
-        return mapperSelfType is ITypeParameterSymbol typeParameter &&
-               typeParameter.ConstraintTypes.Any(constraint =>
-                   SymbolEqualityComparer.Default.Equals(
-                       constraint,
-                       mapperType));
     }
 
     private static ImmutableArray<TSyntax> GetDeclarations<TSyntax>(
@@ -364,109 +257,6 @@ internal static class MapperDeclarationPipeline
         }
 
         return null;
-    }
-
-    private static Location? FindTypeMapperArgumentLocation(
-        INamedTypeSymbol mapperType,
-        INamedTypeSymbol typeMapper,
-        SyntaxTreeOrdering syntaxTrees,
-        CSharpCompilation compilation,
-        CancellationToken cancellationToken)
-    {
-        for (var current = mapperType;
-             current is not null;
-             current = current.BaseType)
-        {
-            foreach (var declaration in current.OriginalDefinition
-                         .DeclaringSyntaxReferences
-                         .Where(reference => syntaxTrees.Contains(
-                             reference.SyntaxTree))
-                         .Select(reference =>
-                             reference.GetSyntax(cancellationToken))
-                         .OfType<ClassDeclarationSyntax>())
-            {
-                if (declaration.BaseList is not { } baseList)
-                {
-                    continue;
-                }
-
-                var semanticModel = compilation.GetSemanticModel(
-                    declaration.SyntaxTree);
-
-                foreach (var baseType in baseList.Types)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (semanticModel.GetTypeInfo(
-                            baseType.Type,
-                            cancellationToken).Type is not
-                            INamedTypeSymbol resolved ||
-                        !SymbolEqualityComparer.Default.Equals(
-                            resolved.OriginalDefinition,
-                            typeMapper.OriginalDefinition))
-                    {
-                        continue;
-                    }
-
-                    return baseType.Type
-                        .DescendantNodesAndSelf()
-                        .OfType<GenericNameSyntax>()
-                        .Where(static name =>
-                            name.TypeArgumentList.Arguments.Count == 1)
-                        .Select(name => new
-                        {
-                            Name = name,
-                            Type = semanticModel.GetTypeInfo(
-                                name,
-                                cancellationToken).Type
-                        })
-                        .Where(candidate => candidate.Type is
-                            INamedTypeSymbol named &&
-                            SymbolEqualityComparer.Default.Equals(
-                                named.OriginalDefinition,
-                                typeMapper.OriginalDefinition))
-                        .Select(static candidate => candidate.Name
-                            .TypeArgumentList.Arguments[0].GetLocation())
-                        .FirstOrDefault() ?? baseType.Type.GetLocation();
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static Location? FindMapperSelfTypeLocation(
-        INamedTypeSymbol mapperType,
-        ITypeSymbol mapperSelfType,
-        INamedTypeSymbol typeMapper,
-        SyntaxTreeOrdering syntaxTrees,
-        CSharpCompilation compilation,
-        CancellationToken cancellationToken)
-    {
-        if (mapperSelfType is ITypeParameterSymbol typeParameter &&
-            SymbolEqualityComparer.Default.Equals(
-                typeParameter.ContainingSymbol,
-                mapperType))
-        {
-            return typeParameter.DeclaringSyntaxReferences
-                .Where(reference => syntaxTrees.Contains(
-                    reference.SyntaxTree))
-                .Select(reference => reference.GetSyntax(
-                    cancellationToken))
-                .OfType<TypeParameterSyntax>()
-                .OrderBy(syntax => syntaxTrees.GetOrder(
-                    syntax.SyntaxTree))
-                .ThenBy(static syntax => syntax.SpanStart)
-                .Select(static syntax => syntax.Identifier.GetLocation())
-                .FirstOrDefault();
-        }
-
-        return FindTypeMapperArgumentLocation(
-            mapperType,
-            typeMapper,
-            syntaxTrees,
-            compilation,
-            cancellationToken);
     }
 
     private static bool HasMalformedBaseDeclaration(
@@ -544,14 +334,5 @@ internal static class MapperDeclarationPipeline
     private static bool HasFileModifier(TypeDeclarationSyntax declaration)
     {
         return declaration.Modifiers.Any(SyntaxKind.FileKeyword);
-    }
-
-    private static bool IsAccessibleFromNamespaceLevel(
-        Accessibility accessibility)
-    {
-        return accessibility is
-            Accessibility.Public or
-            Accessibility.Internal or
-            Accessibility.ProtectedOrInternal;
     }
 }

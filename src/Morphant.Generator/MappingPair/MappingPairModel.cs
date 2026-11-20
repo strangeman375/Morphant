@@ -18,8 +18,6 @@ internal readonly record struct MapperMappingPairModel(
     string MapperIdentity,
     ImmutableArray<MappingPairModel> Pairs,
     ImmutableArray<UnsupportedMappingPairModel> UnsupportedPairs,
-    ImmutableArray<InvalidMapperFamilyMappingPairModel>
-        InvalidMapperFamilyPairs,
     ImmutableArray<UnavailableMappingPairModel> UnavailablePairs,
     ImmutableArray<DuplicateMappingPairRegistrationModel>
         DuplicateRegistrations,
@@ -43,16 +41,6 @@ internal readonly record struct UnsupportedMappingPairModel(
     MappingPairRegistrationModel Registration,
     MappingPairIdentity Identity,
     ImmutableArray<UnsupportedMappingRootModel> UnsupportedRoots)
-{
-    public ITypeSymbol SourceType => Registration.SourceType;
-
-    public ITypeSymbol DestinationType => Registration.DestinationType;
-}
-
-internal readonly record struct InvalidMapperFamilyMappingPairModel(
-    MappingPairRegistrationModel Registration,
-    MappingPairIdentity Identity,
-    ImmutableArray<ITypeParameterSymbol> MissingTypeParameters)
 {
     public ITypeSymbol SourceType => Registration.SourceType;
 

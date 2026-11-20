@@ -10,9 +10,7 @@ internal static class MappingPairPipeline
     internal static MapperMappingPairModel? BuildModel(
         MapperMappingRegistrationModel mappingInfo,
         CSharpCompilation compilation,
-        CancellationToken cancellationToken,
-        MapperMappingRegistrationModel? mapperFamilyParameterRegistrations =
-            null)
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var semanticModel = compilation.GetSemanticModel(
@@ -30,8 +28,6 @@ internal static class MappingPairPipeline
         var pairs = ImmutableArray.CreateBuilder<MappingPairModel>();
         var unsupportedPairs =
             ImmutableArray.CreateBuilder<UnsupportedMappingPairModel>();
-        var invalidMapperFamilyPairs = ImmutableArray.CreateBuilder<
-            InvalidMapperFamilyMappingPairModel>();
         var unavailablePairs =
             ImmutableArray.CreateBuilder<UnavailableMappingPairModel>();
         var duplicateRegistrations = ImmutableArray.CreateBuilder<
@@ -148,25 +144,6 @@ internal static class MappingPairPipeline
                 continue;
             }
 
-            var parameterRegistration = FindParameterRegistration(
-                mapperFamilyParameterRegistrations,
-                registration);
-            var missingTypeParameters = MapperFamilyTypeParameterPolicy
-                .FindMissingPairParameters(
-                    mapperType,
-                    parameterRegistration.SourceType,
-                    parameterRegistration.DestinationType);
-
-            if (!missingTypeParameters.IsEmpty)
-            {
-                invalidMapperFamilyPairs.Add(
-                    new InvalidMapperFamilyMappingPairModel(
-                        registration,
-                        identity,
-                        missingTypeParameters));
-                continue;
-            }
-
             pairs.Add(new MappingPairModel(
                 registration,
                 identity,
@@ -179,12 +156,9 @@ internal static class MappingPairPipeline
 
         var immutablePairs = pairs.ToImmutable();
         var immutableUnsupportedPairs = unsupportedPairs.ToImmutable();
-        var immutableInvalidMapperFamilyPairs =
-            invalidMapperFamilyPairs.ToImmutable();
         var unifiable = FindUnifiableContracts(
             immutablePairs,
             immutableUnsupportedPairs,
-            immutableInvalidMapperFamilyPairs,
             cancellationToken);
 
         immutablePairs = immutablePairs
@@ -199,38 +173,15 @@ internal static class MappingPairPipeline
             SymbolNameHelper.GetFullMetadataName(mapperType),
             immutablePairs,
             immutableUnsupportedPairs,
-            immutableInvalidMapperFamilyPairs,
             unavailablePairs.ToImmutable(),
             duplicateRegistrations.ToImmutable(),
             unifiable.Conflicts,
             unifiable.HasAny);
     }
 
-    private static MappingPairRegistrationModel FindParameterRegistration(
-        MapperMappingRegistrationModel? registrations,
-        MappingPairRegistrationModel fallback)
-    {
-        if (registrations is { } candidates)
-        {
-            foreach (var candidate in candidates.Registrations)
-            {
-                if (candidate.Syntax.SyntaxTree ==
-                        fallback.Syntax.SyntaxTree &&
-                    candidate.Syntax.Span == fallback.Syntax.Span)
-                {
-                    return candidate;
-                }
-            }
-        }
-
-        return fallback;
-    }
-
     private static UnifiableContracts FindUnifiableContracts(
         ImmutableArray<MappingPairModel> pairs,
         ImmutableArray<UnsupportedMappingPairModel> unsupportedPairs,
-        ImmutableArray<InvalidMapperFamilyMappingPairModel>
-            invalidMapperFamilyPairs,
         CancellationToken cancellationToken)
     {
         var contracts = pairs
@@ -248,14 +199,6 @@ internal static class MappingPairPipeline
                 pair.Identity,
                 pair.SourceType,
                 pair.DestinationType)))
-            .Concat(invalidMapperFamilyPairs.Select((pair, index) =>
-                new Contract(
-                    Supported: false,
-                    index,
-                    pair.Registration,
-                    pair.Identity,
-                    pair.SourceType,
-                    pair.DestinationType)))
             .OrderBy(static contract =>
                 contract.Registration.Syntax.SpanStart)
             .ThenBy(static contract => contract.Identity.Source.Key,

@@ -177,8 +177,7 @@ internal static class TypeMapperModelBuilder
             mapperType);
         var mappings = ImmutableArray.CreateBuilder<OrderedMapping>(
             configuration.Pairs.Length +
-            configuration.MappingPairs.UnsupportedPairs.Length +
-            configuration.MappingPairs.InvalidMapperFamilyPairs.Length);
+            configuration.MappingPairs.UnsupportedPairs.Length);
         var configuredPairKeys = new HashSet<MappingIdentityKey>();
 
         foreach (var pairConfiguration in configuration.Pairs)
@@ -342,29 +341,6 @@ internal static class TypeMapperModelBuilder
                     unsupportedPair,
                     compilation,
                     mapperType),
-                TransferredCodePolicy.Empty));
-        }
-
-        foreach (var invalidPair in
-                 configuration.MappingPairs.InvalidMapperFamilyPairs)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (analysis.Excludes(invalidPair.Identity))
-            {
-                continue;
-            }
-
-            mappings.Add(new OrderedMapping(
-                invalidPair.Registration.Syntax.SpanStart,
-                BuildFailedMapping(
-                    invalidPair.Registration,
-                    invalidPair.Identity,
-                    compilation,
-                    mapperType,
-                    MappingFailureReason.UnsupportedMappingContract,
-                    BuildInvalidMapperFamilyParameterReason(invalidPair),
-                    MappingObservationOriginKind.Registration),
                 TransferredCodePolicy.Empty));
         }
 
@@ -557,22 +533,6 @@ internal static class TypeMapperModelBuilder
                 $"The {GetRoleName(root.Role)} type " +
                 $"'{MapperContractDisplay.CreateType(root.Type)}' is not " +
                 $"supported as a mapping root because it is {root.Reason}."));
-    }
-
-    private static string BuildInvalidMapperFamilyParameterReason(
-        InvalidMapperFamilyMappingPairModel pair)
-    {
-        var subject = pair.MissingTypeParameters.Length == 1
-            ? "The mapper family type parameter "
-            : "The mapper family type parameters ";
-        var parameters = string.Join(
-            ", ",
-            pair.MissingTypeParameters.Select(static parameter =>
-                "'" + parameter.Name + "'"));
-
-        return subject + parameters +
-               " must occur in the source or destination type of this " +
-               "mapping.";
     }
 
     private static string GetRoleName(MappingTypeRole role)

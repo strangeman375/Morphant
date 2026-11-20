@@ -74,9 +74,7 @@ internal static class TypeMapperConfigurePipeline
         var syntaxTrees = new SyntaxTreeOrdering(
             compilation.SyntaxTrees);
 
-        if (!declaration.DerivesFromTypeMapper ||
-            declaration.HasInvalidSelfTypeDiagnostic ||
-            !declaration.InaccessibleTypeIssues.IsEmpty)
+        if (!declaration.DerivesFromTypeMapper)
         {
             return null;
         }
