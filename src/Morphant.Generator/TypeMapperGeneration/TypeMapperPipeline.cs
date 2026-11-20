@@ -21,7 +21,7 @@ internal static class TypeMapperPipeline
             context,
             assemblySettings,
             MappingRegistrationDiagnosticPipeline.CheckRegistrations(context,
-                MapperContractPipeline.Build(context, mapperConfigurations), reportDiagnostics: false));
+                MapperContractPipeline.Build(context, mapperConfigurations), out _));
     }
 
     public static void Register(

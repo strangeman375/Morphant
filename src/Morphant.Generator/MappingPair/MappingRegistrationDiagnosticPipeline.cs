@@ -10,18 +10,14 @@ internal static class MappingRegistrationDiagnosticPipeline
     public static IncrementalValuesProvider<MapperContractAnalysis> CheckRegistrations(
         IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<MapperContractAnalysis> analyses,
-        bool reportDiagnostics)
+        out IncrementalValueProvider<ImmutableArray<Diagnostic>> diagnostics)
     {
         var checks = GeneratorStageGuard.Select(
             context, analyses.Collect(), "BuildMappingRegistrationDiagnostics",
             static (all, token) => CheckRegistrations(all, token),
             new RegistrationChecks(ImmutableArray<Diagnostic>.Empty,
                 ImmutableDictionary<string, ImmutableHashSet<string>>.Empty));
-        if (reportDiagnostics)
-        {
-            DiagnosticPipeline.Register(context, checks.Select(static (result, _) => result.Diagnostics),
-                "MappingRegistrationDiagnostics");
-        }
+        diagnostics = checks.Select(static (result, _) => result.Diagnostics);
 
         var conflicts = checks.Select(static (result, _) => result.Conflicts);
         return analyses.Combine(conflicts).Select(static (input, _) =>
