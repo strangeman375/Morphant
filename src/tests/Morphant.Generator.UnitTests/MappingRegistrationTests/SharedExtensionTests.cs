@@ -7,6 +7,33 @@ namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 [TestFixture]
 internal sealed class SharedExtensionTests
 {
+    [Test]
+    public void Renaming_generic_parameters_preserves_extension_file_names()
+    {
+        const string source = """
+#nullable enable
+using Morphant;
+internal sealed class Box<A,B> { }
+internal sealed class Destination<T> { }
+[MorphantMapper]
+internal partial class Mapper<TFirst, TSecond> : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Box<TSecond, TFirst>, Destination<TSecond>>();
+}
+""";
+        var original = MappingRegistrationGeneratorTest.Run(source);
+        var renamed = MappingRegistrationGeneratorTest.Run(
+            source.Replace("TFirst", "X").Replace("TSecond", "Y"), driver: original.Driver);
+
+        Assert.That(original.Diagnostics, Is.Empty);
+        Assert.That(renamed.Diagnostics, Is.Empty);
+        Assert.That(original.CompilerWarningsAndErrors, Is.Empty);
+        Assert.That(renamed.CompilerWarningsAndErrors, Is.Empty);
+        Assert.That(renamed.GeneratedSources.Select(file => file.HintName),
+            Is.EquivalentTo(original.GeneratedSources.Select(file => file.HintName)));
+    }
+
     [TestCase("Box<T, int>", "Box<string, U>", true)]
     [TestCase("Box<T, int>", "Box<U, long>", false)]
     [TestCase("Box<T, int>", "Box<U, int>", false)]

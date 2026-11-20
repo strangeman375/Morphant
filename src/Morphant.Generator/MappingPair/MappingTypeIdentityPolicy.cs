@@ -5,12 +5,14 @@ namespace Morphant.Generator.MappingPair;
 
 internal static class MappingTypeIdentityPolicy
 {
-    public static MappingTypeIdentity Create(ITypeSymbol type)
+    public static MappingTypeIdentity Create(
+        ITypeSymbol type,
+        IReadOnlyDictionary<ITypeParameterSymbol, string>? parameterNames = null)
     {
         var key = new StringBuilder();
         var displayName = new StringBuilder();
 
-        Append(type, key, displayName);
+        Append(type, key, displayName, parameterNames);
 
         return new MappingTypeIdentity(
             key.ToString(),
@@ -151,7 +153,8 @@ internal static class MappingTypeIdentityPolicy
     private static void Append(
         ITypeSymbol type,
         StringBuilder key,
-        StringBuilder displayName)
+        StringBuilder displayName,
+        IReadOnlyDictionary<ITypeParameterSymbol, string>? parameterNames)
     {
         if (IsObjectLike(type))
         {
@@ -163,7 +166,7 @@ internal static class MappingTypeIdentityPolicy
         if (type is IArrayTypeSymbol arrayType)
         {
             key.Append("array(");
-            Append(arrayType.ElementType, key, displayName);
+            Append(arrayType.ElementType, key, displayName, parameterNames);
             key.Append(';')
                 .Append(arrayType.Rank)
                 .Append(';')
@@ -190,7 +193,7 @@ internal static class MappingTypeIdentityPolicy
                 .Append((int)typeParameter.TypeParameterKind)
                 .Append(':')
                 .Append(typeParameter.Ordinal);
-            displayName.Append(typeParameter.Name);
+            displayName.Append(parameterNames is null ? typeParameter.Name : parameterNames[typeParameter]);
             return;
         }
 
@@ -206,7 +209,8 @@ internal static class MappingTypeIdentityPolicy
         AppendNamed(
             Normalize(namedType),
             key,
-            displayName);
+            displayName,
+            parameterNames);
     }
 
     private static void AppendAlphaEquivalentKey(
@@ -319,14 +323,16 @@ internal static class MappingTypeIdentityPolicy
     private static void AppendNamed(
         INamedTypeSymbol type,
         StringBuilder key,
-        StringBuilder displayName)
+        StringBuilder displayName,
+        IReadOnlyDictionary<ITypeParameterSymbol, string>? parameterNames)
     {
         if (type.ContainingType is { } containingType)
         {
             AppendNamed(
                 Normalize(containingType),
                 key,
-                displayName);
+                displayName,
+                parameterNames);
             key.Append('+');
             displayName.Append('.');
         }
@@ -371,7 +377,8 @@ internal static class MappingTypeIdentityPolicy
             Append(
                 type.TypeArguments[index],
                 key,
-                displayName);
+                displayName,
+                parameterNames);
         }
 
         key.Append('>');

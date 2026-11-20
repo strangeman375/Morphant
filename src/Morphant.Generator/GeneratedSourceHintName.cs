@@ -50,11 +50,13 @@ internal static class GeneratedSourceHintName
         return Create(artifactKind, BuildTypeLabel(destination), identity);
     }
 
-    public static string BuildTypeLabel(ITypeSymbol type)
+    public static string BuildTypeLabel(
+        ITypeSymbol type,
+        IReadOnlyDictionary<ITypeParameterSymbol, string>? parameterNames = null)
     {
         if (type is IArrayTypeSymbol array)
         {
-            return BuildTypeLabel(array.ElementType) + "Array" +
+            return BuildTypeLabel(array.ElementType, parameterNames) + "Array" +
                    array.Rank.ToString(CultureInfo.InvariantCulture);
         }
 
@@ -66,7 +68,9 @@ internal static class GeneratedSourceHintName
                    tuple.Elements.Length.ToString(CultureInfo.InvariantCulture);
         }
 
-        return HintNameHelper.ToHintNamePart(type.Name);
+        return type is ITypeParameterSymbol parameter && parameterNames is not null
+            ? parameterNames[parameter]
+            : HintNameHelper.ToHintNamePart(type.Name);
     }
 
     private static string TakeUtf8Prefix(string value, int maxByteCount)
