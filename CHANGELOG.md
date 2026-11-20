@@ -10,9 +10,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Added
 
-- Report `MORPH0063` at compile time when a referenced library was built with
-  an incompatible Morphant version, instead of failing at run time with
-  `TypeLoadException` or `MissingMethodException`. See
+- Report `MORPH0063` when a compiled library reference records a dependency
+  on an incompatible Morphant version. See
   [Version compatibility](docs/compatibility.md).
 
 ## [0.5.0]

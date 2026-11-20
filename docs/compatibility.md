@@ -20,15 +20,14 @@ A library built with an incompatible version can fail at run time with
 
 ## Build-time check
 
-In a project that references Morphant directly, Morphant checks the referenced
-libraries that use Morphant and reports [MORPH0063](diagnostics/MORPH0063.md)
-for a library built with an incompatible version. The check sees a library's
-dependency on Morphant only in the references passed to the compiler:
+A project with a direct `Morphant` package reference reports
+[MORPH0063](diagnostics/MORPH0063.md) when a library DLL supplied to the
+compiler records a dependency on an incompatible Morphant version. Add a
+direct package reference to enable the check in an application that receives
+Morphant transitively.
 
-- A project that receives Morphant only transitively is not checked. To check
-  an application, add a direct reference to the `Morphant` package.
-- A project reference is usually compiled against the library's reference
-  assembly, which contains only its API. If that API does not use Morphant
-  types, for example because the library's mappers are internal, the
-  dependency is not visible. Keep the projects of one solution on the same
-  Morphant version, for example with central package management.
+For a project reference, an IDE can supply source while you edit. The check
+waits until the compiler receives a DLL. An SDK build usually uses a reference
+assembly, which can omit a dependency used only in a method body. Keep projects
+in the same solution on compatible Morphant versions, for example with central
+package management.
