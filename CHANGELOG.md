@@ -14,6 +14,13 @@ See [current limitations](docs/limitations.md) for features not yet included.
   on an incompatible Morphant version. See
   [Version compatibility](docs/compatibility.md).
 
+### Fixed
+
+- Preserve required generic constraints on shared mapping configuration methods
+  and report ambiguous open registrations only for matching type arguments.
+- Report conflicting inherited tuple names and friend assembly imports at the
+  affected registrations, including after source files change.
+
 ### Migrating from 0.5
 
 Derive mappers from `TypeMapper`. Replace `TypeMapper<OrderMapper>` with

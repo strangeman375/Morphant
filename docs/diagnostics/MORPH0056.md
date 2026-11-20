@@ -5,6 +5,8 @@
 Two registrations in one assembly use the same CLR types with different tuple
 element names, nested nullable annotations, or uses of `dynamic` and `object`.
 These differences affect the callbacks and member names available for that pair.
+The same rule applies to open registrations inherited by different mappers,
+even when the derived mappers supply different concrete type arguments.
 
 ## Fix
 
