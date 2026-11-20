@@ -80,6 +80,33 @@ internal sealed class Dto { }
         Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
     }
 
+    [TestCase("T", "int", true)]
+    [TestCase("T[]", "int", false)]
+    [TestCase("T[]", "int[]", true)]
+    public void An_invariant_interface_can_fix_a_remaining_type_parameter(string implemented, string required, bool conflicts)
+    {
+        var source = $$"""
+#nullable enable
+using Morphant;
+internal sealed class Triple<A,B,C> { }
+internal interface IInv<T> { }
+internal sealed class Box<T> : IInv<{{implemented}}> { }
+internal sealed class Rel<A,B> where A : B { }
+internal sealed class Dto { }
+[MorphantMapper] internal partial class First<A,B> : TypeMapper where A : B
+{
+ protected override void Configure(MapperBuilder b) => b.Map<Triple<A,B,Rel<A,B>>,Dto>();
+}
+[MorphantMapper] internal partial class Second<T,Z> : TypeMapper
+{
+ protected override void Configure(MapperBuilder b) => b.Map<Triple<Box<T>,IInv<{{required}}>,Z>,Dto>();
+}
+""";
+        var result = MappingRegistrationGeneratorTest.Run(source, LanguageVersion.CSharp9);
+        Assert.That(result.Diagnostics.Select(d => d.Id), Is.EqualTo(conflicts ? new[] { "MORPH0064" } : Array.Empty<string>()));
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
     [TestCase("struct", false)]
     [TestCase("System.IDisposable", true)]
     public void A_remaining_free_parameter_must_satisfy_both_definitions(string requirement, bool conflicts)

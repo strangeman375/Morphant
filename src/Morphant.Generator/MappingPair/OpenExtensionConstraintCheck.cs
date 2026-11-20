@@ -21,17 +21,22 @@ internal static class OpenExtensionConstraintCheck
 
     // The unified receiver contains the constraints from both registrations.
     // Ask the same compiler that binds the DSL whether it can declare it.
-    public static bool CanConstruct(string source, string destination, IReadOnlyCollection<string> parameters,
-        CSharpCompilation compilation, CancellationToken token)
+    public static bool CanConstruct(OpenExtensionReceiver receiver, CSharpCompilation compilation, CancellationToken token) =>
+        CanConstruct(receiver, compilation, new HashSet<(string, string)>(), token);
+
+    private static bool CanConstruct(OpenExtensionReceiver receiver, CSharpCompilation compilation,
+        HashSet<(string, string)> visited, CancellationToken token)
     {
-        var generic = parameters.Count == 0 ? "" : "<" + string.Join(", ", parameters) + ">";
-        var signature = "private static void Check" + generic + "(" + source + " x, " + destination + " y)";
+        if (!visited.Add((receiver.Source, receiver.Destination)))
+            return false;
+        var generic = receiver.Parameters.Length == 0 ? "" : "<" + string.Join(", ", receiver.Parameters) + ">";
+        var signature = "private static void Check" + generic + "(" + receiver.Source + " x, " + receiver.Destination + " y)";
         var options = (CSharpParseOptions)compilation.SyntaxTrees.First().Options;
         var model = Bind("");
         var diagnostics = model.GetDeclarationDiagnostics(cancellationToken: token);
         if (!diagnostics.Any(IsConstraintViolation))
             return true;
-        if (parameters.Count == 0)
+        if (receiver.Parameters.Length == 0)
             return false;
 
         var method = model.SyntaxTree.GetRoot(token).DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
@@ -40,17 +45,24 @@ internal static class OpenExtensionConstraintCheck
             symbol.TypeParameters, GeneratedTypeNameBuilder.AllocateTypeParameterNames(symbol.TypeParameters), model.Compilation);
         var clauses = string.Concat(bounds.Where(static p => !p.Constraints.IsEmpty)
             .Select(static p => " where " + p.Name + " : " + string.Join(", ", p.Constraints)));
-        if (clauses.Length == 0)
-            return false;
+        if (clauses.Length != 0 &&
+            !Bind(clauses).GetDeclarationDiagnostics(cancellationToken: token).Any(d => d.Severity == DiagnosticSeverity.Error))
+            return true;
 
-        model = Bind(clauses);
-        diagnostics = model.GetDeclarationDiagnostics(cancellationToken: token);
-        // A concrete bound obtained by substitution (for example, T : string)
-        // can have a witness even though C# cannot spell it in a where clause.
-        var clauseSyntax = model.SyntaxTree.GetRoot(token).DescendantNodes().OfType<TypeParameterConstraintClauseSyntax>();
-        return diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error &&
-                   clauseSyntax.Any(clause => clause.Span.Contains(d.Location.SourceSpan))) ||
-               !diagnostics.Any(IsConstraintViolation);
+        // Some intersections exist only for specific residual arguments. In
+        // particular IInvariant<T> can match IInvariant<int> only at T = int.
+        var source = symbol.Parameters[0].Type;
+        var destination = symbol.Parameters[1].Type;
+        foreach (var (from, to) in Specializations(source, model.Compilation, token)
+                     .Concat(Specializations(destination, model.Compilation, token)))
+        {
+            var candidate = MappingTypeIdentityPolicy.SpecializeReceiver(source, destination, from, to);
+            if (candidate is not null && candidate.Parameters.Length < receiver.Parameters.Length &&
+                CanConstruct(candidate, compilation, visited, token))
+                return true;
+        }
+
+        return false;
 
         SemanticModel Bind(string constraints)
         {
@@ -61,7 +73,89 @@ internal static class OpenExtensionConstraintCheck
         }
     }
 
+    private static IEnumerable<(ITypeSymbol From, ITypeSymbol To)> Specializations(
+        ITypeSymbol type, Compilation compilation, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (type is IArrayTypeSymbol array)
+        {
+            foreach (var candidate in Specializations(array.ElementType, compilation, token))
+                yield return candidate;
+        }
+
+        if (type is not INamedTypeSymbol named)
+            yield break;
+
+        if (named.ContainingType is { } container)
+        {
+            foreach (var candidate in Specializations(container, compilation, token))
+                yield return candidate;
+        }
+
+        for (var i = 0; i < named.Arity; i++)
+        {
+            var argument = named.TypeArguments[i];
+            foreach (var bound in named.TypeParameters[i].ConstraintTypes)
+            {
+                var required = MapperTypeSubstitution.Substitute(bound,
+                    MapperTypeSubstitution.Build(named.OriginalDefinition, named), compilation);
+                foreach (var conversion in ConversionEqualities(argument, required))
+                    yield return conversion;
+            }
+            foreach (var candidate in Specializations(argument, compilation, token))
+                yield return candidate;
+        }
+    }
+
+    private static IEnumerable<(ITypeSymbol From, ITypeSymbol To)> ConversionEqualities(ITypeSymbol from, ITypeSymbol to)
+    {
+        if (SymbolEqualityComparer.Default.Equals(from, to))
+            yield break;
+
+        yield return (from, to);
+        if (from is ITypeParameterSymbol)
+            yield break;
+
+        var projections = from.AllInterfaces.AsEnumerable().Concat(BaseTypes(from));
+        if (to is ITypeParameterSymbol)
+        {
+            foreach (var projection in projections)
+                yield return (projection, to);
+        }
+        else if (to is INamedTypeSymbol target && target.Arity > 0)
+        {
+            if (from is INamedTypeSymbol source)
+                projections = projections.Prepend(source);
+
+            foreach (var projection in projections.Where(p =>
+                         SymbolEqualityComparer.Default.Equals(p.OriginalDefinition, target.OriginalDefinition)))
+            {
+                yield return (projection, target);
+                for (var i = 0; i < target.Arity; i++)
+                {
+                    var actual = projection.TypeArguments[i];
+                    var expected = target.TypeArguments[i];
+                    if (target.TypeParameters[i].Variance == VarianceKind.None)
+                        yield return (actual, expected);
+                    else
+                    {
+                        var covariant = target.TypeParameters[i].Variance == VarianceKind.Out;
+                        foreach (var equality in ConversionEqualities(covariant ? actual : expected, covariant ? expected : actual))
+                            yield return equality;
+                    }
+                }
+            }
+        }
+
+        static IEnumerable<INamedTypeSymbol> BaseTypes(ITypeSymbol type)
+        {
+            for (var current = type.BaseType; current is not null; current = current.BaseType)
+                yield return current;
+        }
+    }
+
     private static bool IsConstraintViolation(Diagnostic d) => d.Severity == DiagnosticSeverity.Error &&
         d.Id is "CS0310" or "CS0311" or "CS0312" or "CS0313" or "CS0314" or "CS0315" or
                 "CS0452" or "CS0453" or "CS8377" or "CS9040" or "CS9244";
 }
+internal sealed record OpenExtensionReceiver(string Source, string Destination, string[] Parameters);

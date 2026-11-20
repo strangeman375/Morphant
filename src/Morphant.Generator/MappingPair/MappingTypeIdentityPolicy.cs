@@ -148,10 +148,16 @@ internal static class MappingTypeIdentityPolicy
             !OpenExtensionConstraintCheck.HasConstraints(right.DestinationType))
             return true;
 
-        var parameters = new Dictionary<TypeTerm, string>();
-        var source = unifier.Format(new(left.SourceType, false), parameters);
-        var destination = unifier.Format(new(left.DestinationType, false), parameters);
-        return OpenExtensionConstraintCheck.CanConstruct(source, destination, parameters.Values, compilation, cancellationToken);
+        return OpenExtensionConstraintCheck.CanConstruct(
+            unifier.Receiver(left.SourceType, left.DestinationType), compilation, cancellationToken);
+    }
+
+    internal static OpenExtensionReceiver? SpecializeReceiver(ITypeSymbol source, ITypeSymbol destination,
+        ITypeSymbol from, ITypeSymbol to)
+    {
+        var unifier = new Unifier();
+        return !SymbolEqualityComparer.Default.Equals(from, to) && unifier.Match(new(from, false), new(to, false))
+            ? unifier.Receiver(source, destination) : null;
     }
 
     internal static bool IsMoreSpecificExtension(MappingPairModel left, MappingPairModel right) =>
@@ -503,7 +509,15 @@ internal static class MappingTypeIdentityPolicy
             return true;
         }
 
-        public string Format(TypeTerm term, Dictionary<TypeTerm, string> parameters)
+        public OpenExtensionReceiver Receiver(ITypeSymbol source, ITypeSymbol destination)
+        {
+            var parameters = new Dictionary<TypeTerm, string>();
+            var sourceName = Format(new(source, false), parameters);
+            var destinationName = Format(new(destination, false), parameters);
+            return new OpenExtensionReceiver(sourceName, destinationName, parameters.Values.ToArray());
+        }
+
+        private string Format(TypeTerm term, Dictionary<TypeTerm, string> parameters)
         {
             term = Resolve(term);
             if (term.Type is ITypeParameterSymbol)
