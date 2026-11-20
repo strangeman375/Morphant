@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -107,7 +108,8 @@ internal static class OpenExtensionConstraintCheck
         }
     }
 
-    private static IEnumerable<(ITypeSymbol From, ITypeSymbol To)> ConversionEqualities(ITypeSymbol from, ITypeSymbol to)
+    private static IEnumerable<(ITypeSymbol From, ITypeSymbol To)> ConversionEqualities(
+        ITypeSymbol from, ITypeSymbol to, ImmutableStack<(INamedTypeSymbol, INamedTypeSymbol)>? expansions = null)
     {
         if (SymbolEqualityComparer.Default.Equals(from, to))
             yield break;
@@ -115,6 +117,14 @@ internal static class OpenExtensionConstraintCheck
         yield return (from, to);
         if (from is ITypeParameterSymbol)
             yield break;
+
+        if (from is IArrayTypeSymbol sourceArray && to is IArrayTypeSymbol targetArray &&
+            sourceArray.Rank == targetArray.Rank)
+        {
+            foreach (var equality in ConversionEqualities(sourceArray.ElementType, targetArray.ElementType, expansions))
+                yield return equality;
+            yield break;
+        }
 
         var projections = from.AllInterfaces.AsEnumerable().Concat(BaseTypes(from));
         if (to is ITypeParameterSymbol)
@@ -125,7 +135,20 @@ internal static class OpenExtensionConstraintCheck
         else if (to is INamedTypeSymbol target && target.Arity > 0)
         {
             if (from is INamedTypeSymbol source)
-                projections = projections.Prepend(source);
+            {
+                if (SymbolEqualityComparer.Default.Equals(source.OriginalDefinition, target.OriginalDefinition))
+                    projections = new[] { source };
+                else
+                {
+                    // Recursive variant interfaces can revisit a definition
+                    // with ever larger arguments. Expand each such edge once.
+                    expansions ??= ImmutableStack<(INamedTypeSymbol, INamedTypeSymbol)>.Empty;
+                    var edge = (source.OriginalDefinition, target.OriginalDefinition);
+                    if (expansions.Contains(edge))
+                        yield break;
+                    expansions = expansions.Push(edge);
+                }
+            }
 
             foreach (var projection in projections.Where(p =>
                          SymbolEqualityComparer.Default.Equals(p.OriginalDefinition, target.OriginalDefinition)))
@@ -140,7 +163,8 @@ internal static class OpenExtensionConstraintCheck
                     else
                     {
                         var covariant = target.TypeParameters[i].Variance == VarianceKind.Out;
-                        foreach (var equality in ConversionEqualities(covariant ? actual : expected, covariant ? expected : actual))
+                        foreach (var equality in ConversionEqualities(
+                                     covariant ? actual : expected, covariant ? expected : actual, expansions))
                             yield return equality;
                     }
                 }

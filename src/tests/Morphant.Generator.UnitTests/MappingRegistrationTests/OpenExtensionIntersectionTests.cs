@@ -80,10 +80,12 @@ internal sealed class Dto { }
         Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
     }
 
-    [TestCase("T", "int", true)]
-    [TestCase("T[]", "int", false)]
-    [TestCase("T[]", "int[]", true)]
-    public void An_invariant_interface_can_fix_a_remaining_type_parameter(string implemented, string required, bool conflicts)
+    [TestCase("T", "int", "", true)]
+    [TestCase("T[]", "int", "", false)]
+    [TestCase("T[]", "int[]", "", true)]
+    [TestCase("T", "int", "[]", true)]
+    [TestCase("T[]", "int", "[]", false)]
+    public void An_invariant_interface_can_fix_a_remaining_type_parameter(string implemented, string required, string suffix, bool conflicts)
     {
         var source = $$"""
 #nullable enable
@@ -99,7 +101,7 @@ internal sealed class Dto { }
 }
 [MorphantMapper] internal partial class Second<T,Z> : TypeMapper
 {
- protected override void Configure(MapperBuilder b) => b.Map<Triple<Box<T>,IInv<{{required}}>,Z>,Dto>();
+ protected override void Configure(MapperBuilder b) => b.Map<Triple<Box<T>{{suffix}},IInv<{{required}}>{{suffix}},Z>,Dto>();
 }
 """;
         var result = MappingRegistrationGeneratorTest.Run(source, LanguageVersion.CSharp9);

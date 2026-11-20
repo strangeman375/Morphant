@@ -142,6 +142,7 @@ internal static class PairTypeParameterModelBuilder
             return;
 
         var substitutions = MapperTypeSubstitution.Build(owner.OriginalDefinition, owner);
+        var expanding = new HashSet<(INamedTypeSymbol, INamedTypeSymbol)>();
         foreach (var bound in formal.ConstraintTypes)
             AddConversion(argument, MapperTypeSubstitution.Substitute(bound, substitutions, compilation));
 
@@ -186,6 +187,11 @@ internal static class PairTypeParameterModelBuilder
             if (implementation is null)
                 return;
 
+            var edge = (source.OriginalDefinition, target.OriginalDefinition);
+            var inherited = !SymbolEqualityComparer.Default.Equals(edge.Item1, edge.Item2);
+            if (inherited && !expanding.Add(edge))
+                return;
+
             for (var i = 0; i < target.Arity; i++)
             {
                 var actual = implementation.TypeArguments[i];
@@ -200,6 +206,9 @@ internal static class PairTypeParameterModelBuilder
                         break;
                 }
             }
+
+            if (inherited)
+                expanding.Remove(edge);
         }
     }
 
