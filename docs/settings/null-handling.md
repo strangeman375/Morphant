@@ -63,4 +63,9 @@ a null-result check. Reference-type nullable annotations do not change the
 registered mapping or its null-handling settings. Direct `Create` and `Update`
 calls use the destination annotation of `ITypeMapper<TSource, TDestination>`.
 
+For a reference destination, `Convert`, `ConstructUsing` and `ResolveUsing`
+may return null with either spelling of the registration. The mapper
+implements `ITypeMapper<Source, Destination>` for both. Nullable value types
+such as `int?` are distinct mapping types.
+
 See the [settings overview](README.md) for levels and precedence.

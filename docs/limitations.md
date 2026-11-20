@@ -12,6 +12,7 @@ For supported features and examples, see the [mapping guides](README.md#mapping-
 - automatic immutable Update reconstruction;
 - keyed mappings or discriminator-based dispatch;
 - preserving shared object references or mapping cycles;
+- multiple [presentations of one mapping pair](diagnostics/MORPH0056.md) in one assembly;
 - cross-assembly configuration inheritance;
 - generated DI registration;
 - configurable enum mapping, reverse mapping, before/after hooks or async

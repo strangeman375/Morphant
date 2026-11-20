@@ -15,7 +15,7 @@ public partial class Container
 {
     [MorphantMapper]
     public sealed partial class ApplicationMapper :
-        TypeMapper<ApplicationMapper>
+        TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();

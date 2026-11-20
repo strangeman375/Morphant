@@ -24,7 +24,6 @@ branch.
 
 If the diagnostic points to a fluent callback method, remove or rename the
 competing extension overload, or call it outside the Morphant configuration
-chain. In a reusable mapper family, also check that the callback uses the types
-and tuple element names declared by its own `Map` registration.
+chain.
 
 [All diagnostics](../diagnostics.md)

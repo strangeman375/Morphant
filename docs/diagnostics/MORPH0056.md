@@ -1,21 +1,16 @@
-# MORPH0056: Tuple presentation is conflicting
+# MORPH0056: Mapping pair presentations conflict
 
 ## Cause
 
-Two registrations in one effective mapper have the same underlying source and
-destination types but present a tuple differently on at least one side. The
-effective mapper includes configuration connected through `base.Configure`.
-A presentation includes recursive element names, nullable annotations and the
-choice between `dynamic` and `object`.
-
-C# erases these distinctions from runtime type identity, while they still
-affect Morphant configuration, conventions and callback typing.
+Two registrations in one assembly use the same CLR types with different tuple
+element names, nested nullable annotations, or uses of `dynamic` and `object`.
+These differences affect the callbacks and member names available for that pair.
 
 ## Fix
 
-Use one consistent source and destination tuple presentation for that mapping
-pair inside the mapper family. Unrelated mappers may use different
-presentations. If one effective mapper needs different meanings or nullable
-contracts, introduce distinct wrapper types.
+Use matching names and annotations throughout the assembly. For example,
+register `(int Id, string Name)` with those names in each mapper, or introduce
+a separate DTO for a different meaning. Top-level reference annotations can
+differ. See [result nullability](../settings/null-handling.md#result-nullability).
 
 [All diagnostics](../diagnostics.md)

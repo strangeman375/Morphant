@@ -30,7 +30,7 @@ public sealed class CustomerDto
 }
 
 [MorphantMapper]
-public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
+public sealed partial class ApplicationMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Customer, CustomerDto>();
@@ -39,8 +39,7 @@ public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
 
 The generated `ApplicationMapper` implements
 `ITypeMapper<Customer, CustomerDto>` and maps `Name` by
-[convention](conventions.md). The mapper is its own `TypeMapper<TMapper>`
-argument.
+[convention](conventions.md).
 
 ## Register it with DI
 

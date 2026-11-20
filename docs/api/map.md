@@ -11,23 +11,23 @@ a supported, accessible mapping pair.
 ## Mapper declarations
 
 Mark the mapper with `[MorphantMapper]`, declare it `partial`, and derive from
-`TypeMapper<TMapper>` using the mapper itself as `TMapper`:
+`TypeMapper`:
 
 ```csharp
 [MorphantMapper]
-public partial class OrderMapper : TypeMapper<OrderMapper>
+public partial class OrderMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<OrderDto, Order>();
 }
 ```
 
-For a nested mapper, its containing types must also be partial and
-[accessible](../diagnostics/MORPH0059.md).
+For a nested mapper, declare each containing type partial.
 
-Reusable bases pass the final mapper type through the hierarchy; see
-[Configuration inheritance](../configuration-inheritance.md).
-Independent mappers can configure the same pair separately.
+Mappers can configure the same pair with different rules. Registrations in one
+assembly must agree on tuple element names, nested nullable annotations and
+`dynamic`. See [conflicting pair presentations](../diagnostics/MORPH0056.md)
+and [configuration inheritance](../configuration-inheritance.md).
 
 ## Call forms
 

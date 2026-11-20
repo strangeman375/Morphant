@@ -12,7 +12,7 @@ make every declaration partial.
 
 ```csharp
 [MorphantMapper]
-public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
+public sealed partial class ApplicationMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();

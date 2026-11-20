@@ -10,8 +10,7 @@ Morphant has two explicit reuse mechanisms:
 ## Connect a base mapper
 
 ```csharp
-public abstract class CommonMapper<TMapper> : TypeMapper<TMapper>
-    where TMapper : CommonMapper<TMapper>
+public abstract class CommonMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -21,7 +20,7 @@ public abstract class CommonMapper<TMapper> : TypeMapper<TMapper>
 }
 
 [MorphantMapper]
-public partial class ApplicationMapper : CommonMapper<ApplicationMapper>
+public partial class ApplicationMapper : CommonMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -38,13 +37,10 @@ implemented by `ApplicationMapper`.
 If `base.Configure(builder)` is not called, base configuration is not
 included.
 
-Keep the recursive `TMapper` constraint shown above on each reusable base.
-
 ## Include mapping rules
 
 ```csharp
-public abstract class AnimalMapper<TMapper> : TypeMapper<TMapper>
-    where TMapper : AnimalMapper<TMapper>
+public abstract class AnimalMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Animal, AnimalDto>()
@@ -55,7 +51,7 @@ public abstract class AnimalMapper<TMapper> : TypeMapper<TMapper>
 }
 
 [MorphantMapper]
-public partial class DogMapper : AnimalMapper<DogMapper>
+public partial class DogMapper : AnimalMapper
 {
     protected override void Configure(MapperBuilder builder)
     {

@@ -3,7 +3,7 @@
 ## Cause
 
 A type marked with `[MorphantMapper]` does not derive from
-`TypeMapper<TMapper>` with the mapper as its self type.
+`TypeMapper`.
 
 ## Fix
 
@@ -12,7 +12,7 @@ Morphant mapper:
 
 ```csharp
 [MorphantMapper]
-public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
+public sealed partial class ApplicationMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();

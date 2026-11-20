@@ -1,7 +1,7 @@
 namespace Morphant;
 
 /// <summary>
-/// Marks a partial mapper derived from <c>TypeMapper&lt;TMapper&gt;</c> for
+/// Marks a partial mapper derived from <see cref="TypeMapper"/> for
 /// generation.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]

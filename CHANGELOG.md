@@ -14,6 +14,19 @@ See [current limitations](docs/limitations.md) for features not yet included.
   on an incompatible Morphant version. See
   [Version compatibility](docs/compatibility.md).
 
+### Migrating from 0.5
+
+Derive mappers from `TypeMapper`. Replace `TypeMapper<OrderMapper>` with
+`TypeMapper`, and remove the self-type parameter and its recursive constraint
+from reusable mapper bases. Explicit pair-builder references now use
+`MappingBuilder<TSource, TDestination>`.
+
+Mappers in one assembly share one configuration surface per CLR pair. Align
+tuple names, nested nullable annotations and uses of `dynamic` when migrating
+independent mappers. Register reference pairs in DI as
+`ITypeMapper<Source, Destination>`. Factories and converters may return null.
+See [result nullability](docs/settings/null-handling.md#result-nullability).
+
 ## [0.5.0]
 
 ### Added
@@ -98,9 +111,9 @@ shown by the IDE for the assembly containing the mapper. Short type names
 remain unchanged.
 
 Every additional generic family parameter must participate in each declared
-pair ([`MORPH0060`](docs/diagnostics/MORPH0060.md)). Nested mappers and their
+pair ([`MORPH0060`](https://github.com/strangeman375/Morphant/blob/v0.5.0/docs/diagnostics/MORPH0060.md)). Nested mappers and their
 containing types must be accessible to generated code
-([`MORPH0059`](docs/diagnostics/MORPH0059.md)).
+([`MORPH0059`](https://github.com/strangeman375/Morphant/blob/v0.5.0/docs/diagnostics/MORPH0059.md)).
 
 Application-side `IMapper.Map`, direct `Create`/`Update` calls and DI
 registration keep their existing form.
