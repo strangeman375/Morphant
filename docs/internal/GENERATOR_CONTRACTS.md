@@ -35,7 +35,9 @@ generated-source expectations. Follow the general principles in
   cannot change their values.
 - Construction and member files reuse their destination namespace ID. Mapper
   files identify the mapper. Extension files identify the source/destination
-  pair in the generating assembly. Share identity calculation with
+  pair in the generating assembly. Number open pair parameters by their first
+  occurrence across source and destination so renaming them preserves file IDs.
+  Share identity calculation with
   generated namespaces, but keep namespace and filename rendering independent.
   Preserve existing namespace IDs, including tuple contract/presentation
   fingerprints. Retain destination ownership coordination and verify final
@@ -69,8 +71,12 @@ generated-source expectations. Follow the general principles in
 - All mappers in an assembly share the DSL extensions for a CLR pair. Tuple
   element names, nested nullable annotations and `dynamic` must agree. Generate
   open extensions with the type parameters and constraints needed by the pair.
-  Report conflicting presentations, ambiguous open extensions and collisions
-  with extensions made visible by a friend assembly at the registration. Omit
+  For conflicting presentations, the first registration by source path and
+  position owns the shared extension. Later conflicting registrations retain
+  typed failure stubs. For distinct open pairs, report an intersection when C#
+  cannot select a more specific receiver and invalidate all affected mappings.
+  Report collisions with extensions made visible by a friend assembly at the
+  registration. Omit
   a conflicting local extension when a friend already supplies it. If several
   friends supply it, the compiler can also report ambiguity between them.
 - Ignore the outer nullable reference annotation of both registration types.
