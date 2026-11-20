@@ -90,16 +90,16 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination(source);
+            => __ConvertDestination(source)!;
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination(source);
+            => __ConvertDestination(source)!;
 
-        private global::TestCase.Destination __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(
+        private global::TestCase.Destination? __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(
             #pragma warning disable CS0618
             global::TestCase.TestMapper.Read(source));
             #pragma warning restore CS0618
@@ -208,16 +208,16 @@ namespace TestCase
         global::System.Threading.Tasks.Task<int> global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Threading.Tasks.Task<int>>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination(source);
+            => __ConvertDestination(source)!;
 
         /// <inheritdoc/>
         global::System.Threading.Tasks.Task<int> global::Morphant.ITypeMapper<global::TestCase.Source, global::System.Threading.Tasks.Task<int>>.Update(
             global::TestCase.Source? source,
             global::System.Threading.Tasks.Task<int>? destination,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination(source);
+            => __ConvertDestination(source)!;
 
-        private async global::System.Threading.Tasks.Task<int> __ConvertDestination(global::TestCase.Source? source)
+        private async global::System.Threading.Tasks.Task<int>? __ConvertDestination(global::TestCase.Source? source)
         {
             await global::System.Threading.Tasks.Task.Yield();
             return (source!.ReadText()?.Measure() ?? 0) +

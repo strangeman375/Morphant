@@ -15,10 +15,10 @@ internal sealed class ReferenceAndSettingsTests
         "Morphant.Generated.Construction.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string ExternalMapping =
-        "Morphant.Generated.MappingExtension.ExternalMapper.ExternalSourceToDestination__cf5e23c78e13fc99b34ffbe25d9f3fa6.g.cs";
+        "Morphant.Generated.MappingExtension.ExternalSourceToDestination__0643aa8d7c393cc001781e93b6a0cbaf.g.cs";
 
     private const string StableMapping =
-        "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
+        "Morphant.Generated.MappingExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";
 
     private const string ExternalMember =
         "Morphant.Generated.Member.Destination__31cd2b83a124f88dc007fa312625999a.g.cs";
@@ -27,10 +27,10 @@ internal sealed class ReferenceAndSettingsTests
         "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string ExternalMemberExtension =
-        "Morphant.Generated.MemberExtension.ExternalMapper.ExternalSourceToDestination__cf5e23c78e13fc99b34ffbe25d9f3fa6.g.cs";
+        "Morphant.Generated.MemberExtension.ExternalSourceToDestination__0643aa8d7c393cc001781e93b6a0cbaf.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
+        "Morphant.Generated.MemberExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";
 
     private const string ExternalMapper =
         "Morphant.Generated.TypeMapper.ExternalMapper__07a52aad7ee2b4bee3f3535408fa3189.g.cs";
@@ -228,12 +228,12 @@ internal sealed class ReferenceAndSettingsTests
         {
             "Morphant.Generated.Construction.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs",
             "Morphant.Generated.Construction.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs",
-            "Morphant.Generated.MappingExtension.MapperA.SourceAToDestinationA__db82dfe1a33c9cc6d08771569ec8eb46.g.cs",
-            "Morphant.Generated.MappingExtension.MapperB.SourceBToDestinationB__ed707c749ae9ab2370bbe3005f6c1ef7.g.cs",
+            "Morphant.Generated.MappingExtension.SourceAToDestinationA__8b36226ea1897c8240e32c21561f8505.g.cs",
+            "Morphant.Generated.MappingExtension.SourceBToDestinationB__e9afaf3ac371cc1f333bceecff0fa2fa.g.cs",
             "Morphant.Generated.Member.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs",
             "Morphant.Generated.Member.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs",
-            "Morphant.Generated.MemberExtension.MapperA.SourceAToDestinationA__db82dfe1a33c9cc6d08771569ec8eb46.g.cs",
-            "Morphant.Generated.MemberExtension.MapperB.SourceBToDestinationB__ed707c749ae9ab2370bbe3005f6c1ef7.g.cs",
+            "Morphant.Generated.MemberExtension.SourceAToDestinationA__8b36226ea1897c8240e32c21561f8505.g.cs",
+            "Morphant.Generated.MemberExtension.SourceBToDestinationB__e9afaf3ac371cc1f333bceecff0fa2fa.g.cs",
             "Morphant.Generated.TypeMapper.MapperA__5e218501b1a45e633f93649296e15c01.g.cs",
             "Morphant.Generated.TypeMapper.MapperB__dca3e300d0a63d8240eb166c3130d2df.g.cs"
         };

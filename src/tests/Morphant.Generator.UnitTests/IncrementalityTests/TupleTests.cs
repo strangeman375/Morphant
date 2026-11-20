@@ -20,13 +20,13 @@ internal sealed class TupleTests
         "Morphant.Generated.Member.ValueTuple2__5aa24c2801582c743af2ed2fb0d3ac56.g.cs";
 
     private const string OldTupleMappingExtension =
-        "Morphant.Generated.MappingExtension.TupleMapper.TupleSourceToValueTuple2__a18b216bf0de1e8dfc4c42bb7afc07a3.g.cs";
+        "Morphant.Generated.MappingExtension.TupleSourceToValueTuple2__aa2853039d60ebad1dfb93f13938bcc1.g.cs";
 
     private const string NewTupleMappingExtension =
         "Morphant.Generated.MappingExtension.TupleMapper.TupleSourceToValueTuple2__0709fac8e537bea4f858c2174a5b0226.g.cs";
 
     private const string OldTupleMemberExtension =
-        "Morphant.Generated.MemberExtension.TupleMapper.TupleSourceToValueTuple2__a18b216bf0de1e8dfc4c42bb7afc07a3.g.cs";
+        "Morphant.Generated.MemberExtension.TupleSourceToValueTuple2__aa2853039d60ebad1dfb93f13938bcc1.g.cs";
 
     private const string NewTupleMemberExtension =
         "Morphant.Generated.MemberExtension.TupleMapper.TupleSourceToValueTuple2__0709fac8e537bea4f858c2174a5b0226.g.cs";
@@ -38,19 +38,19 @@ internal sealed class TupleTests
         "Morphant.Generated.Construction.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string StableMappingExtension =
-        "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
+        "Morphant.Generated.MappingExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";
 
     private const string StableMember =
         "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
+        "Morphant.Generated.MemberExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";
 
     private const string StableMapper =
         "Morphant.Generated.TypeMapper.StableMapper__3251a87cd2d93d3948a4f1646b88e0d3.g.cs";
 
     private const string FirstScopedMappingExtension =
-        "Morphant.Generated.MappingExtension.FirstMapper.ValueTuple2ToInt32__81d4a11e0526aadb9f10096399e1c1e3.g.cs";
+        "Morphant.Generated.MappingExtension.ValueTuple2ToInt32__20b3de42e67b0b11483f1bb4dd3387dd.g.cs";
 
     private const string SecondScopedMappingExtension =
         "Morphant.Generated.MappingExtension.SecondMapper.ValueTuple2ToInt32__c894737b18825758ea16d72c3ab6e065.g.cs";

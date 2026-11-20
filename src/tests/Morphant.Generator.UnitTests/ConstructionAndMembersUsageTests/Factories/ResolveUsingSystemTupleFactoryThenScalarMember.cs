@@ -101,7 +101,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingOperation operation)
         {
-            global::System.Tuple<int, string> result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<int, string>>.None);
+            global::System.Tuple<int, string>? result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<int, string>>.None);
 
             if (result is null)
             {
@@ -119,7 +119,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::System.Tuple<int, string> destination)
         {
-            global::System.Tuple<int, string> result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<int, string>>.Some(destination));
+            global::System.Tuple<int, string>? result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<int, string>>.Some(destination));
 
             if (result is null)
             {
@@ -133,7 +133,7 @@ namespace TestCase
                 "This member cannot be assigned in this Create or Update case.");
         }
 
-        private global::System.Tuple<int, string> __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::System.Tuple<int, string>> previous) => previous.HasValue && source.Reuse
+        private global::System.Tuple<int, string>? __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::System.Tuple<int, string>> previous) => previous.HasValue && source.Reuse
             ? previous.Value
             : new global::System.Tuple<int, string>(source.Id, source.FromConstruct());
     }

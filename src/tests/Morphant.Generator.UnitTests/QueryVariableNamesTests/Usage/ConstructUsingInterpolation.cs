@@ -86,7 +86,7 @@ namespace QueryNames
         private global::QueryNames.Destination __Create(
             global::QueryNames.Source source)
         {
-            global::QueryNames.Destination result = __ConstructUsing(source);
+            global::QueryNames.Destination? result = __ConstructUsing(source);
 
             if (result is null)
             {
@@ -107,7 +107,7 @@ namespace QueryNames
             return destination;
         }
 
-        private global::QueryNames.Destination __ConstructUsing(global::QueryNames.Source input) => new global::QueryNames.Destination(string.Join(",", from value in input.Values select $"{value}"));
+        private global::QueryNames.Destination? __ConstructUsing(global::QueryNames.Source input) => new global::QueryNames.Destination(string.Join(",", from value in input.Values select $"{value}"));
     }
 }
 """;

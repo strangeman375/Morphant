@@ -78,7 +78,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, int?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -89,7 +92,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, int?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -100,7 +106,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, int?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -111,7 +120,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, global::Morphant.Context.MappingContext, int?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -122,7 +134,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -133,7 +148,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -144,7 +162,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, global::Morphant.Context.MappingContext, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -168,7 +189,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, int?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -179,7 +203,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, int?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -190,7 +217,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, int?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -201,7 +231,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, global::Morphant.Context.MappingContext, int?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -212,7 +245,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -223,7 +259,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -234,7 +273,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, global::Morphant.Context.MappingContext, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -258,7 +300,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, int?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -269,7 +314,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, int?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -280,7 +328,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, int?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -291,7 +342,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, global::Morphant.Context.MappingContext, int?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -302,7 +356,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -313,7 +370,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -324,7 +384,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, global::Morphant.Context.MappingContext, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -348,7 +411,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, int?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -359,7 +425,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, int?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -370,7 +439,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, int?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -381,7 +453,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, global::Morphant.Context.MappingContext, int?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -392,7 +467,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -403,7 +481,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -414,7 +495,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, global::Morphant.Context.MappingContext, int?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -594,10 +678,7 @@ namespace TestCase
         await ProductionGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            ("Morphant.Generated.MappingExtension.SourceOnlyMapper.SourceToNullable__eaf9ad12e7bd4d492c7df41d2aeba5a1.g.cs", expectedMappingExtension1),
-            ("Morphant.Generated.MappingExtension.PreviousMapper.SourceToNullable__b7648775ba74def29b856bf6927b9b02.g.cs", expectedMappingExtension2),
-            ("Morphant.Generated.MappingExtension.CreateOnlyMapper.SourceToNullable__2645488f030ba41fcdb77244018d9922.g.cs", expectedMappingExtension3),
-            ("Morphant.Generated.MappingExtension.UpdateOnlyMapper.SourceToNullable__a5065f4139bc95512c862d07f0b0f683.g.cs", expectedMappingExtension4),
+            ("Morphant.Generated.MappingExtension.SourceToNullable__a442da9ee1229128d3f3098f6169544a.g.cs", expectedMappingExtension1),
             (
                 "Morphant.Generated.TypeMapper.SourceOnlyMapper__3c43e7b72504856d6e2d540a23070f36.g.cs",
                 expectedSourceOnlyMapper

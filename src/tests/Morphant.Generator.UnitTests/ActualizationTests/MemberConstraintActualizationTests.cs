@@ -142,7 +142,14 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::TestCase.Destination<T
+        #nullable disable annotations
+                >> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -155,7 +162,14 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::TestCase.Destination<T
+        #nullable disable annotations
+                >> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -168,7 +182,14 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::TestCase.Destination<T
+        #nullable disable annotations
+                >> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -181,7 +202,14 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::TestCase.Destination<T
+        #nullable disable annotations
+                >> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -207,9 +235,16 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::TestCase.Destination<T
+        #nullable disable annotations
+                >> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : struct
+            where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -220,9 +255,16 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::TestCase.Destination<T
+        #nullable disable annotations
+                >> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : struct
+            where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -233,9 +275,16 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::TestCase.Destination<T
+        #nullable disable annotations
+                >> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : struct
+            where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -246,9 +295,16 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
+            this global::Morphant.MappingBuilder<global::TestCase.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::TestCase.Destination<T
+        #nullable disable annotations
+                >> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_d4ed98c91d72688835548ac8f46ba748.DestinationMembers<T>> members)
-            where T : struct
+            where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

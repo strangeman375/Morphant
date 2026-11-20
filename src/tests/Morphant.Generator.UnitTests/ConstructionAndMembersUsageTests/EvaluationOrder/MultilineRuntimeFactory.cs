@@ -109,7 +109,7 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            return __ConstructUsing(source);
+            return __ConstructUsing(source)!;
         }
 
         private global::TestCase.Destination __Update(
@@ -118,7 +118,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(
+        private global::TestCase.Destination? __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(
             string.Concat(
                 source.FromConstruct(),
 

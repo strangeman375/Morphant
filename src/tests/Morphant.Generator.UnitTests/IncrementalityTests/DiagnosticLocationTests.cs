@@ -37,7 +37,7 @@ internal sealed class DiagnosticLocationTests
                 Is.EquivalentTo(new[]
                 {
                     "Morphant.Generated.Construction.Destination__277c681baf0bf70cc46a86e230dc487f.g.cs",
-                    "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__706426359947a16471cd2bff588f9a7b.g.cs",
+                    "Morphant.Generated.MappingExtension.SourceToDestination__0808860f332c4e840eaa2b9bd8e72b05.g.cs",
                     "Morphant.Generated.TypeMapper.TestMapper__770403f01a69b9955c41e6183e7f0391.g.cs"
                 }));
 

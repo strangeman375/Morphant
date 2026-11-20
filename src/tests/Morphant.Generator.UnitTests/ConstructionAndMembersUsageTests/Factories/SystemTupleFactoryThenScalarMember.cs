@@ -99,7 +99,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingOperation operation)
         {
-            global::System.Tuple<int, string> result = __ConstructUsing(source);
+            global::System.Tuple<int, string>? result = __ConstructUsing(source);
 
             if (result is null)
             {
@@ -119,7 +119,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::System.Tuple<int, string> __ConstructUsing(global::TestCase.Source source) => new global::System.Tuple<int, string>(source.Id, source.FromConstruct());
+        private global::System.Tuple<int, string>? __ConstructUsing(global::TestCase.Source source) => new global::System.Tuple<int, string>(source.Id, source.FromConstruct());
     }
 }
 """)

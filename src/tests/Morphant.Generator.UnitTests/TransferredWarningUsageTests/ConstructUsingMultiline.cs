@@ -94,7 +94,7 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            return __ConstructUsing(source);
+            return __ConstructUsing(source)!;
         }
 
         private global::TestCase.Destination __Update(
@@ -103,7 +103,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source)
+        private global::TestCase.Destination? __ConstructUsing(global::TestCase.Source source)
         {
             #pragma warning disable CS0219
             var unused = 1;

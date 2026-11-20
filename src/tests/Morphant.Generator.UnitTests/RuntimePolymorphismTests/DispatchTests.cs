@@ -78,7 +78,7 @@ namespace TestCase
 
             if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
             {
-                return polymorphicDestination;
+                return polymorphicDestination!;
             }
 
             return __Create();
@@ -97,7 +97,7 @@ namespace TestCase
 
             if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
             {
-                return polymorphicDestination;
+                return polymorphicDestination!;
             }
 
             if (destination is null)
@@ -111,7 +111,7 @@ namespace TestCase
         private bool __TryCreatePolymorphic(
             global::TestCase.Animal source,
             global::Morphant.Context.MappingContext context,
-            out global::TestCase.AnimalDto result)
+            out global::TestCase.AnimalDto? result)
         {
             switch (source)
             {
@@ -133,7 +133,7 @@ namespace TestCase
             global::TestCase.Animal source,
             global::TestCase.AnimalDto? destination,
             global::Morphant.Context.MappingContext context,
-            out global::TestCase.AnimalDto result)
+            out global::TestCase.AnimalDto? result)
         {
             switch (source)
             {
@@ -334,7 +334,7 @@ namespace TestCase
 
             if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
             {
-                return polymorphicDestination;
+                return polymorphicDestination!;
             }
 
             return __Create();
@@ -353,7 +353,7 @@ namespace TestCase
 
             if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
             {
-                return polymorphicDestination;
+                return polymorphicDestination!;
             }
 
             if (destination is null)
@@ -367,7 +367,7 @@ namespace TestCase
         private bool __TryCreatePolymorphic(
             global::TestCase.Animal source,
             global::Morphant.Context.MappingContext context,
-            out global::TestCase.AnimalDto result)
+            out global::TestCase.AnimalDto? result)
         {
             switch (source)
             {
@@ -393,7 +393,7 @@ namespace TestCase
             global::TestCase.Animal source,
             global::TestCase.AnimalDto? destination,
             global::Morphant.Context.MappingContext context,
-            out global::TestCase.AnimalDto result)
+            out global::TestCase.AnimalDto? result)
         {
             switch (source)
             {
@@ -506,7 +506,7 @@ namespace TestCase
 
             if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
             {
-                return polymorphicDestination;
+                return polymorphicDestination!;
             }
 
             return __Create();
@@ -525,7 +525,7 @@ namespace TestCase
 
             if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
             {
-                return polymorphicDestination;
+                return polymorphicDestination!;
             }
 
             if (destination is null)
@@ -539,7 +539,7 @@ namespace TestCase
         private bool __TryCreatePolymorphic(
             global::TestCase.IRoot source,
             global::Morphant.Context.MappingContext context,
-            out global::TestCase.RootDto result)
+            out global::TestCase.RootDto? result)
         {
             switch (source)
             {
@@ -579,7 +579,7 @@ namespace TestCase
             global::TestCase.IRoot source,
             global::TestCase.RootDto? destination,
             global::Morphant.Context.MappingContext context,
-            out global::TestCase.RootDto result)
+            out global::TestCase.RootDto? result)
         {
             switch (source)
             {
@@ -709,7 +709,7 @@ namespace TestCase
 
             if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
             {
-                return polymorphicDestination;
+                return polymorphicDestination!;
             }
 
             return __Create();
@@ -728,7 +728,7 @@ namespace TestCase
 
             if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
             {
-                return polymorphicDestination;
+                return polymorphicDestination!;
             }
 
             if (destination is null)
@@ -742,7 +742,7 @@ namespace TestCase
         private bool __TryCreatePolymorphic(
             global::TestCase.Animal source,
             global::Morphant.Context.MappingContext context,
-            out global::TestCase.AnimalDto result)
+            out global::TestCase.AnimalDto? result)
         {
             switch (source)
             {
@@ -760,7 +760,7 @@ namespace TestCase
             global::TestCase.Animal source,
             global::TestCase.AnimalDto? destination,
             global::Morphant.Context.MappingContext context,
-            out global::TestCase.AnimalDto result)
+            out global::TestCase.AnimalDto? result)
         {
             switch (source)
             {
@@ -958,7 +958,7 @@ namespace TestCase
 namespace TestCase
 {
     public partial class TestMapper :
-        global::Morphant.ITypeMapper<global::TestCase.Number?, global::TestCase.NumberDto>
+        global::Morphant.ITypeMapper<global::TestCase.Number, global::TestCase.NumberDto>
     {
         /// <inheritdoc/>
         protected override bool Supports(
@@ -969,7 +969,7 @@ namespace TestCase
                 base.Supports(sourceType, destinationType);
 
         /// <inheritdoc/>
-        global::TestCase.NumberDto global::Morphant.ITypeMapper<global::TestCase.Number?, global::TestCase.NumberDto>.Create(
+        global::TestCase.NumberDto global::Morphant.ITypeMapper<global::TestCase.Number, global::TestCase.NumberDto>.Create(
             global::TestCase.Number? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -982,7 +982,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.NumberDto global::Morphant.ITypeMapper<global::TestCase.Number?, global::TestCase.NumberDto>.Update(
+        global::TestCase.NumberDto global::Morphant.ITypeMapper<global::TestCase.Number, global::TestCase.NumberDto>.Update(
             global::TestCase.Number? source,
             global::TestCase.NumberDto? destination,
             global::Morphant.Context.MappingContext context)
@@ -1136,7 +1136,7 @@ namespace TestCase
 """;
         await ProductionGeneratorTest.RunAndAssert(LanguageVersion.CSharp9, source,
             ("Morphant.Generated.TypeMapper.TestMapper__3257fb115d47a54e47a0d30bb8ee81d3.g.cs", expected),
-            ("Morphant.Generated.MappingExtension.TestMapper.ObjectArray1ToInt32__490d4386cef1cde2342404804816bc44.g.cs",
+            ("Morphant.Generated.MappingExtension.ObjectArray1ToInt32__b4b6647f4c458abb96ce14b5d9e2ad40.g.cs",
             // lang=c#
 """
 // <auto-generated />
@@ -1153,7 +1153,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<object[], int> ConstructUsing(
-            this global::Morphant.MappingBuilder<object[], int> builder,
+            this global::Morphant.MappingBuilder<object[
+        #nullable disable annotations
+                ], int> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.ConstructUsing<object[], int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1164,7 +1167,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<object[], int> ConstructUsing(
-            this global::Morphant.MappingBuilder<object[], int> builder,
+            this global::Morphant.MappingBuilder<object[
+        #nullable disable annotations
+                ], int> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.ConstructUsing<object[], global::Morphant.Context.MappingContext, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1175,7 +1181,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<object[], int> ResolveUsing(
-            this global::Morphant.MappingBuilder<object[], int> builder,
+            this global::Morphant.MappingBuilder<object[
+        #nullable disable annotations
+                ], int> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.ResolveUsing<object[], int, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1186,7 +1195,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<object[], int> ResolveUsing(
-            this global::Morphant.MappingBuilder<object[], int> builder,
+            this global::Morphant.MappingBuilder<object[
+        #nullable disable annotations
+                ], int> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.ResolveUsing<object[], int, global::Morphant.Context.MappingContext, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1197,7 +1209,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<object[], int> Convert(
-            this global::Morphant.MappingBuilder<object[], int> builder,
+            this global::Morphant.MappingBuilder<object[
+        #nullable disable annotations
+                ], int> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Convert<object[]?, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1208,7 +1223,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<object[], int> Convert(
-            this global::Morphant.MappingBuilder<object[], int> builder,
+            this global::Morphant.MappingBuilder<object[
+        #nullable disable annotations
+                ], int> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Convert<object[]?, int, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1219,7 +1237,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<object[], int> Convert(
-            this global::Morphant.MappingBuilder<object[], int> builder,
+            this global::Morphant.MappingBuilder<object[
+        #nullable disable annotations
+                ], int> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Convert<object[]?, int, global::Morphant.Context.MappingContext, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

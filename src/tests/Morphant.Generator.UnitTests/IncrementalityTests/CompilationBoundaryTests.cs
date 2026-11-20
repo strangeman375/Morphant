@@ -11,9 +11,9 @@ internal sealed class CompilationBoundaryTests
     private static readonly string[] ValidGeneratedHints =
     [
         "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
-        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+        "Morphant.Generated.MappingExtension.SourceToDestination__fd3791156a0b8842275fd74856c7bb41.g.cs",
         "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
-        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+        "Morphant.Generated.MemberExtension.SourceToDestination__fd3791156a0b8842275fd74856c7bb41.g.cs",
         "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs"
     ];
 

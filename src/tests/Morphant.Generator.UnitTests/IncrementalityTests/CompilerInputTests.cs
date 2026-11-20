@@ -81,9 +81,9 @@ internal sealed class CompilerInputTests
         return
         [
             "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
-            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+            "Morphant.Generated.MappingExtension.SourceToDestination__fd3791156a0b8842275fd74856c7bb41.g.cs",
             "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
-            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs",
+            "Morphant.Generated.MemberExtension.SourceToDestination__fd3791156a0b8842275fd74856c7bb41.g.cs",
             "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs"
         ];
     }
@@ -93,9 +93,9 @@ internal sealed class CompilerInputTests
         return
         [
             "Morphant.Generated.Construction.Destination__280bfff94b0b70574f593935eb7a975e.g.cs",
-            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__f64c017eaa697f8c2139b9ddf79e3527.g.cs",
+            "Morphant.Generated.MappingExtension.SourceToDestination__98ac73a906baad6b245e7c6f3275a453.g.cs",
             "Morphant.Generated.Member.Destination__280bfff94b0b70574f593935eb7a975e.g.cs",
-            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__f64c017eaa697f8c2139b9ddf79e3527.g.cs",
+            "Morphant.Generated.MemberExtension.SourceToDestination__98ac73a906baad6b245e7c6f3275a453.g.cs",
             "Morphant.Generated.TypeMapper.TestMapper__cbc48ffed718c38938475e292a3cab2b.g.cs"
         ];
     }

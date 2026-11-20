@@ -101,7 +101,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingOperation operation)
         {
-            global::TestCase.Destination result = __ConstructUsing(source);
+            global::TestCase.Destination? result = __ConstructUsing(source);
 
             if (result is null)
             {
@@ -121,7 +121,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(source.FromConstruct());
+        private global::TestCase.Destination? __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(source.FromConstruct());
     }
 }
 """)

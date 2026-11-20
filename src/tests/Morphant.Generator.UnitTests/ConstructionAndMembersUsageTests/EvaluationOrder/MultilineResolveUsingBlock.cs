@@ -111,17 +111,17 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            return __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.None);
+            return __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.None)!;
         }
 
         private global::TestCase.Destination __Update(
             global::TestCase.Source source,
             global::TestCase.Destination destination)
         {
-            return __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.Some(destination));
+            return __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.Some(destination))!;
         }
 
-        private global::TestCase.Destination __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::TestCase.Destination> previous)
+        private global::TestCase.Destination? __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::TestCase.Destination> previous)
         {
             if (previous.HasValue)
                 return previous.Value;

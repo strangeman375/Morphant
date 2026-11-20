@@ -99,7 +99,7 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.None);
+            global::TestCase.Destination? result = __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.None);
 
             if (result is null)
             {
@@ -115,7 +115,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.Destination destination)
         {
-            global::TestCase.Destination result = __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.Some(destination));
+            global::TestCase.Destination? result = __ResolveUsing(source, global::Morphant.Option<global::TestCase.Destination>.Some(destination));
 
             if (result is null)
             {
@@ -127,7 +127,7 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.Destination __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::TestCase.Destination> previous) => previous.HasValue ? previous.Value : new global::TestCase.Destination(source.FromConstruct());
+        private global::TestCase.Destination? __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::TestCase.Destination> previous) => previous.HasValue ? previous.Value : new global::TestCase.Destination(source.FromConstruct());
     }
 }
 """)

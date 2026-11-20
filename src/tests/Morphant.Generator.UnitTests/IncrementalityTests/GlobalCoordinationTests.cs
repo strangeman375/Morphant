@@ -18,13 +18,13 @@ internal sealed class GlobalCoordinationTests
         "Morphant.Generated.Construction.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string UpperMapping =
-        "Morphant.Generated.MappingExtension.CollisionMapper.SourceToURL__80880e30e04f7546af678998151bbecb.g.cs";
+        "Morphant.Generated.MappingExtension.SourceToURL__c8bbe30fb9a6909b8cd32689a7b044d2.g.cs";
 
     private const string TitleMapping =
-        "Morphant.Generated.MappingExtension.CollisionMapper.SourceToUrl__2460e2b8dd3b03db2a1ce0f542feaf31.g.cs";
+        "Morphant.Generated.MappingExtension.SourceToUrl__535880a501b7a0238a10707fe0808e5a.g.cs";
 
     private const string StableMapping =
-        "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
+        "Morphant.Generated.MappingExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";
 
     private const string UpperMember =
         "Morphant.Generated.Member.URL__4a82eb081f4a7a56b8896decd859114c.g.cs";
@@ -36,13 +36,13 @@ internal sealed class GlobalCoordinationTests
         "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string UpperMemberExtension =
-        "Morphant.Generated.MemberExtension.CollisionMapper.SourceToURL__80880e30e04f7546af678998151bbecb.g.cs";
+        "Morphant.Generated.MemberExtension.SourceToURL__c8bbe30fb9a6909b8cd32689a7b044d2.g.cs";
 
     private const string TitleMemberExtension =
         "Morphant.Generated.MemberExtension.CollisionMapper.SourceToUrl__2460e2b8dd3b03db2a1ce0f542feaf31.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
+        "Morphant.Generated.MemberExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";
 
     private const string CollisionMapper =
         "Morphant.Generated.TypeMapper.CollisionMapper__ff86deae24b179203f68a6b360ced567.g.cs";
@@ -236,18 +236,18 @@ internal sealed class GlobalCoordinationTests
         {
             "Morphant.Generated.Construction.Destination__2b5567bb552187abaf6a4fd02028bb84.g.cs",
             "Morphant.Generated.Member.Destination__2b5567bb552187abaf6a4fd02028bb84.g.cs",
-            "Morphant.Generated.MappingExtension.StableMapper.SourceToDestination__4dc5cccf2398fab78f138fd682715480.g.cs",
-            "Morphant.Generated.MemberExtension.StableMapper.SourceToDestination__4dc5cccf2398fab78f138fd682715480.g.cs"
+            "Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs",
+            "Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs"
         };
         var initialHints = surfaceHints
-            .Append("Morphant.Generated.MappingExtension.URL.SourceToDestination__83f0e7d5b97b92c44f55ac44c5432be1.g.cs")
-            .Append("Morphant.Generated.MemberExtension.URL.SourceToDestination__83f0e7d5b97b92c44f55ac44c5432be1.g.cs")
+            .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
+            .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
             .Append(upperHint)
             .Append(stableHint)
             .ToArray();
         var collisionHints = initialHints
-            .Append("Morphant.Generated.MappingExtension.Url.SourceToDestination__b134aa8327824ac21f45b9223ea895df.g.cs")
-            .Append("Morphant.Generated.MemberExtension.Url.SourceToDestination__b134aa8327824ac21f45b9223ea895df.g.cs")
+            .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
+            .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
             .Append(titleHint)
             .ToArray();
 
@@ -319,8 +319,8 @@ internal sealed class GlobalCoordinationTests
         {
             "Morphant.Generated.Construction.Destination__2b5567bb552187abaf6a4fd02028bb84.g.cs",
             "Morphant.Generated.Member.Destination__2b5567bb552187abaf6a4fd02028bb84.g.cs",
-            "Morphant.Generated.MappingExtension.StableMapper.SourceToDestination__4dc5cccf2398fab78f138fd682715480.g.cs",
-            "Morphant.Generated.MemberExtension.StableMapper.SourceToDestination__4dc5cccf2398fab78f138fd682715480.g.cs"
+            "Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs",
+            "Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs"
         };
 
         RunAndAssert(
@@ -330,10 +330,10 @@ internal sealed class GlobalCoordinationTests
                 "colliding mapper hints",
                 [models, stable, upper, title],
                 surfaceHints
-                    .Append("Morphant.Generated.MappingExtension.URL.SourceToDestination__83f0e7d5b97b92c44f55ac44c5432be1.g.cs")
-                    .Append("Morphant.Generated.MemberExtension.URL.SourceToDestination__83f0e7d5b97b92c44f55ac44c5432be1.g.cs")
-                    .Append("Morphant.Generated.MappingExtension.Url.SourceToDestination__b134aa8327824ac21f45b9223ea895df.g.cs")
-                    .Append("Morphant.Generated.MemberExtension.Url.SourceToDestination__b134aa8327824ac21f45b9223ea895df.g.cs")
+                    .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
+                    .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
+                    .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
+                    .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
                     .Append(upperHint)
                     .Append(titleHint)
                     .Append(stableHint)
@@ -342,8 +342,8 @@ internal sealed class GlobalCoordinationTests
                 "similar mapper removed",
                 [models, stable, title],
                 surfaceHints
-                    .Append("Morphant.Generated.MappingExtension.Url.SourceToDestination__b134aa8327824ac21f45b9223ea895df.g.cs")
-                    .Append("Morphant.Generated.MemberExtension.Url.SourceToDestination__b134aa8327824ac21f45b9223ea895df.g.cs")
+                    .Append("Morphant.Generated.MappingExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
+                    .Append("Morphant.Generated.MemberExtension.SourceToDestination__185f2b100e6b3e23115a94e05c2004c4.g.cs")
                     .Append(titleHint)
                     .Append(stableHint)
                     .ToArray()));

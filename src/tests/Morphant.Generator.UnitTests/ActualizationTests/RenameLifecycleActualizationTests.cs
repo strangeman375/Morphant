@@ -38,9 +38,9 @@ internal sealed class RenameLifecycleActualizationTests
     private static readonly string[] InitialHints =
     [
         "Morphant.Generated.Construction.Destination__59053fd17e26306a849ae9f6114f73e9.g.cs",
-        "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__bea394c6fc155061bd7f88dc657c4ede.g.cs",
+        "Morphant.Generated.MappingExtension.SourceToDestination__eb5ed04ec34916b513fc4e3f0592ee89.g.cs",
         "Morphant.Generated.Member.Destination__59053fd17e26306a849ae9f6114f73e9.g.cs",
-        "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__bea394c6fc155061bd7f88dc657c4ede.g.cs",
+        "Morphant.Generated.MemberExtension.SourceToDestination__eb5ed04ec34916b513fc4e3f0592ee89.g.cs",
         "Morphant.Generated.TypeMapper.TestMapper__829a5d2eb615686f772dd6b2fe9668b1.g.cs"
     ];
 

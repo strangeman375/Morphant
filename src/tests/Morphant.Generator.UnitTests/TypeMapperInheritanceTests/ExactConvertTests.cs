@@ -58,92 +58,99 @@ namespace Morphant
         /// <summary>
         /// Creates a destination through a callback only when none exists.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing<TMapper>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, int?> construct)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Creates a destination through a callback only when none exists.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing<TMapper>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ConstructUsing(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, int?> construct)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Chooses the destination through a callback on Create and Update.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing<TMapper>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, int?> resolve)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Chooses the destination through a callback on Create and Update.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing<TMapper>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> ResolveUsing(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, global::Morphant.Context.MappingContext, int?> resolve)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert<TMapper>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int?> mapping)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert<TMapper>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, int?> mapping)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert<TMapper>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source, int?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, int?> Convert(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Source,
+        #nullable enable annotations
+                int?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, global::Morphant.Context.MappingContext, int?> mapping)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -198,7 +205,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.MappingExtension.BaseMapper.SourceToNullable__a0825d13841f60cbd95e867d31ce1142.g.cs",
+                "Morphant.Generated.MappingExtension.SourceToNullable__a442da9ee1229128d3f3098f6169544a.g.cs",
                 expectedMappingExtension
             ),
             (

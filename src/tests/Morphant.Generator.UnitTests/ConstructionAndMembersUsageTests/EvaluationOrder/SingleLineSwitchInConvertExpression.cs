@@ -68,16 +68,16 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination(source);
+            => __ConvertDestination(source)!;
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination(source);
+            => __ConvertDestination(source)!;
 
-        private global::TestCase.Destination __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(source switch { null => "missing", _ => string.Concat(source.Name, source.FromMembers()) });
+        private global::TestCase.Destination? __ConvertDestination(global::TestCase.Source? source) => new global::TestCase.Destination(source switch { null => "missing", _ => string.Concat(source.Name, source.FromMembers()) });
     }
 }
 """)

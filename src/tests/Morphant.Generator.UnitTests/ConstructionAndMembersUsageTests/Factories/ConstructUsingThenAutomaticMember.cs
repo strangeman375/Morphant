@@ -99,7 +99,7 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ConstructUsing(source);
+            global::TestCase.Destination? result = __ConstructUsing(source);
 
             if (result is null)
             {
@@ -120,7 +120,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(source.FromConstruct());
+        private global::TestCase.Destination? __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(source.FromConstruct());
     }
 }
 """)

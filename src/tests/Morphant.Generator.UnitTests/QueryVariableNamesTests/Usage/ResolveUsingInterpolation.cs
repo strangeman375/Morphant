@@ -86,7 +86,7 @@ namespace QueryNames
         private global::QueryNames.Destination __Create(
             global::QueryNames.Source source)
         {
-            global::QueryNames.Destination result = __ResolveUsing(source, global::Morphant.Option<global::QueryNames.Destination>.None);
+            global::QueryNames.Destination? result = __ResolveUsing(source, global::Morphant.Option<global::QueryNames.Destination>.None);
 
             if (result is null)
             {
@@ -102,7 +102,7 @@ namespace QueryNames
             global::QueryNames.Source source,
             global::QueryNames.Destination destination)
         {
-            global::QueryNames.Destination result = __ResolveUsing(source, global::Morphant.Option<global::QueryNames.Destination>.Some(destination));
+            global::QueryNames.Destination? result = __ResolveUsing(source, global::Morphant.Option<global::QueryNames.Destination>.Some(destination));
 
             if (result is null)
             {
@@ -114,7 +114,7 @@ namespace QueryNames
             return result;
         }
 
-        private global::QueryNames.Destination __ResolveUsing(global::QueryNames.Source input, global::Morphant.Option<global::QueryNames.Destination> previous) => previous.HasValue ? previous.Value : new global::QueryNames.Destination(string.Join(",", from value in input.Values select $"{value}"));
+        private global::QueryNames.Destination? __ResolveUsing(global::QueryNames.Source input, global::Morphant.Option<global::QueryNames.Destination> previous) => previous.HasValue ? previous.Value : new global::QueryNames.Destination(string.Join(",", from value in input.Values select $"{value}"));
     }
 }
 """;

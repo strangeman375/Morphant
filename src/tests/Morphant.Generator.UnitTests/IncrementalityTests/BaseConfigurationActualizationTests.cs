@@ -23,13 +23,13 @@ internal sealed class BaseConfigurationActualizationTests
         var generated = new[]
         {
             "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
-            "Morphant.Generated.MappingExtension.BaseMapper.SourceToDestination__4d7ddef68010c99712c7cf8d79da0bf5.g.cs",
+            "Morphant.Generated.MappingExtension.SourceToDestination__fd3791156a0b8842275fd74856c7bb41.g.cs",
             "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
-            "Morphant.Generated.MemberExtension.BaseMapper.SourceToDestination__4d7ddef68010c99712c7cf8d79da0bf5.g.cs",
+            "Morphant.Generated.MemberExtension.SourceToDestination__fd3791156a0b8842275fd74856c7bb41.g.cs",
             "Morphant.Generated.Construction.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs",
-            "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs",
+            "Morphant.Generated.MappingExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs",
             "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs",
-            "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs",
+            "Morphant.Generated.MemberExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs",
             DerivedMapper,
             StableMapper
         };

@@ -14,11 +14,11 @@ internal sealed class SurfaceCapabilityTests
         const string construction =
             "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs";
         const string mapping =
-            "Morphant.Generated.MappingExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs";
+            "Morphant.Generated.MappingExtension.SourceToDestination__fd3791156a0b8842275fd74856c7bb41.g.cs";
         const string members =
             "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs";
         const string memberExtension =
-            "Morphant.Generated.MemberExtension.TestMapper.SourceToDestination__2087052f5a3645b79062a3a095263f92.g.cs";
+            "Morphant.Generated.MemberExtension.SourceToDestination__fd3791156a0b8842275fd74856c7bb41.g.cs";
         const string mapper =
             "Morphant.Generated.TypeMapper.TestMapper__c4f37cd504cad969975e05a81c79a459.g.cs";
         var mapperFile = SourceFile("Mapper.cs", MapperSource);

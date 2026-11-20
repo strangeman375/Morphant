@@ -97,7 +97,7 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ConstructUsing(source);
+            global::TestCase.Destination? result = __ConstructUsing(source);
 
             if (result is null)
             {
@@ -123,7 +123,7 @@ namespace TestCase
         }
 
         #pragma warning disable CS0618
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(source.Value);
+        private global::TestCase.Destination? __ConstructUsing(global::TestCase.Source source) => new global::TestCase.Destination(source.Value);
         #pragma warning restore CS0618
     }
 }

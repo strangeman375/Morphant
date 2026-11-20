@@ -142,144 +142,144 @@ namespace Morphant
         /// <summary>
         /// Supplies constructor arguments when no destination exists.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Construct<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Construct(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Construct<global::TestCase.Animal, global::Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9.AnimalDtoConstruction> construct)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Supplies constructor arguments when no destination exists.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Construct<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Construct(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Construct<global::TestCase.Animal, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9.AnimalDtoConstruction> construct)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Resolve<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Resolve(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Resolve<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9.AnimalDtoConstruction> resolve)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Chooses reuse or construction on Create and Update.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Resolve<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Resolve(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Resolve<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9.AnimalDtoConstruction> resolve)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Creates a destination through a callback only when none exists.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
-            global::Morphant.Delegates.ConstructUsing<global::TestCase.Animal, global::TestCase.AnimalDto> construct)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
+        #nullable enable annotations
+            global::Morphant.Delegates.ConstructUsing<global::TestCase.Animal, global::TestCase.AnimalDto?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Creates a destination through a callback only when none exists.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
-            global::Morphant.Delegates.ConstructUsing<global::TestCase.Animal, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> construct)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
+        #nullable enable annotations
+            global::Morphant.Delegates.ConstructUsing<global::TestCase.Animal, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Chooses the destination through a callback on Create and Update.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
-            global::Morphant.Delegates.ResolveUsing<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto> resolve)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
+        #nullable enable annotations
+            global::Morphant.Delegates.ResolveUsing<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Chooses the destination through a callback on Create and Update.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
-            global::Morphant.Delegates.ResolveUsing<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> resolve)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
+        #nullable enable annotations
+            global::Morphant.Delegates.ResolveUsing<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
-            global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto> mapping)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
+        #nullable enable annotations
+            global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
-            global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::TestCase.AnimalDto> mapping)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
+        #nullable enable annotations
+            global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::TestCase.AnimalDto?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
-            global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> mapping)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
+        #nullable enable annotations
+            global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -302,7 +302,9 @@ namespace Morphant
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Construct(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Construct<global::TestCase.Dog, global::Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0.DogDtoConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -313,7 +315,9 @@ namespace Morphant
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Construct(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Construct<global::TestCase.Dog, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0.DogDtoConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -324,7 +328,9 @@ namespace Morphant
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Resolve(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Resolve<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0.DogDtoConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -335,7 +341,9 @@ namespace Morphant
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Resolve(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Resolve<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0.DogDtoConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -346,8 +354,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> ConstructUsing(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
-            global::Morphant.Delegates.ConstructUsing<global::TestCase.Dog, global::TestCase.DogDto> construct)
+        #nullable enable annotations
+            global::Morphant.Delegates.ConstructUsing<global::TestCase.Dog, global::TestCase.DogDto?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -357,8 +367,10 @@ namespace Morphant
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> ConstructUsing(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
-            global::Morphant.Delegates.ConstructUsing<global::TestCase.Dog, global::Morphant.Context.MappingContext, global::TestCase.DogDto> construct)
+        #nullable enable annotations
+            global::Morphant.Delegates.ConstructUsing<global::TestCase.Dog, global::Morphant.Context.MappingContext, global::TestCase.DogDto?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -368,8 +380,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> ResolveUsing(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
-            global::Morphant.Delegates.ResolveUsing<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto> resolve)
+        #nullable enable annotations
+            global::Morphant.Delegates.ResolveUsing<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -379,8 +393,10 @@ namespace Morphant
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> ResolveUsing(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
-            global::Morphant.Delegates.ResolveUsing<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto> resolve)
+        #nullable enable annotations
+            global::Morphant.Delegates.ResolveUsing<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -390,8 +406,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
-            global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto> mapping)
+        #nullable enable annotations
+            global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -401,8 +419,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
-            global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::TestCase.DogDto> mapping)
+        #nullable enable annotations
+            global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::TestCase.DogDto?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -412,8 +432,10 @@ namespace Morphant
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
-            global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto> mapping)
+        #nullable enable annotations
+            global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -491,53 +513,53 @@ namespace Morphant
         /// <summary>
         /// Configures destination members and matching automatic constructor arguments.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9.AnimalDtoMembers> members)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Configures destination members and matching automatic constructor arguments.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9.AnimalDtoMembers> members)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Configures destination members and matching automatic constructor arguments.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto, global::Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9.AnimalDtoMembers> members)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Configures destination members and matching automatic constructor arguments.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_a1d50685fa566dae762a3237dfbd65f9.AnimalDtoMembers> members)
-            where TMapper : global::TestCase.BaseMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -560,7 +582,9 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -571,7 +595,9 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -582,7 +608,9 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto, global::Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -593,7 +621,9 @@ namespace Morphant
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
+        #nullable disable annotations
             this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
+        #nullable enable annotations
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_c66bb723a57bf5b7179914b80e4549e0.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -668,11 +698,11 @@ namespace TestCase
                 animalConstruction
             ),
             (
-                "Morphant.Generated.MappingExtension.DerivedMapper.DogToDogDto__633ba66ceccffc7bc5abdd11306135c1.g.cs",
+                "Morphant.Generated.MappingExtension.DogToDogDto__f6032b8a1913d6e75992977686706b50.g.cs",
                 dogConstructionExtension
             ),
             (
-                "Morphant.Generated.MappingExtension.BaseMapper.AnimalToAnimalDto__f083295ceb0be32178782fc46bb1b2dd.g.cs",
+                "Morphant.Generated.MappingExtension.AnimalToAnimalDto__90040f162384d07bdb244220d6bfc627.g.cs",
                 animalConstructionExtension
             ),
             (
@@ -684,11 +714,11 @@ namespace TestCase
                 animalMembers
             ),
             (
-                "Morphant.Generated.MemberExtension.DerivedMapper.DogToDogDto__633ba66ceccffc7bc5abdd11306135c1.g.cs",
+                "Morphant.Generated.MemberExtension.DogToDogDto__f6032b8a1913d6e75992977686706b50.g.cs",
                 dogMemberExtension
             ),
             (
-                "Morphant.Generated.MemberExtension.BaseMapper.AnimalToAnimalDto__f083295ceb0be32178782fc46bb1b2dd.g.cs",
+                "Morphant.Generated.MemberExtension.AnimalToAnimalDto__90040f162384d07bdb244220d6bfc627.g.cs",
                 animalMemberExtension
             ),
             (

@@ -21,22 +21,22 @@ internal sealed class IncrementalLifecycleTests
         "Morphant.Generated.Member.StableDestination__eabf1949ab4bdd337885a7845c47d3bb.g.cs";
 
     private const string MappingOne =
-        "Morphant.Generated.MappingExtension.MapperOne.SourceOneToSharedDestination__1ccb2c9bede74b4f3b51ec3ba5898c76.g.cs";
+        "Morphant.Generated.MappingExtension.SourceOneToSharedDestination__289b8e4f218870b6e1734ce1dcb98751.g.cs";
 
     private const string MappingTwo =
-        "Morphant.Generated.MappingExtension.MapperTwo.SourceTwoToSharedDestination__b8e49fee3a4d12d7ace074f802206f74.g.cs";
+        "Morphant.Generated.MappingExtension.SourceTwoToSharedDestination__b2d226e296f7422aeecc790589e04e74.g.cs";
 
     private const string StableMapping =
-        "Morphant.Generated.MappingExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
+        "Morphant.Generated.MappingExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";
 
     private const string MemberOne =
-        "Morphant.Generated.MemberExtension.MapperOne.SourceOneToSharedDestination__1ccb2c9bede74b4f3b51ec3ba5898c76.g.cs";
+        "Morphant.Generated.MemberExtension.SourceOneToSharedDestination__289b8e4f218870b6e1734ce1dcb98751.g.cs";
 
     private const string MemberTwo =
-        "Morphant.Generated.MemberExtension.MapperTwo.SourceTwoToSharedDestination__b8e49fee3a4d12d7ace074f802206f74.g.cs";
+        "Morphant.Generated.MemberExtension.SourceTwoToSharedDestination__b2d226e296f7422aeecc790589e04e74.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension.StableMapper.StableSourceToStableDestination__bb75ddcff787fbc895e34e4dd60f1943.g.cs";
+        "Morphant.Generated.MemberExtension.StableSourceToStableDestination__183aa6bcace2f8e773b98c81e36c9920.g.cs";
 
     private const string MapperOne =
         "Morphant.Generated.TypeMapper.MapperOne__60d70ed955273c1b91485515f14a3ca1.g.cs";
@@ -274,11 +274,11 @@ internal sealed class IncrementalLifecycleTests
         const string member =
             "Morphant.Generated.Member.SurfaceDestination__08333ce1cf99bfc02b89cde9e06a0b49.g.cs";
         const string nonNullableMapping =
-            "Morphant.Generated.MappingExtension.NonNullableMapper.SurfaceSourceToSurfaceDestination__bc92abf3096a7bacd2adb4a04954e462.g.cs";
+            "Morphant.Generated.MappingExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
         const string nullableMapping =
             "Morphant.Generated.MappingExtension.NullablePresentationMapper.SurfaceSourceToSurfaceDestination__6967be8c085cdd530e9cf2d4333e8151.g.cs";
         const string nonNullableMember =
-            "Morphant.Generated.MemberExtension.NonNullableMapper.SurfaceSourceToSurfaceDestination__bc92abf3096a7bacd2adb4a04954e462.g.cs";
+            "Morphant.Generated.MemberExtension.SurfaceSourceToSurfaceDestination__898bbcbed4f3d5f36da9cc78edf34d06.g.cs";
         const string nullableMember =
             "Morphant.Generated.MemberExtension.NullablePresentationMapper.SurfaceSourceToSurfaceDestination__6967be8c085cdd530e9cf2d4333e8151.g.cs";
         const string nonNullableMapper =

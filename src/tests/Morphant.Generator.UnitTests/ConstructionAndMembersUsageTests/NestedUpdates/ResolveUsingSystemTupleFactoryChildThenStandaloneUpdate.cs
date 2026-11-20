@@ -179,7 +179,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::System.Tuple<global::TestCase.ChildDestination, int> result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<global::TestCase.ChildDestination, int>>.None, context);
+            global::System.Tuple<global::TestCase.ChildDestination, int>? result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<global::TestCase.ChildDestination, int>>.None, context);
 
             if (result is null)
             {
@@ -200,7 +200,7 @@ namespace TestCase
             global::System.Tuple<global::TestCase.ChildDestination, int> destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::System.Tuple<global::TestCase.ChildDestination, int> result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<global::TestCase.ChildDestination, int>>.Some(destination), context);
+            global::System.Tuple<global::TestCase.ChildDestination, int>? result = __ResolveUsing(source, global::Morphant.Option<global::System.Tuple<global::TestCase.ChildDestination, int>>.Some(destination), context);
 
             if (result is null)
             {
@@ -216,7 +216,7 @@ namespace TestCase
             return result;
         }
 
-        private global::System.Tuple<global::TestCase.ChildDestination, int> __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::System.Tuple<global::TestCase.ChildDestination, int>> previous, global::Morphant.Context.MappingContext context)
+        private global::System.Tuple<global::TestCase.ChildDestination, int>? __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::System.Tuple<global::TestCase.ChildDestination, int>> previous, global::Morphant.Context.MappingContext context)
         {
             if (source.Reuse && previous.TryGetValue(out global::System.Tuple<global::TestCase.ChildDestination, int>? current))
                 return current;

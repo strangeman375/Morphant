@@ -98,7 +98,7 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ResolveUsing();
+            global::TestCase.Destination? result = __ResolveUsing();
 
             if (result is null)
             {
@@ -113,7 +113,7 @@ namespace TestCase
         private global::TestCase.Destination __Update(
             global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ResolveUsing();
+            global::TestCase.Destination? result = __ResolveUsing();
 
             if (result is null)
             {
@@ -125,7 +125,7 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.Destination __ResolveUsing() => null!;
+        private global::TestCase.Destination? __ResolveUsing() => null!;
     }
 }
 """)

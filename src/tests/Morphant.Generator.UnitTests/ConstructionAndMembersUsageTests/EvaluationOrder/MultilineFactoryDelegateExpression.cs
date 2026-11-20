@@ -108,7 +108,7 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            return __ConstructUsing(source);
+            return __ConstructUsing(source)!;
         }
 
         private global::TestCase.Destination __Update(
@@ -117,9 +117,9 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source)
+        private global::TestCase.Destination? __ConstructUsing(global::TestCase.Source source)
         {
-            global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.Destination> callback = global::TestCase.Mapper.Choose(
+            global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.Destination?> callback = global::TestCase.Mapper.Choose(
                 global::TestCase.Mapper.First,
                 global::TestCase.Mapper.Second);
             return callback(source);

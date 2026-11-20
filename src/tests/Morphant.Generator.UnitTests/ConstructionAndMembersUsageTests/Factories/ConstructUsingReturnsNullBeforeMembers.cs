@@ -98,7 +98,7 @@ namespace TestCase
         private global::TestCase.Destination __Create(
             global::TestCase.Source source)
         {
-            global::TestCase.Destination result = __ConstructUsing();
+            global::TestCase.Destination? result = __ConstructUsing();
 
             if (result is null)
             {
@@ -119,7 +119,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing() => null!;
+        private global::TestCase.Destination? __ConstructUsing() => null!;
     }
 }
 """)

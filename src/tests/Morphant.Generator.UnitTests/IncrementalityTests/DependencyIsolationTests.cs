@@ -15,10 +15,10 @@ internal sealed class DependencyIsolationTests
         "Morphant.Generated.Construction.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs";
 
     private const string MappingExtensionA =
-        "Morphant.Generated.MappingExtension.MapperA.SourceAToDestinationA__db82dfe1a33c9cc6d08771569ec8eb46.g.cs";
+        "Morphant.Generated.MappingExtension.SourceAToDestinationA__8b36226ea1897c8240e32c21561f8505.g.cs";
 
     private const string MappingExtensionB =
-        "Morphant.Generated.MappingExtension.MapperB.SourceBToDestinationB__ed707c749ae9ab2370bbe3005f6c1ef7.g.cs";
+        "Morphant.Generated.MappingExtension.SourceBToDestinationB__e9afaf3ac371cc1f333bceecff0fa2fa.g.cs";
 
     private const string MemberA =
         "Morphant.Generated.Member.DestinationA__3733382c8803f06b6b6c3f9cba169e0f.g.cs";
@@ -27,10 +27,10 @@ internal sealed class DependencyIsolationTests
         "Morphant.Generated.Member.DestinationB__1f97cb9531b66ac2ca2a5923c972297b.g.cs";
 
     private const string MemberExtensionA =
-        "Morphant.Generated.MemberExtension.MapperA.SourceAToDestinationA__db82dfe1a33c9cc6d08771569ec8eb46.g.cs";
+        "Morphant.Generated.MemberExtension.SourceAToDestinationA__8b36226ea1897c8240e32c21561f8505.g.cs";
 
     private const string MemberExtensionB =
-        "Morphant.Generated.MemberExtension.MapperB.SourceBToDestinationB__ed707c749ae9ab2370bbe3005f6c1ef7.g.cs";
+        "Morphant.Generated.MemberExtension.SourceBToDestinationB__e9afaf3ac371cc1f333bceecff0fa2fa.g.cs";
 
     private const string MapperA =
         "Morphant.Generated.TypeMapper.MapperA__5e218501b1a45e633f93649296e15c01.g.cs";
