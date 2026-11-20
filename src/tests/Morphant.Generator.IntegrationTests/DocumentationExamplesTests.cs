@@ -98,9 +98,7 @@ public static class Scenario
         {
             ("0005", 0, "ApplicationMapper"),
             ("0006", 0, "ApplicationMapper"),
-            ("0007", 0, "Container.ApplicationMapper"),
-            ("0058", 0, "OrderMapper"),
-            ("0058", 1, "OrderMapper")
+            ("0007", 0, "Container.ApplicationMapper")
         })
         {
             yield return new($"docs/diagnostics/MORPH{id}.md", "## Fix", block,

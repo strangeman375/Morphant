@@ -600,12 +600,12 @@ public partial class StringMapper : Family<StringMapper, string>
                 diagnostic.GetMessage(),
                 Is.EqualTo(
                     "Mapping 'TestCase.Source<string> -> " +
-                    "System.ValueTuple<string, int>' uses tuple " +
+                    "System.ValueTuple<string, int>' uses " +
                     "presentation 'global::TestCase.Source<string> -> " +
-                    "(string Text, int Count)', which conflicts with the " +
-                    "presentation 'global::TestCase.Source<string> -> " +
-                    "(string Value, int Count)' of the same underlying " +
-                    "mapping pair."));
+                    "(string Text, int Count)', which conflicts with " +
+                    "'global::TestCase.Source<string> -> " +
+                    "(string Value, int Count)' for the same mapping pair. " +
+                    "Use matching type annotations and tuple names or a separate DTO."));
             Assert.That(
                 MappingRegistrationGeneratorTest.SourceText(
                     diagnostic.Location),

@@ -389,14 +389,14 @@ public partial class Container
     private partial class PrivateMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<(int X, int Y), int>();
+            builder.Map<(int X, int Y), int>(MappingMode.Update);
     }
 
     [MorphantMapper]
     protected partial class ProtectedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<(int X, int Y), long>();
+            builder.Map<(int X, int Y), long>(MappingMode.Update);
     }
 
     [MorphantMapper]
@@ -404,7 +404,7 @@ public partial class Container
         TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<(int X, int Y), short>();
+            builder.Map<(int X, int Y), short>(MappingMode.Update);
     }
 }
 """;
@@ -437,7 +437,7 @@ public partial class Outer
         public partial class TestMapper : TypeMapper
         {
             protected override void Configure(MapperBuilder builder) =>
-                builder.Map<(int X, int Y), int>();
+                builder.Map<(int X, int Y), int>(MappingMode.Update);
         }
     }
 }

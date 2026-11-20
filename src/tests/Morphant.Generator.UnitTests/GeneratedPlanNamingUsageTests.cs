@@ -41,7 +41,7 @@ public sealed class Destination
 public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
-        builder.Map<Source, Destination>()
+        builder.Map<LocalSource, Destination>()
             .Construct(s => new DestinationConstruction(s.Id))
             .Members(s => new DestinationMembers { Id = s.Id });
 }
@@ -108,6 +108,8 @@ using Morphant;
 using Shared;
 using Morphant.Generated.N_58367882961a46be32ebecd9df026a51;
 
+internal sealed class LocalSource { public int Id { get; set; } public int Count { get; set; } }
+
 [MorphantMapper]
 public partial class ConsumerMapper : TypeMapper
 {
@@ -116,7 +118,7 @@ public partial class ConsumerMapper : TypeMapper
         builder.Map<Source, Destination>()
             .Construct(s => new DestinationConstruction(s.Id))
             .Members(s => new DestinationMembers { Id = s.Id });
-        builder.Map<Source, (int Id, int Count)>();
+        builder.Map<LocalSource, (int Id, int Count)>();
     }
 }
 """;

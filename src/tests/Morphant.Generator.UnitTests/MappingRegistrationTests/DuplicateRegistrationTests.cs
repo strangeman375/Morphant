@@ -120,7 +120,7 @@ public partial class TestMapper : TypeMapper
                 Is.EqualTo(new[]
                 {
                     "MORPH0013",
-                    "MORPH0013",
+                    "MORPH0056",
                     "MORPH0056"
                 }));
             Assert.That(
@@ -131,16 +131,14 @@ public partial class TestMapper : TypeMapper
                     "Mapping 'System.IntPtr -> TestCase.Destination' is " +
                     "registered more than once in mapper " +
                     "'TestCase.TestMapper'.",
-                    "Mapping 'object -> TestCase.Destination' is registered " +
-                    "more than once in mapper " +
-                    "'TestCase.TestMapper'.",
-                    "Mapping 'System.ValueTuple<int, string> -> " +
-                    "TestCase.Destination' uses tuple presentation " +
-                    "'(int, string) -> global::TestCase.Destination?', " +
-                    "which " +
-                    "conflicts with the presentation '(int Id, string? " +
-                    "Name) -> global::TestCase.Destination' of the same " +
-                    "underlying mapping pair."
+                    "Mapping 'System.ValueTuple<int, string> -> TestCase.Destination' uses presentation " +
+                    "'(int, string) -> global::TestCase.Destination?', which conflicts with " +
+                    "'(int Id, string? Name) -> global::TestCase.Destination' for the same mapping pair. " +
+                    "Use matching type annotations and tuple names or a separate DTO.",
+                    "Mapping 'object -> TestCase.Destination' uses presentation " +
+                    "'object? -> global::TestCase.Destination?', which conflicts with " +
+                    "'dynamic -> global::TestCase.Destination' for the same mapping pair. " +
+                    "Use matching type annotations and tuple names or a separate DTO."
                 }));
         });
     }

@@ -149,12 +149,10 @@ namespace TestCase
     internal static class UserExtensions
     {
         public static MappingBuilder<TSource, TDestination> Convert<
-            TMapper,
             TSource,
             TDestination>(
             this MappingBuilder<TSource, TDestination> builder,
-            global::Morphant.Delegates.Convert<TSource?, TDestination> mapping)
-            where TMapper : TypeMapper => builder;
+            global::Morphant.Delegates.Convert<TSource?, TDestination> mapping) => builder;
     }
 
     [MorphantMapper]
@@ -200,12 +198,10 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         public static MappingBuilder<TSource, TDestination> Convert<
-            TMapper,
             TSource,
             TDestination>(
             this MappingBuilder<TSource, TDestination> builder,
-            Action callback)
-            where TMapper : TypeMapper => builder;
+            Action callback) => builder;
     }
 }
 
@@ -260,14 +256,13 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         public static MappingBuilder<global::TestCase.Source,
-            global::TestCase.Destination> Convert<TMapper>(
+            global::TestCase.Destination> Convert(
             this MapperBuilderBase<MappingBuilder<global::TestCase.Source,
                 global::TestCase.Destination>> builder,
             global::Morphant.Delegates.Convert<
                 global::TestCase.Source?,
                 global::TestCase.Destination> mapping,
-            bool compilerFallback = false)
-            where TMapper : TypeMapper =>
+            bool compilerFallback = false) =>
             throw new global::Morphant.Exceptions
                 .RuntimeInvocationNotSupportedException();
     }
@@ -281,11 +276,9 @@ namespace TestCase
     internal static class UserExtensions
     {
         public static MappingBuilder<TSource, TDestination> Tap<
-            TMapper,
             TSource,
             TDestination>(
-            this MappingBuilder<TSource, TDestination> builder)
-            where TMapper : TypeMapper => builder;
+            this MappingBuilder<TSource, TDestination> builder) => builder;
     }
 
     [MorphantMapper]
@@ -356,14 +349,12 @@ namespace TestCase
     internal static class UserExtensions
     {
         public static MappingBuilder<TSource, TDestination> Convert<
-            TMapper,
             TSource,
             TDestination>(
             this MappingBuilder<TSource, TDestination> builder,
             global::Morphant.Delegates.Convert<
                 TSource?,
-                TDestination> mapping)
-            where TMapper : TypeMapper => builder;
+                TDestination> mapping) => builder;
     }
 
     [MorphantMapper]
@@ -469,7 +460,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Unrelated_CRTP_families_use_distinct_extension_containers()
+    public void Unrelated_families_configure_the_same_generic_pair()
     {
         // lang=c#
         const string source =
@@ -552,7 +543,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Related_CRTP_families_do_not_create_competing_extensions()
+    public void Related_families_share_the_generic_pair()
     {
         // lang=c#
         const string source =
@@ -620,7 +611,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Erased_presentations_select_their_own_mapper_receivers()
+    public void Matching_nested_presentations_bind_all_callback_overloads()
     {
         // lang=c#
         const string source =
@@ -648,7 +639,7 @@ namespace TestCase
     public partial class ObjectMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<object>, Destination<object>>();
+            builder.Map<Source<dynamic>, Destination<dynamic>>();
     }
 
     [MorphantMapper]
@@ -690,7 +681,7 @@ namespace TestCase
     public partial class StringMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<string>, Destination<string>>();
+            builder.Map<Source<string?>, Destination<string?>>();
     }
 
     [MorphantMapper]
@@ -720,6 +711,7 @@ namespace TestCase
             source,
             LanguageVersion.CSharp9);
 
+        Assert.That(result.Diagnostics.Where(diagnostic => diagnostic.Id == "MORPH0056"), Is.Empty);
         Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
     }
 }

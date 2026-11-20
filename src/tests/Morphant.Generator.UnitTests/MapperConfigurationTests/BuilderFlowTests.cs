@@ -408,11 +408,9 @@ public sealed class Destination { }
 public static class Extensions
 {
     public static MappingBuilder<TSource, TDestination> Tap<
-        TMapper,
         TSource,
         TDestination>(
-        this MappingBuilder<TSource, TDestination> builder)
-        where TMapper : TypeMapper => builder;
+        this MappingBuilder<TSource, TDestination> builder) => builder;
 }
 
 [MorphantMapper]
