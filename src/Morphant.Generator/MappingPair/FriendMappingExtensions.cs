@@ -39,6 +39,7 @@ internal static class FriendMappingExtensions
             foreach (var method in container.GetMembers("Convert").OfType<IMethodSymbol>())
             {
                 if (!GeneratedMappingExtensionNaming.HasGeneratedSignature(method) ||
+                    !compilation.IsSymbolAccessibleWithin(method, compilation.Assembly) ||
                     method.ReturnType is not INamedTypeSymbol receiver ||
                     !SymbolEqualityComparer.Default.Equals(receiver.OriginalDefinition, builder))
                     continue;

@@ -512,6 +512,29 @@ namespace TestCase
     }
 
     [Test]
+    public void A_private_mapper_constraint_is_available_when_the_pair_does_not_require_it()
+    {
+        const string source = """
+#nullable enable
+using Morphant;
+internal sealed class Box<T> { }
+internal sealed class Target { }
+internal partial class Container
+{
+    private interface IMarker { }
+    [MorphantMapper]
+    private partial class Mapper<T, TUnused> : TypeMapper where T : IMarker
+    {
+        protected override void Configure(MapperBuilder builder) => builder.Map<Box<T[]>, Target>();
+    }
+}
+""";
+        var result = MappingRegistrationGeneratorTest.Run(source);
+        Assert.That(result.Diagnostics, Is.Empty);
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
+    [Test]
     public void Extern_alias_only_constraint_reports_unavailable_pair()
     {
         // lang=c#

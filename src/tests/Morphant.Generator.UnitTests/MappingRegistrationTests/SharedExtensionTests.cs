@@ -174,15 +174,24 @@ internal partial class ConsumerMapper : TypeMapper
     protected override void Configure(MapperBuilder builder) => builder.Map<string, int>().Convert(s => s?.Length ?? 0);
 }
 """;
-        var library = GeneratorTestDriver.Run("Library", librarySource, LanguageVersion.CSharp9);
-        using var dll = new MemoryStream();
-        var emit = library.OutputCompilation.Emit(dll);
-        Assert.That(emit.Success, Is.True, string.Join(Environment.NewLine, emit.Diagnostics));
-        var reference = MetadataReference.CreateFromImage(dll.ToArray());
+        static PortableExecutableReference Library(string name)
+        {
+            var library = GeneratorTestDriver.Run(name, librarySource, LanguageVersion.CSharp9);
+            using var dll = new MemoryStream();
+            var emit = library.OutputCompilation.Emit(dll);
+            Assert.That(emit.Success, Is.True, string.Join(Environment.NewLine, emit.Diagnostics));
+            return MetadataReference.CreateFromImage(dll.ToArray());
+        }
+
+        var reference = Library("FirstLibrary");
 
         var clean = GeneratorTestDriver.Run("FriendConsumer", consumer, LanguageVersion.CSharp9);
         var conflict = GeneratorTestDriver.Run("FriendConsumer", consumer, LanguageVersion.CSharp9,
             driver: clean.Driver, additionalReferences: [reference]);
+        var both = GeneratorTestDriver.Run("FriendConsumer", consumer, LanguageVersion.CSharp9,
+            driver: conflict.Driver, additionalReferences: [reference, Library("SecondLibrary")]);
+        var hidden = GeneratorTestDriver.Run("FriendConsumer", consumer, LanguageVersion.CSharp9,
+            driver: both.Driver, additionalReferences: [reference.WithAliases(["LibraryOnly"])]);
         var recovered = GeneratorTestDriver.Run("FriendConsumer", consumer, LanguageVersion.CSharp9,
             driver: conflict.Driver);
         var other = GeneratorTestDriver.Run("OtherConsumer", consumer, LanguageVersion.CSharp9,
@@ -193,7 +202,13 @@ internal partial class ConsumerMapper : TypeMapper
             Assert.That(clean.Diagnostics, Is.Empty);
             Assert.That(conflict.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0065" }));
             Assert.That(conflict.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(both.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0065" }));
+            Assert.That(both.CompilerWarningsAndErrors.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "CS0121" }));
+            Assert.That(hidden.Diagnostics, Is.Empty);
+            Assert.That(hidden.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(recovered.Diagnostics, Is.Empty);
+            Assert.That(recovered.GeneratedSources.Select(file => (file.HintName, file.SourceText.ToString())),
+                Is.EquivalentTo(clean.GeneratedSources.Select(file => (file.HintName, file.SourceText.ToString()))));
             Assert.That(recovered.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(other.Diagnostics, Is.Empty);
             Assert.That(other.CompilerWarningsAndErrors, Is.Empty);

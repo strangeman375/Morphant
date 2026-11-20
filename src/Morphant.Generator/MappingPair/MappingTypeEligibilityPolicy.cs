@@ -145,7 +145,7 @@ internal static class MappingTypeEligibilityPolicy
             return GetNameability(
                 arrayType.ElementType,
                 compilation,
-                inspectTypeParameterConstraints: true,
+                inspectTypeParameterConstraints,
                 visitedTypeParameters);
         }
 
@@ -176,7 +176,7 @@ internal static class MappingTypeEligibilityPolicy
             var containingNameability = GetNameability(
                 containingType,
                 compilation,
-                inspectTypeParameterConstraints: true,
+                inspectTypeParameterConstraints,
                 visitedTypeParameters,
                 isContainingScope: true);
 
@@ -200,7 +200,7 @@ internal static class MappingTypeEligibilityPolicy
             var argumentNameability = GetNameability(
                 typeArgument,
                 compilation,
-                inspectTypeParameterConstraints: true,
+                inspectTypeParameterConstraints,
                 visitedTypeParameters);
 
             if (argumentNameability == MappingTypeNameability.CompilerOwned)
