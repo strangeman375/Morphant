@@ -27,13 +27,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.ExtensionInvoca
         public Pair[] Pairs => new[] { Pair };
     }
     [MorphantMapper]
-    public partial class AwaitMapper : TypeMapper<AwaitMapper>
+    public partial class AwaitMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Task<int>>().Convert(async source => await source!.Awaitable + source!.Number.Extra());
     }
     [MorphantMapper]
-    public partial class DeconstructionMapper : TypeMapper<DeconstructionMapper>
+    public partial class DeconstructionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int>().Convert(source =>
@@ -44,14 +44,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.ExtensionInvoca
             });
     }
     [MorphantMapper]
-    public partial class PatternMapper : TypeMapper<PatternMapper>
+    public partial class PatternMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int>().Convert(source =>
                 (source!.Pair is (var first, var second) ? first + second : 0) + source!.Number.Extra());
     }
     [MorphantMapper]
-    public partial class InitializerMapper : TypeMapper<InitializerMapper>
+    public partial class InitializerMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int>().Convert(source =>
@@ -61,7 +61,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.ExtensionInvoca
             });
     }
     [MorphantMapper]
-    public partial class LoopDeconstructionMapper : TypeMapper<LoopDeconstructionMapper>
+    public partial class LoopDeconstructionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int>().Convert(source =>

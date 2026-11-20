@@ -31,7 +31,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Expression_2c95c
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

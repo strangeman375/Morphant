@@ -31,7 +31,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -115,7 +115,7 @@ namespace TestCase
             ],
             expectedSurfaces: GetOnlyPropertyWithTwoExpressionsSurfaces,
             expectedDiagnostics: """
-CS1061 Error: 'MappingBuilder<Mapper, Source, Destination>' does not contain a definition for 'Members' and no accessible extension method 'Members' accepting a first argument of type 'MappingBuilder<Mapper, Source, Destination>' could be found (are you missing a using directive or an assembly reference?)
+CS1061 Error: 'MappingBuilder<Source, Destination>' does not contain a definition for 'Members' and no accessible extension method 'Members' accepting a first argument of type 'MappingBuilder<Source, Destination>' could be found (are you missing a using directive or an assembly reference?)
   at TestCase.cs(28,18-28,25)
 """);
     }

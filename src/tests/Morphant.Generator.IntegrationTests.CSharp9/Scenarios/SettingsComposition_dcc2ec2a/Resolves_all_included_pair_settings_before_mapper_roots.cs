@@ -56,7 +56,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsComposit
         public int Value { get; set; }
     }
 
-    public abstract class FarMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class FarMapper<TMapper> : TypeMapper
         where TMapper : FarMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)

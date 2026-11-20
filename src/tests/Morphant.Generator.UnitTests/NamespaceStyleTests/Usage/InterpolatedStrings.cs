@@ -23,7 +23,7 @@ namespace Example
     }
 
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -63,7 +63,7 @@ namespace Example
     }
 
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

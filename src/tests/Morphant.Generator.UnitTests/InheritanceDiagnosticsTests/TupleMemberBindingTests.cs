@@ -40,7 +40,7 @@ namespace TestCase
 """;
         const string family =
 """
-    public abstract class Family<TMapper__PARAMETER__> : TypeMapper<TMapper>
+    public abstract class Family<TMapper__PARAMETER__> : TypeMapper
         where TMapper : Family<TMapper__PARAMETER__>
         __CONSTRAINT__
     {
@@ -67,7 +67,7 @@ namespace TestCase
         var generic = scope == "GenericInherited";
         var baseType = inherit
             ? generic ? "Family<TestMapper, string>" : "Family<TestMapper>"
-            : "TypeMapper<TestMapper>";
+            : "TypeMapper";
         var configuration = inherit
             ? "base.Configure(builder); builder.Map<Source<string>, (string? Value, int Count)>()" +
               ".IncludeBase<Source<string>, (string? Value, int Count)>();"
@@ -108,7 +108,7 @@ namespace TestCase
             (T? Value, int Count)? Tail) Data { get; init; }
     }
 
-    public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+    public abstract class Family<TMapper, T> : TypeMapper
         where TMapper : Family<TMapper, T>
         where T : class
     {

@@ -68,7 +68,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.AdaptiveAssignme
     }
 
     [MorphantMapper]
-    public partial class ConstructMapper : TypeMapper<ConstructMapper>
+    public partial class ConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -90,7 +90,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.AdaptiveAssignme
     }
 
     [MorphantMapper]
-    public partial class ConstructResultMapper : TypeMapper<ConstructResultMapper>
+    public partial class ConstructResultMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -112,7 +112,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.AdaptiveAssignme
     }
 
     [MorphantMapper]
-    public partial class ResolveMapper : TypeMapper<ResolveMapper>
+    public partial class ResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -138,7 +138,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.AdaptiveAssignme
     }
 
     [MorphantMapper]
-    public partial class ResolveResultMapper : TypeMapper<ResolveResultMapper>
+    public partial class ResolveResultMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -164,7 +164,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.AdaptiveAssignme
     }
 
     [MorphantMapper]
-    public partial class ConstructUsingMapper : TypeMapper<ConstructUsingMapper>
+    public partial class ConstructUsingMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -186,7 +186,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.AdaptiveAssignme
     }
 
     [MorphantMapper]
-    public partial class ConstructUsingResultMapper : TypeMapper<ConstructUsingResultMapper>
+    public partial class ConstructUsingResultMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -208,7 +208,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.AdaptiveAssignme
     }
 
     [MorphantMapper]
-    public partial class ResolveUsingMapper : TypeMapper<ResolveUsingMapper>
+    public partial class ResolveUsingMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -231,7 +231,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.AdaptiveAssignme
     }
 
     [MorphantMapper]
-    public partial class ResolveUsingResultMapper : TypeMapper<ResolveUsingResultMapper>
+    public partial class ResolveUsingResultMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

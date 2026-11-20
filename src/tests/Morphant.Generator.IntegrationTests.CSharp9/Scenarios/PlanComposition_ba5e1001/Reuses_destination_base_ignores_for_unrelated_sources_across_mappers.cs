@@ -54,7 +54,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
         public string Number { get; set; }
     }
 
-    public abstract class EntityMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class EntityMapper<TMapper> : TypeMapper
         where TMapper : EntityMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>

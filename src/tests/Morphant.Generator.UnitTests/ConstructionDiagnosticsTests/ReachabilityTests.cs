@@ -24,7 +24,7 @@ namespace TestCase
     public interface DBothThrow { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -98,7 +98,7 @@ namespace TestCase
     public sealed class StructuredDestination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

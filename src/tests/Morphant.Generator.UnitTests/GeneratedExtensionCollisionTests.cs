@@ -21,7 +21,7 @@ namespace TestCase
     public sealed class Destination { }
 
     [Morphant.MorphantMapper]
-    public partial class TestMapper : Morphant.TypeMapper<TestMapper>
+    public partial class TestMapper : Morphant.TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -59,7 +59,7 @@ namespace TestCase
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -105,7 +105,7 @@ namespace A.BConstruction
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -148,17 +148,17 @@ namespace TestCase
 
     internal static class UserExtensions
     {
-        public static MappingBuilder<TMapper, TSource, TDestination> Convert<
+        public static MappingBuilder<TSource, TDestination> Convert<
             TMapper,
             TSource,
             TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MappingBuilder<TSource, TDestination> builder,
             global::Morphant.Delegates.Convert<TSource?, TDestination> mapping)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper => builder;
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -199,13 +199,13 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static MappingBuilder<TMapper, TSource, TDestination> Convert<
+        public static MappingBuilder<TSource, TDestination> Convert<
             TMapper,
             TSource,
             TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MappingBuilder<TSource, TDestination> builder,
             Action callback)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper => builder;
     }
 }
 
@@ -215,7 +215,7 @@ namespace TestCase
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -259,19 +259,15 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static MappingBuilder<
-            TMapper,
-            global::TestCase.Source,
+        public static MappingBuilder<global::TestCase.Source,
             global::TestCase.Destination> Convert<TMapper>(
-            this MapperBuilderBase<MappingBuilder<
-                TMapper,
-                global::TestCase.Source,
+            this MapperBuilderBase<MappingBuilder<global::TestCase.Source,
                 global::TestCase.Destination>> builder,
             global::Morphant.Delegates.Convert<
                 global::TestCase.Source?,
                 global::TestCase.Destination> mapping,
             bool compilerFallback = false)
-            where TMapper : TypeMapper<TMapper> =>
+            where TMapper : TypeMapper =>
             throw new global::Morphant.Exceptions
                 .RuntimeInvocationNotSupportedException();
     }
@@ -284,16 +280,16 @@ namespace TestCase
 
     internal static class UserExtensions
     {
-        public static MappingBuilder<TMapper, TSource, TDestination> Tap<
+        public static MappingBuilder<TSource, TDestination> Tap<
             TMapper,
             TSource,
             TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder)
-            where TMapper : TypeMapper<TMapper> => builder;
+            this MappingBuilder<TSource, TDestination> builder)
+            where TMapper : TypeMapper => builder;
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -336,7 +332,7 @@ namespace TestCase
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -359,19 +355,19 @@ namespace TestCase
 
     internal static class UserExtensions
     {
-        public static MappingBuilder<TMapper, TSource, TDestination> Convert<
+        public static MappingBuilder<TSource, TDestination> Convert<
             TMapper,
             TSource,
             TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MappingBuilder<TSource, TDestination> builder,
             global::Morphant.Delegates.Convert<
                 TSource?,
                 TDestination> mapping)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper => builder;
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -449,7 +445,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -497,7 +493,7 @@ namespace TestCase
         public T Value { get; set; }
     }
 
-    public abstract class FirstFamily<TMapper, T> : TypeMapper<TMapper>
+    public abstract class FirstFamily<TMapper, T> : TypeMapper
         where TMapper : FirstFamily<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -505,7 +501,7 @@ namespace TestCase
                 .Convert(_ => new Destination<T>(default!));
     }
 
-    public abstract class SecondFamily<TMapper, T> : TypeMapper<TMapper>
+    public abstract class SecondFamily<TMapper, T> : TypeMapper
         where TMapper : SecondFamily<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -574,7 +570,7 @@ namespace TestCase
         public T Value { get; set; } = default!;
     }
 
-    public abstract class RootFamily<TMapper, T> : TypeMapper<TMapper>
+    public abstract class RootFamily<TMapper, T> : TypeMapper
         where TMapper : RootFamily<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -649,14 +645,14 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ObjectMapper : TypeMapper<ObjectMapper>
+    public partial class ObjectMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source<object>, Destination<object>>();
     }
 
     [MorphantMapper]
-    public partial class DynamicMapper : TypeMapper<DynamicMapper>
+    public partial class DynamicMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -691,14 +687,14 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class StringMapper : TypeMapper<StringMapper>
+    public partial class StringMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source<string>, Destination<string>>();
     }
 
     [MorphantMapper]
-    public partial class NullableMapper : TypeMapper<NullableMapper>
+    public partial class NullableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

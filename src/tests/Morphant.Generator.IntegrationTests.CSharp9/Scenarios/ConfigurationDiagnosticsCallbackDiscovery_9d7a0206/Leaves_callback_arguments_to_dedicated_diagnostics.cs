@@ -39,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationDia
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         private static bool SelectFirst => true;
 

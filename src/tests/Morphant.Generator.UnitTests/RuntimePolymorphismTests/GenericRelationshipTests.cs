@@ -145,7 +145,7 @@ namespace TestCase
     public class Result<T> { }
     public sealed class First<T> : Result<T> { }
     public sealed class Second<T> : Result<T> { }
-    public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+    public abstract class Family<TMapper, T> : TypeMapper
         where TMapper : Family<TMapper, T> where T : class
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -201,7 +201,7 @@ namespace TestCase
     public sealed class Second<T> : Result<T> { }
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper<TestMapper<T>> where T : __CONSTRAINT__
+    public partial class TestMapper<T> : TypeMapper where T : __CONSTRAINT__
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<object, Result<T>>()

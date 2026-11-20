@@ -45,7 +45,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StructuredResult
     }
 
     [MorphantMapper]
-    public sealed partial class ValueMapper : TypeMapper<ValueMapper>
+    public sealed partial class ValueMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -64,7 +64,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StructuredResult
     }
 
     [MorphantMapper]
-    public sealed partial class NullableMapper : TypeMapper<NullableMapper>
+    public sealed partial class NullableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination?>().Resolve((source, previous) =>
@@ -88,7 +88,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StructuredResult
 
 #pragma warning disable MORPH0062
     [MorphantMapper]
-    public sealed partial class InvalidResolveMapper : TypeMapper<InvalidResolveMapper>
+    public sealed partial class InvalidResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, ReferenceDestination>().Resolve((source, previous) =>
@@ -99,7 +99,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StructuredResult
     }
 
     [MorphantMapper]
-    public sealed partial class InvalidConstructMapper : TypeMapper<InvalidConstructMapper>
+    public sealed partial class InvalidConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, ReferenceDestination>()
@@ -109,7 +109,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StructuredResult
 
 #pragma warning disable MORPH0038
     [MorphantMapper]
-    public sealed partial class InvalidReadMapper : TypeMapper<InvalidReadMapper>
+    public sealed partial class InvalidReadMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, ReferenceDestination>()

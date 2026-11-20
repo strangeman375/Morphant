@@ -15,7 +15,7 @@ namespace Morphant.Generator.CompatibilityFixtures.CSharp8
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

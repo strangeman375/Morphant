@@ -21,7 +21,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -87,7 +87,7 @@ namespace TestCase;
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -160,7 +160,7 @@ namespace TestCase;
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -190,7 +190,7 @@ namespace TestCase;
 public sealed class Source { }
 public sealed class Destination { }
 
-public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+public abstract class BaseMapper<TMapper> : TypeMapper
     where TMapper : BaseMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -208,7 +208,7 @@ public partial class DerivedMapper : BaseMapper<DerivedMapper>
 }
 
 [MorphantMapper]
-public partial class OtherMapper : TypeMapper<OtherMapper>
+public partial class OtherMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
@@ -243,7 +243,7 @@ public sealed class Destination
 }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -286,7 +286,7 @@ public partial class Container
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

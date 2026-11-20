@@ -16,7 +16,7 @@ internal sealed class DocumentationExamplesTests
             var project = XDocument.Parse(ConsumerProject);
             project.Root!.Add(new XElement("ItemGroup",
                 new XElement("Reference", new XAttribute("Include", "Morphant"),
-                    new XElement("HintPath", typeof(TypeMapper<>).Assembly.Location)),
+                    new XElement("HintPath", typeof(TypeMapper).Assembly.Location)),
                 new XElement("Analyzer", new XAttribute("Include", Path.Combine(
                     IntegrationTestEnvironment.RepositoryRoot, "src", "Morphant.Generator", "bin",
                     IntegrationTestEnvironment.BuildConfiguration, "netstandard2.0", "Morphant.Generator.dll")))));
@@ -154,7 +154,7 @@ public sealed class Source
 }
 public sealed class Destination { public string Name { get; set; } = ""; }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -183,7 +183,7 @@ public sealed class Destination
     public int Value { get; set; }
 }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) => __EXAMPLE__;
 }
@@ -210,7 +210,7 @@ public sealed class Order
     public int Id { get; }
 }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) => __EXAMPLE__;
 }
@@ -242,7 +242,7 @@ public sealed class Order
     public void UpdateFrom(OrderDto source) => Name = source.Name;
 }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) => __EXAMPLE__;
 }
@@ -269,7 +269,7 @@ public interface IOrder { int Id { get; } }
 public sealed class Order : IOrder { public Order(int id) => Id = id; public int Id { get; } }
 public sealed class OrderFactory { public IOrder Create(int id) => id < 0 ? null! : new Order(id); }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     private readonly OrderFactory orderFactory = new();
     protected override void Configure(MapperBuilder builder) => __EXAMPLE__;
@@ -303,7 +303,7 @@ public sealed class OrderFactory
     }
 }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     private readonly OrderFactory orderFactory = new();
     protected override void Configure(MapperBuilder builder) => __EXAMPLE__;
@@ -343,7 +343,7 @@ public sealed class Order
     public int TenantId { get; }
 }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) => __EXAMPLE__;
 }
@@ -363,7 +363,7 @@ public static class Scenario
 """
 public sealed class Source { public int Id { get; set; } public string DisplayName { get; set; } = ""; }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) => __EXAMPLE__;
 }

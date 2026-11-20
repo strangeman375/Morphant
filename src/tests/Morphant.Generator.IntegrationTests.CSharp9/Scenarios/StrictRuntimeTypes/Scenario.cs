@@ -18,7 +18,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StrictRuntimeTyp
         public int Value { get; set; }
     }
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         public int ArrayCalls { get; private set; }
         private int Count(object[]? source)

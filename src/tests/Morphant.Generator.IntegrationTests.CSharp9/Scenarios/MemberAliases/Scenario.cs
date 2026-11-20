@@ -20,7 +20,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberAliases
     }
 
     [MorphantMapper]
-    public sealed partial class ConventionMapper : TypeMapper<ConventionMapper>
+    public sealed partial class ConventionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -28,7 +28,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberAliases
     }
 
     [MorphantMapper]
-    public sealed partial class ExplicitMapper : TypeMapper<ExplicitMapper>
+    public sealed partial class ExplicitMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -53,7 +53,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberAliases
     public sealed class ReadOnlyDestination { public ChildDestination Clone { get; } = new(); }
 
     [MorphantMapper]
-    public sealed partial class ReadOnlyMapper : TypeMapper<ReadOnlyMapper>
+    public sealed partial class ReadOnlyMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

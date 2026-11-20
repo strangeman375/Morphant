@@ -26,56 +26,56 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
         public int Value { get => value; set { this.value = value; Writes++; } }
     }
     [MorphantMapper]
-    public partial class AutomaticMapper : TypeMapper<AutomaticMapper>
+    public partial class AutomaticMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
-    public partial class ByConventionMapper : TypeMapper<ByConventionMapper>
+    public partial class ByConventionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Construct(_ => new(ByConvention()))
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
-    public partial class AutoMapper : TypeMapper<AutoMapper>
+    public partial class AutoMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Construct(_ => new(Auto()))
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
-    public partial class ValueMapper : TypeMapper<ValueMapper>
+    public partial class ValueMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Construct(source => new(source.ConstructValue()))
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
-    public partial class ByConventionAutoMapper : TypeMapper<ByConventionAutoMapper>
+    public partial class ByConventionAutoMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Construct(_ => new(ByConvention(), new() { value = Auto() }))
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
-    public partial class ByConventionValueMapper : TypeMapper<ByConventionValueMapper>
+    public partial class ByConventionValueMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Construct(source => new(ByConvention(), new() { value = source.ConstructValue() }))
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
-    public partial class ResolveMapper : TypeMapper<ResolveMapper>
+    public partial class ResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((_, previous) => { if (previous.HasValue) return previous.Value; return new(Auto()); })
                 .Members(source => new() { Value = source.Read() });
     }
     [MorphantMapper]
-    public partial class OmittedMapper : TypeMapper<OmittedMapper>
+    public partial class OmittedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Construct(_ => new())
@@ -88,7 +88,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
         public int ConstructValue() => 23;
     }
     [MorphantMapper]
-    public partial class MemberAutoMapper : TypeMapper<MemberAutoMapper>
+    public partial class MemberAutoMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<AutoSource, Destination>()
@@ -111,7 +111,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnifiedConstruct
         public string Value { get => value; set { this.value = value; Writes++; } }
     }
     [MorphantMapper]
-    public partial class OverloadMapper : TypeMapper<OverloadMapper>
+    public partial class OverloadMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<TextSource, OverloadedDestination>()

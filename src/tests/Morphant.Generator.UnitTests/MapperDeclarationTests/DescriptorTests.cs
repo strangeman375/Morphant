@@ -15,7 +15,7 @@ internal sealed class DescriptorTests
             MapperDeclarationDiagnosticDescriptors.MissingTypeMapperBase,
             "MORPH0005",
             "Mapper must derive from TypeMapper",
-            "Mapper '{0}' must derive from 'Morphant.TypeMapper<{0}>'.");
+            "Mapper '{0}' must derive from 'Morphant.TypeMapper'.");
         yield return Case(
             MapperDeclarationDiagnosticDescriptors.MapperMustBePartial,
             "MORPH0006",
@@ -53,7 +53,7 @@ internal sealed class DescriptorTests
             MapperDeclarationDiagnosticDescriptors.InvalidSelfType,
             "MORPH0058",
             "Mapper self type is invalid",
-            "Mapper '{0}' must close 'Morphant.TypeMapper<TMapper>' with " +
+            "Mapper '{0}' must close 'Morphant.TypeMapper' with " +
             "its own type or a correctly constrained CRTP self type instead " +
             "of '{1}'.");
         yield return Case(

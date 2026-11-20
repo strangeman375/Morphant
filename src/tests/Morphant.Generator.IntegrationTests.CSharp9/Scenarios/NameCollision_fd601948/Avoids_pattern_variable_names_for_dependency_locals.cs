@@ -21,7 +21,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NameCollision_fd
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         public static int InvocationCount { get; private set; }
 

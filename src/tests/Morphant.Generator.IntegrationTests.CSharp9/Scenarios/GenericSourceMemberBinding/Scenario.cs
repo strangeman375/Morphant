@@ -10,7 +10,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
     public sealed class Box<T> where T : BaseSource { public T Payload { get; set; } = default!; }
     public sealed class Destination { public int Value { get; set; } }
 
-    public abstract class ExplicitFamily<TMapper, TSource> : TypeMapper<TMapper>
+    public abstract class ExplicitFamily<TMapper, TSource> : TypeMapper
         where TMapper : ExplicitFamily<TMapper, TSource>
         where TSource : BaseSource
     {
@@ -26,7 +26,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
             builder.Map<Box<Source>, Destination>().IncludeBase<Box<Source>, Destination>();
         }
     }
-    public abstract class NestedFamily<TMapper, TSource> : TypeMapper<TMapper>
+    public abstract class NestedFamily<TMapper, TSource> : TypeMapper
         where TMapper : NestedFamily<TMapper, TSource>
         where TSource : BaseSource
     {
@@ -44,7 +44,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
         }
     }
     [MorphantMapper]
-    public partial class CrossPairMapper : TypeMapper<CrossPairMapper>
+    public partial class CrossPairMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -9,7 +9,7 @@ internal sealed partial class ProductionPipelineTests
 {
     private static readonly CSharpParseOptions Options = new(LanguageVersion.CSharp10);
     private static readonly MetadataReference[] References = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-        .Split(Path.PathSeparator).Append(typeof(TypeMapper<>).Assembly.Location).Distinct(StringComparer.Ordinal)
+        .Split(Path.PathSeparator).Append(typeof(TypeMapper).Assembly.Location).Distinct(StringComparer.Ordinal)
         .Select(path => MetadataReference.CreateFromFile(path)).ToArray();
 
     // lang=c#
@@ -36,7 +36,7 @@ namespace Fixture
     }
 
     [MorphantMapper]
-    public partial class FirstMapper : TypeMapper<FirstMapper>
+    public partial class FirstMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -52,7 +52,7 @@ namespace Fixture
     }
 
     [MorphantMapper]
-    public partial class HealthyMapper : TypeMapper<HealthyMapper>
+    public partial class HealthyMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

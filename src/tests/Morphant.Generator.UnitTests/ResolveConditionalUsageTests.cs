@@ -28,7 +28,7 @@ public sealed class Destination
     public int Id { get; }
 }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper<TestMapper>
+public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>().Resolve((source, previous) => __BODY__);

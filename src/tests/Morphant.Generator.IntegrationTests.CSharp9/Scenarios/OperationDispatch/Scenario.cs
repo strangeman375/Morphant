@@ -39,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.OperationDispatc
     }
 
     [MorphantMapper]
-    public partial class ConstructMapper : TypeMapper<ConstructMapper>
+    public partial class ConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -67,7 +67,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.OperationDispatc
     }
 
     [MorphantMapper]
-    public partial class ResolveMapper : TypeMapper<ResolveMapper>
+    public partial class ResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

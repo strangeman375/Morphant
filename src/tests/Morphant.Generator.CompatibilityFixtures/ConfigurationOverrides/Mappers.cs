@@ -14,7 +14,7 @@ public sealed class SourceC { }
 public sealed class DestinationC { }
 
 [MorphantMapper]
-public abstract partial class MissingMapper : TypeMapper<MissingMapper>
+public abstract partial class MissingMapper : TypeMapper
 {
 }
 
@@ -30,7 +30,7 @@ public partial class UnavailableBaseMapper :
 }
 
 [MorphantMapper]
-public partial class RootFlowMapper : TypeMapper<RootFlowMapper>
+public partial class RootFlowMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -44,7 +44,7 @@ public partial class RootFlowMapper : TypeMapper<RootFlowMapper>
 }
 
 [MorphantMapper]
-public partial class PairFlowMapper : TypeMapper<PairFlowMapper>
+public partial class PairFlowMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {

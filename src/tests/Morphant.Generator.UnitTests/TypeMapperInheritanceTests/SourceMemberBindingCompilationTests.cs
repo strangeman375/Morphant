@@ -119,7 +119,7 @@ namespace TestCase
     }
     public sealed class Box<T> where T : BaseSource { public T Payload { get; set; } = default!; }
     public sealed class Destination { public Destination(int value = 0) { Value = value; } public int Value { get; set; } }
-    public abstract class Family<TMapper, TSource> : TypeMapper<TMapper>
+    public abstract class Family<TMapper, TSource> : TypeMapper
         where TMapper : Family<TMapper, TSource> where TSource : BaseSource
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Box<TSource>, Destination>(){{rule}};

@@ -14,7 +14,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsInherita
     public class AnimalDto : EntityDto { }
     public sealed class DogDto : AnimalDto { }
 
-    public abstract class Far<TMapper> : TypeMapper<TMapper> where TMapper : Far<TMapper>
+    public abstract class Far<TMapper> : TypeMapper where TMapper : Far<TMapper>
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Entity, EntityDto>()
             .Flattening(Flattening.Auto)
@@ -73,7 +73,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsInherita
         }
     }
     [MorphantMapper]
-    public partial class BeforeMapper : TypeMapper<BeforeMapper>
+    public partial class BeforeMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -83,7 +83,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsInherita
         }
     }
     [MorphantMapper]
-    public partial class AfterMapper : TypeMapper<AfterMapper>
+    public partial class AfterMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

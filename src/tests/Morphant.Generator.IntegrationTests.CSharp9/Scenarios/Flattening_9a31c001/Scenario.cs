@@ -321,7 +321,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -381,7 +381,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
     }
 
     [MorphantMapper]
-    public partial class MapperDefaultMapper : TypeMapper<MapperDefaultMapper>
+    public partial class MapperDefaultMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

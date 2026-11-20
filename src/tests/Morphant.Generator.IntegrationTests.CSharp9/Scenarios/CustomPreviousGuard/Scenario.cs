@@ -32,7 +32,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CustomPreviousGu
         public string Value { get; set; }
     }
     [MorphantMapper]
-    public partial class ResolveBeforeMapper : TypeMapper<ResolveBeforeMapper>
+    public partial class ResolveBeforeMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) =>
@@ -42,7 +42,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CustomPreviousGu
             });
     }
     [MorphantMapper]
-    public partial class ResolveAfterMapper : TypeMapper<ResolveAfterMapper>
+    public partial class ResolveAfterMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) =>
@@ -52,7 +52,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CustomPreviousGu
             });
     }
     [MorphantMapper]
-    public partial class ConstructMembersBeforeMapper : TypeMapper<ConstructMembersBeforeMapper>
+    public partial class ConstructMembersBeforeMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Construct(source => new("seed"))
@@ -63,7 +63,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CustomPreviousGu
             });
     }
     [MorphantMapper]
-    public partial class ConstructMembersAfterMapper : TypeMapper<ConstructMembersAfterMapper>
+    public partial class ConstructMembersAfterMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Construct(source => new("seed"))
@@ -74,7 +74,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CustomPreviousGu
             });
     }
     [MorphantMapper]
-    public partial class ResolveMembersBeforeMapper : TypeMapper<ResolveMembersBeforeMapper>
+    public partial class ResolveMembersBeforeMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) => new("seed"))
@@ -85,7 +85,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CustomPreviousGu
             });
     }
     [MorphantMapper]
-    public partial class ResolveMembersAfterMapper : TypeMapper<ResolveMembersAfterMapper>
+    public partial class ResolveMembersAfterMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) => new("seed"))

@@ -12,7 +12,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleGenericPres
     }
     public sealed class State { public int Add(int value) => value + 5; }
 
-    public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+    public abstract class Family<TMapper, T> : TypeMapper
         where TMapper : Family<TMapper, T> where T : class
     {
         protected override void Configure(MapperBuilder builder) =>

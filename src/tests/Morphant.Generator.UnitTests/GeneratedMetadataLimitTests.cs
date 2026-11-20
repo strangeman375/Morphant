@@ -24,7 +24,7 @@ public class Source { public int Value { get; set; } }
         var mapper =
 $$"""
 [MorphantMapper]
-public partial class Mapper : TypeMapper<Mapper>
+public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, {{destinationName}}>();

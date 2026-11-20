@@ -59,7 +59,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingValues
     }
 
     [MorphantMapper]
-    public partial class ConstructAutomaticMapper : TypeMapper<ConstructAutomaticMapper>
+    public partial class ConstructAutomaticMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -69,7 +69,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingValues
     }
 
     [MorphantMapper]
-    public partial class ConstructValueTupleMapper : TypeMapper<ConstructValueTupleMapper>
+    public partial class ConstructValueTupleMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, (int Id, string Name)>()
@@ -79,7 +79,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingValues
     }
 
     [MorphantMapper]
-    public partial class ConstructReferenceTupleMapper : TypeMapper<ConstructReferenceTupleMapper>
+    public partial class ConstructReferenceTupleMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Tuple<int, string>>()
@@ -89,7 +89,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingValues
     }
 
     [MorphantMapper]
-    public partial class ResolveAutomaticMapper : TypeMapper<ResolveAutomaticMapper>
+    public partial class ResolveAutomaticMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -103,7 +103,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingValues
     }
 
     [MorphantMapper]
-    public partial class ResolveValueTupleMapper : TypeMapper<ResolveValueTupleMapper>
+    public partial class ResolveValueTupleMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, (int Id, string Name)>()
@@ -117,7 +117,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingValues
     }
 
     [MorphantMapper]
-    public partial class ResolveReferenceTupleMapper : TypeMapper<ResolveReferenceTupleMapper>
+    public partial class ResolveReferenceTupleMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Tuple<int, string>>()

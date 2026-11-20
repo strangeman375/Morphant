@@ -60,7 +60,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritancePairR
     }
 
     [MorphantMapper]
-    public partial class EdgeMapper : TypeMapper<EdgeMapper>
+    public partial class EdgeMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -81,7 +81,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritancePairR
         }
     }
 
-    public abstract class InvalidBaseMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class InvalidBaseMapper<TMapper> : TypeMapper
         where TMapper : InvalidBaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>

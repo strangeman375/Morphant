@@ -71,7 +71,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         public static int SourceOnlyConstructCount { get; private set; }
 

@@ -32,7 +32,7 @@ namespace ExtensionCases
         public int Value { get; set; }
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -112,8 +112,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Construct(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Construct(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Construct<global::ExtensionCases.Source, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -123,8 +123,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Construct(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Construct(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Construct<global::ExtensionCases.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -134,8 +134,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Resolve(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Resolve(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Resolve<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -145,8 +145,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Resolve(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Resolve(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Resolve<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -156,8 +156,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, global::ExtensionCases.Destination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -167,8 +167,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, global::Morphant.Context.MappingContext, global::ExtensionCases.Destination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -178,8 +178,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::ExtensionCases.Destination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -189,8 +189,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::Morphant.Context.MappingContext, global::ExtensionCases.Destination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -200,8 +200,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::ExtensionCases.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -211,8 +211,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::ExtensionCases.Destination, global::ExtensionCases.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -222,8 +222,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::ExtensionCases.Destination, global::Morphant.Context.MappingContext, global::ExtensionCases.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -269,8 +269,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Members<global::ExtensionCases.Source, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -280,8 +280,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Members<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -291,8 +291,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Members<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::ExtensionCases.Destination, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -302,8 +302,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
-            this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
+            this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
             global::Morphant.Delegates.Members<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::ExtensionCases.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -419,8 +419,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Inline lambda returning a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Construct(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Construct(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Construct<global::ExtensionCases.Source, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -430,8 +430,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Inline lambda returning a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Construct(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Construct(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Construct<global::ExtensionCases.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -441,8 +441,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Resolve(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Resolve(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Resolve<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -452,8 +452,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Resolve(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Resolve(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Resolve<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -463,8 +463,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> ConstructUsing(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> ConstructUsing(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, global::ExtensionCases.Destination> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -474,8 +474,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> ConstructUsing(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> ConstructUsing(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.ConstructUsing<global::ExtensionCases.Source, global::Morphant.Context.MappingContext, global::ExtensionCases.Destination> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -485,8 +485,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> ResolveUsing(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> ResolveUsing(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::ExtensionCases.Destination> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -496,8 +496,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> ResolveUsing(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> ResolveUsing(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.ResolveUsing<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::Morphant.Context.MappingContext, global::ExtensionCases.Destination> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -507,8 +507,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::ExtensionCases.Destination> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -518,8 +518,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::ExtensionCases.Destination, global::ExtensionCases.Destination> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -529,8 +529,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Convert(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Convert<global::ExtensionCases.Source?, global::ExtensionCases.Destination, global::Morphant.Context.MappingContext, global::ExtensionCases.Destination> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }
@@ -574,8 +574,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Members<global::ExtensionCases.Source, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationMembers> members)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -585,8 +585,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Members<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationMembers> members)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -596,8 +596,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Members<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::ExtensionCases.Destination, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationMembers> members)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -607,8 +607,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-    public static global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
-        this global::Morphant.MappingBuilder<global::ExtensionCases.Mapper, global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> Members(
+        this global::Morphant.MappingBuilder<global::ExtensionCases.Source, global::ExtensionCases.Destination> builder,
         global::Morphant.Delegates.Members<global::ExtensionCases.Source, global::ExtensionCases.Destination, global::ExtensionCases.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_95268e09ed38b3e2360d7ef51f9be944.DestinationMembers> members)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }

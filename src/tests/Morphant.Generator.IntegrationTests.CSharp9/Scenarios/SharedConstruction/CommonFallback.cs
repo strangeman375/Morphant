@@ -28,7 +28,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class OutGuardMapper : TypeMapper<OutGuardMapper>
+    public partial class OutGuardMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<GuardSource, GuardDestination>()
@@ -41,7 +41,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class ScopedGuardMapper : TypeMapper<ScopedGuardMapper>
+    public partial class ScopedGuardMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<GuardSource, GuardDestination>()

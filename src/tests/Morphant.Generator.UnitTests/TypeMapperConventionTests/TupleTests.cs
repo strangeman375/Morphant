@@ -22,7 +22,7 @@ namespace TestCase
     public sealed record Source(int Id, string Name);
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, (int Id, string Name)>();

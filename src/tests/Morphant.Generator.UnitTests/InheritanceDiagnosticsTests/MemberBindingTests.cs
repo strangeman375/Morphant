@@ -72,7 +72,7 @@ namespace TestCase
 {
     public sealed class Source { }
     public sealed class Destination { public string Text { get; set; } = ""; }
-    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper> where TMapper : BaseMapper<TMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper where TMapper : BaseMapper<TMapper>
     {
         protected virtual string Read() => "base";
         protected override void Configure(MapperBuilder builder) =>
@@ -138,7 +138,7 @@ namespace TestCase
     public sealed class ConvertTag { }
     public sealed class Destination<T> { public Destination(string text) { Text = text; } public string Text { get; } }
     public sealed class MemberDestination { public string Text { get; set; } = ""; }
-    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper> where TMapper : BaseMapper<TMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper where TMapper : BaseMapper<TMapper>
     {
         protected virtual string Read() => "base";
         protected override void Configure(MapperBuilder builder)

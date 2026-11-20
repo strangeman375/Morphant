@@ -64,7 +64,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class ComplexArgumentsMapper : TypeMapper<ComplexArgumentsMapper>
+    public partial class ComplexArgumentsMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, ComplexDestination>()
@@ -109,7 +109,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class ExpressionsMapper : TypeMapper<ExpressionsMapper>
+    public partial class ExpressionsMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -119,7 +119,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class LocalMapper : TypeMapper<LocalMapper>
+    public partial class LocalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -133,7 +133,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class ConditionMapper : TypeMapper<ConditionMapper>
+    public partial class ConditionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -148,7 +148,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class FactoryMapper : TypeMapper<FactoryMapper>
+    public partial class FactoryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -158,7 +158,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class InitialResultMapper : TypeMapper<InitialResultMapper>
+    public partial class InitialResultMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -168,7 +168,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class SwapMapper : TypeMapper<SwapMapper>
+    public partial class SwapMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -178,7 +178,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class ConventionMapper : TypeMapper<ConventionMapper>
+    public partial class ConventionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -192,7 +192,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class TupleMapper : TypeMapper<TupleMapper>
+    public partial class TupleMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Tuple<int, int>>()
@@ -201,7 +201,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class TupleResultMapper : TypeMapper<TupleResultMapper>
+    public partial class TupleResultMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Tuple<int, int>>()
@@ -210,7 +210,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class TupleLocalMapper : TypeMapper<TupleLocalMapper>
+    public partial class TupleLocalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Tuple<int, int>>()
@@ -223,7 +223,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
     }
 
     [MorphantMapper]
-    public partial class TupleConditionMapper : TypeMapper<TupleConditionMapper>
+    public partial class TupleConditionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Tuple<int, int>>()
@@ -238,7 +238,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionAndM
 
     #pragma warning disable CS8509 // This scenario exercises the generated non-exhaustive switch exception.
     [MorphantMapper]
-    public partial class UnmatchedSwitchMapper : TypeMapper<UnmatchedSwitchMapper>
+    public partial class UnmatchedSwitchMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

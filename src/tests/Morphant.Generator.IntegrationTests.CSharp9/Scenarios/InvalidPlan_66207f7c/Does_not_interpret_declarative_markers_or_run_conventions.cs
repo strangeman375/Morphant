@@ -33,7 +33,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidPlan_6620
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

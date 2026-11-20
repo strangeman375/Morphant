@@ -45,7 +45,7 @@ namespace TestCase
         public string? AfterName { get; set; }
     }
 
-    public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+    public abstract class Family<TMapper, T> : TypeMapper
         where TMapper : Family<TMapper, T>
         where T : BaseSource
     {

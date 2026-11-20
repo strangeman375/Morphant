@@ -58,7 +58,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -87,14 +87,14 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
     }
 
     [MorphantMapper]
-    public partial class SecondMapper : TypeMapper<SecondMapper>
+    public partial class SecondMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<AlternativeSource, Destination>();
@@ -124,7 +124,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -152,7 +152,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -174,7 +174,7 @@ namespace TestCase
     public enum Destination { None }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -291,8 +291,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_c465d85b12adb249299335c032aeafc3.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -302,8 +302,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Generated.N_c465d85b12adb249299335c032aeafc3.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -313,8 +313,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Generated.N_c465d85b12adb249299335c032aeafc3.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -324,8 +324,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_c465d85b12adb249299335c032aeafc3.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -348,8 +348,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, global::TestCase.AlternativeSource, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, global::TestCase.AlternativeSource, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.AlternativeSource, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.AlternativeSource, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.AlternativeSource, global::Morphant.Generated.N_c465d85b12adb249299335c032aeafc3.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -359,8 +359,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, global::TestCase.AlternativeSource, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, global::TestCase.AlternativeSource, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.AlternativeSource, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.AlternativeSource, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.AlternativeSource, global::TestCase.Destination, global::Morphant.Generated.N_c465d85b12adb249299335c032aeafc3.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -370,8 +370,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, global::TestCase.AlternativeSource, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, global::TestCase.AlternativeSource, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.AlternativeSource, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.AlternativeSource, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.AlternativeSource, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Generated.N_c465d85b12adb249299335c032aeafc3.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -381,8 +381,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, global::TestCase.AlternativeSource, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, global::TestCase.AlternativeSource, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.AlternativeSource, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.AlternativeSource, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.AlternativeSource, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_c465d85b12adb249299335c032aeafc3.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

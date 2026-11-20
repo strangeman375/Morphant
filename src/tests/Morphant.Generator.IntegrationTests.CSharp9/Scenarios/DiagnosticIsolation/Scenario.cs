@@ -14,7 +14,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DiagnosticIsolat
     public class Valid { public int Value { get; set; } }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         public static int CallbackCalls { get; set; }
 

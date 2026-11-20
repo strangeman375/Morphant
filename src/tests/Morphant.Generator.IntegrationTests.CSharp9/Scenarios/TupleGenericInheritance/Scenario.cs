@@ -11,7 +11,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleGenericInhe
         public (T? Value, int Count) Data { get; init; }
     }
 
-    public abstract class ConstructionFamily<TMapper, T> : TypeMapper<TMapper>
+    public abstract class ConstructionFamily<TMapper, T> : TypeMapper
         where TMapper : ConstructionFamily<TMapper, T>
         where T : class
     {
@@ -50,7 +50,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleGenericInhe
         }
     }
 
-    public abstract class ConversionFamily<TMapper, T> : TypeMapper<TMapper>
+    public abstract class ConversionFamily<TMapper, T> : TypeMapper
         where TMapper : ConversionFamily<TMapper, T>
         where T : class
     {
@@ -76,7 +76,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleGenericInhe
             (T? Value, int Count)? Tail) Data { get; init; }
     }
 
-    public abstract class LongFamily<TMapper, T> : TypeMapper<TMapper>
+    public abstract class LongFamily<TMapper, T> : TypeMapper
         where TMapper : LongFamily<TMapper, T>
         where T : class
     {
@@ -104,7 +104,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleGenericInhe
         public override int GetHashCode() { Calls++; return 73; }
     }
 
-    public abstract class HashFamily<TMapper, T> : TypeMapper<TMapper>
+    public abstract class HashFamily<TMapper, T> : TypeMapper
         where TMapper : HashFamily<TMapper, T>
         where T : class
     {

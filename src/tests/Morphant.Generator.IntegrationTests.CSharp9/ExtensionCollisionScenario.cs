@@ -21,7 +21,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
     }
 
     public abstract class FirstMapperFamily<TMapper, T> :
-        TypeMapper<TMapper>
+        TypeMapper
         where TMapper : FirstMapperFamily<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -30,7 +30,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
     }
 
     public abstract class SecondMapperFamily<TMapper, T> :
-        TypeMapper<TMapper>
+        TypeMapper
         where TMapper : SecondMapperFamily<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -86,7 +86,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
 
     [MorphantMapper]
     public sealed partial class ObjectMapper :
-        TypeMapper<ObjectMapper>
+        TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<ErasedSource<object>, ErasedDestination<object>>();
@@ -95,7 +95,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
 #pragma warning disable MORPH0060
     [MorphantMapper]
     public abstract partial class InvalidMapperFamily<TMapper, TState> :
-        TypeMapper<TMapper>
+        TypeMapper
         where TMapper : InvalidMapperFamily<TMapper, TState>
     {
         protected override void Configure(MapperBuilder builder) =>

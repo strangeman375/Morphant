@@ -406,7 +406,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class MapperOne : TypeMapper<MapperOne>
+    public partial class MapperOne : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceOne, SharedDestination>();
@@ -424,7 +424,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class MapperTwo : TypeMapper<MapperTwo>
+    public partial class MapperTwo : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceTwo, SharedDestination>();
@@ -442,7 +442,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class StableMapper : TypeMapper<StableMapper>
+    public partial class StableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<StableSource, StableDestination>();
@@ -482,7 +482,7 @@ namespace TestCase
 {
     [MorphantMapper]
     public partial class NonNullableMapper :
-        TypeMapper<NonNullableMapper>
+        TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SurfaceSource, SurfaceDestination>();
@@ -502,7 +502,7 @@ namespace TestCase
 {
     [MorphantMapper]
     public partial class NullablePresentationMapper :
-        TypeMapper<NullablePresentationMapper>
+        TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SurfaceSource?, SurfaceDestination?>();

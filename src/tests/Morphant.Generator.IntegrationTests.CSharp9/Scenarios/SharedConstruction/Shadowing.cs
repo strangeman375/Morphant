@@ -20,7 +20,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class ShadowedCreateMapper : TypeMapper<ShadowedCreateMapper>
+    public partial class ShadowedCreateMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<ShadowSource, ShadowDestination>()
@@ -39,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class ShadowedConstructMapper : TypeMapper<ShadowedConstructMapper>
+    public partial class ShadowedConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<ShadowSource, ShadowDestination>()

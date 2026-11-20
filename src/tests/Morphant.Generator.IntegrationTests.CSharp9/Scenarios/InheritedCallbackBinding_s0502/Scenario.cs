@@ -42,7 +42,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritedCallbac
         public Func<string> Read { get; }
     }
 
-    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper
         where TMapper : BaseMapper<TMapper>
     {
         public int ReadCalls { get; private set; }

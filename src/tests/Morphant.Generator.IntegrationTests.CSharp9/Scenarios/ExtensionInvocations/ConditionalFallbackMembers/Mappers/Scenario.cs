@@ -5,7 +5,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
 {
     using Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocations.ConditionalFallbackMembers.Calls;
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, int>().Convert(source =>
         {

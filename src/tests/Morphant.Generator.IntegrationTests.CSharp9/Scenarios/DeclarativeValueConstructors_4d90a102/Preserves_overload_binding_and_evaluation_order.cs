@@ -157,7 +157,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DeclarativeValue
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         public static List<string> Events { get; } = new();
 

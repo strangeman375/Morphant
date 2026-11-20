@@ -505,7 +505,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ExternalMapper : TypeMapper<ExternalMapper>
+    public partial class ExternalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<ExternalSource, Destination>();
@@ -534,7 +534,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class StableMapper : TypeMapper<StableMapper>
+    public partial class StableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<StableSource, StableDestination>();
@@ -573,14 +573,14 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class MapperA : TypeMapper<MapperA>
+    public partial class MapperA : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceA, DestinationA>();
     }
 
     [MorphantMapper]
-    public partial class MapperB : TypeMapper<MapperB>
+    public partial class MapperB : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceB, DestinationB>();

@@ -15,7 +15,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ComplexArgumentE
     }
 
     [MorphantMapper]
-    public partial class RefMapper : TypeMapper<RefMapper>
+    public partial class RefMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -32,7 +32,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ComplexArgumentE
     }
 
     [MorphantMapper]
-    public partial class ClosureMapper : TypeMapper<ClosureMapper>
+    public partial class ClosureMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -69,7 +69,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ComplexArgumentE
     }
 
     [MorphantMapper]
-    public partial class ValueMapper : TypeMapper<ValueMapper>
+    public partial class ValueMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<ValueSource, ValueDestination>()

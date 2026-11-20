@@ -831,7 +831,7 @@ internal sealed class CiBuildTests
             internal sealed class Destination { public int Value { get; set; } }
 
             [MorphantMapper]
-            internal partial class TestMapper : TypeMapper<TestMapper>
+            internal partial class TestMapper : TypeMapper
             {
                 protected override void Configure(MapperBuilder builder)
                 {

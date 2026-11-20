@@ -67,7 +67,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritanceAcces
         public int Value { get; set; }
     }
 
-    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper
         where TMapper : BaseMapper<TMapper>
     {
         private static string Secret(string value) => "secret:" + value;

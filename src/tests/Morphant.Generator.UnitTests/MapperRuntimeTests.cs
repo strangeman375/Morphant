@@ -657,7 +657,7 @@ internal sealed class MapperRuntimeTests
     }
 
     private sealed class StandaloneTypeMapper :
-        TypeMapper<StandaloneTypeMapper>,
+        TypeMapper,
         ITypeMapper<Source, Destination>,
         ITypeMapper<ChildSource, ChildDestination>
     {
@@ -725,7 +725,7 @@ internal sealed class MapperRuntimeTests
     }
 
     private sealed class ContravariantTypeMapper :
-        TypeMapper<ContravariantTypeMapper>,
+        TypeMapper,
         ITypeMapper<BaseSource, Destination>
     {
         public int CallCount { get; private set; }

@@ -30,7 +30,7 @@ namespace TestCase
         public string Text { get; set; }
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) => { var {|CS0219:unused|} = 1; if (previous.HasValue) return previous.Value; return {|CS0618:new($@"first

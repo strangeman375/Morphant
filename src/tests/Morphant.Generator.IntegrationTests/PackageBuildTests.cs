@@ -166,7 +166,7 @@ namespace PackageConsumer
     public sealed class Source { public int Value { get; set; } }
     public sealed class Destination { public int Value { get; set; } }
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

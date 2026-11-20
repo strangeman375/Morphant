@@ -42,7 +42,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -279,14 +279,14 @@ namespace TestCase
     public readonly struct ResetDestination { }
 
     [MorphantMapper]
-    public partial class AssemblyMapper : TypeMapper<AssemblyMapper>
+    public partial class AssemblyMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, AssemblyDestination>();
     }
 
     [MorphantMapper]
-    public partial class RootMapper : TypeMapper<RootMapper>
+    public partial class RootMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -297,7 +297,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class PairMapper : TypeMapper<PairMapper>
+    public partial class PairMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -307,7 +307,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ResetMapper : TypeMapper<ResetMapper>
+    public partial class ResetMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -542,7 +542,7 @@ namespace TestCase
     public readonly struct OverrideDestination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

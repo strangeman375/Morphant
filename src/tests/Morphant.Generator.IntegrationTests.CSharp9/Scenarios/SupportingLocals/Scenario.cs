@@ -49,7 +49,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingLocals
         public object Second { get; set; } = 0;
     }
     [MorphantMapper]
-    public partial class StableConstructMapper : TypeMapper<StableConstructMapper>
+    public partial class StableConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Construct(source => new(source, source.Initial()))
@@ -62,7 +62,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingLocals
     }
 
     [MorphantMapper]
-    public partial class StableResolveMapper : TypeMapper<StableResolveMapper>
+    public partial class StableResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) => new(source, source.Initial()))
@@ -75,7 +75,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingLocals
     }
 
     [MorphantMapper]
-    public partial class CapturedConstructMapper : TypeMapper<CapturedConstructMapper>
+    public partial class CapturedConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Construct(source => new(source, source.Initial()))
@@ -88,7 +88,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingLocals
     }
 
     [MorphantMapper]
-    public partial class CapturedResolveMapper : TypeMapper<CapturedResolveMapper>
+    public partial class CapturedResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) => new(source, source.Initial()))
@@ -101,7 +101,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingLocals
     }
 
     [MorphantMapper]
-    public partial class ConvertedConstructMapper : TypeMapper<ConvertedConstructMapper>
+    public partial class ConvertedConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Construct(source => new(source, source.Initial()))
@@ -113,7 +113,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingLocals
     }
 
     [MorphantMapper]
-    public partial class ConvertedResolveMapper : TypeMapper<ConvertedResolveMapper>
+    public partial class ConvertedResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) => new(source, source.Initial()))
@@ -125,7 +125,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingLocals
     }
 
     [MorphantMapper]
-    public partial class BoxedConstructMapper : TypeMapper<BoxedConstructMapper>
+    public partial class BoxedConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, BoxedDestination>()
             .Construct(source => new(42))
@@ -137,7 +137,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SupportingLocals
     }
 
     [MorphantMapper]
-    public partial class BoxedResolveMapper : TypeMapper<BoxedResolveMapper>
+    public partial class BoxedResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, BoxedDestination>()
             .Resolve((source, previous) => new(42))

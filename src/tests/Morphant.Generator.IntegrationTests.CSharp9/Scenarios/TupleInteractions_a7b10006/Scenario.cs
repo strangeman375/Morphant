@@ -38,7 +38,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleInteraction
     }
 
     public abstract class GenericTupleFamily<TMapper, T> :
-        TypeMapper<TMapper>
+        TypeMapper
         where TMapper : GenericTupleFamily<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -63,7 +63,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleInteraction
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

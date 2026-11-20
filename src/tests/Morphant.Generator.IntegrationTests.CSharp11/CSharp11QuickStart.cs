@@ -16,7 +16,7 @@ public sealed class CSharp11CustomerDto
 }
 
 [MorphantMapper]
-public sealed partial class CSharp11Mapper : TypeMapper<CSharp11Mapper>
+public sealed partial class CSharp11Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<CSharp11Customer, CSharp11CustomerDto>();

@@ -38,7 +38,7 @@ public sealed class Destination
 }
 
 [MorphantMapper]
-public partial class Mapper : TypeMapper<Mapper>
+public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -53,7 +53,7 @@ public partial class Mapper : TypeMapper<Mapper>
         if (signed)
         {
             options = options
-                .WithCryptoPublicKey(typeof(TypeMapper<>).Assembly
+                .WithCryptoPublicKey(typeof(TypeMapper).Assembly
                     .GetName().GetPublicKey()!.ToImmutableArray())
                 .WithPublicSign(true);
         }
@@ -90,7 +90,7 @@ namespace Shared
     }
 }
 [MorphantMapper]
-public partial class ProducerMapper : TypeMapper<ProducerMapper>
+public partial class ProducerMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -109,7 +109,7 @@ using Shared;
 using Morphant.Generated.N_58367882961a46be32ebecd9df026a51;
 
 [MorphantMapper]
-public partial class ConsumerMapper : TypeMapper<ConsumerMapper>
+public partial class ConsumerMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -161,7 +161,7 @@ using Morphant;
 public sealed class Source { public int Id { get; set; } public int Count { get; set; } }
 public sealed class Destination { public int Id { get; set; } }
 [MorphantMapper]
-public partial class Mapper : TypeMapper<Mapper>
+public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -202,7 +202,7 @@ namespace TestCase
     public sealed class SpecialTypeSource { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -248,7 +248,7 @@ public sealed class Source
     public Models.Destination Value { get; set; } = new();
 }
 [MorphantMapper]
-public partial class Mapper : TypeMapper<Mapper>
+public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -285,7 +285,7 @@ using Morphant;
 public sealed class Source { public int Id { get; set; } public int Count { get; set; } }
 public sealed class Destination { public int Id { get; set; } }
 [MorphantMapper]
-public partial class Mapper : TypeMapper<Mapper>
+public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {

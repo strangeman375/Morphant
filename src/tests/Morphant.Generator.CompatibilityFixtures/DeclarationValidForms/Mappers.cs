@@ -37,21 +37,21 @@ public sealed class Box<T>
 }
 
 [MorphantMapper]
-public abstract partial class AbstractMapper : TypeMapper<AbstractMapper>
+public abstract partial class AbstractMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, DestinationA>();
 }
 
 [MorphantMapper]
-public partial class NonSealedMapper : TypeMapper<NonSealedMapper>
+public partial class NonSealedMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, DestinationB>();
 }
 
 [MorphantMapper]
-public partial class ClosedGenericMapper<T> : TypeMapper<ClosedGenericMapper<T>>
+public partial class ClosedGenericMapper<T> : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Box<int>, Box<string>>();
@@ -61,14 +61,14 @@ public partial class MapperContainer
 {
     [MorphantMapper]
     protected internal partial class ProtectedInternalMapper :
-        TypeMapper<ProtectedInternalMapper>
+        TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, DestinationC>();
     }
 
     [MorphantMapper]
-    internal partial class InternalMapper : TypeMapper<InternalMapper>
+    internal partial class InternalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, DestinationD>();
@@ -76,7 +76,7 @@ public partial class MapperContainer
 }
 
 public abstract class ContractBaseMapper<TMapper> :
-    TypeMapper<TMapper>,
+    TypeMapper,
     ITypeMapper<Source, InheritedDestination>
     where TMapper : ContractBaseMapper<TMapper>
 {
@@ -100,7 +100,7 @@ public partial class DerivedContractMapper :
         builder.Map<Source, InheritedDestination>();
 }
 
-public abstract class SupportsBaseMapper<TMapper> : TypeMapper<TMapper>
+public abstract class SupportsBaseMapper<TMapper> : TypeMapper
     where TMapper : SupportsBaseMapper<TMapper>
 {
     protected override bool Supports(

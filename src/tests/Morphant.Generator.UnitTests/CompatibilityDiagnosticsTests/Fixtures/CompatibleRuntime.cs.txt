@@ -139,8 +139,7 @@ namespace Morphant
         }
     }
 
-    public abstract class TypeMapper<TMapper> : IMapperDeclaration
-        where TMapper : TypeMapper<TMapper>
+    public abstract class TypeMapper : IMapperDeclaration
     {
         protected internal virtual bool Supports(
             Type sourceType,
@@ -204,7 +203,7 @@ namespace Morphant
             public MapperBuilder MappingMode(MappingMode value) =>
                 throw new NotSupportedException();
 
-            public MappingBuilder<TMapper, TSource, TDestination>
+            public MappingBuilder<TSource, TDestination>
                 Map<TSource, TDestination>(
                     MappingMode value = Morphant.MappingMode.Default) =>
                 throw new NotSupportedException();
@@ -237,23 +236,20 @@ namespace Morphant
             throw new NotSupportedException();
     }
 
-    public interface IMappingBuilder<out TMapper, TSource, TDestination> { }
 
-    public sealed class MappingBuilder<TMapper, TSource, TDestination> :
+    public sealed class MappingBuilder<TSource, TDestination> :
         MapperBuilderBase<
-            MappingBuilder<TMapper, TSource, TDestination>>,
-        IMappingBuilder<TMapper, TSource, TDestination>
-        where TMapper : TypeMapper<TMapper>
+            MappingBuilder<TSource, TDestination>>
     {
-        public MappingBuilder<TMapper, TSource, TDestination>
+        public MappingBuilder<TSource, TDestination>
             IncludeMembers(Func<TSource, object?> selector) =>
             throw new NotSupportedException();
 
-        public MappingBuilder<TMapper, TSource, TDestination>
+        public MappingBuilder<TSource, TDestination>
             IncludeBase<TBaseSource, TBaseDestination>() =>
             throw new NotSupportedException();
 
-        public MappingBuilder<TMapper, TSource, TDestination>
+        public MappingBuilder<TSource, TDestination>
             ForDerived<TDerivedSource, TDerivedDestination>()
             where TDerivedSource : TSource
             where TDerivedDestination : TDestination =>

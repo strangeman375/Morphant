@@ -29,7 +29,7 @@ namespace TestCase
     public sealed class Destination { public string Text { get; set; } = ""; }
     public class Payload { }
     public sealed class DerivedPayload : Payload { }
-    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper> where TMapper : BaseMapper<TMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper where TMapper : BaseMapper<TMapper>
     {
         protected virtual Payload ReadPayload() => new();
         protected virtual Payload Payload => new();

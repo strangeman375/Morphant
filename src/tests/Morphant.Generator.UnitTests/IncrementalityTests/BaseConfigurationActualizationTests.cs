@@ -118,7 +118,7 @@ using Morphant;
 
 namespace TestCase
 {
-    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper
         where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -165,7 +165,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class StableMapper : TypeMapper<StableMapper>
+    public partial class StableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<StableSource, StableDestination>();

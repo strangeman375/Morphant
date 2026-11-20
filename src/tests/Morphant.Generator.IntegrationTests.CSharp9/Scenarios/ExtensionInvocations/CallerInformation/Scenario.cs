@@ -5,7 +5,7 @@ using Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocations
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocations.CallerInformation
 {
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
 #line 120 "ExtensionCalls.cs"

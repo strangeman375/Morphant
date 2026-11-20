@@ -30,32 +30,32 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorResul
         public int Echo { get; set; }
     }
     [MorphantMapper]
-    public partial class UnguardedMapper : TypeMapper<UnguardedMapper>
+    public partial class UnguardedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Members((_, _, result) => new() { Value = result.Value + 10 });
     }
     [MorphantMapper]
-    public partial class ExplicitMapper : TypeMapper<ExplicitMapper>
+    public partial class ExplicitMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Construct(_ => new(7))
             .Members((_, _, result) => new() { Value = result.Value + 10 });
     }
     [MorphantMapper]
-    public partial class OperationMapper : TypeMapper<OperationMapper>
+    public partial class OperationMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Members((_, _, result, context) => new() { Value = context.Operation is MappingOperation.Create ? 7 : result.Value + 10 });
     }
     [MorphantMapper]
-    public partial class PreviousMapper : TypeMapper<PreviousMapper>
+    public partial class PreviousMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Members((_, previous, result) => new() { Value = previous.HasValue ? result.Value + 10 : 7 });
     }
     [MorphantMapper]
-    public partial class LocalMapper : TypeMapper<LocalMapper>
+    public partial class LocalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Members((_, previous, result, context) =>
@@ -66,7 +66,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorResul
             });
     }
     [MorphantMapper]
-    public partial class DeferredMapper : TypeMapper<DeferredMapper>
+    public partial class DeferredMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Members((source, previous, result) => new()
@@ -80,7 +80,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorResul
             });
     }
     [MorphantMapper]
-    public partial class NumericMapper : TypeMapper<NumericMapper>
+    public partial class NumericMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Members((_, previous, result) =>
@@ -94,35 +94,35 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorResul
             });
     }
     [MorphantMapper]
-    public partial class ResolveMapper : TypeMapper<ResolveMapper>
+    public partial class ResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) => { if (previous.HasValue && !source.Replace) return previous.Value; return new(7); })
             .Members((_, previous, result) => new() { Value = previous.HasValue ? result.Value + 10 : 7 });
     }
     [MorphantMapper]
-    public partial class PreviousValueMapper : TypeMapper<PreviousValueMapper>
+    public partial class PreviousValueMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) => { if (previous.HasValue && !source.Replace) return previous.Value; return new(7); })
             .Members((_, previous) => new() { Value = previous.HasValue ? previous.Value.Value + 10 : 7 });
     }
     [MorphantMapper]
-    public partial class FactoryMapper : TypeMapper<FactoryMapper>
+    public partial class FactoryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .ConstructUsing(_ => new Destination(7))
             .Members((_, _, result) => new() { Value = result.Value + 10 });
     }
     [MorphantMapper]
-    public partial class ResolveFactoryMapper : TypeMapper<ResolveFactoryMapper>
+    public partial class ResolveFactoryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .ResolveUsing((source, previous) => previous.HasValue && !source.Replace ? previous.Value : new Destination(7))
             .Members((_, _, result) => new() { Value = result.Value + 10 });
     }
     [MorphantMapper]
-    public partial class UnrelatedMapper : TypeMapper<UnrelatedMapper>
+    public partial class UnrelatedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Members((_, _, result) => new() { Value = 7, Echo = result.Value + 10 });

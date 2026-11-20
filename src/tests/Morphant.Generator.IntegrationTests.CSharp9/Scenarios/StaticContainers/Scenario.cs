@@ -15,7 +15,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StaticContainers
     }
 
     [MorphantMapper]
-    public sealed partial class Mapper : TypeMapper<Mapper>
+    public sealed partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -54,7 +54,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorSelec
             : base(label + ":" + value) { }
     }
 
-    public abstract class IncludedBaseMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class IncludedBaseMapper<TMapper> : TypeMapper
         where TMapper : IncludedBaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
@@ -83,7 +83,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorSelec
         }
     }
 
-    public abstract class RootBaseMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class RootBaseMapper<TMapper> : TypeMapper
         where TMapper : RootBaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)

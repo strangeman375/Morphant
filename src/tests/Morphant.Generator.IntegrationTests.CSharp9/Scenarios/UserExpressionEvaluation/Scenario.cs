@@ -48,7 +48,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UserExpressionEv
     }
 
     [MorphantMapper]
-    public partial class DirectMapper : TypeMapper<DirectMapper>
+    public partial class DirectMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -63,7 +63,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UserExpressionEv
     }
 
     [MorphantMapper]
-    public partial class LocalMapper : TypeMapper<LocalMapper>
+    public partial class LocalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

@@ -29,7 +29,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
             throw new InvalidOperationException("Wrong overload.");
     }
     [MorphantMapper]
-    public partial class ConstructMapper : TypeMapper<ConstructMapper>
+    public partial class ConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -39,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
 #line default
     }
     [MorphantMapper]
-    public partial class ResolveMapper : TypeMapper<ResolveMapper>
+    public partial class ResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -53,7 +53,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
 #line default
     }
     [MorphantMapper]
-    public partial class MembersMapper : TypeMapper<MembersMapper>
+    public partial class MembersMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -64,7 +64,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
 #line default
     }
     [MorphantMapper]
-    public partial class ConvertMapper : TypeMapper<ConvertMapper>
+    public partial class ConvertMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -73,7 +73,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
 #line default
     }
     [MorphantMapper]
-    public partial class ConstructUsingMapper : TypeMapper<ConstructUsingMapper>
+    public partial class ConstructUsingMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -83,7 +83,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
 #line default
     }
     [MorphantMapper]
-    public partial class ResolveUsingMapper : TypeMapper<ResolveUsingMapper>
+    public partial class ResolveUsingMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

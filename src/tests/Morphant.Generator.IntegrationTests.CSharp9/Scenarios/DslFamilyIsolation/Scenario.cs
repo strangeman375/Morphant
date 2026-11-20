@@ -22,7 +22,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DslFamilyIsolati
     public sealed class Payload { }
 
     [MorphantMapper]
-    public partial class Root<TMapper, T> : TypeMapper<TMapper>
+    public partial class Root<TMapper, T> : TypeMapper
         where TMapper : Root<TMapper, T>
         where T : class
     {

@@ -22,7 +22,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationMappe
     }
 
     [MorphantMapper]
-    public partial class ChildMapper : TypeMapper<ChildMapper>, IDisposable
+    public partial class ChildMapper : TypeMapper, IDisposable
     {
         private readonly ScopeState _state;
         public ChildMapper(ScopeState state)
@@ -44,7 +44,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationMappe
     }
 
     [MorphantMapper]
-    public partial class RootMapper : TypeMapper<RootMapper>
+    public partial class RootMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

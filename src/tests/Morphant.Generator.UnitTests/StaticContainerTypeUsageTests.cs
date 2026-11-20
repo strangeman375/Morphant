@@ -24,7 +24,7 @@ public __CONTAINER__ Models<T>
     }
 }
 [MorphantMapper]
-public sealed partial class Mapper : TypeMapper<Mapper>
+public sealed partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Models<int>.Inner.Source, Models<int>.Inner.Destination>();

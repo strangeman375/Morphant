@@ -29,7 +29,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SwitchExhaustive
     }
 
     [MorphantMapper]
-    public partial class ConstructCompleteMapper : TypeMapper<ConstructCompleteMapper>
+    public partial class ConstructCompleteMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -47,7 +47,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SwitchExhaustive
     #pragma warning disable CS8846 // Exercise the generated unmatched-value exception.
 
     [MorphantMapper]
-    public partial class ConstructGuardedMapper : TypeMapper<ConstructGuardedMapper>
+    public partial class ConstructGuardedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -66,7 +66,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SwitchExhaustive
     #pragma warning disable CS8655 // Exercise the generated unmatched-value exception.
 
     [MorphantMapper]
-    public partial class ConstructNullableMapper : TypeMapper<ConstructNullableMapper>
+    public partial class ConstructNullableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -85,7 +85,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SwitchExhaustive
     #pragma warning disable CS8524 // Exercise the generated unmatched-value exception.
 
     [MorphantMapper]
-    public partial class ConstructEnumMapper : TypeMapper<ConstructEnumMapper>
+    public partial class ConstructEnumMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -102,7 +102,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SwitchExhaustive
     #pragma warning restore CS8524
 
     [MorphantMapper]
-    public partial class ResolveCompleteMapper : TypeMapper<ResolveCompleteMapper>
+    public partial class ResolveCompleteMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -121,7 +121,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SwitchExhaustive
     #pragma warning disable CS8846 // Exercise the generated unmatched-value exception.
 
     [MorphantMapper]
-    public partial class ResolveGuardedMapper : TypeMapper<ResolveGuardedMapper>
+    public partial class ResolveGuardedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -141,7 +141,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SwitchExhaustive
     #pragma warning disable CS8655 // Exercise the generated unmatched-value exception.
 
     [MorphantMapper]
-    public partial class ResolveNullableMapper : TypeMapper<ResolveNullableMapper>
+    public partial class ResolveNullableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -161,7 +161,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SwitchExhaustive
     #pragma warning disable CS8524 // Exercise the generated unmatched-value exception.
 
     [MorphantMapper]
-    public partial class ResolveEnumMapper : TypeMapper<ResolveEnumMapper>
+    public partial class ResolveEnumMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

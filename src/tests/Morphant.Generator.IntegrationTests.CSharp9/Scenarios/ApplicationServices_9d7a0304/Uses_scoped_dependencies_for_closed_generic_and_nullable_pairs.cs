@@ -26,7 +26,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationServi
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         private readonly ScopeLabel _label;
 

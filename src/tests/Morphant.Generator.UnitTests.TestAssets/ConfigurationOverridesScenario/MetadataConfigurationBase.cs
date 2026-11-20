@@ -2,7 +2,7 @@ using Morphant;
 
 namespace Morphant.Generator.UnitTests.TestAssets.ConfigurationOverridesScenario;
 
-public abstract class MetadataConfigurationBase<TMapper> : TypeMapper<TMapper>
+public abstract class MetadataConfigurationBase<TMapper> : TypeMapper
     where TMapper : MetadataConfigurationBase<TMapper>
 {
     protected override void Configure(MapperBuilder builder)

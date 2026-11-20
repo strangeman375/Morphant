@@ -19,7 +19,7 @@ public partial class Container
     private sealed class HiddenSource { }
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
+    public partial class TestMapper<T> : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -137,7 +137,7 @@ namespace ExternalModels
     public sealed class Destination { public int Value { get; set; } }
 
     [Morphant.MorphantMapper]
-    public partial class ExternalMapper : Morphant.TypeMapper<ExternalMapper>
+    public partial class ExternalMapper : Morphant.TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -155,7 +155,7 @@ using ExternalModels;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -173,7 +173,7 @@ using ExternalModels;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

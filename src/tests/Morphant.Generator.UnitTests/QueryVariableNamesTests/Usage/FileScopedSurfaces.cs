@@ -72,8 +72,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Inline lambda returning a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Construct(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Construct(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Construct<global::QueryNames.Source, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -83,8 +83,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Inline lambda returning a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Construct(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Construct(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Construct<global::QueryNames.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -94,8 +94,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Resolve(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Resolve(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Resolve<global::QueryNames.Source, global::QueryNames.Destination, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -105,8 +105,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Resolve(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Resolve(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Resolve<global::QueryNames.Source, global::QueryNames.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -116,8 +116,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> ConstructUsing(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> ConstructUsing(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.ConstructUsing<global::QueryNames.Source, global::QueryNames.Destination> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -127,8 +127,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> ConstructUsing(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> ConstructUsing(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.ConstructUsing<global::QueryNames.Source, global::Morphant.Context.MappingContext, global::QueryNames.Destination> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -138,8 +138,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> ResolveUsing(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> ResolveUsing(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.ResolveUsing<global::QueryNames.Source, global::QueryNames.Destination, global::QueryNames.Destination> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -149,8 +149,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> ResolveUsing(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> ResolveUsing(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.ResolveUsing<global::QueryNames.Source, global::QueryNames.Destination, global::Morphant.Context.MappingContext, global::QueryNames.Destination> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -160,8 +160,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Convert(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Convert(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Convert<global::QueryNames.Source?, global::QueryNames.Destination> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -171,8 +171,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Convert(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Convert(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Convert<global::QueryNames.Source?, global::QueryNames.Destination, global::QueryNames.Destination> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -182,8 +182,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Convert(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Convert(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Convert<global::QueryNames.Source?, global::QueryNames.Destination, global::Morphant.Context.MappingContext, global::QueryNames.Destination> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }
@@ -227,8 +227,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Members(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Members(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Members<global::QueryNames.Source, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationMembers> members)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -238,8 +238,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Members(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Members(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Members<global::QueryNames.Source, global::QueryNames.Destination, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationMembers> members)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -249,8 +249,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Members(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Members(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Members<global::QueryNames.Source, global::QueryNames.Destination, global::QueryNames.Destination, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationMembers> members)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -260,8 +260,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-    public static global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> Members(
-        this global::Morphant.MappingBuilder<global::QueryNames.Mapper, global::QueryNames.Source, global::QueryNames.Destination> builder,
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> Members(
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> builder,
         global::Morphant.Delegates.Members<global::QueryNames.Source, global::QueryNames.Destination, global::QueryNames.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_92f4e91695f7f6060dddb9866f3aa6c7.DestinationMembers> members)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }

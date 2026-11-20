@@ -31,7 +31,7 @@ public class Outer<T>
     }
 }
 [MorphantMapper]
-public sealed partial class Mapper : TypeMapper<Mapper>
+public sealed partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Outer<int>.Inner>()
@@ -55,7 +55,7 @@ using Morphant;
 public sealed class Source { }
 public sealed class Destination { public int Clone { get; set; } }
 [MorphantMapper]
-public sealed partial class Mapper : TypeMapper<Mapper>
+public sealed partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()

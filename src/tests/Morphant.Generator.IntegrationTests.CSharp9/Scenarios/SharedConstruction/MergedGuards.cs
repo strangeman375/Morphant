@@ -57,7 +57,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class CombinedGuardMapper : TypeMapper<CombinedGuardMapper>
+    public partial class CombinedGuardMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<MergeSource, MergeDestination>()
@@ -79,7 +79,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class InnerDeclarationMapper : TypeMapper<InnerDeclarationMapper>
+    public partial class InnerDeclarationMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<MergeSource, MergeDestination>()
@@ -95,7 +95,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class TruthGuardMapper : TypeMapper<TruthGuardMapper>
+    public partial class TruthGuardMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<MergeSource, MergeDestination>()

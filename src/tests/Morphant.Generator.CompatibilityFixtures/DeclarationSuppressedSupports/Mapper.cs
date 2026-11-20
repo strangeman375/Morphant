@@ -12,7 +12,7 @@ public sealed class Destination
 }
 
 [MorphantMapper]
-public partial class SuppressedMapper : TypeMapper<SuppressedMapper>
+public partial class SuppressedMapper : TypeMapper
 {
     private new bool Supports(Type sourceType, Type destinationType) => false;
 

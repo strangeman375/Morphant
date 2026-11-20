@@ -130,7 +130,7 @@ internal sealed class CompatibilityDiagnosticsTests
 
         var implementation = await workspace.BuildLegacyLibraryConsumer(
             legacyRuntime.AssemblyPath, useImplementationAssembly: true);
-        var runtimeVersion = typeof(TypeMapper<>).Assembly.GetName().Version!;
+        var runtimeVersion = typeof(TypeMapper).Assembly.GetName().Version!;
 
         AssertFailedWith(
             implementation.Process,

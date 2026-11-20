@@ -20,7 +20,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MultilineExpress
     }
 
     [MorphantMapper]
-    public partial class StructuredMapper : TypeMapper<StructuredMapper>
+    public partial class StructuredMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -48,7 +48,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MultilineExpress
     }
 
     [MorphantMapper]
-    public partial class FactoryMapper : TypeMapper<FactoryMapper>
+    public partial class FactoryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

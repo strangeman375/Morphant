@@ -71,7 +71,7 @@ namespace TestCase
     public sealed class Source { }
     public sealed class Destination { }
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

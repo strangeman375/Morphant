@@ -26,7 +26,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
         public BoxedBag this[int index] { get { Trace.Events.Add("get:" + index); return Bag; } }
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         private static int Next() { Trace.Events.Add("index"); return 1; }
         protected override void Configure(MapperBuilder builder) => builder.Map<int, string>().Convert(source =>

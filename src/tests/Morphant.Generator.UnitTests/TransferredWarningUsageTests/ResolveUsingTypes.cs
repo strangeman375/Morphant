@@ -26,7 +26,7 @@ namespace TestCase
     [Obsolete("Legacy type.")]
     public sealed class Destination { public int Value { get; set; } }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
 #pragma warning disable CS0618

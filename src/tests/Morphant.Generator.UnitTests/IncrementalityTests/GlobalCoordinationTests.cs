@@ -505,7 +505,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class CollisionMapper : TypeMapper<CollisionMapper>
+    public partial class CollisionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -527,7 +527,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class StableMapper : TypeMapper<StableMapper>
+    public partial class StableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<StableSource, StableDestination>();
@@ -566,7 +566,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class __MAPPER_NAME__ : TypeMapper<__MAPPER_NAME__>
+    public partial class __MAPPER_NAME__ : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Models.Source, Models.Destination>();

@@ -46,7 +46,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExtensionInvocat
         public void Add(int value, object? member) => throw new InvalidOperationException("Wrong caller argument conversion.");
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<int, string>().Convert(source =>
         {

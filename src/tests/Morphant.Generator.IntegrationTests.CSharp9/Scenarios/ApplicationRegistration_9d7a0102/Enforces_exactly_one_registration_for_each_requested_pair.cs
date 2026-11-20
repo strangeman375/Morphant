@@ -21,14 +21,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationRegis
     }
 
     [MorphantMapper]
-    public partial class ExactMapper : TypeMapper<ExactMapper>
+    public partial class ExactMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
     }
 
     [MorphantMapper]
-    public partial class BroadMapper : TypeMapper<BroadMapper>
+    public partial class BroadMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<object, Destination>()

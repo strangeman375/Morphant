@@ -44,7 +44,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     {
     }
 
-    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper
         where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -105,7 +105,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     }
 
     [MorphantMapper]
-    public partial class SelfReferenceMapper : TypeMapper<SelfReferenceMapper>
+    public partial class SelfReferenceMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Dog, DogDto>()

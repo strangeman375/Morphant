@@ -24,18 +24,16 @@ namespace Morphant
     // remains the better candidate after generation.
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static global::Morphant.MappingBuilder<TMapper,
-            global::TestCase.Source,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source,
             global::TestCase.Destination> Convert<TMapper>(
                 this global::Morphant.MapperBuilderBase<
-                    global::Morphant.MappingBuilder<TMapper,
-                        global::TestCase.Source,
+                    global::Morphant.MappingBuilder<global::TestCase.Source,
                         global::TestCase.Destination>> builder,
                 global::Morphant.Delegates.Convert<
                     global::TestCase.Source?,
                     global::TestCase.Destination> mapping,
                 int testOnly = 0)
-            where TMapper : global::Morphant.TypeMapper<TMapper> =>
+            where TMapper : global::Morphant.TypeMapper =>
             throw new global::Morphant.Exceptions
                 .RuntimeInvocationNotSupportedException();
     }
@@ -56,7 +54,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -134,18 +132,16 @@ namespace Morphant
     // remains the better candidate after generation.
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static global::Morphant.MappingBuilder<TMapper,
-            global::TestCase.Source,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source,
             global::System.Threading.Tasks.Task<int>> Convert<TMapper>(
                 this global::Morphant.MapperBuilderBase<
-                    global::Morphant.MappingBuilder<TMapper,
-                        global::TestCase.Source,
+                    global::Morphant.MappingBuilder<global::TestCase.Source,
                         global::System.Threading.Tasks.Task<int>>> builder,
                 global::Morphant.Delegates.Convert<
                     global::TestCase.Source?,
                     global::System.Threading.Tasks.Task<int>> mapping,
                 int testOnly = 0)
-            where TMapper : global::Morphant.TypeMapper<TMapper> =>
+            where TMapper : global::Morphant.TypeMapper =>
             throw new global::Morphant.Exceptions
                 .RuntimeInvocationNotSupportedException();
     }
@@ -169,7 +165,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -255,18 +251,16 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static global::Morphant.MappingBuilder<TMapper,
-            global::TestCase.Source,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source,
             int> ConstructUsing<TMapper>(
                 this global::Morphant.MapperBuilderBase<
-                    global::Morphant.MappingBuilder<TMapper,
-                        global::TestCase.Source,
+                    global::Morphant.MappingBuilder<global::TestCase.Source,
                         int>> builder,
                 global::Morphant.Delegates.ConstructUsing<
                     global::TestCase.Source,
                     int> construct,
                 int testOnly = 0)
-            where TMapper : global::Morphant.TypeMapper<TMapper> =>
+            where TMapper : global::Morphant.TypeMapper =>
             throw new global::Morphant.Exceptions
                 .RuntimeInvocationNotSupportedException();
     }
@@ -280,7 +274,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override unsafe void Configure(MapperBuilder builder) =>
             builder.Map<Source, int>()

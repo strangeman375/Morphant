@@ -27,7 +27,7 @@ namespace TestCase
     public sealed class CatDto : AnimalDto { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -290,7 +290,7 @@ namespace TestCase
     public sealed class DogDto : AnimalDto { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -463,7 +463,7 @@ namespace TestCase
     public sealed class PetDto : RootDto { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -667,7 +667,7 @@ namespace TestCase
     public class AnimalDto { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -819,7 +819,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -938,7 +938,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -1035,7 +1035,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<object[], int>()
@@ -1152,8 +1152,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> builder,
+        public static global::Morphant.MappingBuilder<object[], int> ConstructUsing(
+            this global::Morphant.MappingBuilder<object[], int> builder,
             global::Morphant.Delegates.ConstructUsing<object[], int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1163,8 +1163,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> builder,
+        public static global::Morphant.MappingBuilder<object[], int> ConstructUsing(
+            this global::Morphant.MappingBuilder<object[], int> builder,
             global::Morphant.Delegates.ConstructUsing<object[], global::Morphant.Context.MappingContext, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1174,8 +1174,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> builder,
+        public static global::Morphant.MappingBuilder<object[], int> ResolveUsing(
+            this global::Morphant.MappingBuilder<object[], int> builder,
             global::Morphant.Delegates.ResolveUsing<object[], int, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1185,8 +1185,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> builder,
+        public static global::Morphant.MappingBuilder<object[], int> ResolveUsing(
+            this global::Morphant.MappingBuilder<object[], int> builder,
             global::Morphant.Delegates.ResolveUsing<object[], int, global::Morphant.Context.MappingContext, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1196,8 +1196,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> builder,
+        public static global::Morphant.MappingBuilder<object[], int> Convert(
+            this global::Morphant.MappingBuilder<object[], int> builder,
             global::Morphant.Delegates.Convert<object[]?, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1207,8 +1207,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> builder,
+        public static global::Morphant.MappingBuilder<object[], int> Convert(
+            this global::Morphant.MappingBuilder<object[], int> builder,
             global::Morphant.Delegates.Convert<object[]?, int, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1218,8 +1218,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, object[], int> builder,
+        public static global::Morphant.MappingBuilder<object[], int> Convert(
+            this global::Morphant.MappingBuilder<object[], int> builder,
             global::Morphant.Delegates.Convert<object[]?, int, global::Morphant.Context.MappingContext, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

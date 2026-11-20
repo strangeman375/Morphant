@@ -42,7 +42,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.FoldedExpression
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         private static string Pick(int value) => "int";
         private static string Pick(double value) => "double";

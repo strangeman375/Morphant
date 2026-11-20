@@ -33,7 +33,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -110,7 +110,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class MissingMapper : TypeMapper<MissingMapper>
+    public partial class MissingMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<UnrelatedSource, UnrelatedDestination>()
@@ -118,7 +118,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class IncompatibleMapper : TypeMapper<IncompatibleMapper>
+    public partial class IncompatibleMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -204,7 +204,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
+    public partial class TestMapper<T> : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

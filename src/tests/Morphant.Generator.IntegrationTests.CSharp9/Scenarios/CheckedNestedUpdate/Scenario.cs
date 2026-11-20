@@ -48,7 +48,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CheckedNestedUpd
     }
 
     [MorphantMapper]
-    public partial class StaticMapper : TypeMapper<StaticMapper>
+    public partial class StaticMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -67,7 +67,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CheckedNestedUpd
     }
 
     [MorphantMapper]
-    public partial class CapturedMapper : TypeMapper<CapturedMapper>
+    public partial class CapturedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

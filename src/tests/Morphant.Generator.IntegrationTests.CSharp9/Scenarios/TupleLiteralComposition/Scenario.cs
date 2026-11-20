@@ -30,7 +30,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleLiteralComp
     }
 
     [MorphantMapper]
-    public partial class ValueMapper : TypeMapper<ValueMapper>
+    public partial class ValueMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, (int Fixed, int Id, int Converted, string Name)>()
@@ -45,7 +45,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleLiteralComp
     }
 
     [MorphantMapper]
-    public partial class ReferenceMapper : TypeMapper<ReferenceMapper>
+    public partial class ReferenceMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Tuple<int, int, int, string>>()

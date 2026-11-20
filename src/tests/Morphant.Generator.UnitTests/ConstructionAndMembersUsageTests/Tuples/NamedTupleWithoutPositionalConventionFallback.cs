@@ -20,7 +20,7 @@ namespace TestCase
     public sealed class Source { public int Id => 7; public string Name => "source"; }
 
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, (int Code, string Text)>()

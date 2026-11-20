@@ -63,7 +63,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Configuration_51
     }
 
     [MorphantMapper]
-    public partial class ConfiguredMapper : TypeMapper<ConfiguredMapper>
+    public partial class ConfiguredMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -78,7 +78,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Configuration_51
     }
 
     [MorphantMapper]
-    public partial class LibraryMapper : TypeMapper<LibraryMapper>
+    public partial class LibraryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, LibraryDestination>();

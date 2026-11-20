@@ -21,7 +21,7 @@ public sealed class Destination { }
 public abstract class MissingBase : ITypeMapper<Source, Destination> { }
 
 [MorphantMapper]
-public class NonPartialMapper : TypeMapper<NonPartialMapper>
+public class NonPartialMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
@@ -30,7 +30,7 @@ public class NonPartialMapper : TypeMapper<NonPartialMapper>
 public class NonPartialContainer
 {
     [MorphantMapper]
-    public partial class NestedMapper : TypeMapper<NestedMapper>
+    public partial class NestedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -38,14 +38,14 @@ public class NonPartialContainer
 }
 
 [MorphantMapper]
-file partial class FileMapper : TypeMapper<FileMapper>
+file partial class FileMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
 }
 
 [MorphantMapper]
-public abstract partial class ExactMapper : TypeMapper<ExactMapper>,
+public abstract partial class ExactMapper : TypeMapper,
     ITypeMapper<Source, Destination>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -53,7 +53,7 @@ public abstract partial class ExactMapper : TypeMapper<ExactMapper>,
 }
 
 [MorphantMapper]
-public abstract partial class UnifiableMapper<T> : TypeMapper<UnifiableMapper<T>>,
+public abstract partial class UnifiableMapper<T> : TypeMapper,
     ITypeMapper<T, Destination>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -61,7 +61,7 @@ public abstract partial class UnifiableMapper<T> : TypeMapper<UnifiableMapper<T>
 }
 
 [MorphantMapper]
-public partial class SupportsMapper : TypeMapper<SupportsMapper>
+public partial class SupportsMapper : TypeMapper
 {
     private new bool Supports(Type sourceType, Type destinationType) => false;
 
@@ -73,7 +73,7 @@ public partial class AccessibilityContainer
 {
     [MorphantMapper]
     private partial class InaccessibleMapper :
-        TypeMapper<InaccessibleMapper>
+        TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();

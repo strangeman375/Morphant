@@ -18,7 +18,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class BlockMapper : TypeMapper<BlockMapper>
+public partial class BlockMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder configuration)
     {
@@ -28,14 +28,14 @@ public partial class BlockMapper : TypeMapper<BlockMapper>
 }
 
 [MorphantMapper]
-public partial class ExpressionMapper : TypeMapper<ExpressionMapper>
+public partial class ExpressionMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder configuration) =>
         _ = 1;
 }
 
 [MorphantMapper]
-public partial class EmptyMapper : TypeMapper<EmptyMapper>
+public partial class EmptyMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder configuration)
     {
@@ -68,7 +68,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public abstract partial class MissingMapper : TypeMapper<MissingMapper>
+public abstract partial class MissingMapper : TypeMapper
 {
 }
 """;
@@ -110,7 +110,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class MissingMapper : TypeMapper<MissingMapper>
+public partial class MissingMapper : TypeMapper
 {
 }
 """;
@@ -144,7 +144,7 @@ using Morphant;
 
 namespace TestCase;
 
-public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+public abstract class BaseMapper<TMapper> : TypeMapper
     where TMapper : BaseMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder)
@@ -189,7 +189,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public abstract partial class AbstractMapper : TypeMapper<AbstractMapper>
+public abstract partial class AbstractMapper : TypeMapper
 {
     protected abstract override void Configure(MapperBuilder builder);
 }
@@ -225,13 +225,13 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public abstract partial class WrongReturn : TypeMapper<WrongReturn>
+public abstract partial class WrongReturn : TypeMapper
 {
     protected override int Configure(MapperBuilder builder) => 0;
 }
 
 [MorphantMapper]
-public abstract partial class WrongParameter : TypeMapper<WrongParameter>
+public abstract partial class WrongParameter : TypeMapper
 {
     protected override void Configure(string builder)
     {
@@ -239,7 +239,7 @@ public abstract partial class WrongParameter : TypeMapper<WrongParameter>
 }
 
 [MorphantMapper]
-public abstract partial class StaticOverride : TypeMapper<StaticOverride>
+public abstract partial class StaticOverride : TypeMapper
 {
     protected static override void Configure(MapperBuilder builder)
     {
@@ -247,7 +247,7 @@ public abstract partial class StaticOverride : TypeMapper<StaticOverride>
 }
 
 [MorphantMapper]
-public abstract partial class UnresolvedParameter : TypeMapper<UnresolvedParameter>
+public abstract partial class UnresolvedParameter : TypeMapper
 {
     protected override void Configure(MissingBuilder builder)
     {
@@ -280,7 +280,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public abstract partial class TestMapper : TypeMapper<TestMapper>
+public abstract partial class TestMapper : TypeMapper
 {
     private void Configure()
     {
@@ -319,7 +319,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public abstract class InvalidMapper : TypeMapper<InvalidMapper>
+public abstract class InvalidMapper : TypeMapper
 {
 }
 """;

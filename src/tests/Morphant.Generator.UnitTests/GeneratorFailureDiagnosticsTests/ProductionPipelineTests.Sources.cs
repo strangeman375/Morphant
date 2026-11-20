@@ -75,8 +75,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Inline lambda returning a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> Construct(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Construct(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Construct<global::Fixture.Source, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -86,8 +86,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Inline lambda returning a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> Construct(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Construct(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Construct<global::Fixture.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -97,8 +97,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> Resolve(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Resolve(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Resolve<global::Fixture.Source, global::Fixture.Target, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -108,8 +108,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> Resolve(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Resolve(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Resolve<global::Fixture.Source, global::Fixture.Target, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -119,8 +119,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> ConstructUsing(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ConstructUsing(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.ConstructUsing<global::Fixture.Source, global::Fixture.Target> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -130,8 +130,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> ConstructUsing(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ConstructUsing(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.ConstructUsing<global::Fixture.Source, global::Morphant.Context.MappingContext, global::Fixture.Target> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -141,8 +141,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> ResolveUsing(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ResolveUsing(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.ResolveUsing<global::Fixture.Source, global::Fixture.Target, global::Fixture.Target> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -152,8 +152,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> ResolveUsing(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ResolveUsing(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.ResolveUsing<global::Fixture.Source, global::Fixture.Target, global::Morphant.Context.MappingContext, global::Fixture.Target> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -163,8 +163,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> Convert(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -174,8 +174,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> Convert(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target, global::Fixture.Target> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -185,8 +185,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> Convert(
-        this global::Morphant.MappingBuilder<global::Fixture.FirstMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target, global::Morphant.Context.MappingContext, global::Fixture.Target> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }
@@ -207,8 +207,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Inline lambda returning a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> Construct(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Construct(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Construct<global::Fixture.Source, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -218,8 +218,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Inline lambda returning a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> Construct(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Construct(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Construct<global::Fixture.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -229,8 +229,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> Resolve(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Resolve(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Resolve<global::Fixture.Source, global::Fixture.Target, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -240,8 +240,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> Resolve(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Resolve(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Resolve<global::Fixture.Source, global::Fixture.Target, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_1daf727403655f8233415c3196cf76a9.TargetConstruction> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -251,8 +251,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> ConstructUsing(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ConstructUsing(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.ConstructUsing<global::Fixture.Source, global::Fixture.Target> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -262,8 +262,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> ConstructUsing(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ConstructUsing(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.ConstructUsing<global::Fixture.Source, global::Morphant.Context.MappingContext, global::Fixture.Target> construct)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -273,8 +273,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> ResolveUsing(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ResolveUsing(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.ResolveUsing<global::Fixture.Source, global::Fixture.Target, global::Fixture.Target> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -284,8 +284,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> ResolveUsing(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> ResolveUsing(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.ResolveUsing<global::Fixture.Source, global::Fixture.Target, global::Morphant.Context.MappingContext, global::Fixture.Target> resolve)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -295,8 +295,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> Convert(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -306,8 +306,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> Convert(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target, global::Fixture.Target> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -317,8 +317,8 @@ internal static partial class MorphantGeneratedMappingExtensions
     /// <param name="builder">The mapping to configure.</param>
     /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-    public static global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> Convert(
-        this global::Morphant.MappingBuilder<global::Fixture.HealthyMapper, global::Fixture.Source, global::Fixture.Target> builder,
+    public static global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> Convert(
+        this global::Morphant.MappingBuilder<global::Fixture.Source, global::Fixture.Target> builder,
         global::Morphant.Delegates.Convert<global::Fixture.Source?, global::Fixture.Target, global::Morphant.Context.MappingContext, global::Fixture.Target> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }

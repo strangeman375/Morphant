@@ -197,7 +197,7 @@ internal sealed class ConsumerBuildWorkspace : IDisposable
 
     private static string GetRuntimeAssemblyPath()
     {
-        return typeof(TypeMapper<>).Assembly.Location;
+        return typeof(TypeMapper).Assembly.Location;
     }
 
     private string GetTestAssetsAssemblyPath()

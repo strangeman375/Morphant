@@ -14,7 +14,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
     }
     public sealed class Audit { public decimal Amount { get; set; } }
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

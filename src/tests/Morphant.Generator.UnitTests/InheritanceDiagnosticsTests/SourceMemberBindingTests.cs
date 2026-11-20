@@ -17,7 +17,7 @@ namespace TestCase
     public struct Source : ISource { public int Value => 11; }
     public sealed class Box<T> where T : struct, ISource { public T? Payload; }
     public sealed class Destination { public int? Value { get; set; } }
-    public abstract class Family<TMapper, TSource> : TypeMapper<TMapper>
+    public abstract class Family<TMapper, TSource> : TypeMapper
         where TMapper : Family<TMapper, TSource> where TSource : struct, ISource
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Box<TSource>, Destination>()
@@ -63,7 +63,7 @@ namespace TestCase
     }
     public sealed class Box<T> where T : IProfileSource { public T Payload = default!; }
     public sealed class Destination { public int Value { get; set; } }
-    public abstract class Family<TMapper, TSource> : TypeMapper<TMapper>
+    public abstract class Family<TMapper, TSource> : TypeMapper
         where TMapper : Family<TMapper, TSource> where TSource : IProfileSource
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Box<TSource>, Destination>(){{rule}};

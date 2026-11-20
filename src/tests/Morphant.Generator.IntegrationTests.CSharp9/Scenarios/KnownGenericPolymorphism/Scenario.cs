@@ -23,7 +23,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.KnownGenericPoly
     public sealed class TextProducer : IProducer<string> { }
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
+    public partial class TestMapper<T> : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

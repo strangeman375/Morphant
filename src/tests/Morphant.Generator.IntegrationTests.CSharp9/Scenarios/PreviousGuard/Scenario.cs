@@ -43,7 +43,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
     }
 
     [MorphantMapper]
-    public partial class AndMapper : TypeMapper<AndMapper>
+    public partial class AndMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) =>
@@ -55,7 +55,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
     }
 
     [MorphantMapper]
-    public partial class NegatedMapper : TypeMapper<NegatedMapper>
+    public partial class NegatedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) =>
@@ -68,7 +68,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
     }
 
     [MorphantMapper]
-    public partial class ConditionalMapper : TypeMapper<ConditionalMapper>
+    public partial class ConditionalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) =>
@@ -80,7 +80,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
     }
 
     [MorphantMapper]
-    public partial class StoredMapper : TypeMapper<StoredMapper>
+    public partial class StoredMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) =>
@@ -93,7 +93,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
     }
 
     [MorphantMapper]
-    public partial class ArbitraryMapper : TypeMapper<ArbitraryMapper>
+    public partial class ArbitraryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) =>
@@ -105,7 +105,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
     }
 
     [MorphantMapper]
-    public partial class MembersConstructMapper : TypeMapper<MembersConstructMapper>
+    public partial class MembersConstructMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Construct(source => new(source, source.BuildName(null)))
@@ -118,7 +118,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousGuard
     }
 
     [MorphantMapper]
-    public partial class MembersResolveMapper : TypeMapper<MembersResolveMapper>
+    public partial class MembersResolveMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>()
             .Resolve((source, previous) => new(source, source.BuildName(null)))

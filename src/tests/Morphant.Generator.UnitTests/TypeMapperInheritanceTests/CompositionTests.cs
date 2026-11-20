@@ -29,7 +29,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -84,8 +84,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Construct(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -95,8 +95,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Construct(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -106,8 +106,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Resolve(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Resolve(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -117,8 +117,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Resolve(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Resolve(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -128,8 +128,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.Destination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -139,8 +139,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.Destination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -150,8 +150,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -161,8 +161,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -172,8 +172,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -183,8 +183,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -194,8 +194,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -241,8 +241,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -252,8 +252,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -263,8 +263,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -274,8 +274,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_0f314f840bb9544edc7d9e081735fe2b.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -402,7 +402,7 @@ namespace TestCase
     {
     }
 
-    public abstract class FarMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class FarMapper<TMapper> : TypeMapper
         where TMapper : FarMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
@@ -564,8 +564,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Construct(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Construct(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Dog, global::Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278.DogDtoConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -575,8 +575,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Construct(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Construct(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Dog, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278.DogDtoConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -586,8 +586,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Resolve(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Resolve(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278.DogDtoConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -597,8 +597,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Resolve(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Resolve(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278.DogDtoConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -608,8 +608,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Dog, global::TestCase.DogDto> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -619,8 +619,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Dog, global::Morphant.Context.MappingContext, global::TestCase.DogDto> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -630,8 +630,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -641,8 +641,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -652,8 +652,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -663,8 +663,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::TestCase.DogDto> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -674,8 +674,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -698,8 +698,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Construct<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Construct<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Entity, global::Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff.EntityDtoConstruction> construct)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -711,8 +711,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Construct<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Construct<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Entity, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff.EntityDtoConstruction> construct)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -724,8 +724,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Resolve<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Resolve<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Entity, global::TestCase.EntityDto, global::Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff.EntityDtoConstruction> resolve)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -737,8 +737,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Resolve<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Resolve<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Entity, global::TestCase.EntityDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff.EntityDtoConstruction> resolve)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -750,8 +750,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> ConstructUsing<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> ConstructUsing<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Entity, global::TestCase.EntityDto> construct)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -763,8 +763,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> ConstructUsing<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> ConstructUsing<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Entity, global::Morphant.Context.MappingContext, global::TestCase.EntityDto> construct)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -776,8 +776,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> ResolveUsing<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> ResolveUsing<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Entity, global::TestCase.EntityDto, global::TestCase.EntityDto> resolve)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -789,8 +789,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> ResolveUsing<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> ResolveUsing<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Entity, global::TestCase.EntityDto, global::Morphant.Context.MappingContext, global::TestCase.EntityDto> resolve)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -802,8 +802,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Convert<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Convert<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Entity?, global::TestCase.EntityDto> mapping)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -815,8 +815,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Convert<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Convert<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Entity?, global::TestCase.EntityDto, global::TestCase.EntityDto> mapping)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -828,8 +828,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Convert<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Convert<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Entity?, global::TestCase.EntityDto, global::Morphant.Context.MappingContext, global::TestCase.EntityDto> mapping)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -853,8 +853,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Construct<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Construct<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Animal, global::Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed.AnimalDtoConstruction> construct)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -866,8 +866,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Construct<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Construct<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Animal, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed.AnimalDtoConstruction> construct)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -879,8 +879,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Resolve<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Resolve<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed.AnimalDtoConstruction> resolve)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -892,8 +892,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Resolve<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Resolve<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed.AnimalDtoConstruction> resolve)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -905,8 +905,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Animal, global::TestCase.AnimalDto> construct)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -918,8 +918,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Animal, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> construct)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -931,8 +931,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto> resolve)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -944,8 +944,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> resolve)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -957,8 +957,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto> mapping)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -970,8 +970,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::TestCase.AnimalDto> mapping)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -983,8 +983,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> mapping)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1079,8 +1079,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1090,8 +1090,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1101,8 +1101,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto, global::Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1112,8 +1112,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.DogMapper, global::TestCase.Dog, global::TestCase.DogDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_502bad47f58182ed1eac0b8a312b3278.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -1136,8 +1136,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Members<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Members<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Entity, global::Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff.EntityDtoMembers> members)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1149,8 +1149,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Members<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Members<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Entity, global::TestCase.EntityDto, global::Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff.EntityDtoMembers> members)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1162,8 +1162,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Members<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Members<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Entity, global::TestCase.EntityDto, global::TestCase.EntityDto, global::Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff.EntityDtoMembers> members)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1175,8 +1175,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Entity, global::TestCase.EntityDto> Members<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.FarMapper<TMapper>, global::TestCase.Entity, global::TestCase.EntityDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> Members<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Entity, global::TestCase.EntityDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Entity, global::TestCase.EntityDto, global::TestCase.EntityDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_27d1db3fbc40bf22d1483d84bdbdffff.EntityDtoMembers> members)
             where TMapper : global::TestCase.FarMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1200,8 +1200,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed.AnimalDtoMembers> members)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1213,8 +1213,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed.AnimalDtoMembers> members)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1226,8 +1226,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto, global::Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed.AnimalDtoMembers> members)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1239,8 +1239,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
-            this global::Morphant.IMappingBuilder<global::TestCase.NearMapper<TMapper>, global::TestCase.Animal, global::TestCase.AnimalDto> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members<TMapper>(
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_f5ffaa7b27d24f83e02578bb4ef317ed.AnimalDtoMembers> members)
             where TMapper : global::TestCase.NearMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();

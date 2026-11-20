@@ -9,7 +9,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InterfaceDestina
     public struct Destination : IDestination { public int Id { get; set; } }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         public int FactoryCalls { get; private set; }
         private IDestination CreateDestination()

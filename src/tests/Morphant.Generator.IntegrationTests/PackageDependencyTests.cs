@@ -135,7 +135,7 @@ namespace MappingLibrary
     public sealed class Source { public int Value { get; set; } public int Other { get; set; } }
     public sealed class Destination { public int Value { get; set; } public int Other { get; set; } = 43; }
     [MorphantMapper]
-    public partial class LibraryMapper : TypeMapper<LibraryMapper>
+    public partial class LibraryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -176,7 +176,7 @@ using MappingLibrary;
 namespace Consumer
 {
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

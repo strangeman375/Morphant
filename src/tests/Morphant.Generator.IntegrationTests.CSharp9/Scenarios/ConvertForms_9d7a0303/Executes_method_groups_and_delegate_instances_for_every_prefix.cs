@@ -21,7 +21,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConvertForms_9d7
     public sealed record ContextDestination(int Value);
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         private readonly Convert<
             Source?,

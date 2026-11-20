@@ -16,7 +16,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PolymorphismGene
     public sealed class TextResult<T> : Result<T> { }
 
     [MorphantMapper]
-    public partial class BroadFirstMapper<T> : TypeMapper<BroadFirstMapper<T>> where T : class
+    public partial class BroadFirstMapper<T> : TypeMapper where T : class
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -32,7 +32,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PolymorphismGene
     }
 
     [MorphantMapper]
-    public partial class SpecificFirstMapper<T> : TypeMapper<SpecificFirstMapper<T>> where T : class
+    public partial class SpecificFirstMapper<T> : TypeMapper where T : class
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -320,7 +320,7 @@ namespace BodyUsage
     [Test]
     public void Runtime_assembly_version_is_the_package_minor_line()
     {
-        var runtime = typeof(TypeMapper<>).Assembly;
+        var runtime = typeof(TypeMapper).Assembly;
         var packageVersion = runtime
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
             .InformationalVersion;
@@ -334,7 +334,7 @@ namespace BodyUsage
 
     private static PortableExecutableReference Runtime(
         string version,
-        string revision = "2")
+        string revision = "3")
     {
         return RuntimeContractFixture.Compatible()
             .WithRevision(revision)
@@ -408,7 +408,7 @@ namespace MappingLibrary
     }
 
     [MorphantMapper]
-    internal partial class LibraryMapper : TypeMapper<LibraryMapper>
+    internal partial class LibraryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -14,7 +14,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RegistrationDupl
     public sealed record Destination(int Value);
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

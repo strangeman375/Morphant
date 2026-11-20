@@ -9,7 +9,7 @@ using Morphant.Context;
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleSharedPresentation_a7b10005
 {
     [MorphantMapper]
-    public partial class FirstMapper : TypeMapper<FirstMapper>
+    public partial class FirstMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<(long X, decimal Y), (decimal Left, long Top)>()
@@ -21,7 +21,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleSharedPrese
     }
 
     [MorphantMapper]
-    public partial class SecondMapper : TypeMapper<SecondMapper>
+    public partial class SecondMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<(long X, decimal Y), (decimal Left, long Top)>()

@@ -13,7 +13,7 @@ internal static class CompatibilityGeneratorTest
         FrameworkReferences = BuildFrameworkReferences();
 
     public static PortableExecutableReference ActualRuntimeReference =>
-        MetadataReference.CreateFromFile(typeof(TypeMapper<>).Assembly.Location);
+        MetadataReference.CreateFromFile(typeof(TypeMapper).Assembly.Location);
 
     public static CompatibilityGeneratorResult Run(
         LanguageVersion languageVersion,
@@ -237,7 +237,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

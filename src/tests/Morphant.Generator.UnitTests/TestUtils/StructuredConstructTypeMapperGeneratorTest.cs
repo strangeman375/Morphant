@@ -18,7 +18,7 @@ internal sealed class StructuredConstructTypeMapperGeneratorTest
     {
         _languageVersion = languageVersion;
         CompilerDiagnostics = CompilerDiagnostics.Warnings;
-        TestState.AdditionalReferences.Add(typeof(TypeMapper<>).Assembly);
+        TestState.AdditionalReferences.Add(typeof(TypeMapper).Assembly);
     }
 
     protected override ParseOptions CreateParseOptions()
@@ -114,7 +114,7 @@ internal sealed class StructuredConstructTypeMapperGeneratorTest
             .ToImmutableArray()
             .Add(
                 MetadataReference.CreateFromFile(
-                    typeof(TypeMapper<>).Assembly.Location));
+                    typeof(TypeMapper).Assembly.Location));
 
         return references;
     }

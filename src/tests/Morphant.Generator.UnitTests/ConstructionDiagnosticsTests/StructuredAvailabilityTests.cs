@@ -90,7 +90,7 @@ namespace TestCase
         public string Name { get; set; }
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>

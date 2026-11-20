@@ -68,7 +68,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Strategy_5ce5bec
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

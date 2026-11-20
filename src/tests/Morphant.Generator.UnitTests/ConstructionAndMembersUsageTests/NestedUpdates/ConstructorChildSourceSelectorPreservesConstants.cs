@@ -40,7 +40,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

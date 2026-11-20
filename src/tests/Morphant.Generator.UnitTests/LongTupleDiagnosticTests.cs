@@ -33,7 +33,7 @@ namespace TestCase
 {
     public sealed class Source { public int Value { get; set; } }
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         private static Destination CreateDestination() => throw new System.NotImplementedException();
         protected override void Configure(MapperBuilder builder) =>
@@ -80,7 +80,7 @@ namespace TestCase
 {
     public sealed class Destination { public int Value { get; set; } }
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceTuple, Destination>()
@@ -127,7 +127,7 @@ namespace TestCase
 {
     public sealed class Destination { public int Value { get; set; } }
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         private static int Read(object value) => value.GetHashCode();
         protected override void Configure(MapperBuilder builder) =>

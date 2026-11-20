@@ -305,7 +305,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class TupleMapper : TypeMapper<TupleMapper>
+    public partial class TupleMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<TupleSource, (int __ELEMENT__, string Name)>();
@@ -324,7 +324,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class StableMapper : TypeMapper<StableMapper>
+    public partial class StableMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<StableSource, StableDestination>();
@@ -343,7 +343,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class FirstMapper : TypeMapper<FirstMapper>
+    public partial class FirstMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<(int X, int Y), int>()
@@ -363,7 +363,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class SecondMapper : TypeMapper<SecondMapper>
+    public partial class SecondMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<(int A, int B), int>()

@@ -16,7 +16,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Member_a76b168f
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         public sealed class Destination
         {

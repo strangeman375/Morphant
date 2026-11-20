@@ -54,7 +54,7 @@ public sealed class NullableNumber
 }
 
 [MorphantMapper]
-public sealed partial class LatestMapper : TypeMapper<LatestMapper>
+public sealed partial class LatestMapper : TypeMapper
 {
     private readonly ILabelFormatter _formatter;
 

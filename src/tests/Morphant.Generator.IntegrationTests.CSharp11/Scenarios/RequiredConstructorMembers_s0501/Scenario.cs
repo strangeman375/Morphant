@@ -61,7 +61,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
     }
 
     [MorphantMapper]
-    public partial class AutomaticMapper : TypeMapper<AutomaticMapper>
+    public partial class AutomaticMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -73,7 +73,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
     }
 
     [MorphantMapper]
-    public partial class ConventionMapper : TypeMapper<ConventionMapper>
+    public partial class ConventionMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -89,7 +89,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
     }
 
     [MorphantMapper]
-    public partial class ExplicitMapper : TypeMapper<ExplicitMapper>
+    public partial class ExplicitMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -105,7 +105,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
     }
 
     [MorphantMapper]
-    public partial class AutomaticControlMapper : TypeMapper<AutomaticControlMapper>
+    public partial class AutomaticControlMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

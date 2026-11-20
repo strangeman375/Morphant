@@ -52,7 +52,7 @@ internal sealed class PublicApiBaselineTests
     [Test]
     public void Runtime_public_API_preserves_modifiers_inheritance_and_metadata()
     {
-        var typeMapperType = typeof(TypeMapper<>);
+        var typeMapperType = typeof(TypeMapper);
         var mapperBuilderType = typeMapperType.GetNestedType(
             "MapperBuilder",
             BindingFlags.NonPublic)!;
@@ -70,7 +70,7 @@ internal sealed class PublicApiBaselineTests
             typeof(Member<>),
             typeof(ConstructorParameter<>),
             mapperBuilderType,
-            typeof(MappingBuilder<,,>),
+            typeof(MappingBuilder<,>),
             typeof(AmbiguousMappingException),
             typeof(AmbiguousPolymorphicMappingException),
             typeof(InvalidMappingContextException),
@@ -117,7 +117,7 @@ internal sealed class PublicApiBaselineTests
         var supportsMethod = typeMapperType.GetMethod(
             "Supports",
             BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var forDerivedMethod = typeof(MappingBuilder<,,>)
+        var forDerivedMethod = typeof(MappingBuilder<,>)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Single(method => method.Name == "ForDerived");
         var mapperAttributeUsage =
@@ -190,9 +190,8 @@ internal sealed class PublicApiBaselineTests
             Assert.That(configureMethod.IsFamily, Is.True);
             Assert.That(configureMethod.IsAbstract, Is.True);
             Assert.That(
-                configureMethod.GetParameters().Single().ParameterType
-                    .GetGenericTypeDefinition(),
-                Is.EqualTo(mapperBuilderType.GetGenericTypeDefinition()));
+                configureMethod.GetParameters().Single().ParameterType,
+                Is.EqualTo(mapperBuilderType));
             Assert.That(supportsMethod.IsPublic, Is.False);
             Assert.That(supportsMethod.IsFamilyOrAssembly, Is.True);
             Assert.That(supportsMethod.IsVirtual, Is.True);
@@ -205,23 +204,8 @@ internal sealed class PublicApiBaselineTests
                     .Select(parameter => parameter
                         .GetGenericParameterConstraints()
                         .Single()),
-                Is.EqualTo(typeof(MappingBuilder<,,>)
-                    .GetGenericArguments()
-                    .Skip(1)));
-            Assert.That(
-                typeof(IMappingBuilder<,,>).GetGenericArguments()
-                    .Select(parameter => parameter.GenericParameterAttributes &
-                        GenericParameterAttributes.VarianceMask),
-                Is.EqualTo(new[]
-                {
-                    GenericParameterAttributes.Covariant,
-                    GenericParameterAttributes.None,
-                    GenericParameterAttributes.None
-                }));
-            Assert.That(
-                typeof(MappingBuilder<,,>).GetInterfaces()
-                    .Select(type => type.GetGenericTypeDefinition()),
-                Is.EqualTo(new[] { typeof(IMappingBuilder<,,>) }));
+                Is.EqualTo(typeof(MappingBuilder<,>)
+                    .GetGenericArguments()));
             Assert.That(
                 GetImplicitOperatorCount(typeof(AutoMarker<>)),
                 Is.EqualTo(1));
@@ -429,7 +413,6 @@ T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
 T Morphant.IMapperDeclaration
   M System.Boolean Supports(System.Type, System.Type)
-T Morphant.IMappingBuilder<TMapper, TSource, TDestination>
 T Morphant.ITypeMapper<TSource, TDestination>
   M TDestination Create(TSource, Morphant.Context.MappingContext)
   M TDestination Update(TSource, TDestination, Morphant.Context.MappingContext)
@@ -445,10 +428,10 @@ T Morphant.MapperBuilderBase<TBuilder>
   M TBuilder NullSourceHandling(Morphant.NullSourceHandling)
   M TBuilder UnknownDerivedTypeHandling(Morphant.UnknownDerivedTypeHandling)
   M TBuilder UnmappedMemberValidation(Morphant.UnmappedMemberValidation)
-T Morphant.MappingBuilder<TMapper, TSource, TDestination>
-  M Morphant.MappingBuilder<TMapper, TSource, TDestination> ForDerived<TDerivedSource, TDerivedDestination>()
-  M Morphant.MappingBuilder<TMapper, TSource, TDestination> IncludeBase<TBaseSource, TBaseDestination>()
-  M Morphant.MappingBuilder<TMapper, TSource, TDestination> IncludeMembers(System.Func<TSource, System.Object>)
+T Morphant.MappingBuilder<TSource, TDestination>
+  M Morphant.MappingBuilder<TSource, TDestination> ForDerived<TDerivedSource, TDerivedDestination>()
+  M Morphant.MappingBuilder<TSource, TDestination> IncludeBase<TBaseSource, TBaseDestination>()
+  M Morphant.MappingBuilder<TSource, TDestination> IncludeMembers(System.Func<TSource, System.Object>)
 T Morphant.MappingMode
   V Default, Create, Update, CreateAndUpdate
 T Morphant.Markers.AutoMarker
@@ -483,10 +466,7 @@ T Morphant.RuntimeSupport.MappingHelpers
   M System.Void UpdateInPlace<TState, TSource, TDestination, TCurrentDestination>(TCurrentDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
   M System.Void UpdateInPlace<TState, TSource, TDestination>(TDestination, TState, System.Func<TState, TSource>, Morphant.Context.MappingContext)
   M TBranchDestination UpdateDerived<TSource, TDestination, TBranchSource, TBranchDestination>(TBranchSource, TDestination, Morphant.Context.MappingContext)
-T Morphant.TypeMapperExtensions
-  M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
-  M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)
-T Morphant.TypeMapper<TMapper>
+T Morphant.TypeMapper
   C .ctor()
   M Morphant.Markers.AutoMarker Auto()
   M Morphant.Markers.AutoMarker<T> Auto<T>()
@@ -503,7 +483,10 @@ T Morphant.TypeMapper<TMapper>
   M Morphant.Markers.MapMarker<T> Update<T>(System.Object, System.Object)
   M Morphant.Markers.ValueMarker<T> Value<T>(T)
   M System.Boolean Supports(System.Type, System.Type)
-  M System.Void Configure(Morphant.TypeMapper<TMapper>.MapperBuilder)
+  M System.Void Configure(Morphant.TypeMapper.MapperBuilder)
+T Morphant.TypeMapperExtensions
+  M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
+  M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)
 T Morphant.UnknownDerivedTypeHandling
   V Default, UseBaseMapping, Throw
 T Morphant.UnmappedMemberValidation

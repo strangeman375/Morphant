@@ -20,7 +20,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationActiv
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         public TestMapper(Activation activation) => activation.Run();
         protected override void Configure(MapperBuilder builder) => builder.Map<Source, Destination>();

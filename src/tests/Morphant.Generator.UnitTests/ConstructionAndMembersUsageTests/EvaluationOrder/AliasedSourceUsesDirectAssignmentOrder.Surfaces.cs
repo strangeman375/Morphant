@@ -73,8 +73,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Construct(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Construct(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Mutable, global::Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd.MutableConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -84,8 +84,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Construct(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Construct(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Mutable, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd.MutableConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -95,8 +95,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Resolve(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Resolve(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Mutable, global::TestCase.Mutable, global::Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd.MutableConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -106,8 +106,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Resolve(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Resolve(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Mutable, global::TestCase.Mutable, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd.MutableConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -117,8 +117,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Mutable, global::TestCase.Mutable> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -128,8 +128,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Mutable, global::Morphant.Context.MappingContext, global::TestCase.Mutable> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -139,8 +139,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Mutable, global::TestCase.Mutable, global::TestCase.Mutable> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -150,8 +150,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Mutable, global::TestCase.Mutable, global::Morphant.Context.MappingContext, global::TestCase.Mutable> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -161,8 +161,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Mutable?, global::TestCase.Mutable> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -172,8 +172,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Mutable?, global::TestCase.Mutable, global::TestCase.Mutable> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -183,8 +183,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Mutable?, global::TestCase.Mutable, global::Morphant.Context.MappingContext, global::TestCase.Mutable> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -239,8 +239,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Members<global::TestCase.Mutable, global::Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd.MutableMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -250,8 +250,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Members<global::TestCase.Mutable, global::TestCase.Mutable, global::Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd.MutableMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -261,8 +261,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Members<global::TestCase.Mutable, global::TestCase.Mutable, global::TestCase.Mutable, global::Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd.MutableMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -272,8 +272,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Mutable, global::TestCase.Mutable> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Mutable, global::TestCase.Mutable> builder,
             global::Morphant.Delegates.Members<global::TestCase.Mutable, global::TestCase.Mutable, global::TestCase.Mutable, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_ae39599ff02b996704b851c7aeb9efdd.MutableMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

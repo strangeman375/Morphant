@@ -19,7 +19,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<int, Task<int>>().Convert(source =>
@@ -56,8 +56,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> builder,
+        public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> ConstructUsing(
+            this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> builder,
             global::Morphant.Delegates.ConstructUsing<int, global::System.Threading.Tasks.Task<int>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -67,8 +67,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> builder,
+        public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> ConstructUsing(
+            this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> builder,
             global::Morphant.Delegates.ConstructUsing<int, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -78,8 +78,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> builder,
+        public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> ResolveUsing(
+            this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> builder,
             global::Morphant.Delegates.ResolveUsing<int, global::System.Threading.Tasks.Task<int>, global::System.Threading.Tasks.Task<int>> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -89,8 +89,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> builder,
+        public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> ResolveUsing(
+            this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> builder,
             global::Morphant.Delegates.ResolveUsing<int, global::System.Threading.Tasks.Task<int>, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -100,8 +100,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> builder,
+        public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> Convert(
+            this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> builder,
             global::Morphant.Delegates.Convert<int, global::System.Threading.Tasks.Task<int>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -111,8 +111,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> builder,
+        public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> Convert(
+            this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> builder,
             global::Morphant.Delegates.Convert<int, global::System.Threading.Tasks.Task<int>, global::System.Threading.Tasks.Task<int>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -122,8 +122,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, int, global::System.Threading.Tasks.Task<int>> builder,
+        public static global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> Convert(
+            this global::Morphant.MappingBuilder<int, global::System.Threading.Tasks.Task<int>> builder,
             global::Morphant.Delegates.Convert<int, global::System.Threading.Tasks.Task<int>, global::Morphant.Context.MappingContext, global::System.Threading.Tasks.Task<int>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

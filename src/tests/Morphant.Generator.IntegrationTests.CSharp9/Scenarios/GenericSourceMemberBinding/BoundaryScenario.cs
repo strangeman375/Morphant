@@ -40,7 +40,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
         public T Payload { get { Reads++; return _payload; } set { _payload = value; } }
     }
 
-    public abstract class BoundaryFamily<TMapper, TSource> : TypeMapper<TMapper>
+    public abstract class BoundaryFamily<TMapper, TSource> : TypeMapper
         where TMapper : BoundaryFamily<TMapper, TSource> where TSource : BoundaryBase
     {
         protected override void Configure(MapperBuilder builder)
@@ -105,7 +105,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
         public Profile Profile => throw new InvalidOperationException("The public property was selected.");
     }
     public sealed class InterfaceBox<T> where T : IProfileSource { public T Payload = default!; }
-    public abstract class InterfaceFamily<TMapper, TSource> : TypeMapper<TMapper>
+    public abstract class InterfaceFamily<TMapper, TSource> : TypeMapper
         where TMapper : InterfaceFamily<TMapper, TSource> where TSource : IProfileSource
     {
         protected override void Configure(MapperBuilder builder)

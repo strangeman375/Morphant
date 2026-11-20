@@ -18,7 +18,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.LongTupleRules
     }
 
     [MorphantMapper]
-    public partial class TailIgnoreMapper : TypeMapper<TailIgnoreMapper>
+    public partial class TailIgnoreMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -40,7 +40,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.LongTupleRules
     }
 
     [MorphantMapper]
-    public partial class HeadIgnoreMapper : TypeMapper<HeadIgnoreMapper>
+    public partial class HeadIgnoreMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -62,7 +62,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.LongTupleRules
     }
 
     [MorphantMapper]
-    public partial class ValueMapper : TypeMapper<ValueMapper>
+    public partial class ValueMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

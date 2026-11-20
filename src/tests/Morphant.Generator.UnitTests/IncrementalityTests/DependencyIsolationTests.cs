@@ -248,7 +248,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class MapperA : TypeMapper<MapperA>
+    public partial class MapperA : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceA, DestinationA>();
@@ -272,7 +272,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class MapperB : TypeMapper<MapperB>
+    public partial class MapperB : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceB, DestinationB>();

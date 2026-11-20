@@ -81,7 +81,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
     }
 
     [MorphantMapper]
-    public partial class ConstructorMapper : TypeMapper<ConstructorMapper>
+    public partial class ConstructorMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -100,7 +100,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
     }
 
     [MorphantMapper]
-    public partial class FactoryMapper : TypeMapper<FactoryMapper>
+    public partial class FactoryMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -119,7 +119,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
     }
 
     [MorphantMapper]
-    public partial class OperationGuardMapper : TypeMapper<OperationGuardMapper>
+    public partial class OperationGuardMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -139,7 +139,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
     }
 
     [MorphantMapper]
-    public partial class PreviousGuardMapper : TypeMapper<PreviousGuardMapper>
+    public partial class PreviousGuardMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -268,7 +268,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
     }
 
     [MorphantMapper]
-    public partial class MutableSourceMapper : TypeMapper<MutableSourceMapper>
+    public partial class MutableSourceMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -288,7 +288,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
     }
 
     [MorphantMapper]
-    public partial class MutableLocalMapper : TypeMapper<MutableLocalMapper>
+    public partial class MutableLocalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -315,7 +315,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedNestedUpda
     }
 
     [MorphantMapper]
-    public partial class ConstantMapper : TypeMapper<ConstantMapper>
+    public partial class ConstantMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

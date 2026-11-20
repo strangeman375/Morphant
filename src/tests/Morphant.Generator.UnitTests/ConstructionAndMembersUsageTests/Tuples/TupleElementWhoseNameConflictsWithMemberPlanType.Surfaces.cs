@@ -81,8 +81,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Construct(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Construct(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Generated.N_a71d16d3dc19e8aaa2c7723dff2eb88f.TupleConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -92,8 +92,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Inline lambda returning a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Construct(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Construct(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_a71d16d3dc19e8aaa2c7723dff2eb88f.TupleConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -103,8 +103,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Resolve(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Resolve(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, (int Id, string TupleMembers), global::Morphant.Generated.N_a71d16d3dc19e8aaa2c7723dff2eb88f.TupleConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -114,8 +114,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Inline lambda returning the existing destination value or a construction expression.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Resolve(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Resolve(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, (int Id, string TupleMembers), global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_a71d16d3dc19e8aaa2c7723dff2eb88f.TupleConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -125,8 +125,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, (int Id, string TupleMembers)> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -136,8 +136,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> ConstructUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> ConstructUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, (int Id, string TupleMembers)> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -147,8 +147,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, (int Id, string TupleMembers), (int Id, string TupleMembers)> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -158,8 +158,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> ResolveUsing(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> ResolveUsing(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, (int Id, string TupleMembers), global::Morphant.Context.MappingContext, (int Id, string TupleMembers)> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -169,8 +169,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, (int Id, string TupleMembers)> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -180,8 +180,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, (int Id, string TupleMembers), (int Id, string TupleMembers)> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -191,8 +191,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Convert(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Convert(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, (int Id, string TupleMembers), global::Morphant.Context.MappingContext, (int Id, string TupleMembers)> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -247,8 +247,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_a71d16d3dc19e8aaa2c7723dff2eb88f.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -258,8 +258,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, (int Id, string TupleMembers), global::Morphant.Generated.N_a71d16d3dc19e8aaa2c7723dff2eb88f.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -269,8 +269,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, (int Id, string TupleMembers), (int Id, string TupleMembers), global::Morphant.Generated.N_a71d16d3dc19e8aaa2c7723dff2eb88f.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -280,8 +280,8 @@ namespace Morphant
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> Members(
-            this global::Morphant.MappingBuilder<global::TestCase.Mapper, global::TestCase.Source, (int Id, string TupleMembers)> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.Source, (int Id, string TupleMembers)> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, (int Id, string TupleMembers), (int Id, string TupleMembers), global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_a71d16d3dc19e8aaa2c7723dff2eb88f.TupleMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }

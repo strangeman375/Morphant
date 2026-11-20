@@ -29,7 +29,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
         public string Extra { get; set; } = string.Empty;
     }
 
-    public abstract class GenericBaseMapper<TMapper, T> : TypeMapper<TMapper>
+    public abstract class GenericBaseMapper<TMapper, T> : TypeMapper
         where TMapper : GenericBaseMapper<TMapper, T>
     {
         protected static string FormatValue(object? value) =>

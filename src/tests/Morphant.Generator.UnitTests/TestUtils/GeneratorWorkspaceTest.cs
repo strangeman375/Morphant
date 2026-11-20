@@ -12,7 +12,7 @@ internal sealed class GeneratorWorkspaceTest : IDisposable
     private static readonly ImmutableArray<MetadataReference> References =
         ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
         .Split(Path.PathSeparator)
-        .Append(typeof(TypeMapper<>).Assembly.Location)
+        .Append(typeof(TypeMapper).Assembly.Location)
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .Select(static path =>
             (MetadataReference)MetadataReference.CreateFromFile(path))

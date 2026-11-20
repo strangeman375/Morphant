@@ -42,7 +42,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -68,7 +68,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class CounterMapper : TypeMapper<CounterMapper>
+    public partial class CounterMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<CounterSource, CounterDestination>()
@@ -95,7 +95,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class SeedMapper : TypeMapper<SeedMapper>
+    public partial class SeedMapper : TypeMapper
     {
         private int __Construct() => 0;
 
@@ -122,7 +122,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SharedConstructi
     }
 
     [MorphantMapper]
-    public partial class NamedMapper : TypeMapper<NamedMapper>
+    public partial class NamedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<NamedSource, NamedDestination>()

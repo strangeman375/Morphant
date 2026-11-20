@@ -53,7 +53,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ReadOnlyMember_c
     }
 
     [MorphantMapper]
-    public partial class OuterMapper : TypeMapper<OuterMapper>
+    public partial class OuterMapper : TypeMapper
     {
         public static int SourceCalls { get; private set; }
 

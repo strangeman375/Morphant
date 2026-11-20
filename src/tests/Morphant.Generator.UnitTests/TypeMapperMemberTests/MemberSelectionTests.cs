@@ -30,7 +30,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder
@@ -145,7 +145,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -232,7 +232,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class AutoMapper : TypeMapper<AutoMapper>
+    public partial class AutoMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -243,7 +243,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ExplicitMapper : TypeMapper<ExplicitMapper>
+    public partial class ExplicitMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -14,7 +14,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.ValueTypeConstr
     public readonly record struct ReadonlyDestination(int Id);
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {

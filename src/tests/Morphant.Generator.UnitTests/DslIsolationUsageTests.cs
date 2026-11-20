@@ -60,7 +60,7 @@ public sealed class Destination<T>
     public int Id { get; set; }
 }
 public sealed class Payload { }
-public abstract class Root<TMapper, T> : TypeMapper<TMapper>
+public abstract class Root<TMapper, T> : TypeMapper
     where TMapper : Root<TMapper, T>
     where T : class
 {
@@ -130,7 +130,7 @@ namespace Shared
     }
 }
 [MorphantMapper]
-public partial class ProducerMapper : TypeMapper<ProducerMapper>
+public partial class ProducerMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Shared.Source, Shared.Destination>();
@@ -143,7 +143,7 @@ public partial class ProducerMapper : TypeMapper<ProducerMapper>
 #pragma warning disable CS1591
 using Morphant;
 [MorphantMapper]
-public partial class ConsumerMapper : TypeMapper<ConsumerMapper>
+public partial class ConsumerMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Shared.Source, Shared.Destination>()__CALLBACK__;
@@ -177,13 +177,13 @@ public partial class ConsumerMapper : TypeMapper<ConsumerMapper>
                     .Replace("class Source", "class Source<T>")
                     .Replace("class Destination", "class Destination<T>")
                     .Replace("Map<Shared.Source, Shared.Destination>", "Map<Shared.Source<T>, Shared.Destination<T>>")
-                    .Replace("ProducerMapper : TypeMapper<ProducerMapper>",
-                        "ProducerMapper<TMapper, T> : TypeMapper<TMapper>\n" +
+                    .Replace("ProducerMapper : TypeMapper",
+                        "ProducerMapper<TMapper, T> : TypeMapper\n" +
                         "    where TMapper : ProducerMapper<TMapper, T> where T : class");
                 consumerSource = consumerSource
                     .Replace("Map<Shared.Source, Shared.Destination>", "Map<Shared.Source<T>, Shared.Destination<T>>")
-                    .Replace("ConsumerMapper : TypeMapper<ConsumerMapper>",
-                        "ConsumerMapper<TMapper, T> : TypeMapper<TMapper>\n" +
+                    .Replace("ConsumerMapper : TypeMapper",
+                        "ConsumerMapper<TMapper, T> : TypeMapper\n" +
                         "    where TMapper : ConsumerMapper<TMapper, T> where T : class, new()");
                 destination = "Shared.Destination<T>";
                 break;
@@ -246,7 +246,7 @@ public sealed class Destination
     public Destination(int id) => Id = id;
     public int Id { get; set; }
 }
-public abstract class Root<TMapper> : TypeMapper<TMapper>
+public abstract class Root<TMapper> : TypeMapper
     where TMapper : Root<TMapper>
 {
     protected override void Configure(MapperBuilder builder) =>

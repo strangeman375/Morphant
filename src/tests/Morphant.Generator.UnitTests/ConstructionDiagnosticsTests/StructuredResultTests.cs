@@ -179,7 +179,7 @@ public static class DestinationExtensions
     public static int Change(this ref Destination value) => ++value.Id;
 }
 [MorphantMapper]
-public partial class Mapper : TypeMapper<Mapper>
+public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -232,7 +232,7 @@ public sealed class DerivedDestination : Destination
     public DerivedDestination(int id) : base(id) { }
 }
 [MorphantMapper]
-public partial class Mapper : TypeMapper<Mapper>
+public partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>().__METHOD__(__PARAMETERS__ => { __BODY__ });

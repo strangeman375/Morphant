@@ -32,7 +32,7 @@ namespace TestCase
     {
     }
 
-    public abstract class FarMapper<TMapper> : TypeMapper<TMapper>
+    public abstract class FarMapper<TMapper> : TypeMapper
         where TMapper : FarMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -50,7 +50,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class SameLevelMapper : TypeMapper<SameLevelMapper>
+    public partial class SameLevelMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -115,7 +115,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -171,7 +171,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -249,7 +249,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper<TestMapper>
+    public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -303,7 +303,7 @@ namespace TestCase
     {
     }
 
-    public abstract class GenericMapper<TMapper, T> : TypeMapper<TMapper>
+    public abstract class GenericMapper<TMapper, T> : TypeMapper
         where TMapper : GenericMapper<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>

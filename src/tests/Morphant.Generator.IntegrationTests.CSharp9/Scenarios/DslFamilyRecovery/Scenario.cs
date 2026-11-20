@@ -15,7 +15,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DslFamilyRecover
         public int Id { get; }
     }
 
-    public abstract class Root<TMapper> : TypeMapper<TMapper>
+    public abstract class Root<TMapper> : TypeMapper
         where TMapper : Root<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>

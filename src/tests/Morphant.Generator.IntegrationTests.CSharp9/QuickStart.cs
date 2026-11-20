@@ -13,7 +13,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
     }
 
     [MorphantMapper]
-    public sealed partial class CSharp9Mapper : TypeMapper<CSharp9Mapper>
+    public sealed partial class CSharp9Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Customer, CustomerDto>();

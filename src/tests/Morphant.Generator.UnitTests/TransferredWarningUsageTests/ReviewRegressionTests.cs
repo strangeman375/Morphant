@@ -49,7 +49,7 @@ namespace TestCase
         public string Text { get; set; }
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()__RULE__;
@@ -91,7 +91,7 @@ namespace TestCase
         public int Value { get; set; }
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()__RULE__;
@@ -131,7 +131,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<int, Task<int>>().__CALLBACK__(__EXPRESSION__);
@@ -181,7 +181,7 @@ namespace TestCase
         public int Value { get; set; }
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<int, Destination>()__EXPRESSION__;
@@ -221,7 +221,7 @@ namespace TestCase
         public int Value { get; set; }
     }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -277,7 +277,7 @@ namespace TestCase
     [Obsolete("Legacy type.")]
     public sealed class Destination { __MEMBER__ }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().__CALLBACK__(__EXPRESSION__);
@@ -310,7 +310,7 @@ namespace TestCase
     [Obsolete("Legacy type.")]
     public sealed class Destination { }
     [MorphantMapper]
-    public partial class Mapper : TypeMapper<Mapper>
+    public partial class Mapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().__CALLBACK__(__EXPRESSION__);

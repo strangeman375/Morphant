@@ -24,7 +24,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class AndMapper : TypeMapper<AndMapper>
+    public sealed partial class AndMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -36,7 +36,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class NestedMapper : TypeMapper<NestedMapper>
+    public sealed partial class NestedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -50,7 +50,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class ConditionalMapper : TypeMapper<ConditionalMapper>
+    public sealed partial class ConditionalMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -60,7 +60,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class NegatedMapper : TypeMapper<NegatedMapper>
+    public sealed partial class NegatedMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -72,7 +72,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class ValueAliasMapper : TypeMapper<ValueAliasMapper>
+    public sealed partial class ValueAliasMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -89,7 +89,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class OutAliasMapper : TypeMapper<OutAliasMapper>
+    public sealed partial class OutAliasMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -104,7 +104,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class ConditionalAliasMapper : TypeMapper<ConditionalAliasMapper>
+    public sealed partial class ConditionalAliasMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -119,7 +119,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class AvailabilityAliasMapper : TypeMapper<AvailabilityAliasMapper>
+    public sealed partial class AvailabilityAliasMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -133,7 +133,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class StoredGuardMapper : TypeMapper<StoredGuardMapper>
+    public sealed partial class StoredGuardMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -145,7 +145,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class StoredOutGuardMapper : TypeMapper<StoredOutGuardMapper>
+    public sealed partial class StoredOutGuardMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
@@ -157,7 +157,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResolveTryGetVal
     }
 
     [MorphantMapper]
-    public sealed partial class StoredSwitchMapper : TypeMapper<StoredSwitchMapper>
+    public sealed partial class StoredSwitchMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>().Resolve((source, previous) =>
