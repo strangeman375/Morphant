@@ -78,7 +78,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_a0564c
         {
             var generated = new TestMapper();
             using var provider = new ServiceCollection()
-                .AddSingleton<ITypeMapper<Source, Destination?>>(generated)
+                .AddSingleton<ITypeMapper<Source, Destination>>(generated)
                 .AddSingleton<IMapper, Mapper>()
                 .BuildServiceProvider();
             var mapper = provider.GetRequiredService<IMapper>();

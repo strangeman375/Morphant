@@ -42,7 +42,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StrictRuntimeTyp
             Destination? result;
             if (reference)
             {
-                ITypeMapper<ReferenceNumber?, Destination> contract = mapper;
+                ITypeMapper<ReferenceNumber, Destination> contract = mapper;
                 var source = nullSource ? null : new ReferenceNumber(7);
                 result = operation == "Create" ? contract.Create(source) : contract.Update(source, previous);
             }

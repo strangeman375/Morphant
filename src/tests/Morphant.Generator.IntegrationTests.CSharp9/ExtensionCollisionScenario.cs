@@ -1,7 +1,6 @@
 using System;
 using Morphant;
 using Morphant.Context;
-using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9
 {
@@ -20,18 +19,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
         public T Value { get; set; }
     }
 
-    public abstract class FirstMapperFamily<TMapper, T> :
+    public abstract class FirstMapperFamily<T> :
         TypeMapper
-        where TMapper : FirstMapperFamily<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<FamilySource<T>, FamilyDestination<T>>()
                 .Convert(_ => new FamilyDestination<T>(default(T)!));
     }
 
-    public abstract class SecondMapperFamily<TMapper, T> :
+    public abstract class SecondMapperFamily<T> :
         TypeMapper
-        where TMapper : SecondMapperFamily<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<FamilySource<T>, FamilyDestination<T>>()
@@ -43,7 +40,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
 
     [MorphantMapper]
     public sealed partial class FirstFamilyMapper :
-        FirstMapperFamily<FirstFamilyMapper, string>
+        FirstMapperFamily<string>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -57,7 +54,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
 
     [MorphantMapper]
     public sealed partial class SecondFamilyMapper :
-        SecondMapperFamily<SecondFamilyMapper, string>
+        SecondMapperFamily<string>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -92,21 +89,17 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
             builder.Map<ErasedSource<object>, ErasedDestination<object>>();
     }
 
-#pragma warning disable MORPH0060
     [MorphantMapper]
-    public abstract partial class InvalidMapperFamily<TMapper, TState> :
-        TypeMapper
-        where TMapper : InvalidMapperFamily<TMapper, TState>
+    public abstract partial class StateMapper<TState> : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<
-                    ErasedSource<dynamic>,
-                    ErasedDestination<dynamic>>();
+                    ErasedSource<object>,
+                    ErasedDestination<object>>();
     }
-#pragma warning restore MORPH0060
 
-    public sealed class InvalidFamilyMapper :
-        InvalidMapperFamily<InvalidFamilyMapper, string>
+    public sealed class ClosedStateMapper :
+        StateMapper<string>
     {
     }
 
@@ -134,31 +127,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
                     "Mapper-family callbacks were not applied.");
             }
 
-            var invalid =
+            var closed =
                 (ITypeMapper<
                     ErasedSource<object>,
                     ErasedDestination<object>>)
-                new InvalidFamilyMapper();
+                new ClosedStateMapper();
 
-            try
-            {
-                invalid.Create(
-                    new ErasedSource<object> { Value = "source" },
-                    default(MappingContext));
-                throw new InvalidOperationException(
-                    "An invalid mapper-family mapping was executed.");
-            }
-            catch (MappingConfigurationException exception)
-            {
-                if (!exception.Message.Contains(
-                        "type parameter 'TState'",
-                        StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        "The invalid mapper-family stub lost its reason.",
-                        exception);
-                }
-            }
+            var mapped = closed.Create(new ErasedSource<object> { Value = "value" }, default);
+            if (!Equals(mapped.Value, "value"))
+                throw new InvalidOperationException("An unused mapper parameter changed the mapping.");
         }
     }
 }

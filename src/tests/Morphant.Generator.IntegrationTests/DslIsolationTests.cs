@@ -10,7 +10,7 @@ internal sealed class DslIsolationTests
     }
 
     [Test]
-    public void Invalid_family_callback_uses_typed_recovery_without_affecting_other_pairs()
+    public void Mappers_sharing_a_tuple_pair_execute_their_own_callbacks()
     {
         CSharp9.Scenarios.DslFamilyRecovery.Scenario.Verify();
     }

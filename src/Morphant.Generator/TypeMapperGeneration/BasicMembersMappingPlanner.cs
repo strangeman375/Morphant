@@ -1649,7 +1649,7 @@ internal static class BasicMembersMappingPlanner
                     cancellationToken)
                 .Type is not INamedTypeSymbol
                 {
-                    TypeArguments.Length: 3
+                    TypeArguments.Length: 2
                 } builderType ||
             !StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
@@ -1660,7 +1660,7 @@ internal static class BasicMembersMappingPlanner
         }
 
         return MappingTypeNormalization.NormalizePreviousDestination(
-            builderType.TypeArguments[2],
+            builderType.TypeArguments[1],
             configuration.Expression.SemanticModel.Compilation);
     }
 

@@ -57,7 +57,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationServi
                 .AddScoped<TestMapper>()
                 .AddScoped<ITypeMapper<Box<int>, Box<string>>>(services =>
                     services.GetRequiredService<TestMapper>())
-                .AddScoped<ITypeMapper<int?, string?>>(services =>
+                .AddScoped<ITypeMapper<int?, string>>(services =>
                     services.GetRequiredService<TestMapper>())
                 .AddScoped<IMapper, Mapper>()
                 .BuildServiceProvider(new ServiceProviderOptions
@@ -90,7 +90,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationServi
             var boxedContract = services.GetRequiredService<
                 ITypeMapper<Box<int>, Box<string>>>();
             var nullableContract = services.GetRequiredService<
-                ITypeMapper<int?, string?>>();
+                ITypeMapper<int?, string>>();
             var mapper = services.GetRequiredService<IMapper>();
             var label = services.GetRequiredService<ScopeLabel>();
 

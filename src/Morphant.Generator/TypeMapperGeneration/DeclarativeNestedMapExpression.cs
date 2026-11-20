@@ -1180,12 +1180,12 @@ internal static class DeclarativeNestedMapExpression
                semanticModel.GetSymbolInfo(configuration, cancellationToken)
                    .Symbol is IMethodSymbol
                    {
-                       ReturnType: INamedTypeSymbol { TypeArguments.Length: 3 } builder
+                       ReturnType: INamedTypeSymbol { TypeArguments.Length: 2 } builder
                    } &&
                SymbolNameHelper.GetFullMetadataName(builder.OriginalDefinition) ==
                    MetadataNames.PairMapperBuilder
             ? MappingTypeNormalization.NormalizePreviousDestination(
-                builder.TypeArguments[2], semanticModel.Compilation) as INamedTypeSymbol
+                builder.TypeArguments[1], semanticModel.Compilation) as INamedTypeSymbol
             : null;
     }
 

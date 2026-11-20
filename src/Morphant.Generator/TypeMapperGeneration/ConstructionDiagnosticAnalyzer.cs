@@ -1261,7 +1261,7 @@ internal static class ConstructionDiagnosticAnalyzer
                     memberAccess.Expression)
                 .Type is INamedTypeSymbol
                 {
-                    TypeArguments.Length: 3
+                    TypeArguments.Length: 2
                 } builderType &&
             StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
@@ -1269,8 +1269,8 @@ internal static class ConstructionDiagnosticAnalyzer
                 MetadataNames.PairMapperBuilder))
         {
             return MapperContractDisplay.Create(
-                builderType.TypeArguments[1],
-                builderType.TypeArguments[2]);
+                builderType.TypeArguments[0],
+                builderType.TypeArguments[1]);
         }
 
         return MapperContractDisplay.Create(

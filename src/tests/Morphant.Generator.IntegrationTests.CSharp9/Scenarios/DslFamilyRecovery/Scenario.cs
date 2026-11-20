@@ -1,11 +1,8 @@
 #nullable enable
 #pragma warning disable CS1591
-#pragma warning disable MORPH0018
 
 using System;
 using Morphant;
-using Morphant.Context;
-using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DslFamilyRecovery
 {
@@ -15,27 +12,25 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DslFamilyRecover
         public int Id { get; }
     }
 
-    public abstract class Root<TMapper> : TypeMapper
-        where TMapper : Root<TMapper>
+    public abstract class Root : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<(int Id, int Other), Destination>()
                 .Convert(s => new Destination(s.Id));
     }
 
-    public abstract class Derived<TMapper> : Root<TMapper>
-        where TMapper : Derived<TMapper>
+    public abstract class Derived : Root
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<(int Code, int Other), Destination>()
-                .Convert(s => new Destination(s.Id));
+            builder.Map<(int Id, int Other), Destination>()
+                .Convert(s => new Destination(s.Id + 10));
             builder.Map<int, int>().Convert(s => s + 1);
         }
     }
 
     [MorphantMapper]
-    public partial class RootMapper : Root<RootMapper>
+    public partial class RootMapper : Root
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -46,13 +41,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DslFamilyRecover
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : Derived<DerivedMapper>
+    public partial class DerivedMapper : Derived
     {
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<(int Code, int Other), Destination>()
-                .IncludeBase<(int Code, int Other), Destination>();
+            builder.Map<(int Id, int Other), Destination>()
+                .IncludeBase<(int Id, int Other), Destination>();
             builder.Map<int, int>().IncludeBase<int, int>();
         }
     }
@@ -63,32 +58,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DslFamilyRecover
         {
             var root = (ITypeMapper<(int Id, int Other), Destination>)new RootMapper();
             var derived = new DerivedMapper();
-            var invalid = (ITypeMapper<(int Code, int Other), Destination>)derived;
+            var second = (ITypeMapper<(int Id, int Other), Destination>)derived;
             var valid = (ITypeMapper<int, int>)derived;
-
-            ExpectFailure(() => invalid.Create((2, 3), default), MappingOperation.Create);
-            ExpectFailure(() => invalid.Update((2, 3), new Destination(7), default), MappingOperation.Update);
 
             if (root.Create((2, 3), default).Id != 2 ||
                 root.Update((4, 5), new Destination(7), default).Id != 4 ||
+                second.Create((2, 3), default).Id != 12 ||
+                second.Update((2, 3), new Destination(7), default).Id != 12 ||
                 valid.Create(10, default) != 11 || valid.Update(20, 7, default) != 21)
-                throw new InvalidOperationException("Invalid callback binding affected an independent mapping.");
-        }
-
-        private static void ExpectFailure(Action map, MappingOperation operation)
-        {
-            try
-            {
-                map();
-            }
-            catch (MappingConfigurationException exception)
-            {
-                if (exception.Operation == operation)
-                    return;
-                throw;
-            }
-
-            throw new InvalidOperationException("An invalid derived callback executed through its base family.");
+                throw new InvalidOperationException("Mappers sharing a tuple pair lost their own rules.");
         }
     }
 }

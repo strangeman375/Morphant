@@ -465,7 +465,8 @@ internal static class TypeMapperEmitter
         writer.Line($"if ({methodName}({arguments}))");
         writer.Line("{");
         writer.Indent();
-        writer.Line($"return {resultName};");
+        var suffix = mapping.AnalysisContext.DestinationType.IsReferenceType ? "!" : string.Empty;
+        writer.Line($"return {resultName}{suffix};");
         writer.Unindent();
         writer.Line("}");
     }
@@ -1974,7 +1975,7 @@ internal static class TypeMapperEmitter
         writer.Line(
             "global::Morphant.Context.MappingContext context,");
         writer.Line(
-            $"out {mapping.DestinationTypeName} {resultName})");
+            $"out {mapping.MaybeNullDestinationTypeName} {resultName})");
         writer.Unindent();
         writer.Line("{");
         writer.Indent();
@@ -2023,7 +2024,7 @@ internal static class TypeMapperEmitter
         writer.Line(
             "global::Morphant.Context.MappingContext context,");
         writer.Line(
-            $"out {mapping.DestinationTypeName} {resultName})");
+            $"out {mapping.MaybeNullDestinationTypeName} {resultName})");
         writer.Unindent();
         writer.Line("{");
         writer.Indent();
