@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/20/2026 - 15:08:06 |
-| Coverage date: | 11/20/2026 - 14:52:44 - 11/20/2026 - 15:08:00 |
+| Generated on: | 11/20/2026 - 16:10:39 |
+| Coverage date: | 11/20/2026 - 16:00:30 - 11/20/2026 - 16:10:35 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
-| Classes: | 395 |
-| Files: | 220 |
-| **Line coverage:** | 90.9% (41232 of 45314) |
-| Covered lines: | 41232 |
-| Uncovered lines: | 4082 |
-| Coverable lines: | 45314 |
-| Total lines: | 75667 |
-| **Branch coverage:** | 79.2% (16197 of 20431) |
-| Covered branches: | 16197 |
-| Total branches: | 20431 |
+| Classes: | 397 |
+| Files: | 221 |
+| **Line coverage:** | 90.9% (41336 of 45430) |
+| Covered lines: | 41336 |
+| Uncovered lines: | 4094 |
+| Coverable lines: | 45430 |
+| Total lines: | 75869 |
+| **Branch coverage:** | 79.2% (16416 of 20714) |
+| Covered branches: | 16416 |
+| Total branches: | 20714 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -98,7 +98,7 @@
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odel|100%||
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odelBuilder|100%|97.7%|
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odelEquality|97.7%|93.7%|
-|Morphant.Generator.ConstructionSurface.PairConfiguration.PairTypeParameterM<br/>odelBuilder|79.4%|63.7%|
+|Morphant.Generator.ConstructionSurface.PairConfiguration.PairTypeParameterM<br/>odelBuilder|81.2%|65.6%|
 |Morphant.Generator.DiagnosticLocationActualizer|95.9%|90%|
 |Morphant.Generator.DiagnosticPipeline|100%|100%|
 |Morphant.Generator.Diagnostics.DiagnosticHelpLink|100%||
@@ -149,11 +149,11 @@
 |Morphant.Generator.MappingPair.BclTupleShape|100%||
 |Morphant.Generator.MappingPair.BclTupleShapePolicy|91.5%|80.2%|
 |Morphant.Generator.MappingPair.CanonicalMappingPairCandidate|100%||
-|Morphant.Generator.MappingPair.CanonicalMappingPairPipeline|95.8%|81.8%|
+|Morphant.Generator.MappingPair.CanonicalMappingPairPipeline|99.3%|89.2%|
 |Morphant.Generator.MappingPair.DestinationCapabilityPolicy|98.3%|84%|
 |Morphant.Generator.MappingPair.DestinationMemberPolicy|100%|95.1%|
 |Morphant.Generator.MappingPair.DuplicateMappingPairRegistrationModel|100%||
-|Morphant.Generator.MappingPair.FriendMappingExtensions|100%|100%|
+|Morphant.Generator.MappingPair.FriendMappingExtensions|100%|97.2%|
 |Morphant.Generator.MappingPair.GeneratedMappingExtensionBinding|100%|92.8%|
 |Morphant.Generator.MappingPair.GeneratedMappingExtensionNaming|98.7%|79%|
 |Morphant.Generator.MappingPair.MapperMappingPairModel|88.8%||
@@ -164,14 +164,16 @@
 |Morphant.Generator.MappingPair.MappingPairCapabilities|71.4%||
 |Morphant.Generator.MappingPair.MappingPairIdentity|100%||
 |Morphant.Generator.MappingPair.MappingPairModel|100%||
-|Morphant.Generator.MappingPair.MappingPairPipeline|98.3%|94.1%|
+|Morphant.Generator.MappingPair.MappingPairPipeline|98.4%|94.1%|
 |Morphant.Generator.MappingPair.MappingPairRegistrationModel|100%||
 |Morphant.Generator.MappingPair.MappingRegistrationDiagnosticDescriptors|100%||
-|Morphant.Generator.MappingPair.MappingRegistrationDiagnosticPipeline|100%|91.3%|
+|Morphant.Generator.MappingPair.MappingRegistrationDiagnosticPipeline|100%|91%|
 |Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|97%|83.1%|
 |Morphant.Generator.MappingPair.MappingTypeIdentity|100%||
-|Morphant.Generator.MappingPair.MappingTypeIdentityPolicy|91.4%|82.9%|
+|Morphant.Generator.MappingPair.MappingTypeIdentityPolicy|92.9%|84.8%|
 |Morphant.Generator.MappingPair.MappingTypeNormalization|96.7%|95.4%|
+|Morphant.Generator.MappingPair.OpenExtensionConstraintCheck|86.6%|73.6%|
+|Morphant.Generator.MappingPair.OpenExtensionReceiver|100%||
 |Morphant.Generator.MappingPair.UnavailableMappingPairModel|100%||
 |Morphant.Generator.MappingPair.UnavailableMappingTypeModel|100%||
 |Morphant.Generator.MappingPair.UnifiableMappingPairConflictModel|100%||
@@ -191,7 +193,7 @@
 |Morphant.Generator.ObsoleteTypeWarning|100%||
 |Morphant.Generator.ObsoleteTypeWarnings|97.9%|83.6%|
 |Morphant.Generator.PairConfiguration.BoundConfigurationExpression|90%||
-|Morphant.Generator.PairConfiguration.BuilderFlowAnalyzer|95.4%|80.4%|
+|Morphant.Generator.PairConfiguration.BuilderFlowAnalyzer|95.4%|80.2%|
 |Morphant.Generator.PairConfiguration.BuilderFlowBreakModel|100%||
 |Morphant.Generator.PairConfiguration.BuilderFlowLevelAnalysis|100%||
 |Morphant.Generator.PairConfiguration.ConfigurationFlowDiagnosticDescriptors|100%||
@@ -441,4 +443,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #777](https://github.com/strangeman375/Morphant/actions/runs/44756380158).
+Full HTML report: download the **coverage** artifact from [CI run #792](https://github.com/strangeman375/Morphant/actions/runs/44768026533).
