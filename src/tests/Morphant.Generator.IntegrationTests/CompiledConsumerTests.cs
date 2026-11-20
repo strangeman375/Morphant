@@ -9,6 +9,10 @@ namespace Morphant.Generator.IntegrationTests;
 internal sealed class CompiledConsumerTests
 {
     [Test]
+    public void Open_extensions_share_indirect_constraints_and_preserve_each_callback() =>
+        CSharp9Consumer.Scenarios.IndirectPairConstraints.Scenario.Verify();
+
+    [Test]
     public void CSharp9_quick_start_compiles_and_executes()
     {
         using var provider = new ServiceCollection()

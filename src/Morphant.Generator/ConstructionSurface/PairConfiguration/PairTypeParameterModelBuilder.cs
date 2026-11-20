@@ -14,6 +14,9 @@ internal static class PairTypeParameterModelBuilder
         IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterNames,
         Compilation compilation)
     {
+        if (typeParameters.IsEmpty)
+            return ImmutableArray<ConstructionTypeParameterModel>.Empty;
+
         var constraints =
             new Dictionary<ITypeParameterSymbol, ConstraintAccumulator>(
                 TypeParameterComparer.Instance);
@@ -28,11 +31,11 @@ internal static class PairTypeParameterModelBuilder
         AddDefinitionConstraints(
             sourceType,
             typeParameterNames,
-            constraints);
+            constraints, compilation);
         AddDefinitionConstraints(
             destinationType,
             typeParameterNames,
-            constraints);
+            constraints, compilation);
 
         var result =
             ImmutableArray.CreateBuilder<ConstructionTypeParameterModel>(
@@ -53,14 +56,14 @@ internal static class PairTypeParameterModelBuilder
         IReadOnlyDictionary<ITypeParameterSymbol, string>
             typeParameterNames,
         IReadOnlyDictionary<ITypeParameterSymbol, ConstraintAccumulator>
-            constraints)
+            constraints, Compilation compilation)
     {
         if (type is IArrayTypeSymbol arrayType)
         {
             AddDefinitionConstraints(
                 arrayType.ElementType,
                 typeParameterNames,
-                constraints);
+                constraints, compilation);
             return;
         }
 
@@ -74,7 +77,7 @@ internal static class PairTypeParameterModelBuilder
             AddDefinitionConstraints(
                 containingType,
                 typeParameterNames,
-                constraints);
+                constraints, compilation);
         }
 
         var constraintTypeNames = BuildConstraintTypeNames(
@@ -96,11 +99,102 @@ internal static class PairTypeParameterModelBuilder
                     namedType.TypeParameters[index],
                     constraintTypeNames);
             }
+            else if (argument is not ITypeParameterSymbol)
+            {
+                AddIndirectConstraints(argument, namedType.TypeParameters[index], namedType,
+                    typeParameterNames, constraints, compilation);
+            }
 
             AddDefinitionConstraints(
                 argument,
                 typeParameterNames,
-                constraints);
+                constraints, compilation);
+        }
+    }
+
+    private static void AddIndirectConstraints(
+        ITypeSymbol argument, ITypeParameterSymbol formal, INamedTypeSymbol owner,
+        IReadOnlyDictionary<ITypeParameterSymbol, string> names,
+        IReadOnlyDictionary<ITypeParameterSymbol, ConstraintAccumulator> constraints, Compilation compilation)
+    {
+        if (formal.HasUnmanagedTypeConstraint && argument.IsValueType)
+        {
+            // Ask Roslyn about the constructed layout. A phantom parameter or
+            // a static field does not contribute to unmanagedness.
+            foreach (var parameter in GeneratedTypeNameBuilder.CollectTypeParameters(argument))
+            {
+                var replacement = new Dictionary<ITypeParameterSymbol, ITypeSymbol>(SymbolEqualityComparer.Default)
+                {
+                    [parameter] = compilation.GetSpecialType(SpecialType.System_Object)
+                };
+                if (!MapperTypeSubstitution.Substitute(argument, replacement, compilation).IsUnmanagedType &&
+                    constraints.TryGetValue(parameter, out var required))
+                    required.RequireUnmanaged();
+            }
+        }
+
+        if (formal.ConstraintTypes.IsEmpty)
+            return;
+
+        var substitutions = MapperTypeSubstitution.Build(owner.OriginalDefinition, owner);
+        foreach (var bound in formal.ConstraintTypes)
+            AddConversion(argument, MapperTypeSubstitution.Substitute(bound, substitutions, compilation));
+
+        void AddConversion(ITypeSymbol from, ITypeSymbol to)
+        {
+            if (SymbolEqualityComparer.Default.Equals(from, to))
+                return;
+            if (from is ITypeParameterSymbol parameter)
+            {
+                if (constraints.TryGetValue(parameter, out var required))
+                    required.RequireReferenceConversion(to, names);
+                return;
+            }
+
+            if (from is IArrayTypeSymbol array)
+            {
+                if (to is IArrayTypeSymbol targetArray && array.Rank == targetArray.Rank)
+                    AddConversion(array.ElementType, targetArray.ElementType);
+                else if (array.IsSZArray && to is INamedTypeSymbol targetInterface &&
+                         targetInterface.OriginalDefinition.SpecialType is
+                             SpecialType.System_Collections_Generic_IEnumerable_T or
+                             SpecialType.System_Collections_Generic_IList_T or
+                             SpecialType.System_Collections_Generic_ICollection_T or
+                             SpecialType.System_Collections_Generic_IReadOnlyList_T or
+                             SpecialType.System_Collections_Generic_IReadOnlyCollection_T)
+                    AddConversion(array.ElementType, targetInterface.TypeArguments[0]);
+                return;
+            }
+
+            if (to is not INamedTypeSymbol target || target.Arity == 0 || from is not INamedTypeSymbol source)
+                return;
+
+            // An exact implemented interface needs no variance conversion.
+            if (source.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, target)))
+                return;
+
+            var implementation = SymbolEqualityComparer.Default.Equals(source.OriginalDefinition, target.OriginalDefinition)
+                ? source
+                : source.AllInterfaces.FirstOrDefault(i =>
+                    SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, target.OriginalDefinition) &&
+                    compilation.ClassifyCommonConversion(i, target).IsImplicit);
+            if (implementation is null)
+                return;
+
+            for (var i = 0; i < target.Arity; i++)
+            {
+                var actual = implementation.TypeArguments[i];
+                var expected = target.TypeArguments[i];
+                switch (target.TypeParameters[i].Variance)
+                {
+                    case VarianceKind.Out:
+                        AddConversion(actual, expected);
+                        break;
+                    case VarianceKind.In:
+                        AddConversion(expected, actual);
+                        break;
+                }
+            }
         }
     }
 
@@ -197,21 +291,42 @@ internal static class PairTypeParameterModelBuilder
                 definitionParameter.HasConstructorConstraint;
         }
 
+        public void RequireUnmanaged() => MergePrimaryConstraint(PrimaryConstraint.Unmanaged);
+
+        public void RequireReferenceConversion(ITypeSymbol target,
+            IReadOnlyDictionary<ITypeParameterSymbol, string> names)
+        {
+            MergePrimaryConstraint(target.NullableAnnotation switch
+            {
+                NullableAnnotation.Annotated => PrimaryConstraint.ClassNullable,
+                NullableAnnotation.None => PrimaryConstraint.ClassOblivious,
+                _ => PrimaryConstraint.Class
+            });
+            if (target.SpecialType != SpecialType.System_Object && target is not IDynamicTypeSymbol)
+            {
+                AddTypeConstraint(target, GeneratedTypeNameBuilder.Build(target, names));
+                _requiresNullableAnnotationsDisabled |= HasObliviousTopLevelAnnotation(target);
+            }
+        }
+
         public ConstructionTypeParameterModel Build(string name)
         {
             var result = ImmutableArray.CreateBuilder<string>();
 
-            if (_primaryConstraint != PrimaryConstraint.None)
-            {
+            var baseConstraint = _typeConstraints.FirstOrDefault(static constraint => constraint.IsClass);
+            var ordinaryBase = baseConstraint is not null && baseConstraint.Type.SpecialType is not
+                (SpecialType.System_Enum or SpecialType.System_Delegate or SpecialType.System_MulticastDelegate);
+            if (_primaryConstraint != PrimaryConstraint.None && !ordinaryBase)
                 result.Add(BuildPrimaryConstraint(_primaryConstraint));
-            }
-
-            var baseConstraint = _typeConstraints.FirstOrDefault(
-                static constraint => constraint.IsClass);
 
             if (baseConstraint is not null)
             {
-                result.Add(baseConstraint.Name);
+                var nameOfBase = baseConstraint.Name;
+                if (ordinaryBase && _primaryConstraint is PrimaryConstraint.Class or PrimaryConstraint.NotNull &&
+                    IsTopLevelNullable(nameOfBase))
+                    nameOfBase = nameOfBase.Substring(0, nameOfBase.Length - 1);
+
+                result.Add(nameOfBase);
             }
 
             foreach (var constraint in _typeConstraints)
