@@ -18,6 +18,7 @@ internal static class LibraryCompatibilityDetector
 
         foreach (var library in compilation.SourceModule.ReferencedAssemblySymbols)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (SymbolEqualityComparer.Default.Equals(library, runtime))
             {
                 continue;
@@ -28,13 +29,9 @@ internal static class LibraryCompatibilityDetector
                 .FirstOrDefault(identity =>
                     IsIncompatibleRuntime(identity, runtimeIdentity));
 
+            // Only a compiled reference records the library's own binary dependencies.
             if (reference is not null &&
-                (compilation.GetMetadataReference(library) is not
-                     CompilationReference project ||
-                 UsesIncompatibleRuntime(
-                     project.Compilation,
-                     runtimeIdentity,
-                     cancellationToken)))
+                compilation.GetMetadataReference(library) is PortableExecutableReference)
             {
                 incompatible.Add((library.Identity.Name, reference.Version));
             }
@@ -49,20 +46,6 @@ internal static class LibraryCompatibilityDetector
                 FormatLine(library.Version),
                 FormatLine(runtimeIdentity.Version)))
             .ToImmutableArray();
-    }
-
-    // A project reference lists every reference passed to its compilation.
-    // Like a compiled library, count only the references its code uses.
-    private static bool UsesIncompatibleRuntime(
-        Compilation project,
-        AssemblyIdentity runtime,
-        CancellationToken cancellationToken)
-    {
-        return project.GetUsedAssemblyReferences(cancellationToken)
-            .Any(reference =>
-                project.GetAssemblyOrModuleSymbol(reference) is
-                    IAssemblySymbol assembly &&
-                IsIncompatibleRuntime(assembly.Identity, runtime));
     }
 
     private static bool IsIncompatibleRuntime(

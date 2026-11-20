@@ -12,28 +12,30 @@ internal sealed class LibraryCompatibilityTests
 
     [TestCase(false)]
     [TestCase(true)]
-    public void Reports_a_mapper_library_built_with_an_older_minor_line(
-        bool projectReference)
+    public void Reports_an_older_mapper_when_its_compiled_reference_arrives(
+        bool referenceAssembly)
     {
         var runtime = Runtime("0.6.0.0");
-        var library = MapperLibrary("0.5.0.0", projectReference);
-        var withoutLibrary = CompatibilityGeneratorTest.Run(
+        var library = GenerateMapperLibrary("0.5.0.0");
+        var live = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
             sources: [CompatibilityGeneratorTest.MapperSource],
-            references: [runtime]);
-        var result = CompatibilityGeneratorTest.Run(
+            references: [runtime, library.ToMetadataReference()]);
+        var compiled = CompatibilityGeneratorTest.EmitReference(library, referenceAssembly);
+        var built = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
             sources: [CompatibilityGeneratorTest.MapperSource],
-            references: [runtime, library]);
+            references: [runtime, compiled],
+            driver: live.Driver);
 
-        CompatibilityGeneratorTest.AssertDiagnostics(withoutLibrary);
+        CompatibilityGeneratorTest.AssertDiagnostics(live);
         CompatibilityGeneratorTest.AssertDiagnostics(
-            result,
+            built,
             Incompatible("MappingLibrary", "0.5", "0.6"));
-        Assert.That(GeneratedSources(withoutLibrary), Is.Not.Empty);
+        Assert.That(GeneratedSources(live), Is.Not.Empty);
         Assert.That(
-            GeneratedSources(result),
-            Is.EqualTo(GeneratedSources(withoutLibrary)));
+            GeneratedSources(built),
+            Is.EqualTo(GeneratedSources(live)));
     }
 
     [TestCase("0.6.0.0", "0.6.0.0", null)]
@@ -113,42 +115,102 @@ namespace Unrelated
             Incompatible("Beta", "0.4", "0.6"));
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public void Ignores_a_library_that_references_but_does_not_use_the_runtime(
-        bool projectReference)
+    [TestCase("null")]
+    [TestCase("nameof(Morphant.IMapper)")]
+    [TestCase("(int)Morphant.MappingMode.Create")]
+    public void Ignores_libraries_whose_binary_has_no_runtime_dependency(string expression)
     {
-        const string source =
+        var runtime = Runtime("0.6.0.0");
+        var library = CompatibilityGeneratorTest.CreateProjectReference(
+            "Constants",
+$$"""
+#nullable enable
+
+internal static class Constants
+{
+    internal static object? Value => {{expression}};
+}
+""",
+            [Runtime("0.5.0.0")]);
+        var compiled = CompatibilityGeneratorTest.EmitReference(library.Compilation);
+
+        var live = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9, references: [runtime, library]);
+        var built = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9, references: [runtime, compiled]);
+
+        CompatibilityGeneratorTest.AssertDiagnostics(live);
+        CompatibilityGeneratorTest.AssertDiagnostics(built);
+    }
+
+    [Test]
+    public void Reports_the_binary_dependency_of_the_leaf_only()
+    {
+        var oldRuntime = Runtime("0.5.0.0");
+        var runtime = Runtime("0.6.0.0");
+        var leaf = CompatibilityGeneratorTest.CreateReference(
+            "Leaf",
 """
 #nullable enable
 #pragma warning disable CS1591
 
-namespace UnusedRuntime
+public static class Leaf
 {
-    public sealed class Library
-    {
-    }
+    public static int Value() => 42;
+    public static bool IsMapper(object value) => value is Morphant.IMapper;
 }
-""";
-        MetadataReference[] libraryReferences = [Runtime("0.5.0.0")];
-        var library = projectReference
-            ? (MetadataReference)CompatibilityGeneratorTest.CreateProjectReference(
-                "UnusedRuntimeLibrary",
-                source,
-                libraryReferences)
-            : CompatibilityGeneratorTest.CreateReference(
-                "UnusedRuntimeLibrary",
-                source,
-                libraryReferences);
-        var result = CompatibilityGeneratorTest.Run(
-            LanguageVersion.CSharp9,
-            references: [Runtime("0.6.0.0"), library]);
+""",
+            [oldRuntime]);
+        var wrapper = CompatibilityGeneratorTest.CreateProjectReference(
+            "Wrapper",
+"""
+#nullable enable
 
-        CompatibilityGeneratorTest.AssertDiagnostics(result);
+internal static class Wrapper
+{
+    internal static int Value() => Leaf.Value();
+}
+""",
+            [oldRuntime, leaf]);
+        var compiled = CompatibilityGeneratorTest.EmitReference(wrapper.Compilation);
+        var live = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9, references: [runtime, leaf, wrapper]);
+        var built = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9, references: [runtime, leaf, compiled]);
+
+        var expected = Incompatible("Leaf", "0.5", "0.6");
+        CompatibilityGeneratorTest.AssertDiagnostics(live, expected);
+        CompatibilityGeneratorTest.AssertDiagnostics(built, expected);
     }
 
     [Test]
-    public void Reports_a_project_that_uses_the_runtime_only_in_a_method_body()
+    public void Unrelated_compiler_error_in_a_live_project_does_not_implicate_the_runtime()
+    {
+        var library = CompatibilityGeneratorTest.CreateCompilation(
+            "Unfinished",
+"""
+#nullable enable
+
+internal static class Unfinished
+{
+    internal static int Value() => MissingName;
+}
+""",
+            [Runtime("0.5.0.0")]);
+        var errors = library.GetDiagnostics()
+            .Where(d => d.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error)
+            .Select(d => d.Id);
+        Assert.That(errors, Is.EqualTo(new[] { "CS0103" }));
+
+        var consumer = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9,
+            references: [Runtime("0.6.0.0"), library.ToMetadataReference()]);
+
+        CompatibilityGeneratorTest.AssertDiagnostics(consumer);
+    }
+
+    [Test]
+    public void Method_body_dependency_is_visible_in_the_implementation_assembly()
     {
         var library = CompatibilityGeneratorTest.CreateProjectReference(
             "BodyUsageLibrary",
@@ -165,12 +227,20 @@ namespace BodyUsage
 }
 """,
             [Runtime("0.5.0.0")]);
-        var result = CompatibilityGeneratorTest.Run(
-            LanguageVersion.CSharp9,
-            references: [Runtime("0.6.0.0"), library]);
+        var runtime = Runtime("0.6.0.0");
+        var api = CompatibilityGeneratorTest.EmitReference(
+            library.Compilation, referenceAssembly: true);
+        var implementation = CompatibilityGeneratorTest.EmitReference(library.Compilation);
+        var live = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9, references: [runtime, library]);
+        var apiOnly = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9, references: [runtime, api]);
+        var full = CompatibilityGeneratorTest.Run(
+            LanguageVersion.CSharp9, references: [runtime, implementation]);
 
-        CompatibilityGeneratorTest.AssertDiagnostics(
-            result,
+        CompatibilityGeneratorTest.AssertDiagnostics(live);
+        CompatibilityGeneratorTest.AssertDiagnostics(apiOnly);
+        CompatibilityGeneratorTest.AssertDiagnostics(full,
             Incompatible("BodyUsageLibrary", "0.5", "0.6"));
     }
 
@@ -211,19 +281,23 @@ namespace BodyUsage
     public void Actualizes_the_diagnostic_when_the_library_is_rebuilt()
     {
         var runtime = Runtime("0.6.0.0");
+        var compatibleLibrary = CompatibilityGeneratorTest.EmitReference(
+            GenerateMapperLibrary("0.6.0.0"));
+        var olderLibrary = CompatibilityGeneratorTest.EmitReference(
+            GenerateMapperLibrary("0.5.0.0"));
         var clean = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
             sources: [CompatibilityGeneratorTest.MapperSource],
-            references: [runtime, MapperLibrary("0.6.0.0", false)]);
+            references: [runtime, compatibleLibrary]);
         var stale = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
             sources: [CompatibilityGeneratorTest.MapperSource],
-            references: [runtime, MapperLibrary("0.5.0.0", false)],
+            references: [runtime, olderLibrary],
             driver: clean.Driver);
         var rebuilt = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
             sources: [CompatibilityGeneratorTest.MapperSource],
-            references: [runtime, MapperLibrary("0.6.0.0", false)],
+            references: [runtime, compatibleLibrary],
             driver: stale.Driver);
 
         CompatibilityGeneratorTest.AssertDiagnostics(clean);
@@ -268,9 +342,7 @@ namespace BodyUsage
             .CreateReference(RuntimeName);
     }
 
-    private static MetadataReference MapperLibrary(
-        string runtimeVersion,
-        bool projectReference)
+    private static Compilation GenerateMapperLibrary(string runtimeVersion)
     {
         var library = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
@@ -281,10 +353,7 @@ namespace BodyUsage
         CompatibilityGeneratorTest.AssertDiagnostics(library);
         Assert.That(library.GeneratedSources, Is.Not.Empty);
 
-        return projectReference
-            ? library.OutputCompilation.ToMetadataReference()
-            : CompatibilityGeneratorTest.EmitReference(
-                library.OutputCompilation);
+        return library.OutputCompilation;
     }
 
     private static PortableExecutableReference UsageLibrary(

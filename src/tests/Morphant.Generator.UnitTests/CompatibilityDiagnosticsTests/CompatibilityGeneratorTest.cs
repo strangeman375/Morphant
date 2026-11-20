@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Morphant.Generator.UnitTests.CompatibilityDiagnosticsTests;
@@ -103,16 +104,20 @@ internal static class CompatibilityGeneratorTest
     }
 
     public static PortableExecutableReference EmitReference(
-        Compilation compilation)
+        Compilation compilation,
+        bool referenceAssembly = false)
     {
         using var stream = new MemoryStream();
-        var emitResult = compilation.Emit(stream);
+        var options = referenceAssembly
+            ? new EmitOptions(metadataOnly: true, includePrivateMembers: false)
+            : null;
+        var emitResult = compilation.Emit(stream, options: options);
 
         AssertNoFailures(compilation, emitResult.Diagnostics);
         return MetadataReference.CreateFromImage(stream.ToArray());
     }
 
-    private static CSharpCompilation CreateCompilation(
+    public static CSharpCompilation CreateCompilation(
         string assemblyName,
         string source,
         IReadOnlyCollection<MetadataReference>? references)
