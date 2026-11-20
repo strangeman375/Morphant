@@ -6,7 +6,7 @@ namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 internal sealed class TuplePresentationTests
 {
     [Test]
-    public void Allows_different_presentations_in_unrelated_mappers()
+    public void Diagnoses_different_presentations_in_unrelated_mappers()
     {
         // lang=c#
         const string source =
@@ -36,9 +36,8 @@ public partial class SecondMapper : TypeMapper
         Assert.Multiple(() =>
         {
             Assert.That(
-                result.Diagnostics.Where(static diagnostic =>
-                    diagnostic.Id == "MORPH0056"),
-                Is.Empty);
+                result.Diagnostics.Select(static diagnostic => diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0056" }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

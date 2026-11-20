@@ -42,7 +42,7 @@ internal sealed class DslIsolationUsageTests
         select new TestCaseData(callback, referenceKind, shape, friend);
 
     [TestCaseSource(nameof(FamilyCases))]
-    public void Related_non_partial_families_select_their_own_callbacks_without_base_call(
+    public void Related_families_bind_shared_or_specialized_pair_callbacks(
         string callback,
         string constraint,
         bool nested)
@@ -60,27 +60,25 @@ public sealed class Destination<T>
     public int Id { get; set; }
 }
 public sealed class Payload { }
-public abstract class Root<TMapper, T> : TypeMapper
-    where TMapper : Root<TMapper, T>
+public abstract class Root<T> : TypeMapper
     where T : class
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source<T>, Destination<T>>()__CALLBACK__;
 }
-public abstract class Derived<TMapper, T> : Root<TMapper, T>
-    where TMapper : Derived<TMapper, T>
+public abstract class Derived<T> : Root<T>
     where T : __CONSTRAINT__
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source<__DERIVED_ARGUMENT__>, Destination<__DERIVED_ARGUMENT__>>()__DERIVED_CALLBACK__;
 }
 [MorphantMapper]
-public partial class RootMapper : Root<RootMapper, Payload>
+public partial class RootMapper : Root<Payload>
 {
     protected override void Configure(MapperBuilder builder) => base.Configure(builder);
 }
 [MorphantMapper]
-public partial class DerivedMapper : Derived<DerivedMapper, Payload>
+public partial class DerivedMapper : Derived<Payload>
 {
     protected override void Configure(MapperBuilder builder) => base.Configure(builder);
 }
@@ -96,18 +94,19 @@ public partial class DerivedMapper : Derived<DerivedMapper, Payload>
 
         var syntaxTree = result.OutputCompilation.SyntaxTrees.First();
         var semanticModel = result.OutputCompilation.GetSemanticModel(syntaxTree);
-        var owners = syntaxTree.GetRoot().DescendantNodes()
+        var extensions = syntaxTree.GetRoot().DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Select(invocation => semanticModel.GetSymbolInfo(invocation).Symbol)
             .OfType<IMethodSymbol>()
             .Where(method => method.ReducedFrom is not null)
-            .Select(method => ((INamedTypeSymbol)((INamedTypeSymbol)method.ReceiverType!)
-                .TypeArguments[0]).Name);
-        Assert.That(owners, Is.EqualTo(new[] { "Root", "Derived" }));
+            .Select(method => method.ReducedFrom!.OriginalDefinition)
+            .ToArray();
+        Assert.That(extensions.Length, Is.EqualTo(2));
+        Assert.That(SymbolEqualityComparer.Default.Equals(extensions[0], extensions[1]), Is.EqualTo(!nested));
     }
 
     [TestCaseSource(nameof(AssemblyCases))]
-    public void Referenced_assembly_extensions_do_not_compete_with_local_callbacks(
+    public void Only_visible_referenced_extensions_for_the_same_pair_conflict(
         string callback,
         string referenceKind,
         string shape,
@@ -178,13 +177,11 @@ public partial class ConsumerMapper : TypeMapper
                     .Replace("class Destination", "class Destination<T>")
                     .Replace("Map<Shared.Source, Shared.Destination>", "Map<Shared.Source<T>, Shared.Destination<T>>")
                     .Replace("ProducerMapper : TypeMapper",
-                        "ProducerMapper<TMapper, T> : TypeMapper\n" +
-                        "    where TMapper : ProducerMapper<TMapper, T> where T : class");
+                        "ProducerMapper<T> : TypeMapper where T : class");
                 consumerSource = consumerSource
                     .Replace("Map<Shared.Source, Shared.Destination>", "Map<Shared.Source<T>, Shared.Destination<T>>")
                     .Replace("ConsumerMapper : TypeMapper",
-                        "ConsumerMapper<TMapper, T> : TypeMapper\n" +
-                        "    where TMapper : ConsumerMapper<TMapper, T> where T : class, new()");
+                        "ConsumerMapper<T> : TypeMapper where T : class, new()");
                 destination = "Shared.Destination<T>";
                 break;
             case "distinct-source":
@@ -219,7 +216,10 @@ public partial class ConsumerMapper : TypeMapper
                 callback.Replace("__DESTINATION__", destination)),
             LanguageVersion.CSharp9,
             additionalReferences: [reference]);
-        AssertClean(consumer);
+        var conflict = friend && shape != "distinct-source";
+        Assert.That(consumer.Diagnostics.Select(diagnostic => diagnostic.Id),
+            Is.EqualTo(conflict ? new[] { "MORPH0065" } : Array.Empty<string>()));
+        Assert.That(consumer.CompilerWarningsAndErrors, Is.Empty);
 
         var syntaxTree = consumer.OutputCompilation.SyntaxTrees.First();
         var semanticModel = consumer.OutputCompilation.GetSemanticModel(syntaxTree);
@@ -229,11 +229,11 @@ public partial class ConsumerMapper : TypeMapper
             .OfType<IMethodSymbol>()
             .Where(method => method.ReducedFrom is not null)
             .Select(method => method.ContainingAssembly.Name);
-        Assert.That(callbackAssemblies, Is.EqualTo(new[] { "DslConsumer" }));
+        Assert.That(callbackAssemblies, Is.EqualTo(new[] { conflict ? "DslProducer" : "DslConsumer" }));
     }
 
     [TestCaseSource(nameof(Callbacks))]
-    public void Invalid_derived_tuple_callback_is_rejected_and_recovers_after_edit(string callback)
+    public void Conflicting_tuple_registration_recovers_when_its_element_names_match(string callback)
     {
         // lang=c#
         const string source =
@@ -246,39 +246,36 @@ public sealed class Destination
     public Destination(int id) => Id = id;
     public int Id { get; set; }
 }
-public abstract class Root<TMapper> : TypeMapper
-    where TMapper : Root<TMapper>
+public abstract class Root : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int Id, int Other), Destination>()
-            .Convert(s => new Destination(s.Id));
+            .Convert(s => new Destination(s.Other));
 }
-public abstract class Derived<TMapper> : Root<TMapper>
-    where TMapper : Derived<TMapper>
+public abstract class Derived : Root
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int Code, int Other), Destination>()
             __CALLBACK__;
 }
 [MorphantMapper]
-public partial class RootMapper : Root<RootMapper>
+public partial class RootMapper : Root
 {
     protected override void Configure(MapperBuilder builder) => base.Configure(builder);
 }
 [MorphantMapper]
-public partial class DerivedMapper : Derived<DerivedMapper>
+public partial class DerivedMapper : Derived
 {
     protected override void Configure(MapperBuilder builder) => base.Configure(builder);
 }
 """;
         var invalidSource = source.Replace("__CALLBACK__",
-            callback.Replace("__DESTINATION__", "Destination"));
+            callback.Replace("__DESTINATION__", "Destination").Replace("s.Id", "s.Other").Replace("s!.Id", "s!.Other"));
         var invalid = GeneratorTestDriver.Run(
             "InvalidFamilyCallback", invalidSource, LanguageVersion.CSharp9);
         AssertRejected(invalid);
 
-        var repairedSource = source.Replace("__CALLBACK__",
-            callback.Replace("__DESTINATION__", "Destination").Replace(".Id", ".Code"));
+        var repairedSource = invalidSource.Replace("(int Code, int Other)", "(int Id, int Other)");
         var repaired = GeneratorTestDriver.Run(
             "InvalidFamilyCallback", repairedSource, LanguageVersion.CSharp9,
             driver: invalid.Driver);
@@ -295,10 +292,10 @@ public partial class DerivedMapper : Derived<DerivedMapper>
             {
                 Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
                 Assert.That(result.Diagnostics.Select(diagnostic => diagnostic.Id),
-                    Is.EqualTo(new[] { "MORPH0018" }));
+                    Is.EqualTo(new[] { "MORPH0056" }));
                 Assert.That(result.Diagnostics.Select(diagnostic =>
                         GeneratorTestDriver.GetSourceText(diagnostic.Location)),
-                    Is.EqualTo(new[] { callback[1..callback.IndexOf('(')] }));
+                    Is.EqualTo(new[] { "Map" }));
             });
         }
     }
