@@ -23,26 +23,18 @@ internal static class RuntimeContractManifest
 
         // TypeMapper and compile-time intrinsics.
         Requirement(
-            "Morphant.TypeMapper`1",
+            "Morphant.TypeMapper",
             TypeKind.Class,
             IsTypeMapper),
 
         // Builder contract, ordered by metadata name. The protected root
         // builder is validated as part of TypeMapper because it is nested.
         Requirement(
-            "Morphant.IMappingBuilder`3",
-            TypeKind.Interface,
-            static symbol =>
-                symbol.TypeParameters.Length == 3 &&
-                symbol.TypeParameters[0].Variance == VarianceKind.Out &&
-                symbol.TypeParameters[1].Variance == VarianceKind.None &&
-                symbol.TypeParameters[2].Variance == VarianceKind.None),
-        Requirement(
             "Morphant.MapperBuilderBase`1",
             TypeKind.Class,
             IsMapperBuilderBase),
         Requirement(
-            "Morphant.MappingBuilder`3",
+            "Morphant.MappingBuilder`2",
             TypeKind.Class,
             IsMappingBuilder),
 
@@ -620,15 +612,12 @@ internal static class RuntimeContractManifest
 
     private static bool IsTypeMapper(INamedTypeSymbol symbol)
     {
-        var mapper = TypeParameter(0);
         var builder = symbol.GetTypeMembers("MapperBuilder")
             .SingleOrDefault();
 
         return symbol.IsAbstract &&
                !symbol.IsSealed &&
-               symbol.TypeParameters.Length == 1 &&
-               symbol.TypeParameters[0].ConstraintTypes.Any(type =>
-                   Named("Morphant.TypeMapper`1", mapper).Matches(type)) &&
+               symbol.Arity == 0 &&
                symbol.AllInterfaces.Any(@interface =>
                    GetFullMetadataName(@interface.OriginalDefinition) ==
                        "Morphant.IMapperDeclaration") &&
@@ -642,7 +631,7 @@ internal static class RuntimeContractManifest
                    arity: 0,
                    Void,
                    [Parameter(Named(
-                       "Morphant.TypeMapper`1+MapperBuilder"))],
+                       "Morphant.TypeMapper+MapperBuilder"))],
                    method => method.IsAbstract) &&
                HasMethod(
                    symbol,
@@ -839,14 +828,14 @@ internal static class RuntimeContractManifest
                    symbol,
                    Named(
                        "Morphant.MapperBuilderBase`1",
-                       Named("Morphant.TypeMapper`1+MapperBuilder"))) &&
+                       Named("Morphant.TypeMapper+MapperBuilder"))) &&
                HasMethod(
                    symbol,
                    "MappingMode",
                    Accessibility.Public,
                    isStatic: false,
                    arity: 0,
-                   Named("Morphant.TypeMapper`1+MapperBuilder"),
+                   Named("Morphant.TypeMapper+MapperBuilder"),
                    [Parameter(Named("Morphant.MappingMode"))]) &&
                HasMethod(
                    symbol,
@@ -855,8 +844,7 @@ internal static class RuntimeContractManifest
                    isStatic: false,
                    arity: 2,
                    Named(
-                       "Morphant.MappingBuilder`3",
-                       TypeParameter(0),
+                       "Morphant.MappingBuilder`2",
                        MethodTypeParameter(0),
                        MethodTypeParameter(1)),
                    [Parameter(Named("Morphant.MappingMode"))],
@@ -869,24 +857,13 @@ internal static class RuntimeContractManifest
     private static bool IsMappingBuilder(INamedTypeSymbol symbol)
     {
         var self = Named(
-            "Morphant.MappingBuilder`3",
+            "Morphant.MappingBuilder`2",
             TypeParameter(0),
-            TypeParameter(1),
-            TypeParameter(2));
+            TypeParameter(1));
 
         return symbol.IsSealed &&
                !symbol.IsAbstract &&
-               symbol.TypeParameters.Length == 3 &&
-               symbol.AllInterfaces.Any(type =>
-                   Named(
-                       "Morphant.IMappingBuilder`3",
-                       TypeParameter(0),
-                       TypeParameter(1),
-                       TypeParameter(2)).Matches(type)) &&
-               symbol.TypeParameters[0].ConstraintTypes.Any(type =>
-                   Named(
-                       "Morphant.TypeMapper`1",
-                       TypeParameter(0)).Matches(type)) &&
+               symbol.Arity == 2 &&
                HasBaseType(
                    symbol,
                    Named("Morphant.MapperBuilderBase`1", self)) &&
@@ -907,7 +884,7 @@ internal static class RuntimeContractManifest
                    [
                        Parameter(Named(
                            "System.Func`2",
-                           TypeParameter(1),
+                           TypeParameter(0),
                            Object))
                    ]) &&
                HasMethod(
@@ -920,10 +897,10 @@ internal static class RuntimeContractManifest
                    additionalCheck: method =>
                        HasTypeParameterConstraint(
                            method.TypeParameters[0],
-                           symbol.TypeParameters[1]) &&
+                           symbol.TypeParameters[0]) &&
                        HasTypeParameterConstraint(
                            method.TypeParameters[1],
-                           symbol.TypeParameters[2]));
+                           symbol.TypeParameters[1]));
     }
 
     private static bool IsMapperDeclaration(INamedTypeSymbol symbol)

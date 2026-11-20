@@ -98,13 +98,9 @@ public interface IMapperDeclaration
 /// <summary>
 /// Base class for compile-time mapper declarations.
 /// </summary>
-/// <typeparam name="TMapper">
-/// The concrete mapper at the end of the configuration hierarchy.
-/// </typeparam>
 /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/map.md"/>
 [ExcludeFromCodeCoverage]
-public abstract class TypeMapper<TMapper> : IMapperDeclaration
-    where TMapper : TypeMapper<TMapper>
+public abstract class TypeMapper : IMapperDeclaration
 {
     /// <summary>
     /// Checks whether this mapper declares an exact mapping pair.
@@ -286,7 +282,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
 
         /// <summary>
         /// Registers a mapping from <typeparamref name="TSource"/> to
-        /// <typeparamref name="TDestination"/> in this mapper scope.
+        /// <typeparamref name="TDestination"/> in this mapper.
         /// </summary>
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <typeparam name="TDestination">The destination type.</typeparam>
@@ -297,10 +293,8 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         /// <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
         /// </param>
         /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/map.md"/>
-        public global::Morphant.MappingBuilder<
-            TMapper,
-            TSource,
-            TDestination> Map<TSource, TDestination>(
+        public global::Morphant.MappingBuilder<TSource, TDestination>
+            Map<TSource, TDestination>(
                 MappingMode mappingMode =
                     Morphant.MappingMode.Default) =>
             throw new RuntimeInvocationNotSupportedException();

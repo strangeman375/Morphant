@@ -5,17 +5,13 @@ namespace Morphant;
 
 /// <summary>
 /// Configures mapping from <typeparamref name="TSource"/> to
-/// <typeparamref name="TDestination"/> declared by
-/// <typeparamref name="TMapper"/>.
+/// <typeparamref name="TDestination"/>.
 /// </summary>
-/// <typeparam name="TMapper">The mapper owning the configuration.</typeparam>
 /// <typeparam name="TSource">The source type.</typeparam>
 /// <typeparam name="TDestination">The destination type.</typeparam>
 [ExcludeFromCodeCoverage]
-public sealed class MappingBuilder<TMapper, TSource, TDestination> :
-    MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>>,
-    IMappingBuilder<TMapper, TSource, TDestination>
-    where TMapper : TypeMapper<TMapper>
+public sealed class MappingBuilder<TSource, TDestination> :
+    MapperBuilderBase<MappingBuilder<TSource, TDestination>>
 {
     private MappingBuilder()
     {
@@ -29,7 +25,7 @@ public sealed class MappingBuilder<TMapper, TSource, TDestination> :
     /// anonymous object containing several such paths.
     /// </param>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-    public MappingBuilder<TMapper, TSource, TDestination> IncludeMembers(
+    public MappingBuilder<TSource, TDestination> IncludeMembers(
         Func<TSource, object?> selector) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -50,7 +46,7 @@ public sealed class MappingBuilder<TMapper, TSource, TDestination> :
     /// with <c>base.Configure(builder)</c>.
     /// </remarks>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-base.md"/>
-    public MappingBuilder<TMapper, TSource, TDestination>
+    public MappingBuilder<TSource, TDestination>
         IncludeBase<TBaseSource, TBaseDestination>() =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -70,7 +66,7 @@ public sealed class MappingBuilder<TMapper, TSource, TDestination> :
     /// also configure <see cref="IncludeBase"/> on that pair.
     /// </remarks>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/for-derived.md"/>
-    public MappingBuilder<TMapper, TSource, TDestination>
+    public MappingBuilder<TSource, TDestination>
         ForDerived<TDerivedSource, TDerivedDestination>()
         where TDerivedSource : TSource
         where TDerivedDestination : TDestination =>

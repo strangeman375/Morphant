@@ -6,19 +6,19 @@ internal static class MetadataNames
         "Morphant.MorphantMapperAttribute";
 
     public const string TypeMapper =
-        "Morphant.TypeMapper`1";
+        "Morphant.TypeMapper";
 
     public const string TypeMapperInterface =
         "Morphant.ITypeMapper`2";
 
     public const string MapperBuilder =
-        "Morphant.TypeMapper`1+MapperBuilder";
+        "Morphant.TypeMapper+MapperBuilder";
 
     public const string MapperBuilderBase =
         "Morphant.MapperBuilderBase`1";
 
     public const string PairMapperBuilder =
-        "Morphant.MappingBuilder`3";
+        "Morphant.MappingBuilder`2";
 
     public const string PairMapperBuilderInterface =
         "Morphant.IMappingBuilder`3";
