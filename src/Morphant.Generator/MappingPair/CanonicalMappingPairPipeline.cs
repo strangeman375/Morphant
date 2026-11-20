@@ -151,6 +151,8 @@ internal static class CanonicalMappingPairPipeline
             string,
             CanonicalMappingPairCandidate>(StringComparer.Ordinal);
 
+        var owners = new Dictionary<string, CanonicalMappingPairCandidate>(StringComparer.Ordinal);
+
         foreach (var candidate in candidates)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -169,31 +171,18 @@ internal static class CanonicalMappingPairPipeline
             {
                 effective[key] = candidate;
             }
+
+            var declaredKey = candidate.DeclaredPairKey;
+            if (!owners.TryGetValue(declaredKey, out var owner) || Compare(candidate, owner) < 0)
+                owners[declaredKey] = candidate;
         }
 
-        var selected = new Dictionary<
-            string,
-            CanonicalMappingPairCandidate>(StringComparer.Ordinal);
-
-        foreach (var candidate in effective.Values)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var key = MappingTypeIdentityPolicy
-                    .CreateAlphaEquivalentPairKey(
-                        candidate.Pair.SourceType,
-                        candidate.Pair.DestinationType);
-
-            if (!selected.TryGetValue(key, out var current) ||
-                Compare(candidate, current) < 0)
-            {
-                selected[key] = candidate;
-            }
-        }
-
+        // Inheritance selects which signatures are needed. All declarations
+        // of each selected signature take part in choosing its presentation.
         return new CanonicalPairCoordination(
-            selected.Values
-                .Select(static candidate => candidate.CandidateIdentity)
+            effective.Values
+                .Select(candidate => owners[candidate.DeclaredPairKey].CandidateIdentity)
+                .Distinct(StringComparer.Ordinal)
                 .OrderBy(static identity => identity, StringComparer.Ordinal)
                 .ToImmutableArray());
     }
@@ -212,6 +201,9 @@ internal static class CanonicalMappingPairPipeline
                 candidate.CandidateIdentity))
             .ToImmutableArray();
     }
+
+    internal static readonly IComparer<CanonicalMappingPairCandidate> DeclarationOrder =
+        Comparer<CanonicalMappingPairCandidate>.Create(Compare);
 
     private static int Compare(
         CanonicalMappingPairCandidate left,
@@ -331,4 +323,8 @@ internal readonly record struct CanonicalMappingPairCandidate(
     ITypeSymbol EffectiveDestinationType,
     int DeclaringMapperDepth,
     MappingPairModel Pair,
-    CSharpCompilation Compilation);
+    CSharpCompilation Compilation)
+{
+    public string DeclaredPairKey => MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(Pair.SourceType, Pair.DestinationType);
+    public string EffectivePairKey => MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(EffectiveSourceType, EffectiveDestinationType);
+}
