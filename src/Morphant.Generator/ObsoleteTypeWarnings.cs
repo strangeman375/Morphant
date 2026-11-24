@@ -153,8 +153,8 @@ internal static class ObsoleteTypeWarnings
                 SuppressRange(declaration, declaration.OpenBraceToken.SpanStart);
             foreach (var method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
-                if (method.Identifier.ValueText == "Supports" &&
-                    method.Modifiers.Any(SyntaxKind.OverrideKeyword))
+                if (method.Identifier.ValueText == "Supports" && method.Modifiers.Any(SyntaxKind.OverrideKeyword) ||
+                    method.ExplicitInterfaceSpecifier is not null && method.ExpressionBody?.Expression is ThrowExpressionSyntax)
                     SuppressRange(method, method.Span.End);
                 else if (method.Body is { } body)
                     SuppressRange(method, body.OpenBraceToken.SpanStart);

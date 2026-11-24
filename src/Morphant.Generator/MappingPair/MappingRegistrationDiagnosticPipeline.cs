@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MapperDeclaration;
 
@@ -12,9 +13,11 @@ internal static class MappingRegistrationDiagnosticPipeline
         IncrementalValuesProvider<MapperContractAnalysis> analyses,
         out IncrementalValueProvider<ImmutableArray<Diagnostic>> diagnostics)
     {
+        var inputs = analyses.Collect().Combine(context.CompilationProvider)
+            .Select(static (input, _) => new RegistrationInputs(input.Left, (CSharpCompilation)input.Right));
         var checks = GeneratorStageGuard.Select(
-            context, analyses.Collect(), "BuildMappingRegistrationDiagnostics",
-            static (all, token) => CheckRegistrations(all, token),
+            context, inputs, "BuildMappingRegistrationDiagnostics",
+            static (input, token) => CheckRegistrations(input.Analyses, input.Compilation, token),
             new RegistrationChecks(ImmutableArray<Diagnostic>.Empty,
                 ImmutableDictionary<string, ImmutableHashSet<string>>.Empty));
         diagnostics = checks.Select(static (result, _) => result.Diagnostics);
@@ -26,12 +29,22 @@ internal static class MappingRegistrationDiagnosticPipeline
                 : input.Left);
     }
 
+    // A changed registration cohort must bind its shared receiver in the current
+    // compilation. An unrelated edit can reuse the complete previous check.
+    private readonly record struct RegistrationInputs(
+        ImmutableArray<MapperContractAnalysis> Analyses, CSharpCompilation Compilation)
+    {
+        public bool Equals(RegistrationInputs other) => Analyses.Equals(other.Analyses);
+        public override int GetHashCode() => Analyses.GetHashCode();
+    }
+
     private sealed record RegistrationChecks(
         ImmutableArray<Diagnostic> Diagnostics,
         ImmutableDictionary<string, ImmutableHashSet<string>> Conflicts);
 
     private static RegistrationChecks CheckRegistrations(
         ImmutableArray<MapperContractAnalysis> analyses,
+        CSharpCompilation compilation,
         CancellationToken cancellationToken)
     {
         var conflicts = ImmutableDictionary.CreateBuilder<string, ImmutableHashSet<string>>(StringComparer.Ordinal);
@@ -220,7 +233,7 @@ internal static class MappingRegistrationDiagnosticPipeline
             }
         }
 
-        AddOpenExtensionDiagnostics(openRegistrations, interfaceConflicts, candidates, conflicts, cancellationToken);
+        AddOpenExtensionDiagnostics(openRegistrations, interfaceConflicts, candidates, conflicts, compilation, cancellationToken);
         var reportedPresentations = new HashSet<(Location, Location)>();
         AddPresentationDiagnostics(openRegistrations, declared: true, candidates, conflicts, reportedPresentations, cancellationToken);
         AddPresentationDiagnostics(surfaces, declared: false, candidates, conflicts, reportedPresentations, cancellationToken);
@@ -253,6 +266,7 @@ internal static class MappingRegistrationDiagnosticPipeline
         HashSet<(Location, Location)> interfaceConflicts,
         ImmutableArray<DiagnosticCandidate>.Builder diagnostics,
         ImmutableDictionary<string, ImmutableHashSet<string>>.Builder conflicts,
+        CSharpCompilation compilation,
         CancellationToken cancellationToken)
     {
         var groups = registrations
@@ -287,8 +301,6 @@ internal static class MappingRegistrationDiagnosticPipeline
                     }
                 }
 
-                var compilation = right.Compilation.ContainsSyntaxTree(left.Pair.Registration.Syntax.SyntaxTree)
-                    ? right.Compilation : left.Compilation;
                 if (!MappingTypeIdentityPolicy.ExtensionsCanBeAmbiguous(left.Pair, right.Pair, compilation, cancellationToken))
                     continue;
 

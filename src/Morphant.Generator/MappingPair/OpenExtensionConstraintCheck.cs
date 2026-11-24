@@ -47,7 +47,8 @@ internal static class OpenExtensionConstraintCheck
         var clauses = string.Concat(bounds.Where(static p => !p.Constraints.IsEmpty)
             .Select(static p => " where " + p.Name + " : " + string.Join(", ", p.Constraints)));
         if (clauses.Length != 0 &&
-            !Bind(clauses).GetDeclarationDiagnostics(cancellationToken: token).Any(d => d.Severity == DiagnosticSeverity.Error))
+            !Bind(clauses).GetDeclarationDiagnostics(cancellationToken: token)
+                .Any(static d => d.Severity == DiagnosticSeverity.Error && !d.IsWarningAsError))
             return true;
 
         // Some intersections exist only for specific residual arguments. In

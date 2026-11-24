@@ -2,12 +2,74 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 
 [TestFixture]
 internal sealed class OpenExtensionIntersectionTests
 {
+    [Test]
+    public void Editing_a_constraint_in_a_separate_file_updates_both_open_mappers()
+    {
+        var maps = new RegistrationSourceFile("A.cs", """
+#nullable enable
+using Morphant;
+internal class Triple<A,B,C> { }
+internal class Dto { }
+[MorphantMapper] internal partial class A<U> : TypeMapper where U : class, new()
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<int,U,Ref<U>>,Dto>();
+}
+""");
+        var other = new RegistrationSourceFile("B.cs", """
+#nullable enable
+using Morphant;
+[MorphantMapper] internal partial class B<T,V> : TypeMapper
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<T,int,V>,Dto>();
+}
+""");
+        var bound = new RegistrationSourceFile("Bound.cs", "internal class Ref<T> where T : class { }");
+        var initial = MappingRegistrationGeneratorTest.Run([maps, other, bound], LanguageVersion.CSharp9);
+        var driver = initial.Driver;
+        var original = initial.OutputCompilation.RemoveSyntaxTrees(driver.GetRunResult().GeneratedTrees);
+        var tree = original.SyntaxTrees.Single(t => t.FilePath == bound.Name);
+        var edited = bound with { Source = bound.Source.Replace(" : class", " : new()") };
+        var changed = original.ReplaceSyntaxTree(tree, tree.WithChangedText(SourceText.From(edited.Source, Encoding.UTF8)));
+        var fresh = MappingRegistrationGeneratorTest.Run([maps, other, edited], LanguageVersion.CSharp9);
+        Assert.That(initial.Diagnostics, Is.Empty);
+        Assert.That(fresh.Diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "MORPH0064" }));
+        CheckIncrementalRun(ref driver, changed, fresh);
+        CheckIncrementalRun(ref driver, original, initial);
+    }
+
+    [TestCase(ReportDiagnostic.Default)]
+    [TestCase(ReportDiagnostic.Error)]
+    public void Warning_promotion_preserves_constructible_open_intersections(ReportDiagnostic warnings)
+    {
+        const string source = """
+#nullable enable
+#pragma warning disable CS0618
+using Morphant;
+internal class Box<A,B,C> { }
+[System.Obsolete("Legacy")] internal class Ref<T> where T : class { }
+[MorphantMapper] internal partial class A<X,P> : TypeMapper where X : class
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Box<Ref<X>,int,P>,int>().Convert(_ => 1);
+}
+[MorphantMapper] internal partial class B<Y,Q> : TypeMapper where Y : class
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Box<Ref<Y>,Q,string>,int>().Convert(_ => 2);
+}
+""";
+        var result = GeneratorTestDriver.Run("Consumer", source, LanguageVersion.CSharp9,
+            compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: NullableContextOptions.Enable, generalDiagnosticOption: warnings));
+        Assert.That(result.Diagnostics.Select(d => d.Id), Is.EqualTo(new[] { "MORPH0064" }));
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
     [Test]
     public void Adding_a_constrained_type_to_a_new_file_uses_the_current_compilation()
     {
@@ -225,18 +287,21 @@ using Morphant;
             original.ReplaceSyntaxTree(original.SyntaxTrees.Single(tree => tree.FilePath == secondFile.Name), editedTree);
         var fresh = MappingRegistrationGeneratorTest.Run([firstFile, secondFile with { Source = edited }], LanguageVersion.CSharp9);
         Assert.That(fresh.Diagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0064" }));
-        Check(changed, fresh);
-        Check(original, initial);
+        CheckIncrementalRun(ref driver, changed, fresh);
+        CheckIncrementalRun(ref driver, original, initial);
+    }
 
-        void Check(Compilation compilation, MappingRegistrationGeneratorResult expected)
-        {
-            driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
-            Assert.That(diagnostics.Select(d => (d.Id, d.GetMessage(), d.Location.GetLineSpan())),
-                Is.EquivalentTo(expected.Diagnostics.Select(d => (d.Id, d.GetMessage(), d.Location.GetLineSpan()))));
-            Assert.That(output.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning), Is.Empty);
-            var generated = driver.GetRunResult().Results.Single().GeneratedSources;
-            Assert.That(generated.Select(f => (f.HintName, f.SourceText.ToString())),
-                Is.EquivalentTo(expected.GeneratedSources.Select(f => (f.HintName, f.SourceText.ToString()))));
-        }
+    private static void CheckIncrementalRun(ref GeneratorDriver driver, Compilation compilation,
+        MappingRegistrationGeneratorResult expected)
+    {
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
+        Assert.That(diagnostics.Select(d => (d.Id, d.GetMessage(), d.Location.GetLineSpan())),
+            Is.EquivalentTo(expected.Diagnostics.Select(d => (d.Id, d.GetMessage(), d.Location.GetLineSpan()))));
+        Assert.That(diagnostics.SelectMany(d => d.AdditionalLocations).Select(l => l.GetLineSpan()),
+            Is.EquivalentTo(expected.Diagnostics.SelectMany(d => d.AdditionalLocations).Select(l => l.GetLineSpan())));
+        Assert.That(output.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning), Is.Empty);
+        var generated = driver.GetRunResult().Results.Single().GeneratedSources;
+        Assert.That(generated.Select(f => (f.HintName, f.SourceText.ToString())),
+            Is.EquivalentTo(expected.GeneratedSources.Select(f => (f.HintName, f.SourceText.ToString()))));
     }
 }
