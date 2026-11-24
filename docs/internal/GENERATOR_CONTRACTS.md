@@ -75,9 +75,10 @@ generated-source expectations. Follow the general principles in
   Omit constraints imposed only by an individual mapper.
   For conflicting presentations, the first registration by source path and
   position owns the shared extension. Later conflicting registrations retain
-  typed failure stubs. For distinct open pairs, report an intersection when C#
-  cannot select a more specific receiver for a constructible pair and invalidate
-  all affected mappings. Each extension has its own type parameters, even when
+  typed failure stubs. For distinct open pairs, report an intersection at the
+  later registration by source path and position when C# cannot select a more
+  specific receiver for a constructible pair, and invalidate all affected
+  mappings. Each extension has its own type parameters, even when
   both registrations use one mapper parameter.
   Report collisions with extensions made visible by a friend assembly at the
   registration, including imports through an extern alias. Omit the local

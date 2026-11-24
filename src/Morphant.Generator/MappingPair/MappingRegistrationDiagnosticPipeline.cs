@@ -275,7 +275,10 @@ internal static class MappingRegistrationDiagnosticPipeline
             .ThenBy(static candidate => candidate.TargetMapperIdentity, StringComparer.Ordinal)
             .GroupBy(static candidate => MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(
                 candidate.Pair.SourceType, candidate.Pair.DestinationType), StringComparer.Ordinal)
-            .OrderBy(static group => group.Key, StringComparer.Ordinal)
+            // Like other registration conflicts, report at the later registration.
+            .OrderBy(static group => group.First().Pair.Registration.Syntax.SyntaxTree.FilePath, StringComparer.Ordinal)
+            .ThenBy(static group => group.First().Pair.Registration.Syntax.SpanStart)
+            .ThenBy(static group => group.Key, StringComparer.Ordinal)
             .ToArray();
 
         for (var later = 1; later < groups.Length; later++)

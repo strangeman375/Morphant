@@ -42,6 +42,18 @@ internal sealed class DescriptorTests
             "Mapping pair presentations conflict",
             "Mapping '{0}' uses presentation '{1}', which conflicts " +
             "with '{2}' for the same mapping pair. Use matching type annotations and tuple names or a separate DTO.");
+        yield return Case(
+            MappingRegistrationDiagnosticDescriptors.AmbiguousOpenExtensions,
+            "MORPH0064",
+            "Open mapping extensions can be ambiguous",
+            "Open mappings '{0}' and '{1}' can supply ambiguous " +
+            "configuration methods. Use distinct pair types.");
+        yield return Case(
+            MappingRegistrationDiagnosticDescriptors.FriendExtensionConflict,
+            "MORPH0065",
+            "Mapping extensions are already visible from a friend assembly",
+            "Assembly '{1}' exposes configuration methods for mapping " +
+            "'{0}'. Use a separate DTO or remove friend access.");
     }
 
     [TestCaseSource(nameof(Descriptors))]

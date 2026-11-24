@@ -10,6 +10,65 @@ namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 internal sealed class OpenExtensionIntersectionTests
 {
     [Test]
+    public void Reports_the_ambiguous_pair_at_the_later_registration()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Box<TFirst, TSecond> { }
+    public sealed class Destination { }
+
+    [MorphantMapper]
+    public partial class FirstMapper<T> : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Box<T, int>, Destination>();
+    }
+
+    [MorphantMapper]
+    public partial class SecondMapper<U> : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Box<string, U>, Destination>();
+    }
+}
+""";
+
+        var result = MappingRegistrationGeneratorTest.Run(source);
+        var diagnostic = result.Diagnostics.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0064"));
+            Assert.That(
+                diagnostic.GetMessage(),
+                Is.EqualTo(
+                    "Open mappings 'TestCase.Box<T, int> -> " +
+                    "TestCase.Destination' and 'TestCase.Box<string, U> -> " +
+                    "TestCase.Destination' can supply ambiguous configuration " +
+                    "methods. Use distinct pair types."));
+            Assert.That(
+                MappingRegistrationGeneratorTest.SourceText(diagnostic.Location),
+                Is.EqualTo("Map"));
+            Assert.That(
+                diagnostic.Location.GetLineSpan().StartLinePosition.Line,
+                Is.EqualTo(21));
+            Assert.That(
+                diagnostic.AdditionalLocations.Select(static location =>
+                    location.GetLineSpan().StartLinePosition.Line),
+                Is.EqualTo(new[] { 14 }));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
     public void Editing_a_constraint_in_a_separate_file_updates_both_open_mappers()
     {
         var maps = new RegistrationSourceFile("A.cs", """

@@ -76,6 +76,14 @@ internal sealed class DiagnosticCatalogAuditTests
         new("MORPH0065", "Morphant.Registration", DiagnosticSeverity.Error)
     };
 
+    // Help links of earlier releases point to main, so removed IDs keep a page.
+    private static readonly (string Id, string Version)[] RemovedDiagnostics =
+    {
+        ("MORPH0058", "0.6.0"),
+        ("MORPH0059", "0.6.0"),
+        ("MORPH0060", "0.6.0")
+    };
+
     [Test]
     public void Enumerates_the_exact_project_owned_diagnostic_catalog()
     {
@@ -162,7 +170,11 @@ internal sealed class DiagnosticCatalogAuditTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(documentedIds, Is.EqualTo(ids));
+            Assert.That(
+                documentedIds,
+                Is.EqualTo(ids
+                    .Concat(RemovedDiagnostics.Select(static removed => removed.Id))
+                    .OrderBy(static id => id, StringComparer.Ordinal)));
 
             foreach (var id in ids)
             {
@@ -187,6 +199,50 @@ internal sealed class DiagnosticCatalogAuditTests
                     Does.Contain(
                         "[" + id + "](diagnostics/" + id + ".md)"),
                     id + " must be linked from the catalog.");
+            }
+        });
+    }
+
+    [Test]
+    public void Every_removed_diagnostic_keeps_a_page_that_states_its_removal()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var catalog = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "docs",
+            "diagnostics.md"));
+        var removedSection = catalog[catalog.IndexOf(
+            "## Removed diagnostics",
+            StringComparison.Ordinal)..];
+
+        Assert.Multiple(() =>
+        {
+            foreach (var (id, version) in RemovedDiagnostics)
+            {
+                var page = File.ReadAllText(Path.Combine(
+                    repositoryRoot,
+                    "docs",
+                    "diagnostics",
+                    id + ".md"));
+
+                Assert.That(
+                    ExpectedCatalog.Select(static entry => entry.Id),
+                    Does.Not.Contain(id),
+                    id + " must not be reported.");
+                Assert.That(
+                    page,
+                    Does.StartWith("# " + id + ": "),
+                    id + " must start with its ID and title.");
+                Assert.That(
+                    page,
+                    Does.Contain("> **Removed in Morphant " + version + ".**"),
+                    id + " must state when it was removed.");
+                Assert.That(
+                    removedSection,
+                    Does.Contain(
+                        "| [" + id + "](diagnostics/" + id + ".md) | " +
+                        version + " |"),
+                    id + " must be listed with its removal version.");
             }
         });
     }

@@ -60,12 +60,13 @@ var order = mapper.Map<OrderDto, Order?>(orderDto);
 
 A non-nullable destination expresses your expectation; Morphant does not add
 a null-result check. Reference-type nullable annotations do not change the
-registered mapping or its null-handling settings. Direct `Create` and `Update`
-calls use the destination annotation of `ITypeMapper<TSource, TDestination>`.
+registered mapping or its null-handling settings. Nullable value types such as
+`int?` are distinct mapping types.
 
-For a reference destination, `Convert`, `ConstructUsing` and `ResolveUsing`
-may return null with either spelling of the registration. The mapper
-implements `ITypeMapper<Source, Destination>` for both. Nullable value types
-such as `int?` are distinct mapping types.
+`Map<Source, Destination>` and `Map<Source?, Destination?>` generate the same
+code. The mapper implements `ITypeMapper<Source, Destination>`, so direct
+`Create` and `Update` calls return an unannotated `Destination`. The result can
+still be null when `Convert`, `ConstructUsing`, `ResolveUsing` or null handling
+produces null; check it wherever your mapping allows that.
 
 See the [settings overview](README.md) for levels and precedence.

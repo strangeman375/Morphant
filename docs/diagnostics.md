@@ -74,6 +74,16 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0064](diagnostics/MORPH0064.md) | Registration | Error | Open mapping pairs can produce ambiguous configuration calls. |
 | [MORPH0065](diagnostics/MORPH0065.md) | Registration | Error | A friend assembly exposes configuration extensions for the same pair. |
 
+## Removed diagnostics
+
+Current versions no longer report these IDs. They remain reserved.
+
+| ID | Removed in | Former meaning |
+|---|---|---|
+| [MORPH0058](diagnostics/MORPH0058.md) | 0.6.0 | A mapper or reusable configuration base had an invalid self type. |
+| [MORPH0059](diagnostics/MORPH0059.md) | 0.6.0 | A mapper or containing type was inaccessible to generated namespace-level code. |
+| [MORPH0060](diagnostics/MORPH0060.md) | 0.6.0 | A reusable mapper-family parameter was absent from a declared mapping pair. |
+
 ## Configure severity
 
 Use the standard `.editorconfig` syntax:

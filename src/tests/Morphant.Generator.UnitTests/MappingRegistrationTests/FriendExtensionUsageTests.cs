@@ -85,6 +85,44 @@ internal abstract class Base<T> : TypeMapper
         Assert.That(bound.ReducedFrom!.Arity, Is.Zero);
     }
 
+    [Test]
+    public void Reports_the_friend_assembly_at_the_registration()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+
+using Morphant;
+
+[MorphantMapper]
+internal partial class LocalMapper : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Dto, Dto>();
+}
+""";
+
+        var result = GeneratorTestDriver.Run("Consumer", source, LanguageVersion.CSharp9,
+            additionalReferences: [CreateLibrary(projectReference: false)]);
+        var diagnostic = result.Diagnostics.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0065"));
+            Assert.That(
+                diagnostic.GetMessage(),
+                Is.EqualTo(
+                    "Assembly 'Library' exposes configuration methods for " +
+                    "mapping 'Dto -> Dto'. Use a separate DTO or remove friend " +
+                    "access."));
+            Assert.That(GeneratorTestDriver.GetSourceText(diagnostic.Location), Is.EqualTo("Map"));
+            Assert.That(diagnostic.Location.GetLineSpan().StartLinePosition.Line, Is.EqualTo(8));
+            Assert.That(diagnostic.AdditionalLocations, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
     private static MetadataReference CreateLibrary(bool projectReference)
     {
         var result = GeneratorTestDriver.Run("Library", Library, LanguageVersion.CSharp9);

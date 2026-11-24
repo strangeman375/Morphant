@@ -13,16 +13,33 @@ See [current limitations](docs/limitations.md) for features not yet included.
 - Report `MORPH0063` when a compiled library reference records a dependency
   on an incompatible Morphant version. See
   [Version compatibility](docs/compatibility.md).
+- Report `MORPH0064` when open mappings can supply ambiguous configuration
+  methods, and `MORPH0065` when a friend assembly already exposes them for the
+  same mapping.
 
-### Fixed
+### Changed
 
-- Shared generic configuration methods accept the same mappings in either
-  registration order and update after edits to nested value types. Ambiguity
-  diagnostics require type arguments that satisfy both registrations, including
-  when the project treats warnings as errors.
-- Report conflicting inherited tuple names and visible friend extensions at
-  the affected registrations. A closed registration can configure its own
-  callback when local and external open extensions also match.
+- Derive mappers from the non-generic `TypeMapper`. All mappers in an assembly
+  share the configuration methods of each mapping pair, so their registrations
+  must agree on tuple element names, nested nullable annotations and `dynamic`
+  ([`MORPH0056`](docs/diagnostics/MORPH0056.md)).
+- `Map<Source, Destination>` and `Map<Source?, Destination?>` now produce the
+  same mapping. The mapper implements `ITypeMapper<Source, Destination>`, and
+  `Convert`, `ConstructUsing` and `ResolveUsing` may return null; see
+  [result nullability](docs/settings/null-handling.md#result-nullability).
+- `IncludeMembers` is a generated configuration method in the `Morphant`
+  namespace. Its selector receives a non-null source for either spelling of the
+  registration.
+- A nested mapper and its containing types can be `private` or `protected`,
+  and a generic mapper's type parameters no longer need to occur in each
+  mapping pair.
+
+### Removed
+
+- `TypeMapper<TMapper>`, `MappingBuilder<TMapper, TSource, TDestination>` and
+  `IMappingBuilder<TMapper, TSource, TDestination>`.
+- Diagnostics `MORPH0058`, `MORPH0059` and `MORPH0060`; see
+  [removed diagnostics](docs/diagnostics.md#removed-diagnostics).
 
 ### Migrating from 0.5
 

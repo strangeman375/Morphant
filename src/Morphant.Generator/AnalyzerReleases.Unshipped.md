@@ -12,6 +12,6 @@ MORPH0065 | Morphant.Registration | Error | Mapping extensions visible from a fr
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|------
-MORPH0058 | Morphant.Declaration | Error | TypeMapper has no self type
-MORPH0059 | Morphant.Declaration | Error | Pair extensions do not reference the mapper
-MORPH0060 | Morphant.Registration | Error | Only parameters present in the pair are needed
+MORPH0058 | Morphant.Declaration | Error | Mapper self type is invalid
+MORPH0059 | Morphant.Declaration | Error | Mapper type is inaccessible to generated code
+MORPH0060 | Morphant.Registration | Error | Mapper family parameter is absent from mapping
