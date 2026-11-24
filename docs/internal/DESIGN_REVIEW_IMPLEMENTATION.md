@@ -50,10 +50,11 @@
 - [x] Одно представление CLR-пары на сборку с `MORPH0056`. Для открытых пар
   генерируются обобщённые расширения. `MORPH0064` указывает на неоднозначное
   пересечение, а [`MORPH0065`](../diagnostics/MORPH0065.md) — на конфликт
-  с расширением, видимым через `InternalsVisibleTo` (1.8). `d3c5155d`
-- [x] Нормализация верхнеуровневых nullable-аннотаций: `Convert`,
-  `ConstructUsing` и `ResolveUsing` возвращают `Destination?`, маппер
-  реализует `ITypeMapper<Source, Destination>` без аннотаций (1.8). `ff262924`
+  с расширением, видимым через `InternalsVisibleTo` (1.8). `566fc868`
+- [x] `Convert`, `ConstructUsing` и `ResolveUsing` возвращают `Destination?`.
+  Маппер реализует `ITypeMapper<Source, Destination>`, а селектор
+  `IncludeMembers` получает ненулевой ссылочный источник при обеих записях
+  регистрации (1.8). `8f73d09c`
 - [x] Примеры документации без self-типа; инструкция миграции на
   необобщённый `TypeMapper` (1.8). `44476355`
 

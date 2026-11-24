@@ -17,8 +17,9 @@ See [current limitations](docs/limitations.md) for features not yet included.
 ### Fixed
 
 - Shared generic configuration methods accept the same mappings in either
-  registration order. Changes to nested value types and generic constraints
-  produce the same mapping code and diagnostics as a clean build.
+  registration order and update after edits to nested value types. Ambiguity
+  diagnostics require type arguments that satisfy both registrations, including
+  when the project treats warnings as errors.
 - Report conflicting inherited tuple names and visible friend extensions at
   the affected registrations. A closed registration can configure its own
   callback when local and external open extensions also match.

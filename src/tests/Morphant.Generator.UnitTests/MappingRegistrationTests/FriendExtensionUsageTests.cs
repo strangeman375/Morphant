@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
@@ -74,6 +75,14 @@ internal abstract class Base<T> : TypeMapper
             additionalReferences: [CreateLibrary(projectReference)]);
         Assert.That(result.Diagnostics, Is.Empty);
         Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+
+        var tree = result.OutputCompilation.SyntaxTrees.First();
+        var call = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>()
+            .Single(c => c.Identifier.ValueText == "Derived").DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Single(i => i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Convert" });
+        var bound = (IMethodSymbol)result.OutputCompilation.GetSemanticModel(tree).GetSymbolInfo(call).Symbol!;
+        Assert.That(bound.ContainingAssembly.Name, Is.EqualTo("Consumer"));
+        Assert.That(bound.ReducedFrom!.Arity, Is.Zero);
     }
 
     private static MetadataReference CreateLibrary(bool projectReference)
