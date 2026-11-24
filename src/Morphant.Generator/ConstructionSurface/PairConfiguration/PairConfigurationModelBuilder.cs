@@ -121,7 +121,10 @@ internal static class PairConfigurationModelBuilder
         }
 
         // Nullable context is read at a named type's last token or an
-        // array's outer rank. Keep nested type arguments in enabled context.
+        // array's outer rank. Only the outer source and destination are
+        // oblivious, so both registration spellings bind without CS8620.
+        // Nested arguments stay annotated for type inference, and the final
+        // '>' keeps the builder itself non-null for null-receiver warnings.
         var lines = new List<string>();
         var line = prefix;
         bool? enabled = null;
