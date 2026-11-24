@@ -6,6 +6,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using Morphant.Generator.Compatibility;
+using Morphant.Generator.ConstructionSurface;
+using Morphant.Generator.ConstructionSurface.PairConfiguration;
 
 namespace Morphant.Generator.Incrementality;
 
@@ -259,6 +261,7 @@ internal static class MapperSemanticFingerprintBuilder
                 {
                     result.Append('|').Append(MappingPair.FriendMappingExtensions.Find(
                         compilation, map.TypeArguments[0], map.TypeArguments[1], operation.Syntax, cancellationToken));
+                    AppendPairConstraints(result, map.TypeArguments[0], map.TypeArguments[1], compilation);
                 }
             }
 
@@ -288,6 +291,21 @@ internal static class MapperSemanticFingerprintBuilder
             mapperType,
             dependencyTypes,
             cancellationToken);
+    }
+
+    private static void AppendPairConstraints(StringBuilder result, ITypeSymbol source, ITypeSymbol destination,
+        Compilation compilation)
+    {
+        var parameters = GeneratedTypeNameBuilder.CollectTypeParameters(source, destination);
+        if (parameters.IsEmpty) return;
+
+        // Roslyn's unmanagedness check observes transitive instance storage.
+        // Only a change to the inferred contract needs to invalidate the mapper.
+        var constraints = PairTypeParameterModelBuilder.Build(source, destination, parameters,
+            GeneratedTypeNameBuilder.AllocateTypeParameterNames(parameters), compilation);
+        foreach (var parameter in constraints)
+            result.Append('|').Append(parameter.Name).Append(':').Append(parameter.RequiresNullableAnnotationsDisabled)
+                .Append(':').Append(string.Join(", ", parameter.Constraints));
     }
 
     private static ISymbol? GetReferencedSymbol(IOperation operation)
