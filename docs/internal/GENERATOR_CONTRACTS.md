@@ -90,6 +90,8 @@ generated-source expectations. Follow the general principles in
   nested annotations and `Nullable<T>` intact. Reference results of `Convert`,
   `ConstructUsing` and `ResolveUsing` are nullable. Keep declarative and
   factory sources non-null and the reference source of `Convert` nullable.
+  Generate `IncludeMembers` on the pair with a non-null reference source in
+  its selector. A nullable value source keeps its declared `Nullable<T>` type.
 - Preserve record member-plan types and `with` expressions. A destination
   member whose name conflicts with the generated record, its type parameters
   or its required record members uses a readable configuration alias: append

@@ -5,8 +5,8 @@ conventions. It does not start a nested mapping.
 
 ## Availability
 
-`IncludeMembers` is available on every mapping-pair builder. It cannot be
-combined with [`Convert`](convert.md).
+Import `Morphant` to use `IncludeMembers` on a registered mapping pair.
+It cannot be combined with [`Convert`](convert.md).
 
 ## Overload
 
@@ -18,7 +18,9 @@ combined with [`Convert`](convert.md).
 |---|---|
 | `selector` | Inline property or field path rooted in `source`, or an anonymous object containing several paths |
 
-The method returns the same mapping builder.
+The selector receives a non-null reference source even when the registration
+uses `Map<Source?, Destination>()`. A nullable value source retains its
+`Nullable<T>` type. The method returns the same mapping builder.
 
 ```csharp
 builder.Map<Order, OrderDto>()

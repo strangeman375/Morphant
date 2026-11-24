@@ -16,17 +16,20 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
-- Preserve required generic constraints on shared mapping configuration methods
-  and report ambiguous open registrations only for matching type arguments.
-- Report conflicting inherited tuple names and friend assembly imports at the
-  affected registrations, including after source files change.
+- Shared generic configuration methods accept the same mappings in either
+  registration order. Changes to nested value types and generic constraints
+  produce the same mapping code and diagnostics as a clean build.
+- Report conflicting inherited tuple names and visible friend extensions at
+  the affected registrations. A closed registration can configure its own
+  callback when local and external open extensions also match.
 
 ### Migrating from 0.5
 
 Derive mappers from `TypeMapper`. Replace `TypeMapper<OrderMapper>` with
 `TypeMapper`, and remove the self-type parameter and its recursive constraint
 from reusable mapper bases. Explicit pair-builder references now use
-`MappingBuilder<TSource, TDestination>`.
+`MappingBuilder<TSource, TDestination>`. Import `Morphant` for
+`IncludeMembers` if the file previously used only a namespace alias.
 
 Mappers in one assembly share one configuration surface per CLR pair. Align
 tuple names, nested nullable annotations and uses of `dynamic` when migrating
