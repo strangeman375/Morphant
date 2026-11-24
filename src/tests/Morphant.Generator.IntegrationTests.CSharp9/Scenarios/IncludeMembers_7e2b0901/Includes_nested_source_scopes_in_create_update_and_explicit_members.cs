@@ -240,16 +240,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                     Audit = source.Envelope?.Audit
                 });
 
-            builder.Map<Source, NonNullableDestination>()
+            builder.Map<Source?, NonNullableDestination?>()
                 .IncludeMembers(source => source.Customer);
 
-            builder.Map<Source, ExplicitDestination>()
-                .IncludeMembers(source => source.Customer)
+            builder.Map<Source?, ExplicitDestination?>()
                 .MemberSelection(MemberSelection.Explicit)
                 .Members(source => new()
                 {
                     Name = Auto()
-                });
+                })
+                .IncludeMembers(source => source.Customer);
 
             builder.Map<Source, AssertedDestination>()
                 .IncludeMembers(source => source.Customer!);

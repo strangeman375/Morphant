@@ -21,6 +21,34 @@ internal sealed class ActualizationTests
     ];
 
     [Test]
+    public void A_deep_selector_after_members_tracks_the_selected_flattening_contract()
+    {
+        var mapper = SourceFile("Mapper.cs", """
+#nullable enable
+using Morphant;
+namespace TestCase
+{
+    [MorphantMapper] internal partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder b) => b.Map<Source?,Destination>()
+            .Flattening(Flattening.Auto).Members(s => new() { Marker = s.Marker })
+            .IncludeMembers(s => s.Envelope.Included);
+    }
+    internal class Source { public int Marker { get; } public Envelope Envelope { get; } = new(); }
+    internal class Envelope { public Included Included { get; } = new(); }
+    internal class Included { public Payload Payload { get; } = new(); }
+    internal class Destination { public int Marker { get; set; } public int PayloadCode { get; set; } }
+}
+""");
+        GeneratorIncrementalityStep Edit(string member, params ExpectedIncrementalStage[] stages) => Step(member,
+            [mapper, SourceFile("Payload.cs", $"namespace TestCase {{ internal class Payload {{ public int {member} {{ get; }} }} }}")],
+            GeneratedFiles, stages);
+        var modified = Stage("BuildTypeMapperRequests", Expected(Mapper, IncrementalStepRunReason.Modified));
+        RunAndAssert(LanguageVersion.CSharp9, static () => new MorphantGenerator(),
+            Edit("Code"), Edit("Other", modified), Edit("Code", modified));
+    }
+
+    [Test]
     public void Actualizes_added_changed_and_removed_scopes()
     {
         RunAndAssert(

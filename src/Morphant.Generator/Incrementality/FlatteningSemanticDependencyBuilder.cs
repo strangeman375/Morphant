@@ -75,7 +75,8 @@ internal static class FlatteningSemanticDependencyBuilder
             token.ThrowIfCancellationRequested();
             current = call;
             if (call.Expression is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "IncludeMembers" } ||
-                call.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax selector }])
+                call.ArgumentList.Arguments.Count != 1 ||
+                call.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax selector)
                 continue;
 
             // The extension is not in the input compilation yet. Bind its
