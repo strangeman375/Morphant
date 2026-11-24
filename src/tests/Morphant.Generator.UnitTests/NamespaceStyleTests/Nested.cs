@@ -338,6 +338,27 @@ namespace Morphant
             global::Morphant.Delegates.Convert<global::Example.@namespace.Source<T>?, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContext, global::Example.@namespace.Destination<T>?> mapping)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Adds nested source members to name matching. Root members take priority.
+        /// </summary>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
+        public static global::Morphant.MappingBuilder<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>> IncludeMembers<T>(
+            this global::Morphant.MappingBuilder<global::Example.@namespace.Source<T
+        #nullable disable annotations
+                >,
+        #nullable enable annotations
+                global::Example.@namespace.Destination<T
+        #nullable disable annotations
+                >
+        #nullable enable annotations
+                > builder,
+            global::System.Func<global::Example.@namespace.Source<T>, object?> selector)
+            where T : class
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """),
@@ -829,6 +850,27 @@ internal static partial class MorphantGeneratedMappingExtensions
     #nullable enable annotations
             > builder,
         global::Morphant.Delegates.Convert<global::Example.@namespace.Source<T>?, global::Example.@namespace.Destination<T>, global::Morphant.Context.MappingContext, global::Example.@namespace.Destination<T>?> mapping)
+        where T : class
+        => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+    /// <summary>
+    /// Adds nested source members to name matching. Root members take priority.
+    /// </summary>
+    /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+    /// <param name="builder">The mapping to configure.</param>
+    /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
+    public static global::Morphant.MappingBuilder<global::Example.@namespace.Source<T>, global::Example.@namespace.Destination<T>> IncludeMembers<T>(
+        this global::Morphant.MappingBuilder<global::Example.@namespace.Source<T
+    #nullable disable annotations
+            >,
+    #nullable enable annotations
+            global::Example.@namespace.Destination<T
+    #nullable disable annotations
+            >
+    #nullable enable annotations
+            > builder,
+        global::System.Func<global::Example.@namespace.Source<T>, object?> selector)
         where T : class
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }

@@ -219,6 +219,20 @@ internal static partial class MorphantGeneratedMappingExtensions
             > builder,
         global::Morphant.Delegates.Convert<global::QueryNames.Source?, global::QueryNames.Destination, global::Morphant.Context.MappingContext, global::QueryNames.Destination?> mapping)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+    /// <summary>
+    /// Adds nested source members to name matching. Root members take priority.
+    /// </summary>
+    /// <param name="builder">The mapping to configure.</param>
+    /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
+    public static global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination> IncludeMembers(
+    #nullable disable annotations
+        this global::Morphant.MappingBuilder<global::QueryNames.Source, global::QueryNames.Destination
+    #nullable enable annotations
+            > builder,
+        global::System.Func<global::QueryNames.Source, object?> selector)
+        => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }
 """),
         ("Morphant.Generated.Member.Destination__92f4e91695f7f6060dddb9866f3aa6c7.g.cs",
