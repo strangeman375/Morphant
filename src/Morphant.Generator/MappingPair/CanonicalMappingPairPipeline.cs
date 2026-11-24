@@ -172,22 +172,26 @@ internal static class CanonicalMappingPairPipeline
         // of each selected signature take part in choosing its presentation.
         var required = new HashSet<string>(effective.Values.Select(static c => c.DeclaredPairKey), StringComparer.Ordinal);
         // A closed redeclaration normally reuses its inherited open extension.
-        // Keep it when two open overloads would tie at that concrete call.
-        foreach (var owner in owners)
+        // Each redeclaration has its own imports. Retain the closed overload if
+        // its inherited local extension would lose or tie at any such call.
+        foreach (var candidate in candidates)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (required.Contains(owner.Key) || !needsLocalExtension.Contains(owner.Key) ||
+            var pair = candidate.Pair;
+            if (required.Contains(candidate.DeclaredPairKey) || pair.FriendAssembly is not null ||
                 !ConstructionSurface.GeneratedTypeNameBuilder.CollectTypeParameters(
-                    owner.Value.Pair.SourceType, owner.Value.Pair.DestinationType).IsEmpty)
+                    pair.SourceType, pair.DestinationType).IsEmpty)
                 continue;
 
-            var pair = owner.Value.Pair;
             var applicable = required.Where(needsLocalExtension.Contains).Select(key => owners[key].Pair)
                 .Where(open => MappingTypeIdentityPolicy.CanPairsUnify(
-                    open.SourceType, open.DestinationType, pair.SourceType, pair.DestinationType)).ToArray();
-            if (applicable.Length > 1 && !applicable.Any(best => applicable.All(other =>
-                    best.Equals(other) || MappingTypeIdentityPolicy.IsMoreSpecificExtension(best, other))))
-                required.Add(owner.Key);
+                    open.SourceType, open.DestinationType, pair.SourceType, pair.DestinationType))
+                .Select(static open => open.Receiver).ToArray();
+            var foreign = pair.Friends.OpenReceivers;
+            if ((applicable.Length > 1 || !foreign.IsDefaultOrEmpty) && !applicable.Any(best =>
+                applicable.All(other => best.Equals(other) || MappingTypeIdentityPolicy.IsMoreSpecificExtension(best, other)) &&
+                (foreign.IsDefaultOrEmpty || foreign.All(other => MappingTypeIdentityPolicy.IsMoreSpecificExtension(best, other)))))
+                required.Add(candidate.DeclaredPairKey);
         }
 
         // Emit in the incremental input order so adding another mapping does

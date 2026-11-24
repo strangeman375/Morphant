@@ -6,44 +6,39 @@ namespace Morphant.Generator.MappingPair;
 
 internal static class FriendMappingExtensions
 {
-    private sealed record Owner(INamedTypeSymbol Container, bool Global);
+    private static readonly ConditionalWeakTable<Compilation, ImmutableDictionary<IMethodSymbol, MappingExtensionReceiver>> Indexes = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ImmutableDictionary<string, ImmutableArray<Owner>>> Indexes = new();
-
-    public static string? Find(Compilation compilation, ITypeSymbol source, ITypeSymbol destination,
+    public static VisibleFriendExtensions Find(Compilation compilation, ITypeSymbol source, ITypeSymbol destination,
         SyntaxNode registration, CancellationToken cancellationToken)
     {
         var index = Indexes.GetValue(compilation, BuildIndex);
-        if (index.IsEmpty || !index.TryGetValue(MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(source, destination), out var owners))
-            return null;
+        if (index.IsEmpty) return default;
 
+        var pairKey = MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(source, destination);
+        var receiver = compilation.GetTypeByMetadataName(MetadataNames.PairMapperBuilder)!.Construct(source, destination);
+        cancellationToken.ThrowIfCancellationRequested();
+        var visible = compilation.GetSemanticModel(registration.SyntaxTree).LookupSymbols(
+            registration.SpanStart, receiver, "Convert", includeReducedExtensionMethods: true);
         var names = new SortedSet<string>(StringComparer.Ordinal);
-        ImmutableArray<ISymbol> visible = default;
-        foreach (var owner in owners)
+        var open = new SortedDictionary<string, MappingExtensionReceiver>(StringComparer.Ordinal);
+        foreach (var method in visible.OfType<IMethodSymbol>())
         {
-            if (!owner.Global)
-            {
-                if (visible.IsDefault)
-                {
-                    var receiver = compilation.GetTypeByMetadataName(MetadataNames.PairMapperBuilder)!.Construct(source, destination);
-                    cancellationToken.ThrowIfCancellationRequested();
-                    visible = compilation.GetSemanticModel(registration.SyntaxTree).LookupSymbols(
-                        registration.SpanStart, receiver, "Convert", includeReducedExtensionMethods: true);
-                }
-
-                if (!visible.Any(method => SymbolEqualityComparer.Default.Equals(method.ContainingType, owner.Container)))
-                    continue;
-            }
-
-            names.Add(owner.Container.ContainingAssembly.Identity.Name);
+            var definition = (method.ReducedFrom ?? method).OriginalDefinition;
+            if (!index.TryGetValue(definition, out var pattern)) continue;
+            var key = pattern.Key;
+            if (key == pairKey)
+                names.Add(definition.ContainingAssembly.Identity.Name);
+            else if (definition.IsGenericMethod)
+                open[key] = pattern;
         }
 
-        return names.Count == 0 ? null : string.Join(", ", names);
+        return new VisibleFriendExtensions(names.Count == 0 ? null : string.Join(", ", names),
+            open.Values.ToImmutableArray());
     }
 
-    private static ImmutableDictionary<string, ImmutableArray<Owner>> BuildIndex(Compilation compilation)
+    private static ImmutableDictionary<IMethodSymbol, MappingExtensionReceiver> BuildIndex(Compilation compilation)
     {
-        var pairs = new Dictionary<string, List<Owner>>(StringComparer.Ordinal);
+        var methods = ImmutableDictionary.CreateBuilder<IMethodSymbol, MappingExtensionReceiver>(SymbolEqualityComparer.Default);
         var builder = compilation.GetTypeByMetadataName(MetadataNames.PairMapperBuilder);
         foreach (var assembly in compilation.SourceModule.ReferencedAssemblySymbols)
         {
@@ -57,7 +52,6 @@ internal static class FriendMappingExtensions
             if (container is null || !compilation.IsSymbolAccessibleWithin(container, compilation.Assembly))
                 continue;
 
-            var owner = new Owner(container, MappingTypeEligibilityPolicy.IsAvailableThroughGlobalAlias(assembly, compilation));
             // Every generated pair provides Convert, including opaque roots.
             foreach (var method in container.GetMembers("Convert").OfType<IMethodSymbol>())
             {
@@ -67,16 +61,17 @@ internal static class FriendMappingExtensions
                     !SymbolEqualityComparer.Default.Equals(receiver.OriginalDefinition, builder))
                     continue;
 
-                var key = MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(
-                    receiver.TypeArguments[0], receiver.TypeArguments[1]);
-                if (!pairs.TryGetValue(key, out var owners))
-                    pairs.Add(key, owners = []);
-                if (!owners.Contains(owner))
-                    owners.Add(owner);
+                methods[method.OriginalDefinition] = new MappingExtensionReceiver(receiver.TypeArguments[0], receiver.TypeArguments[1]);
             }
         }
 
-        return pairs.ToImmutableDictionary(
-            entry => entry.Key, entry => entry.Value.ToImmutableArray(), StringComparer.Ordinal);
+        return methods.ToImmutable();
     }
+}
+
+internal readonly record struct VisibleFriendExtensions(string? ExactAssemblies, ImmutableArray<MappingExtensionReceiver> OpenReceivers);
+
+internal readonly record struct MappingExtensionReceiver(ITypeSymbol Source, ITypeSymbol Destination)
+{
+    public string Key => MappingTypeIdentityPolicy.CreateAlphaEquivalentPairKey(Source, Destination);
 }

@@ -28,9 +28,12 @@ internal readonly record struct MappingPairModel(
     MappingPairRegistrationModel Registration,
     MappingPairIdentity Identity,
     MappingPairCapabilities Capabilities,
-    string? FriendAssembly = null,
+    VisibleFriendExtensions Friends = default,
     bool HasUnifiableConflict = false)
 {
+    public string? FriendAssembly => Friends.ExactAssemblies;
+    public MappingExtensionReceiver Receiver => new(SourceType, DestinationType);
+
     public ITypeSymbol SourceType =>
         MappingTypeNormalization.WithoutOuterAnnotation(Registration.SourceType);
 

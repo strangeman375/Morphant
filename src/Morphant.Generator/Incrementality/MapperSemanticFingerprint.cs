@@ -259,8 +259,11 @@ internal static class MapperSemanticFingerprintBuilder
                 if (symbol is IMethodSymbol { Name: "Map", TypeArguments.Length: 2 } map &&
                     SymbolNameHelper.GetFullMetadataName(map.ContainingType.OriginalDefinition) == MetadataNames.MapperBuilder)
                 {
-                    result.Append('|').Append(MappingPair.FriendMappingExtensions.Find(
-                        compilation, map.TypeArguments[0], map.TypeArguments[1], operation.Syntax, cancellationToken));
+                    var friends = MappingPair.FriendMappingExtensions.Find(
+                        compilation, map.TypeArguments[0], map.TypeArguments[1], operation.Syntax, cancellationToken);
+                    result.Append('|').Append(friends.ExactAssemblies);
+                    if (!friends.OpenReceivers.IsDefaultOrEmpty)
+                        foreach (var receiver in friends.OpenReceivers) result.Append('|').Append(receiver.Key);
                     AppendPairConstraints(result, map.TypeArguments[0], map.TypeArguments[1], compilation);
                 }
             }

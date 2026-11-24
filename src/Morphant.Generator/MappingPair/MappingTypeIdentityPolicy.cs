@@ -140,7 +140,7 @@ internal static class MappingTypeIdentityPolicy
 
         // C# compares positions in the unsubstituted parameter types. Reusing
         // a type parameter restricts applicability but does not break a tie.
-        if (IsMoreSpecificExtension(left, right) || IsMoreSpecificExtension(right, left))
+        if (IsMoreSpecificExtension(left.Receiver, right.Receiver) || IsMoreSpecificExtension(right.Receiver, left.Receiver))
             return false;
         if (!OpenExtensionConstraintCheck.HasConstraints(left.SourceType) &&
             !OpenExtensionConstraintCheck.HasConstraints(left.DestinationType) &&
@@ -160,11 +160,11 @@ internal static class MappingTypeIdentityPolicy
             ? unifier.Receiver(source, destination) : null;
     }
 
-    internal static bool IsMoreSpecificExtension(MappingPairModel left, MappingPairModel right) =>
-        (HasMoreSpecificPosition(left.SourceType, right.SourceType) ||
-         HasMoreSpecificPosition(left.DestinationType, right.DestinationType)) &&
-        !HasMoreSpecificPosition(right.SourceType, left.SourceType) &&
-        !HasMoreSpecificPosition(right.DestinationType, left.DestinationType);
+    internal static bool IsMoreSpecificExtension(MappingExtensionReceiver left, MappingExtensionReceiver right) =>
+        (HasMoreSpecificPosition(left.Source, right.Source) ||
+         HasMoreSpecificPosition(left.Destination, right.Destination)) &&
+        !HasMoreSpecificPosition(right.Source, left.Source) &&
+        !HasMoreSpecificPosition(right.Destination, left.Destination);
 
     private static bool HasMoreSpecificPosition(ITypeSymbol left, ITypeSymbol right)
     {
