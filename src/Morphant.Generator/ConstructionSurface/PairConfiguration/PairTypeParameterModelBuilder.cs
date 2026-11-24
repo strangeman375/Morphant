@@ -143,24 +143,27 @@ internal static class PairTypeParameterModelBuilder
 
         var substitutions = MapperTypeSubstitution.Build(owner.OriginalDefinition, owner);
         var expanding = new HashSet<(INamedTypeSymbol, INamedTypeSymbol)>();
+        var requirements = new List<ReferenceRequirement>();
         foreach (var bound in formal.ConstraintTypes)
-            AddConversion(argument, MapperTypeSubstitution.Substitute(bound, substitutions, compilation));
+            AddConversion(argument, MapperTypeSubstitution.Substitute(bound, substitutions, compilation), requirements);
+        foreach (var requirement in requirements)
+            if (constraints.TryGetValue(requirement.Parameter, out var required))
+                required.RequireReferenceConversion(requirement.Target, names);
 
-        void AddConversion(ITypeSymbol from, ITypeSymbol to)
+        void AddConversion(ITypeSymbol from, ITypeSymbol to, List<ReferenceRequirement> result)
         {
             if (SymbolEqualityComparer.Default.Equals(from, to))
                 return;
             if (from is ITypeParameterSymbol parameter)
             {
-                if (constraints.TryGetValue(parameter, out var required))
-                    required.RequireReferenceConversion(to, names);
+                result.Add(new ReferenceRequirement(parameter, to));
                 return;
             }
 
             if (from is IArrayTypeSymbol array)
             {
                 if (to is IArrayTypeSymbol targetArray && array.Rank == targetArray.Rank)
-                    AddConversion(array.ElementType, targetArray.ElementType);
+                    AddConversion(array.ElementType, targetArray.ElementType, result);
                 else if (array.IsSZArray && to is INamedTypeSymbol targetInterface &&
                          targetInterface.OriginalDefinition.SpecialType is
                              SpecialType.System_Collections_Generic_IEnumerable_T or
@@ -168,7 +171,7 @@ internal static class PairTypeParameterModelBuilder
                              SpecialType.System_Collections_Generic_ICollection_T or
                              SpecialType.System_Collections_Generic_IReadOnlyList_T or
                              SpecialType.System_Collections_Generic_IReadOnlyCollection_T)
-                    AddConversion(array.ElementType, targetInterface.TypeArguments[0]);
+                    AddConversion(array.ElementType, targetInterface.TypeArguments[0], result);
                 return;
             }
 
@@ -179,19 +182,53 @@ internal static class PairTypeParameterModelBuilder
             if (source.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, target)))
                 return;
 
-            var matches = source.AllInterfaces.Where(i =>
-                SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, target.OriginalDefinition));
-            var implementation = SymbolEqualityComparer.Default.Equals(source.OriginalDefinition, target.OriginalDefinition)
-                ? source
-                : matches.FirstOrDefault(i => compilation.ClassifyCommonConversion(i, target).IsImplicit) ?? matches.FirstOrDefault();
-            if (implementation is null)
+            if (SymbolEqualityComparer.Default.Equals(source.OriginalDefinition, target.OriginalDefinition))
+            {
+                AddVariantArguments(source, target, result);
                 return;
+            }
 
             var edge = (source.OriginalDefinition, target.OriginalDefinition);
-            var inherited = !SymbolEqualityComparer.Default.Equals(edge.Item1, edge.Item2);
-            if (inherited && !expanding.Add(edge))
+            if (!expanding.Add(edge))
                 return;
 
+            // A mapper's own constraints can make extra projections applicable.
+            // Prefer the proof whose requirements are implied by the others.
+            List<ReferenceRequirement>? best = null;
+            INamedTypeSymbol? first = null;
+            foreach (var projection in source.AllInterfaces)
+            {
+                if (!SymbolEqualityComparer.Default.Equals(projection.OriginalDefinition, target.OriginalDefinition))
+                    continue;
+                first ??= projection;
+                if (!compilation.ClassifyCommonConversion(projection, target).IsImplicit)
+                    continue;
+
+                var candidate = new List<ReferenceRequirement>();
+                AddVariantArguments(projection, target, candidate);
+                if (best is null || candidate.All(r => best.Any(b => Implies(b, r))))
+                    best = candidate;
+                if (best.Count == 0) break;
+            }
+            if (best is not null)
+                result.AddRange(best);
+            else if (first is not null)
+                AddVariantArguments(first, target, result);
+            expanding.Remove(edge);
+        }
+
+        bool Implies(ReferenceRequirement given, ReferenceRequirement needed)
+        {
+            if (!SymbolEqualityComparer.Default.Equals(given.Parameter, needed.Parameter) ||
+                given.Target.NullableAnnotation == NullableAnnotation.Annotated &&
+                needed.Target.NullableAnnotation == NullableAnnotation.NotAnnotated)
+                return false;
+            var conversion = compilation.ClassifyCommonConversion(given.Target, needed.Target);
+            return conversion.IsIdentity || conversion.IsImplicit && conversion.IsReference;
+        }
+
+        void AddVariantArguments(INamedTypeSymbol implementation, INamedTypeSymbol target, List<ReferenceRequirement> result)
+        {
             for (var i = 0; i < target.Arity; i++)
             {
                 var actual = implementation.TypeArguments[i];
@@ -199,18 +236,18 @@ internal static class PairTypeParameterModelBuilder
                 switch (target.TypeParameters[i].Variance)
                 {
                     case VarianceKind.Out:
-                        AddConversion(actual, expected);
+                        AddConversion(actual, expected, result);
                         break;
                     case VarianceKind.In:
-                        AddConversion(expected, actual);
+                        AddConversion(expected, actual, result);
                         break;
                 }
             }
 
-            if (inherited)
-                expanding.Remove(edge);
         }
     }
+
+    private readonly record struct ReferenceRequirement(ITypeParameterSymbol Parameter, ITypeSymbol Target);
 
     private static IReadOnlyDictionary<ITypeParameterSymbol, string>
         BuildConstraintTypeNames(

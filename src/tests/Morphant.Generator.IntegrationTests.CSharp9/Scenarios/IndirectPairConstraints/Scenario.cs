@@ -7,6 +7,22 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IndirectPairCons
 {
     internal struct Cell<T, TTag> { public T Value { get; set; } }
 
+    internal interface IOut<out T> { }
+    internal sealed class Both<T> : IOut<List<T>>, IOut<string[]> { }
+    internal sealed class Request<T> where T : IOut<IEnumerable<object>> { }
+
+    [MorphantMapper]
+    internal partial class Constrained<T> : TypeMapper where T : class
+    {
+        protected override void Configure(MapperBuilder b) => b.Map<Request<Both<T>>, int>().Convert(_ => 3);
+    }
+
+    [MorphantMapper]
+    internal partial class Unconstrained<T> : TypeMapper
+    {
+        protected override void Configure(MapperBuilder b) => b.Map<Request<Both<T>>, int>().Convert(_ => 4);
+    }
+
     internal sealed class Packet<TSequence, TCell> where TSequence : IEnumerable<object> where TCell : unmanaged
     {
         public int Code { get; set; }
@@ -35,6 +51,12 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IndirectPairCons
             if (first.Create(new Packet<List<Exception>, Cell<int, string>> { Code = 10 }) != 11 ||
                 second.Create(new Packet<List<string>, Cell<long, object>> { Code = 20 }) != 22)
                 throw new InvalidOperationException("The shared extension changed a mapper's callback.");
+
+            ITypeMapper<Request<Both<string>>, int> constrained = new Constrained<string>();
+            ITypeMapper<Request<Both<int>>, int> unconstrained = new Unconstrained<int>();
+            if (constrained.Create(new Request<Both<string>>()) != 3 ||
+                unconstrained.Create(new Request<Both<int>>()) != 4)
+                throw new InvalidOperationException("The shared extension rejected a valid variant conversion.");
         }
     }
 }
