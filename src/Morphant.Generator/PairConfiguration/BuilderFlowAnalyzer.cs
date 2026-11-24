@@ -138,8 +138,7 @@ internal static class BuilderFlowAnalyzer
                 return false;
             }
 
-            if (!IsGeneratedConfigurationMethod(method, semanticModel.Compilation) &&
-                !IsIncludeMembersMethod(method))
+            if (!IsGeneratedConfigurationMethod(method, semanticModel.Compilation))
             {
                 var containingType =
                     method.ContainingType.OriginalDefinition;
@@ -283,8 +282,7 @@ internal static class BuilderFlowAnalyzer
 
         if (symbol is not null)
         {
-            if (IsGeneratedConfigurationMethod(symbol, semanticModel.Compilation) ||
-                IsIncludeMembersMethod(symbol))
+            if (IsGeneratedConfigurationMethod(symbol, semanticModel.Compilation))
             {
                 return true;
             }
@@ -961,7 +959,7 @@ internal static class BuilderFlowAnalyzer
                !IsPairBuilderType(containingType);
     }
 
-    private static bool TryGetOuterReceiverInvocation(
+    internal static bool TryGetOuterReceiverInvocation(
         SyntaxNode current,
         out InvocationExpressionSyntax invocation)
     {
@@ -1415,19 +1413,6 @@ internal static class BuilderFlowAnalyzer
         return CallbackMethodNames.Contains(method.Name) &&
                GeneratedMappingExtensionNaming.IsGeneratedMethod(
                    definition, compilation);
-    }
-
-    private static bool IsIncludeMembersMethod(IMethodSymbol method)
-    {
-        return method.Name == "IncludeMembers" &&
-               method.MethodKind == MethodKind.Ordinary &&
-               !method.IsStatic &&
-               method.Parameters.Length == 1 &&
-               method.TypeArguments.Length == 0 &&
-               StringComparer.Ordinal.Equals(
-                   SymbolNameHelper.GetFullMetadataName(
-                       method.ContainingType.OriginalDefinition),
-                   MetadataNames.PairMapperBuilder);
     }
 
     private static bool IsPairBuilderType(ITypeSymbol? type)

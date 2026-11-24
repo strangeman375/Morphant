@@ -14,6 +14,7 @@ internal static class PairConfigurationModelEquality
                    left.BuilderTypeName,
                    right.BuilderTypeName) &&
                StringComparer.Ordinal.Equals(left.ReceiverParameter, right.ReceiverParameter) &&
+               StringComparer.Ordinal.Equals(left.SourceTypeName, right.SourceTypeName) &&
                StringComparer.Ordinal.Equals(
                    left.DeclarativeSourceTypeName,
                    right.DeclarativeSourceTypeName) &&

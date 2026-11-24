@@ -431,7 +431,6 @@ T Morphant.MapperBuilderBase<TBuilder>
 T Morphant.MappingBuilder<TSource, TDestination>
   M Morphant.MappingBuilder<TSource, TDestination> ForDerived<TDerivedSource, TDerivedDestination>()
   M Morphant.MappingBuilder<TSource, TDestination> IncludeBase<TBaseSource, TBaseDestination>()
-  M Morphant.MappingBuilder<TSource, TDestination> IncludeMembers(System.Func<TSource, System.Object>)
 T Morphant.MappingMode
   V Default, Create, Update, CreateAndUpdate
 T Morphant.Markers.AutoMarker

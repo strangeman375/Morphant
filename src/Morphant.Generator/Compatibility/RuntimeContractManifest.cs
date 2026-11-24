@@ -876,19 +876,6 @@ internal static class RuntimeContractManifest
                    self) &&
                HasMethod(
                    symbol,
-                   "IncludeMembers",
-                   Accessibility.Public,
-                   isStatic: false,
-                   arity: 0,
-                   self,
-                   [
-                       Parameter(Named(
-                           "System.Func`2",
-                           TypeParameter(0),
-                           Object))
-                   ]) &&
-               HasMethod(
-                   symbol,
                    "ForDerived",
                    Accessibility.Public,
                    isStatic: false,

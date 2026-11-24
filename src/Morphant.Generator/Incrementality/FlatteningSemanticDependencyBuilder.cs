@@ -1,7 +1,9 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.TypeMapperGeneration;
 
 namespace Morphant.Generator.Incrementality;
@@ -28,49 +30,14 @@ internal static class FlatteningSemanticDependencyBuilder
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (TryGetRegisteredPair(
+            if (!TryGetRegisteredPair(
                     invocation.TargetMethod,
                     out var source,
                     out var destination))
-            {
-                walker.AddScope(
-                    source,
-                    destination,
-                    cancellationToken);
                 continue;
-            }
 
-            if (!TryGetIncludeMembersPair(
-                    invocation.TargetMethod,
-                    out source,
-                    out destination))
-            {
-                continue;
-            }
-
-            walker.AddScope(
-                source,
-                destination,
-                cancellationToken);
-
-            foreach (var argument in invocation.Arguments)
-            {
-                foreach (var operation in argument.Value
-                             .DescendantsAndSelf())
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if ((operation is IPropertyReferenceOperation ||
-                         operation is IFieldReferenceOperation) &&
-                        operation.Type is { } selectedType)
-                    {
-                        walker.AddScope(
-                            selectedType,
-                            destination,
-                            cancellationToken);
-                    }
-                }
-            }
+            walker.AddScope(source, destination, cancellationToken);
+            AddIncludedScopes(invocation.Syntax, source, destination, walker, compilation, cancellationToken);
         }
     }
 
@@ -99,31 +66,34 @@ internal static class FlatteningSemanticDependencyBuilder
         return false;
     }
 
-    private static bool TryGetIncludeMembersPair(
-        IMethodSymbol method,
-        out ITypeSymbol source,
-        out ITypeSymbol destination)
+    private static void AddIncludedScopes(SyntaxNode registration, ITypeSymbol source, ITypeSymbol destination,
+        FlatteningDependencyWalker walker, Compilation compilation, CancellationToken token)
     {
-        var containingType = method.ContainingType;
-
-        if (method.Name == "IncludeMembers" &&
-            method.MethodKind == MethodKind.Ordinary &&
-            !method.IsStatic &&
-            method.Parameters.Length == 1 &&
-            containingType.TypeArguments.Length == 2 &&
-            StringComparer.Ordinal.Equals(
-                SymbolNameHelper.GetFullMetadataName(
-                    containingType.OriginalDefinition),
-                MetadataNames.PairMapperBuilder))
+        var current = registration;
+        while (BuilderFlowAnalyzer.TryGetOuterReceiverInvocation(current, out var call))
         {
-            source = containingType.TypeArguments[0];
-            destination = containingType.TypeArguments[1];
-            return true;
-        }
+            token.ThrowIfCancellationRequested();
+            current = call;
+            if (call.Expression is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "IncludeMembers" } ||
+                call.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax selector }])
+                continue;
 
-        source = null!;
-        destination = null!;
-        return false;
+            // The extension is not in the input compilation yet. Bind its
+            // selector in the original scope to observe the selected field and
+            // property types, including paths after other generated callbacks.
+            var type = SyntaxFactory.ParseTypeName("global::System.Func<" +
+                source.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable) + ", object?>");
+            var statement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(type)
+                .AddVariables(SyntaxFactory.VariableDeclarator("__selector").WithInitializer(SyntaxFactory.EqualsValueClause(selector))));
+            var model = compilation.GetSemanticModel(call.SyntaxTree);
+            if (!model.TryGetSpeculativeSemanticModel(call.SpanStart, statement, out var binding) ||
+                binding.GetOperation(statement, token) is not { } operation)
+                continue;
+
+            foreach (var read in operation.DescendantsAndSelf())
+                if (read is IPropertyReferenceOperation or IFieldReferenceOperation && read.Type is { } selected)
+                    walker.AddScope(selected, destination, token);
+        }
     }
 
     private sealed class FlatteningDependencyWalker
