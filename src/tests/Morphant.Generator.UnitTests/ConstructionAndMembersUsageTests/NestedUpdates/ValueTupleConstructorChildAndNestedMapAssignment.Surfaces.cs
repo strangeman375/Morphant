@@ -258,20 +258,6 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<global::TestCase.ChildSource?, global::TestCase.ChildDestination, global::Morphant.Context.MappingContext, global::TestCase.ChildDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination> IncludeMembers(
-        #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.ChildSource, global::TestCase.ChildDestination
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::TestCase.ChildSource, object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """),
@@ -437,20 +423,6 @@ namespace Morphant
         #nullable enable annotations
                 (global::TestCase.ChildDestination Child, int Id)> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, (global::TestCase.ChildDestination Child, int Id), global::Morphant.Context.MappingContext, (global::TestCase.ChildDestination Child, int Id)> mapping)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, (global::TestCase.ChildDestination Child, int Id)> IncludeMembers(
-        #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source,
-        #nullable enable annotations
-                (global::TestCase.ChildDestination Child, int Id)> builder,
-            global::System.Func<global::TestCase.Source, object?> selector)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

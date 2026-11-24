@@ -220,17 +220,6 @@ namespace Morphant
             this global::Morphant.MappingBuilder<(int Id, string Name), (int Id, string Name)> builder,
             global::Morphant.Delegates.Convert<(int Id, string Name), (int Id, string Name), global::Morphant.Context.MappingContext, (int Id, string Name)> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<(int Id, string Name), (int Id, string Name)> IncludeMembers(
-            this global::Morphant.MappingBuilder<(int Id, string Name), (int Id, string Name)> builder,
-            global::System.Func<(int Id, string Name), object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """),
@@ -567,17 +556,6 @@ internal static partial class MorphantGeneratedMappingExtensions
     public static global::Morphant.MappingBuilder<(int Id, string Name), (int Id, string Name)> Convert(
         this global::Morphant.MappingBuilder<(int Id, string Name), (int Id, string Name)> builder,
         global::Morphant.Delegates.Convert<(int Id, string Name), (int Id, string Name), global::Morphant.Context.MappingContext, (int Id, string Name)> mapping)
-        => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-    /// <summary>
-    /// Adds nested source members to name matching. Root members take priority.
-    /// </summary>
-    /// <param name="builder">The mapping to configure.</param>
-    /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-    public static global::Morphant.MappingBuilder<(int Id, string Name), (int Id, string Name)> IncludeMembers(
-        this global::Morphant.MappingBuilder<(int Id, string Name), (int Id, string Name)> builder,
-        global::System.Func<(int Id, string Name), object?> selector)
         => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 }
 """),

@@ -375,21 +375,6 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<int, int>?, int, global::Morphant.Context.MappingContext, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::System.Tuple<int, int>, int> IncludeMembers(
-            this global::Morphant.MappingBuilder<global::System.Tuple<int, int
-        #nullable disable annotations
-                >, int
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::System.Tuple<int, int>, object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;
@@ -508,21 +493,6 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<(int X, int Y)>?, int, global::Morphant.Context.MappingContext, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::System.Tuple<(int X, int Y)>, int> IncludeMembers(
-            this global::Morphant.MappingBuilder<global::System.Tuple<(int X, int Y)
-        #nullable disable annotations
-                >, int
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::System.Tuple<(int X, int Y)>, object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;
@@ -612,17 +582,6 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<(int X, int Y), int> Convert(
             this global::Morphant.MappingBuilder<(int X, int Y), int> builder,
             global::Morphant.Delegates.Convert<(int X, int Y), int, global::Morphant.Context.MappingContext, int> mapping)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<(int X, int Y), int> IncludeMembers(
-            this global::Morphant.MappingBuilder<(int X, int Y), int> builder,
-            global::System.Func<(int X, int Y), object?> selector)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

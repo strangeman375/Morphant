@@ -372,20 +372,6 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<global::GlobalSource?, global::Global.GlobalDestination, global::Morphant.Context.MappingContext, global::Global.GlobalDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::GlobalSource, global::Global.GlobalDestination> IncludeMembers(
-        #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::GlobalSource, global::Global.GlobalDestination
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::GlobalSource, object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;
@@ -553,20 +539,6 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<global::GlobalSource?, global::GlobalDestination, global::Morphant.Context.MappingContext, global::GlobalDestination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::GlobalSource, global::GlobalDestination> IncludeMembers(
-        #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::GlobalSource, global::GlobalDestination
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::GlobalSource, object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;
@@ -733,20 +705,6 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Convert<global::GlobalSource?, global::Second.Destination, global::Morphant.Context.MappingContext, global::Second.Destination?> mapping)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::GlobalSource, global::Second.Destination> IncludeMembers(
-        #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::GlobalSource, global::Second.Destination
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::GlobalSource, object?> selector)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -958,24 +916,6 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Convert<global::GlobalSource?, global::TestCase.Outer<string>.Destination<int>, global::Morphant.Context.MappingContext, global::TestCase.Outer<string>.Destination<int>?> mapping)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::GlobalSource, global::TestCase.Outer<string>.Destination<int>> IncludeMembers(
-        #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::GlobalSource,
-        #nullable enable annotations
-                global::TestCase.Outer<string>.Destination<int
-        #nullable disable annotations
-                >
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::GlobalSource, object?> selector)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -1272,20 +1212,6 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.URL, global::Morphant.Context.MappingContext, global::TestCase.URL?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.URL> IncludeMembers(
-        #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.URL
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::TestCase.Source, object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;
@@ -1452,20 +1378,6 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Url, global::Morphant.Context.MappingContext, global::TestCase.Url?> mapping)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Url> IncludeMembers(
-        #nullable disable annotations
-            this global::Morphant.MappingBuilder<global::TestCase.Source, global::TestCase.Url
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::TestCase.Source, object?> selector)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -1823,27 +1735,6 @@ namespace Morphant
             global::Morphant.Delegates.Convert<global::TestCase.Source<@class>?, global::TestCase.Destination<@class>, global::Morphant.Context.MappingContext, global::TestCase.Destination<@class>?> mapping)
             where @class : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <typeparam name="class">A type parameter from the mapping declaration.</typeparam>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source<@class>, global::TestCase.Destination<@class>> IncludeMembers<@class>(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<@class
-        #nullable disable annotations
-                >,
-        #nullable enable annotations
-                global::TestCase.Destination<@class
-        #nullable disable annotations
-                >
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::TestCase.Source<@class>, object?> selector)
-            where @class : class
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;
@@ -2183,25 +2074,6 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source<string>?, global::TestCase.Destination<string>, global::Morphant.Context.MappingContext, global::TestCase.Destination<string>?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source<string>, global::TestCase.Destination<string>> IncludeMembers(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<string
-        #nullable disable annotations
-                >,
-        #nullable enable annotations
-                global::TestCase.Destination<string
-        #nullable disable annotations
-                >
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::TestCase.Source<string>, object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;
@@ -2423,25 +2295,6 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source<object>?, global::TestCase.Destination<object>, global::Morphant.Context.MappingContext, global::TestCase.Destination<object>?> mapping)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Source<object>, global::TestCase.Destination<object>> IncludeMembers(
-            this global::Morphant.MappingBuilder<global::TestCase.Source<object
-        #nullable disable annotations
-                >,
-        #nullable enable annotations
-                global::TestCase.Destination<object
-        #nullable disable annotations
-                >
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::TestCase.Source<object>, object?> selector)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

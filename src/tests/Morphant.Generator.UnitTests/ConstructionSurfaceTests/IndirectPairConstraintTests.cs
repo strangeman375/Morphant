@@ -172,26 +172,6 @@ namespace Morphant
             where T : class
             where TValue : unmanaged
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
-        /// <typeparam name="TValue">A type parameter from the mapping declaration.</typeparam>
-        /// <typeparam name="TTag">A type parameter from the mapping declaration.</typeparam>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<global::TestCase.Packet<global::System.Collections.Generic.List<T>, global::TestCase.Cell<TValue, TTag>>, int> IncludeMembers<T, TValue, TTag>(
-            this global::Morphant.MappingBuilder<global::TestCase.Packet<global::System.Collections.Generic.List<T>, global::TestCase.Cell<TValue, TTag>
-        #nullable disable annotations
-                >, int
-        #nullable enable annotations
-                > builder,
-            global::System.Func<global::TestCase.Packet<global::System.Collections.Generic.List<T>, global::TestCase.Cell<TValue, TTag>>, object?> selector)
-            where T : class
-            where TValue : unmanaged
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;

@@ -27,9 +27,6 @@ See [current limitations](docs/limitations.md) for features not yet included.
   same mapping. The mapper implements `ITypeMapper<Source, Destination>`, and
   `Convert`, `ConstructUsing` and `ResolveUsing` may return null; see
   [result nullability](docs/settings/null-handling.md#result-nullability).
-- `IncludeMembers` is a generated configuration method in the `Morphant`
-  namespace. Its selector receives a non-null source for either spelling of the
-  registration.
 - A nested mapper and its containing types can be `private` or `protected`,
   and a generic mapper's type parameters no longer need to occur in each
   mapping pair.
@@ -41,13 +38,17 @@ See [current limitations](docs/limitations.md) for features not yet included.
 - Diagnostics `MORPH0058`, `MORPH0059` and `MORPH0060`; see
   [removed diagnostics](docs/diagnostics.md#removed-diagnostics).
 
+### Fixed
+
+- Update a mapping after edits to the types selected by `IncludeMembers` when
+  it follows `Members` or another generated configuration method.
+
 ### Migrating from 0.5
 
 Derive mappers from `TypeMapper`. Replace `TypeMapper<OrderMapper>` with
 `TypeMapper`, and remove the self-type parameter and its recursive constraint
 from reusable mapper bases. Explicit pair-builder references now use
-`MappingBuilder<TSource, TDestination>`. Import `Morphant` for
-`IncludeMembers` if the file previously used only a namespace alias.
+`MappingBuilder<TSource, TDestination>`.
 
 Mappers in one assembly share one configuration surface per CLR pair. Align
 tuple names, nested nullable annotations and uses of `dynamic` when migrating

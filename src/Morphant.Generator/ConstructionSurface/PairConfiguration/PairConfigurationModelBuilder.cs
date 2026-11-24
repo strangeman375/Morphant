@@ -57,7 +57,6 @@ internal static class PairConfigurationModelBuilder
             GeneratedMappingExtensionNaming.CommonContainerTypeName,
             builderTypeName,
             BuildReceiverParameter(sourceType, sourceTypeName, destinationType, destinationTypeName),
-            sourceTypeName,
             GeneratedTypeNameBuilder.Build(
                 declarativeSourceType,
                 typeParameterNames,

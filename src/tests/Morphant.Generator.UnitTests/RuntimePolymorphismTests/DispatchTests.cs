@@ -1250,21 +1250,6 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<object[]?, int, global::Morphant.Context.MappingContext, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        /// <summary>
-        /// Adds nested source members to name matching. Root members take priority.
-        /// </summary>
-        /// <param name="builder">The mapping to configure.</param>
-        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
-        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-        public static global::Morphant.MappingBuilder<object[], int> IncludeMembers(
-            this global::Morphant.MappingBuilder<object[
-        #nullable disable annotations
-                ], int
-        #nullable enable annotations
-                > builder,
-            global::System.Func<object[], object?> selector)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """));

@@ -79,9 +79,9 @@ internal static class FlatteningSemanticDependencyBuilder
                 call.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax selector)
                 continue;
 
-            // The extension is not in the input compilation yet. Bind its
-            // selector in the original scope to observe the selected field and
-            // property types, including paths after other generated callbacks.
+            // After a generated callback, the call has no bound receiver in the
+            // input compilation. Bind the selector in its original scope to
+            // observe the selected field and property types.
             var type = SyntaxFactory.ParseTypeName("global::System.Func<" +
                 source.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable) + ", object?>");
             var statement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(type)

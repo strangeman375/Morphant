@@ -83,8 +83,6 @@ internal static class GeneratedMappingExtensionNaming
 
         return method.Name switch
         {
-            "IncludeMembers" => callbackMetadataName == "System.Func`2" &&
-                                callback.TypeArguments[1].SpecialType == SpecialType.System_Object,
             "Construct" => callbackMetadataName is
                 "Morphant.Delegates.Construct`2" or
                 "Morphant.Delegates.Construct`3",
