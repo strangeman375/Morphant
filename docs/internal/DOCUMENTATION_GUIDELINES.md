@@ -24,8 +24,11 @@ principles in [AGENTS.md](../../AGENTS.md).
   related pages instead of repeating it. Do not add a general-guide paragraph
   for every edge case; update diagnostic help when troubleshooting needs it.
 - Keep navigation task-oriented, with basic usage before composition and
-  specialized features. Remove superseded pages and repair incoming links.
-  Use version numbers only for actual compatibility requirements or history.
+  specialized features. Remove superseded pages and update their incoming
+  links. Keep diagnostic help URLs shipped in released packages working.
+  For a removed diagnostic, retain its published help page at the original
+  URL with the removal version and migration guidance. Use version numbers
+  only for actual compatibility requirements or history.
 
 ## Content
 

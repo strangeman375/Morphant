@@ -45,8 +45,9 @@
   before starting the next stage. This includes states that do not build or
   pass tests; describe that state in the commit message. Do not postpone
   publication until validation, cleanup or the end of the task. Verify each
-  published checkpoint on remote `main`. Only an explicit user instruction
-  changes this rule.
+  published checkpoint on remote `main`. This workflow requires a Git identity
+  authorized to push directly to protected `main` before required checks pass.
+  Only an explicit user instruction changes this rule.
 - Commit only actual file changes. Report validation and review results in the
   conversation; never create empty checkpoint or validation commits.
 - Split long work into small coherent checkpoints. Preserve progress before

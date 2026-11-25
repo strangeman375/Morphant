@@ -14,8 +14,9 @@ expectations or verification policy, and when verifying a change. They are inten
   a compatibility test.
 - Treat the generator as a black box. Start from supported user scenarios, not
   branches in the implementation.
-- For every new or changed test, inspect its generated code against the input
-  and [generator contracts](GENERATOR_CONTRACTS.md). Check bindings, evaluation
+- When a new or changed test exercises source generation, inspect all code
+  generated for that scenario against its input and the
+  [generator contracts](GENERATOR_CONTRACTS.md). Check bindings, evaluation
   order, unnecessary locals or renaming, readability and formatting, including
   behavior outside the test's immediate assertion. Handle discovered defects
   within the agreed scope and add coverage for fixes; never accept an incorrect
@@ -41,10 +42,10 @@ expectations or verification policy, and when verifying a change. They are inten
 
 ## Generated-source unit tests
 
-- Tests for generated declaration surfaces must trigger generation with bare
-  `Map<TSource, TDestination>()` registrations. Calls to generated
-  `Construct`, `Convert`, `Members` or similar methods belong only in an
-  explicit Usage category.
+- Test generated declarations with bare `Map<TSource, TDestination>()`
+  registrations. Put tests of how consumer calls bind to those declarations
+  in an explicit Usage category. In tests of generated mapping behavior,
+  configure the mapping with the DSL calls the scenario requires.
 - Compare the complete generation result: the exact hint-name set and complete
   content of every generated file. Do not use substring presence, absence,
   occurrence counts or relative positions as substitutes.
@@ -99,8 +100,10 @@ expectations or verification policy, and when verifying a change. They are inten
 - End-to-end runtime scenarios belong in the dedicated integration slice and
   must be compiled by MSBuild as ordinary consumer code.
 - Define each mapper and scenario in an analyzer-backed consumer assembly.
-  Instantiate the generated mapper normally, cast it to the exact
-  `ITypeMapper<,>` contract, and call `Create` or `Update` directly.
+  To test a generated implementation, instantiate the mapper and call
+  `Create` or `Update` through its exact `ITypeMapper<,>` contract.
+  To test application dispatch, including DI lookup, registration and scope
+  lifetime, call `IMapper.Map`.
 - The integration host may call an already compiled scenario method. It must
   not create a `CSharpCompilation`, run a `GeneratorDriver`, emit or load an
   assembly, or invoke the scenario through reflection.
