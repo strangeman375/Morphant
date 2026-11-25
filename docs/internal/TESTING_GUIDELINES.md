@@ -1,8 +1,7 @@
 # Testing guidelines
 
-These rules apply when changing tests, test infrastructure, generated-output
-expectations or verification policy, and when verifying a change. They are intentionally kept outside
-`AGENTS.md` so unrelated work does not load detailed test guidance.
+To select checks for a change and report their results, see
+[Running verification](#running-verification).
 
 ## Test design
 
@@ -133,9 +132,14 @@ expectations or verification policy, and when verifying a change. They are inten
   alone do not require the full suite.
 - Reuse completed checks while the tested content is unchanged; after a
   change, rerun only the affected validation.
-- Run `git diff --check` before publishing changes to instructions or
-  documentation, including executable examples, XML documentation and release
-  or package text.
+- A stage is verified when its applicable checks pass. In the validation
+  report, identify which checks passed locally or in CI and which failed
+  or remain pending.
+- Before publishing changes to instructions or documentation, including
+  executable examples, XML documentation and release or package text, check
+  the diff for whitespace errors. Use `git diff --cached --check` for the
+  final staged changes or `git show --first-parent --check HEAD` for the
+  checkpoint already committed at `HEAD`.
 
 | Change | Required verification |
 | --- | --- |
@@ -146,8 +150,7 @@ expectations or verification policy, and when verifying a change. They are inten
 | Packaging or MSBuild integration | Run affected ordinary consumer and package tests, including the minimum-SDK checks when that compatibility is affected. |
 
 - Before a release, run the full Release build and both test projects, then
-  inspect the final NuGet artifacts. Report which local and CI checks actually
-  completed and which remain pending.
+  inspect the final NuGet artifacts.
 
 ### Roslyn compatibility
 

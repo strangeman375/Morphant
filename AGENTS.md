@@ -21,8 +21,10 @@
   generated-source expectations, read
   [Generator contracts](docs/internal/GENERATOR_CONTRACTS.md).
 - Before changing tests, test infrastructure, generated-output expectations or
-  verification policy, and before verifying a change, read
-  [Testing guidelines](docs/internal/TESTING_GUIDELINES.md).
+  verification policy, read the full
+  [testing guidelines](docs/internal/TESTING_GUIDELINES.md).
+- To choose checks for other changes, go directly to
+  [Running verification](docs/internal/TESTING_GUIDELINES.md#running-verification).
 - Before a user-visible change or a change to public documentation, XML
   IntelliSense, diagnostic help, changelog, release or package text or
   internal documents, read

@@ -57,10 +57,12 @@ principles in [AGENTS.md](../../AGENTS.md).
 - For a user-visible change, review the relevant guides, API, settings,
   diagnostics, limitations, index and changelog. Edit only the pages that need
   it, removing stale statements instead of layering exceptions onto them.
-- Before publishing, reread changed pages in full, review the beginner route,
-  search for contradictory wording and repeated explanations, and validate
-  links and anchors.
+- Before publishing, reread changed pages in full, search for contradictory
+  wording and repeated explanations, and validate links and anchors.
+- Review the beginner route before each release and when a change could affect
+  a step or link along it. Follow installation, mapper declaration, DI
+  registration and the first `Map` call in the [README](../../README.md) and
+  [quick start](../quick-start.md).
 - Publish intermediate checkpoints under the
-  [repository workflow](../../AGENTS.md#repository-workflow). Complete the
-  [checks for the change](TESTING_GUIDELINES.md#running-verification) before
-  reporting the stage as verified.
+  [repository workflow](../../AGENTS.md#repository-workflow). Select checks
+  for the change under [Running verification](TESTING_GUIDELINES.md#running-verification).
