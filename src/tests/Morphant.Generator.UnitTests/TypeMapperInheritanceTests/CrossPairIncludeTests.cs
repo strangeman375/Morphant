@@ -292,6 +292,20 @@ namespace Morphant
                 > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Adds nested source members to name matching. Root members take priority.
+        /// </summary>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
+        public static global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> IncludeMembers(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Animal, global::TestCase.AnimalDto
+        #nullable enable annotations
+                > builder,
+            global::System.Func<global::TestCase.Animal, object?> selector)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;
@@ -458,6 +472,20 @@ namespace Morphant
         #nullable enable annotations
                 > builder,
             global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto?> mapping)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Adds nested source members to name matching. Root members take priority.
+        /// </summary>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
+        public static global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto> IncludeMembers(
+        #nullable disable annotations
+            this global::Morphant.MappingBuilder<global::TestCase.Dog, global::TestCase.DogDto
+        #nullable enable annotations
+                > builder,
+            global::System.Func<global::TestCase.Dog, object?> selector)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

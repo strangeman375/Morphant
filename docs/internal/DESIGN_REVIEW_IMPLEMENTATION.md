@@ -52,8 +52,8 @@
   пересечение, а [`MORPH0065`](../diagnostics/MORPH0065.md) — на конфликт
   с расширением, видимым через `InternalsVisibleTo` (1.8). `6f9737df`
 - [x] `Convert`, `ConstructUsing` и `ResolveUsing` возвращают `Destination?`.
-  Маппер реализует `ITypeMapper<Source, Destination>`; `IncludeMembers`
-  остаётся методом runtime (1.8). `93560630`
+  Маппер реализует `ITypeMapper<Source, Destination>`. `IncludeMembers`
+  генерируется для подходящих пар с источником как у `Members` (1.8).
 - [x] Примеры документации без self-типа; инструкция миграции на
   необобщённый `TypeMapper` (1.8). `93560630`
 

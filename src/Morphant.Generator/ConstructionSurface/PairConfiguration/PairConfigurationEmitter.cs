@@ -166,6 +166,15 @@ internal static class PairConfigurationEmitter
             "global::Morphant.Context.MappingContext, " +
             model.DestinationTypeName + ">");
 
+        if (model.HasIncludeMembers)
+        {
+            Separate();
+            WriteMethod(writer, model, "IncludeMembers", "selector",
+                "Adds nested source members to name matching. Root members take priority.",
+                "An inline property or field path, or an anonymous object containing several paths.",
+                "global::System.Func<" + model.DeclarativeSourceTypeName + ", object?>");
+        }
+
         writer.CloseBlock();
         writer.CloseNamespace();
 
@@ -196,6 +205,7 @@ internal static class PairConfigurationEmitter
         {
             "ConstructUsing" => "construct-using",
             "ResolveUsing" => "resolve-using",
+            "IncludeMembers" => "include-members",
             _ => methodName.ToLowerInvariant()
         };
         writer.Line(

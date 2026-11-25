@@ -7,6 +7,7 @@ internal sealed record PairConfigurationModel(
     string ExtensionContainerTypeName,
     string BuilderTypeName,
     string ReceiverParameter,
+    bool HasIncludeMembers,
     string DeclarativeSourceTypeName,
     string ManualSourceTypeName,
     string DestinationTypeName,

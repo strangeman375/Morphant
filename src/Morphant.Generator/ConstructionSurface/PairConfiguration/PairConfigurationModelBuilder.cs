@@ -57,6 +57,7 @@ internal static class PairConfigurationModelBuilder
             GeneratedMappingExtensionNaming.CommonContainerTypeName,
             builderTypeName,
             BuildReceiverParameter(sourceType, sourceTypeName, destinationType, destinationTypeName),
+            HasIncludeMembers(pair.Capabilities, declarativeSourceType),
             GeneratedTypeNameBuilder.Build(
                 declarativeSourceType,
                 typeParameterNames,
@@ -107,6 +108,42 @@ internal static class PairConfigurationModelBuilder
             ObsoleteWarnings = ObsoleteTypeWarnings.Collect(
                 sourceType, destinationType)
         };
+    }
+
+    // IncludeMembers adds source members to destination conventions, so it
+    // needs a source with nested objects and a destination with conventions.
+    private static bool HasIncludeMembers(
+        MappingPairCapabilities capabilities,
+        ITypeSymbol declarativeSource)
+    {
+        return (capabilities.Members || capabilities.StructuredConstruction) &&
+               declarativeSource.TypeKind is not (
+                   TypeKind.Enum or
+                   TypeKind.Array or
+                   TypeKind.Delegate or
+                   TypeKind.Pointer or
+                   TypeKind.FunctionPointer or
+                   TypeKind.Dynamic or
+                   TypeKind.TypeParameter or
+                   TypeKind.Error) &&
+               declarativeSource.SpecialType is not (
+                   SpecialType.System_Object or
+                   SpecialType.System_Boolean or
+                   SpecialType.System_Char or
+                   SpecialType.System_SByte or
+                   SpecialType.System_Byte or
+                   SpecialType.System_Int16 or
+                   SpecialType.System_UInt16 or
+                   SpecialType.System_Int32 or
+                   SpecialType.System_UInt32 or
+                   SpecialType.System_Int64 or
+                   SpecialType.System_UInt64 or
+                   SpecialType.System_Decimal or
+                   SpecialType.System_Single or
+                   SpecialType.System_Double or
+                   SpecialType.System_String or
+                   SpecialType.System_IntPtr or
+                   SpecialType.System_UIntPtr);
     }
 
     private static string BuildReceiverParameter(

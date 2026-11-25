@@ -18,18 +18,6 @@ public sealed class MappingBuilder<TSource, TDestination> :
     }
 
     /// <summary>
-    /// Adds nested source members to name matching; root members take priority.
-    /// </summary>
-    /// <param name="selector">
-    /// One inline property or field path rooted in the mapping source, or an
-    /// anonymous object containing several such paths.
-    /// </param>
-    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
-    public MappingBuilder<TSource, TDestination> IncludeMembers(
-        Func<TSource, object?> selector) =>
-        throw new RuntimeInvocationNotSupportedException();
-
-    /// <summary>
     /// Reuses the nearest available base mapping; local rules take priority.
     /// </summary>
     /// <typeparam name="TBaseSource">

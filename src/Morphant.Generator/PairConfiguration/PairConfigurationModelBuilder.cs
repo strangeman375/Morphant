@@ -1216,7 +1216,7 @@ internal static class PairConfigurationModelBuilder
 
             if (invocationName?.Identifier.ValueText is
                     "Construct" or "Resolve" or "ConstructUsing" or
-                    "ResolveUsing" or "Members" or "Convert" &&
+                    "ResolveUsing" or "Members" or "IncludeMembers" or "Convert" &&
                 boundMethod is not null &&
                 !GeneratedMappingExtensionBinding.IsAssignedMethod(
                     boundMethod,
@@ -1299,34 +1299,6 @@ internal static class PairConfigurationModelBuilder
                 continue;
             }
 
-            if (IsIncludeMembersMethod(method))
-            {
-                var includeExpression = TryBindConfigurationExpression(
-                    invocation,
-                    method,
-                    semanticModel,
-                    compilation,
-                    targetMapperType,
-                    declaringMapperType,
-                    levelOrder,
-                    cancellationToken);
-
-                if (includeExpression is not null)
-                {
-                    localPlanSlots.Add(
-                        new MappingPlanSlotOccurrenceModel(
-                            invocation,
-                            MappingPlanSlotKind.IncludeMembers));
-                    includeMembers.Add(
-                        new IncludeMembersConfigurationModel(
-                            invocation,
-                            pair.SourceType,
-                            includeExpression));
-                }
-
-                continue;
-            }
-
             if (!IsGeneratedConfigurationMethod(method, semanticModel.Compilation))
             {
                 continue;
@@ -1349,6 +1321,11 @@ internal static class PairConfigurationModelBuilder
 
             switch (method.Name)
             {
+                case "IncludeMembers":
+                    localPlanSlots.Add(new MappingPlanSlotOccurrenceModel(invocation, MappingPlanSlotKind.IncludeMembers));
+                    includeMembers.Add(new IncludeMembersConfigurationModel(invocation, pair.SourceType, expression));
+                    break;
+
                 case "Construct":
                     localPlanSlots.Add(new MappingPlanSlotOccurrenceModel(
                         invocation,
@@ -2054,19 +2031,6 @@ internal static class PairConfigurationModelBuilder
                invocation.ArgumentList.Arguments.Count == 0;
     }
 
-    private static bool IsIncludeMembersMethod(IMethodSymbol method)
-    {
-        return method.Name == "IncludeMembers" &&
-               method.MethodKind == MethodKind.Ordinary &&
-               !method.IsStatic &&
-               method.Parameters.Length == 1 &&
-               method.TypeArguments.Length == 0 &&
-               StringComparer.Ordinal.Equals(
-                   SymbolNameHelper.GetFullMetadataName(
-                       method.ContainingType.OriginalDefinition),
-                   MetadataNames.PairMapperBuilder);
-    }
-
     private static ImmutableArray<Location>
         FindInaccessibleReferenceLocations(
         ExpressionSyntax expression,
@@ -2209,6 +2173,7 @@ internal static class PairConfigurationModelBuilder
                    "ConstructUsing" or
                    "ResolveUsing" or
                    "Members" or
+                   "IncludeMembers" or
                    "Convert" &&
                GeneratedMappingExtensionNaming.IsGeneratedMethod(
                    definition, compilation);

@@ -372,6 +372,23 @@ namespace Morphant
             global::Morphant.Delegates.Convert<global::TestCase.Box<T>?, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination?> mapping)
             where T : global::TestCase.BaseSource
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Adds nested source members to name matching. Root members take priority.
+        /// </summary>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="selector">An inline property or field path, or an anonymous object containing several paths.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
+        public static global::Morphant.MappingBuilder<global::TestCase.Box<T>, global::TestCase.Destination> IncludeMembers<T>(
+            this global::Morphant.MappingBuilder<global::TestCase.Box<T
+        #nullable disable annotations
+                >, global::TestCase.Destination
+        #nullable enable annotations
+                > builder,
+            global::System.Func<global::TestCase.Box<T>, object?> selector)
+            where T : global::TestCase.BaseSource
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """),

@@ -241,7 +241,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 });
 
             builder.Map<Source?, NonNullableDestination?>()
-                .IncludeMembers(source => source!.Customer);
+                .IncludeMembers(source => source.Customer);
 
             builder.Map<Source?, ExplicitDestination?>()
                 .MemberSelection(MemberSelection.Explicit)
@@ -249,7 +249,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 {
                     Name = Auto()
                 })
-                .IncludeMembers(source => source!.Customer);
+                .IncludeMembers(source => source.Customer);
 
             builder.Map<Source, AssertedDestination>()
                 .IncludeMembers(source => source.Customer!);
@@ -278,7 +278,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 .IncludeMembers(source => source.Revision);
 
             builder.Map<NullableValueSource?, NullableValueDestination>()
-                .IncludeMembers(source => source!.Value.Details);
+                .IncludeMembers(source => source.Details);
 
             builder.Map<OptionalDetailsSource,
                     OptionalDetailsDestination>()

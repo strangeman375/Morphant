@@ -3,43 +3,13 @@ namespace Morphant.Generator.UnitTests.IncludeMembersTests;
 [TestFixture]
 internal sealed class NullabilityUsageTests
 {
-    [TestCase(false)]
-    [TestCase(true)]
-    public void An_unannotated_registration_gives_a_non_null_source_in_either_fluent_order(
-        bool includeFirst)
+    [TestCase(false, false)]
+    [TestCase(false, true)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public void The_reference_source_is_non_null_in_either_fluent_order(bool nullable, bool includeFirst)
     {
-        var result = IncludeMembersGeneratorTest.Run(
-            Source("Source, Dto", includeFirst, "s.Item"));
-
-        Assert.That(result.Diagnostics, Is.Empty);
-        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
-    }
-
-    [Test]
-    public void Directly_after_an_annotated_registration_the_source_is_annotated()
-    {
-        var result = IncludeMembersGeneratorTest.Run(
-            Source("Source?, Dto?", includeFirst: true, "s.Item"));
-        var warning = result.CompilerWarningsAndErrors.Single();
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.Diagnostics, Is.Empty);
-            Assert.That(warning.Id, Is.EqualTo("CS8602"));
-            Assert.That(
-                IncludeMembersGeneratorTest.SourceText(warning.Location),
-                Is.EqualTo("s"));
-        });
-    }
-
-    [TestCase(false)]
-    [TestCase(true)]
-    public void A_null_forgiving_source_selects_members_of_an_annotated_registration(
-        bool includeFirst)
-    {
-        var result = IncludeMembersGeneratorTest.Run(
-            Source("Source?, Dto?", includeFirst, "s!.Item"));
-
+        var result = IncludeMembersGeneratorTest.Run(Source(nullable, includeFirst, "s.Item"));
         Assert.That(result.Diagnostics, Is.Empty);
         Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
     }
@@ -47,21 +17,14 @@ internal sealed class NullabilityUsageTests
     [Test]
     public void A_nullable_member_inside_the_selector_still_warns_on_dereference()
     {
-        var result = IncludeMembersGeneratorTest.Run(
-            Source("Source, Dto", includeFirst: true, "s.Optional.Item"));
+        var result = IncludeMembersGeneratorTest.Run(Source(true, true, "s.Optional.Item"));
+        Assert.That(result.Diagnostics, Is.Empty);
         var warning = result.CompilerWarningsAndErrors.Single();
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.Diagnostics, Is.Empty);
-            Assert.That(warning.Id, Is.EqualTo("CS8602"));
-            Assert.That(
-                IncludeMembersGeneratorTest.SourceText(warning.Location),
-                Is.EqualTo("s.Optional"));
-        });
+        Assert.That(warning.Id, Is.EqualTo("CS8602"));
+        Assert.That(IncludeMembersGeneratorTest.SourceText(warning.Location), Is.EqualTo("s.Optional"));
     }
 
-    private static string Source(string pair, bool includeFirst, string path)
+    private static string Source(bool nullable, bool includeFirst, string path)
     {
         var include = $".IncludeMembers(s => {path})";
         const string members = ".Members(s => new() { Title = s.Title })";
@@ -79,7 +42,7 @@ internal class Dto { public int Id { get; set; } public string Title { get; set;
 [MorphantMapper] internal partial class Mapper : TypeMapper
 {
     protected override void Configure(MapperBuilder b) =>
-        b.Map<{{pair}}>()
+        b.Map<{{(nullable ? "Source?, Dto?" : "Source, Dto")}}>()
             {{(includeFirst ? include + members : members + include)}};
 }
 """;

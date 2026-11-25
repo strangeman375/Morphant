@@ -32,7 +32,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder b) => b.Map<Source?,Destination>()
             .Flattening(Flattening.Auto).Members(s => new() { Marker = s.Marker })
-            .IncludeMembers(s => s!.Envelope.Included);
+            .IncludeMembers(s => s.Envelope.Included);
     }
     internal class Source { public int Marker { get; } public Envelope Envelope { get; } = new(); }
     internal class Envelope { public Included Included { get; } = new(); }
