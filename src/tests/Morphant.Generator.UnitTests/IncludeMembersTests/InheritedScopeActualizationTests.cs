@@ -65,7 +65,7 @@ namespace TestCase
             b.Map<Source, Destination>().Flattening(Flattening.Auto).IncludeBase<Middle, MiddleDto>();
         }
     }
-    public static class Scenario
+    internal static class Scenario
     {
         public static void Verify()
         {
