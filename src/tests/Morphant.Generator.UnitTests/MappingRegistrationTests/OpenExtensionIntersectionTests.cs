@@ -9,6 +9,56 @@ namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 [TestFixture]
 internal sealed class OpenExtensionIntersectionTests
 {
+    [TestCase("Box<U, int>")]
+    [TestCase("Box<string, U>")]
+    public void Adding_a_copy_preserves_both_original_diagnostic_locations(string repeatedPair)
+    {
+        const string original = """
+#nullable enable
+using Morphant;
+internal sealed class Box<X,Y> { }
+internal sealed class Dto { }
+[MorphantMapper] internal partial class First<T> : TypeMapper
+{
+    protected override void Configure(MapperBuilder b)
+    {
+        b.Map<Box<T, int>, Dto>();
+        b.Map<Box<string, T>, Dto>();
+    }
+}
+""";
+        var copy = $$"""
+#nullable enable
+using Morphant;
+[MorphantMapper] internal partial class Copy<U> : TypeMapper
+{
+    protected override void Configure(MapperBuilder b) => b.Map<{{repeatedPair}}, Dto>();
+}
+""";
+        var firstFile = new RegistrationSourceFile("A.cs", original);
+        var initial = MappingRegistrationGeneratorTest.Run([firstFile], LanguageVersion.CSharp9);
+        var fresh = MappingRegistrationGeneratorTest.Run(
+            [firstFile, new RegistrationSourceFile("Z.cs", copy)], LanguageVersion.CSharp9);
+        foreach (var result in new[] { initial, fresh })
+        {
+            var diagnostic = result.Diagnostics.Single();
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0064"));
+            Assert.That((diagnostic.Location.GetLineSpan().Path, diagnostic.Location.SourceSpan.Start),
+                Is.EqualTo(("A.cs", original.IndexOf("Map<Box<string, T>", StringComparison.Ordinal))));
+            var related = diagnostic.AdditionalLocations.Single();
+            Assert.That((related.GetLineSpan().Path, related.SourceSpan.Start),
+                Is.EqualTo(("A.cs", original.IndexOf("Map<Box<T, int>", StringComparison.Ordinal))));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        }
+
+        var driver = initial.Driver;
+        var before = initial.OutputCompilation.RemoveSyntaxTrees(driver.GetRunResult().GeneratedTrees);
+        var added = CSharpSyntaxTree.ParseText(SourceText.From(copy, Encoding.UTF8),
+            (CSharpParseOptions)before.SyntaxTrees.First().Options, "Z.cs");
+        CheckIncrementalRun(ref driver, before.AddSyntaxTrees(added), fresh);
+        CheckIncrementalRun(ref driver, before, initial);
+    }
+
     [Test]
     public void Reports_the_ambiguous_pair_at_the_later_registration()
     {

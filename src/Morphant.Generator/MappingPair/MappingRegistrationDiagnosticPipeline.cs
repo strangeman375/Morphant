@@ -289,20 +289,14 @@ internal static class MappingRegistrationDiagnosticPipeline
                 var leftGroup = groups[earlier];
                 var rightGroup = groups[later];
                 var left = leftGroup.First();
-                var right = rightGroup.FirstOrDefault(item => item.DeclaringMapperIdentity != left.DeclaringMapperIdentity);
-                if (right.DeclaringMapperIdentity is null)
-                {
-                    right = rightGroup.First();
-                    left = leftGroup.FirstOrDefault(item => item.DeclaringMapperIdentity != right.DeclaringMapperIdentity);
-                    if (left.DeclaringMapperIdentity is null)
-                    {
-                        left = leftGroup.First();
-                        var first = GetMapIdentifierLocation(left.Pair.Registration.Syntax);
-                        var second = GetMapIdentifierLocation(right.Pair.Registration.Syntax);
-                        if (interfaceConflicts.Contains((first, second)) || interfaceConflicts.Contains((second, first)))
-                            continue;
-                    }
-                }
+                var right = rightGroup.First();
+                var first = GetMapIdentifierLocation(left.Pair.Registration.Syntax);
+                var second = GetMapIdentifierLocation(right.Pair.Registration.Syntax);
+                // MORPH0014 covers a conflict confined to one declaring mapper.
+                // A copy elsewhere can also require MORPH0064, at the original pair.
+                if ((interfaceConflicts.Contains((first, second)) || interfaceConflicts.Contains((second, first))) &&
+                    leftGroup.Concat(rightGroup).All(candidate => candidate.DeclaringMapperIdentity == left.DeclaringMapperIdentity))
+                    continue;
 
                 if (!MappingTypeIdentityPolicy.ExtensionsCanBeAmbiguous(left.Pair, right.Pair, compilation, cancellationToken))
                     continue;
@@ -316,8 +310,7 @@ internal static class MappingRegistrationDiagnosticPipeline
                 diagnostics.Add(new DiagnosticCandidate(
                     64, right.TargetMapperIdentity, rightGroup.Key, 0, right.Pair.Registration.Syntax.SpanStart, leftGroup.Key,
                     Diagnostic.Create(MappingRegistrationDiagnosticDescriptors.AmbiguousOpenExtensions,
-                        GetMapIdentifierLocation(right.Pair.Registration.Syntax),
-                        [GetMapIdentifierLocation(left.Pair.Registration.Syntax)], properties: null,
+                        second, [first], properties: null,
                         MapperContractDisplay.Create(left.Pair.SourceType, left.Pair.DestinationType),
                         MapperContractDisplay.Create(right.Pair.SourceType, right.Pair.DestinationType))));
             }
