@@ -25,7 +25,7 @@ builder.Map<OrderDto, Order>()
     .Convert((source, previous) =>
     {
         if (source is null)
-            return null!;
+            return null;
 
         var order = previous.TryGetValue(out var existing)
             ? existing

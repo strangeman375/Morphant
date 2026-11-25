@@ -78,7 +78,9 @@ generated-source expectations. Follow the general principles in
   typed failure stubs. For distinct open pairs, report an intersection at the
   later registration by source path and position when C# cannot select a more
   specific receiver for a constructible pair, and invalidate all affected
-  mappings. Each extension has its own type parameters, even when
+  mappings. Anchor the diagnostic to the first declaration of each conflicting
+  extension, even when another mapper repeats the registration.
+  Each extension has its own type parameters, even when
   both registrations use one mapper parameter.
   Report collisions with extensions made visible by a friend assembly at the
   registration, including imports through an extern alias. Omit the local
@@ -96,7 +98,9 @@ generated-source expectations. Follow the general principles in
   `dynamic`, and the destination has member or structured construction
   surfaces. Track its selected types for incrementality from syntax, including
   calls after generated callbacks that are not yet bound in the input
-  compilation.
+  compilation. Follow selectors inherited through `IncludeBase` using the
+  mapper's actual type arguments and the consuming destination's member and
+  constructor names.
 - Preserve record member-plan types and `with` expressions. A destination
   member whose name conflicts with the generated record, its type parameters
   or its required record members uses a readable configuration alias: append
