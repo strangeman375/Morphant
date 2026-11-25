@@ -44,8 +44,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
-- Update a mapping after edits to the types selected by `IncludeMembers` when
-  it follows `Members` or another configuration method.
+- Update a mapping after edits to the types selected by `IncludeMembers`,
+  including selectors inherited through `IncludeBase` or chained after `Members`.
 
 ### Migrating from 0.5
 

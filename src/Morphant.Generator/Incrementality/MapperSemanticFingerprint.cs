@@ -38,6 +38,7 @@ internal static class MapperSemanticFingerprintBuilder
     {
         var signature = new StringBuilder();
         var dependencyTypes = new DependencyTypeSet();
+        var registrations = new List<IInvocationOperation>();
         var syntaxTrees = new SyntaxTreeOrdering(
             compilation.SyntaxTrees);
         dependencyTypes.Add(mapperType);
@@ -77,12 +78,14 @@ internal static class MapperSemanticFingerprintBuilder
                     signature,
                     declaration,
                     compilation,
-                    mapperType,
                     dependencyTypes,
+                    registrations,
                     cancellationToken);
             }
         }
 
+        FlatteningSemanticDependencyBuilder.Add(
+            registrations, compilation, mapperType, dependencyTypes, cancellationToken);
         var lookupTypes = new DependencyTypeSet();
         ExtensionLookupDependencies.Add(
             compilation,
@@ -159,8 +162,8 @@ internal static class MapperSemanticFingerprintBuilder
         StringBuilder result,
         TypeDeclarationSyntax declaration,
         CSharpCompilation compilation,
-        INamedTypeSymbol mapperType,
         DependencyTypeSet dependencyTypes,
+        List<IInvocationOperation> registrations,
         CancellationToken cancellationToken)
     {
         var semanticModel = compilation.GetSemanticModel(
@@ -218,8 +221,8 @@ internal static class MapperSemanticFingerprintBuilder
                     result,
                     operation,
                     compilation,
-                    mapperType,
                     dependencyTypes,
+                    registrations,
                     cancellationToken);
             }
         }
@@ -229,8 +232,8 @@ internal static class MapperSemanticFingerprintBuilder
         StringBuilder result,
         IOperation root,
         CSharpCompilation compilation,
-        INamedTypeSymbol mapperType,
         DependencyTypeSet dependencyTypes,
+        List<IInvocationOperation> registrations,
         CancellationToken cancellationToken)
     {
         foreach (var operation in root.DescendantsAndSelf())
@@ -259,6 +262,8 @@ internal static class MapperSemanticFingerprintBuilder
                 if (symbol is IMethodSymbol { Name: "Map", TypeArguments.Length: 2 } map &&
                     SymbolNameHelper.GetFullMetadataName(map.ContainingType.OriginalDefinition) == MetadataNames.MapperBuilder)
                 {
+                    if (operation is IInvocationOperation invocation)
+                        registrations.Add(invocation);
                     var friends = MappingPair.FriendMappingExtensions.Find(
                         compilation, map.TypeArguments[0], map.TypeArguments[1], operation.Syntax, cancellationToken);
                     result.Append('|').Append(friends.ExactAssemblies);
@@ -287,13 +292,6 @@ internal static class MapperSemanticFingerprintBuilder
 
             result.AppendLine();
         }
-
-        FlatteningSemanticDependencyBuilder.Add(
-            root,
-            compilation,
-            mapperType,
-            dependencyTypes,
-            cancellationToken);
     }
 
     private static void AppendPairConstraints(StringBuilder result, ITypeSymbol source, ITypeSymbol destination,

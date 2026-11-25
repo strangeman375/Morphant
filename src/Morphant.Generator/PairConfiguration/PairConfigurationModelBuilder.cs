@@ -1683,7 +1683,7 @@ internal static class PairConfigurationModelBuilder
                 conversion.IsNullable);
     }
 
-    private static bool TryBuildIncludeBaseConfiguration(
+    internal static bool TryBuildIncludeBaseConfiguration(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
         IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
@@ -2356,20 +2356,5 @@ internal static class PairConfigurationModelBuilder
         public static IncludeBaseLookupResult Found(
             PairConfigurationModel? configuration) =>
             new(IncludeBaseLookupStatus.Found, configuration);
-    }
-
-    private readonly record struct MappingPairKey(
-        string Source,
-        string Destination)
-    {
-        public static MappingPairKey Create(MappingPairModel pair) =>
-            Create(pair.SourceType, pair.DestinationType);
-
-        public static MappingPairKey Create(
-            ITypeSymbol source,
-            ITypeSymbol destination) =>
-            new(
-                MappingTypeIdentityPolicy.Create(source).Key,
-                MappingTypeIdentityPolicy.Create(destination).Key);
     }
 }
