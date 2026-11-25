@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.TypeMapperGeneration;
 
@@ -82,8 +83,11 @@ internal static class FlatteningSemanticDependencyBuilder
             // The extension is not in the input compilation yet. Bind its
             // selector in the original scope to observe the selected field and
             // property types, including paths after other generated callbacks.
+            // The generated selector receives the declarative source.
+            var selectorSource = MappingTypeNormalization.NormalizeDeclarativeSource(
+                source, compilation, normalizeDynamic: false);
             var type = SyntaxFactory.ParseTypeName("global::System.Func<" +
-                source.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable) + ", object?>");
+                selectorSource.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable) + ", object?>");
             var statement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(type)
                 .AddVariables(SyntaxFactory.VariableDeclarator("__selector").WithInitializer(SyntaxFactory.EqualsValueClause(selector))));
             var model = compilation.GetSemanticModel(call.SyntaxTree);

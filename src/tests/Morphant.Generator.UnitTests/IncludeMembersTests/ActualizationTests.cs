@@ -49,6 +49,42 @@ namespace TestCase
     }
 
     [Test]
+    public void A_nullable_struct_selector_tracks_the_selected_flattening_contract()
+    {
+        var mapper = SourceFile("Mapper.cs", """
+#nullable enable
+using Morphant;
+namespace TestCase
+{
+    [MorphantMapper] internal partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder b) => b.Map<Source?,Destination>()
+            .Flattening(Flattening.Auto).IncludeMembers(s => s.Envelope.Included);
+    }
+    internal struct Source { public Envelope Envelope { get; set; } }
+    internal class Envelope { public Included Included { get; } = new(); }
+    internal class Included { public Payload Payload { get; } = new(); }
+    internal class Destination { public int PayloadCode { get; set; } }
+}
+""");
+        GeneratorIncrementalityStep Edit(string member, params ExpectedIncrementalStage[] stages) => Step(member,
+            [mapper, SourceFile("Payload.cs", $"namespace TestCase {{ internal class Payload {{ public int {member} {{ get; }} }} }}")],
+            NullableStructGeneratedFiles, stages);
+        var modified = Stage("BuildTypeMapperRequests", Expected(Mapper, IncrementalStepRunReason.Modified));
+        RunAndAssert(LanguageVersion.CSharp9, static () => new MorphantGenerator(),
+            Edit("Code"), Edit("Other", modified), Edit("Code", modified));
+    }
+
+    private static readonly string[] NullableStructGeneratedFiles =
+    [
+        "Morphant.Generated.Construction.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+        "Morphant.Generated.MappingExtension.NullableToDestination__4e5f62554abb26dea5b9593e04361c3a.g.cs",
+        "Morphant.Generated.Member.Destination__adf0e0d9f318ac2567116b6b00dfb794.g.cs",
+        "Morphant.Generated.MemberExtension.NullableToDestination__4e5f62554abb26dea5b9593e04361c3a.g.cs",
+        Mapper
+    ];
+
+    [Test]
     public void Actualizes_added_changed_and_removed_scopes()
     {
         RunAndAssert(
