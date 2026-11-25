@@ -116,6 +116,8 @@ generated-source expectations. Follow the general principles in
 
 ## Diagnostics and failure isolation
 
+- Runtime reflection is unsupported. Diagnose polymorphic relationships that
+  cannot be established at generation time.
 - Diagnostics are part of the public contract. When C# can declare an
   `ITypeMapper<,>`, invalid or unsupported behavior must retain a complete
   mapper and use typed Morphant exception stubs. Do not generate construction,
@@ -193,8 +195,8 @@ generated-source expectations. Follow the general principles in
   Introduce supporting locals or functions only as needed to preserve the
   initializer's position, conditional execution, evaluation order and single
   evaluations.
-- First-class collection mapping remains deferred. Do not add complex callback
-  transformations solely to expand collection support. When preserving caller
+- Do not add complex callback transformations solely to expand collection
+  support. When preserving caller
   information requires explicit `Add` calls, an init-only assignment after a
   member collection initializer and an awaited member initializer that would
   require moving `await` across a function boundary may be rejected with

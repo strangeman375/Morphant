@@ -1,7 +1,7 @@
 # Testing guidelines
 
 These rules apply when changing tests, test infrastructure, generated-output
-expectations or verification policy. They are intentionally kept outside
+expectations or verification policy, and when verifying a change. They are intentionally kept outside
 `AGENTS.md` so unrelated work does not load detailed test guidance.
 
 ## Test design
@@ -104,10 +104,8 @@ expectations or verification policy. They are intentionally kept outside
 - The integration host may call an already compiled scenario method. It must
   not create a `CSharpCompilation`, run a `GeneratorDriver`, emit or load an
   assembly, or invoke the scenario through reflection.
-- Consumer assemblies
-  `Morphant.Generator.IntegrationTests.CSharp9`,
-  `Morphant.Generator.IntegrationTests.CSharp11`, and
-  `Morphant.Generator.IntegrationTests.Latest` use analyzer-style project
+- Consumer assemblies `Morphant.Generator.IntegrationTests.<Variant>`, one per
+  language version or set of assembly-level settings, use analyzer-style project
   references and must not reference one another. Only the aggregating
   integration host references all of them.
 - Each scenario owns its DTOs, mappers and domain fixtures and must not
@@ -130,6 +128,8 @@ expectations or verification policy. They are intentionally kept outside
 - Run focused tests for the affected category while iterating.
 - Select verification by the effect of the change. File or category counts
   alone do not require the full suite.
+- Reuse completed checks while the tested content is unchanged; after a
+  change, rerun only the affected validation.
 
 | Change | Required verification |
 | --- | --- |
@@ -163,6 +163,5 @@ expectations or verification policy. They are intentionally kept outside
 - Use the script with `--filter` for focused verification. When shared
   output directories were used, restore baseline dependencies and rebuild
   affected outputs before resuming ordinary `--no-restore` / `--no-build` runs,
-  including after a failed compatibility check. Follow any workspace-specific
-  forced-restore procedure; a metadata-only restore cache cannot detect a
-  command-line Roslyn-version override.
+  including after a failed compatibility check. A metadata-only restore cache
+  cannot detect a command-line Roslyn-version override.
