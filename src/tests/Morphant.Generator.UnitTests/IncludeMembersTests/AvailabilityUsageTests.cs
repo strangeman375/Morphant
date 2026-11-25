@@ -36,7 +36,7 @@ internal sealed class AvailabilityUsageTests
     public void Selects_from_the_value_of_a_nullable_struct_source()
     {
         var result = IncludeMembersGeneratorTest.Run(
-            Source("b.Map<Wrapper?, Dto>().IncludeMembers(s => s.Inner)"));
+            Source("b.Map<Wrapper?, Dto>().IncludeMembers(s => s.Value)"));
 
         Assert.That(result.Diagnostics, Is.Empty);
         Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
@@ -47,7 +47,7 @@ internal sealed class AvailabilityUsageTests
         return $$"""
 #nullable enable
 using Morphant;
-internal struct Wrapper { public Inner Inner { get; set; } }
+internal struct Wrapper { public Inner Value { get; set; } }
 internal sealed class Order { public Inner Inner { get; set; } = new(); }
 internal sealed class Inner { public string Name { get; set; } = ""; }
 internal sealed class Dto { public string Name { get; set; } = ""; }

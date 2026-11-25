@@ -168,6 +168,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
     public struct NullableValueSource
     {
         public ValueDetails Details { get; init; }
+        public NullableValueSource Value => new()
+        {
+            Details = new ValueDetails { Text = "selected" }
+        };
     }
 
     public sealed class ValueDetails
@@ -182,7 +186,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
             Text = text;
         }
 
-        public string Text { get; }
+        public string Text { get; set; }
     }
 
     public struct OptionalDetails
@@ -278,7 +282,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 .IncludeMembers(source => source.Revision);
 
             builder.Map<NullableValueSource?, NullableValueDestination>()
-                .IncludeMembers(source => source.Details);
+                .IncludeMembers(source => source.Value.Details);
 
             builder.Map<OptionalDetailsSource,
                     OptionalDetailsDestination>()
@@ -587,18 +591,18 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
             var nullableValueMapper =
                 (ITypeMapper<NullableValueSource?,
                     NullableValueDestination>)mapper;
-            var nullableValue = nullableValueMapper.Create(
-                new NullableValueSource
-                {
-                    Details = new ValueDetails { Text = "value" }
-                },
-                default(MappingContext));
+            var nullableSource = new NullableValueSource
+            {
+                Details = new ValueDetails { Text = "root" }
+            };
+            var nullableCreate = nullableValueMapper.Create(nullableSource, default);
+            var nullableUpdate = nullableValueMapper.Update(
+                nullableSource, new NullableValueDestination("previous"), default);
 
-            if (nullableValue.Text != "value")
+            if (nullableCreate.Text != "selected" || nullableUpdate.Text != "selected")
             {
                 throw new InvalidOperationException(
-                    "A nullable value source did not use its normalized " +
-                    "included path.");
+                    "Create and Update must follow the struct's own Value property.");
             }
 
             var optionalDetailsMapper =

@@ -280,32 +280,15 @@ internal static class IncludedSourceMemberSet
                 configuration.SourceType,
                 compilation)
             .WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-        var parsedPath = path;
-
-        if (MappingTypeNormalization.IsNullableValue(
-                configuration.SourceType) &&
-            parsedPath.Length > 0 &&
-            StringComparer.Ordinal.Equals(parsedPath[0].Name, "Value"))
-        {
-            parsedPath = parsedPath.RemoveAt(0);
-        }
-
-        if (parsedPath.IsEmpty)
-        {
-            scope = default;
-            reason = "the selector must select a nested source object";
-            return false;
-        }
-
         var resolvedPath =
             ImmutableArray.CreateBuilder<ConventionSourcePathSegment>(
-                parsedPath.Length);
+                path.Length);
         var receiverType = rootType;
         var semanticMapper = configuration.Expression.SemanticModel.Compilation.GetTypeByMetadataName(
             SymbolNameHelper.GetFullMetadataName(mapperType)) ?? mapperType;
         var substitutions = MapperTypeSubstitution.BuildForHierarchy(semanticMapper);
 
-        foreach (var segment in parsedPath)
+        foreach (var segment in path)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var selectedMember = ReceiverMemberBinding.SubstituteMember(
