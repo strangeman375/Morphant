@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.ConstructionSurface.ConstructionPlan;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.ConstructionSurface.PairConfiguration;
 
@@ -142,7 +143,7 @@ internal static class PairTypeParameterModelBuilder
             return;
 
         var substitutions = MapperTypeSubstitution.Build(owner.OriginalDefinition, owner);
-        var expanding = new HashSet<(INamedTypeSymbol, INamedTypeSymbol)>();
+        var expanding = new Stack<InterfaceProjection>();
         var requirements = new List<ReferenceRequirement>();
         foreach (var bound in formal.ConstraintTypes)
             AddConversion(argument, MapperTypeSubstitution.Substitute(bound, substitutions, compilation), requirements);
@@ -188,9 +189,10 @@ internal static class PairTypeParameterModelBuilder
                 return;
             }
 
-            var edge = (source.OriginalDefinition, target.OriginalDefinition);
-            if (!expanding.Add(edge))
+            var edge = new InterfaceProjection(source, target);
+            if (!edge.CanFollow(expanding))
                 return;
+            expanding.Push(edge);
 
             // A mapper's own constraints can make extra projections applicable.
             // Prefer the proof whose requirements are implied by the others.
@@ -214,7 +216,7 @@ internal static class PairTypeParameterModelBuilder
                 result.AddRange(best);
             else if (first is not null)
                 AddVariantArguments(first, target, result);
-            expanding.Remove(edge);
+            expanding.Pop();
         }
 
         bool Implies(ReferenceRequirement given, ReferenceRequirement needed)

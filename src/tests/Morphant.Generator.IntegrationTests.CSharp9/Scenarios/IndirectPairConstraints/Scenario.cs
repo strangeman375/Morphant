@@ -11,6 +11,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IndirectPairCons
     internal sealed class Both<T> : IOut<List<T>>, IOut<string[]> { }
     internal sealed class Request<T> where T : IOut<IEnumerable<object>> { }
 
+    internal interface ILeaf<out T> { }
+    internal sealed class Loop<T> : IOut<Loop<T>>, ILeaf<T> { }
+    internal sealed class NestedRequest<T> where T : IOut<IOut<ILeaf<object>>> { }
+
+    [MorphantMapper]
+    internal partial class NestedMapper<T> : TypeMapper where T : class
+    {
+        protected override void Configure(MapperBuilder b) => b.Map<NestedRequest<Loop<T>>, int>().Convert(_ => 7);
+    }
+
     [MorphantMapper]
     internal partial class Constrained<T> : TypeMapper where T : class
     {
@@ -57,6 +67,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IndirectPairCons
             if (constrained.Create(new Request<Both<string>>()) != 3 ||
                 unconstrained.Create(new Request<Both<int>>()) != 4)
                 throw new InvalidOperationException("The shared extension rejected a valid variant conversion.");
+
+            ITypeMapper<NestedRequest<Loop<string>>, int> nested = new NestedMapper<string>();
+            if (nested.Create(new NestedRequest<Loop<string>>()) != 7)
+                throw new InvalidOperationException("The nested covariant projection lost the configured callback.");
         }
     }
 }

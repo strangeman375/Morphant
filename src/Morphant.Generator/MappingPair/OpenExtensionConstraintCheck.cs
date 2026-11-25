@@ -110,7 +110,7 @@ internal static class OpenExtensionConstraintCheck
     }
 
     private static IEnumerable<(ITypeSymbol From, ITypeSymbol To)> ConversionEqualities(
-        ITypeSymbol from, ITypeSymbol to, ImmutableStack<(INamedTypeSymbol, INamedTypeSymbol)>? expansions = null)
+        ITypeSymbol from, ITypeSymbol to, ImmutableStack<InterfaceProjection>? expansions = null)
     {
         if (SymbolEqualityComparer.Default.Equals(from, to))
             yield break;
@@ -141,11 +141,9 @@ internal static class OpenExtensionConstraintCheck
                     projections = new[] { source };
                 else
                 {
-                    // Recursive variant interfaces can revisit a definition
-                    // with ever larger arguments. Expand each such edge once.
-                    expansions ??= ImmutableStack<(INamedTypeSymbol, INamedTypeSymbol)>.Empty;
-                    var edge = (source.OriginalDefinition, target.OriginalDefinition);
-                    if (expansions.Contains(edge))
+                    expansions ??= ImmutableStack<InterfaceProjection>.Empty;
+                    var edge = new InterfaceProjection(source, target);
+                    if (!edge.CanFollow(expansions))
                         yield break;
                     expansions = expansions.Push(edge);
                 }

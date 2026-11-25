@@ -230,6 +230,35 @@ internal sealed class Dto { }
         Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
     }
 
+    [TestCase("T", true)]
+    [TestCase("T[]", false)]
+    public void A_repeated_projection_can_reach_a_concrete_type_argument(string element, bool intersects)
+    {
+        var source = $$"""
+#nullable enable
+using Morphant;
+internal interface IOut<out T> { }
+internal interface IInv<T> { }
+internal sealed class Loop<T> : IOut<Loop<T>>, IInv<{{element}}> { }
+internal sealed class Triple<A, B, C> { }
+internal sealed class Rel<A, B> where A : B { }
+internal sealed class Dto { }
+[MorphantMapper] internal partial class First<A, B> : TypeMapper where A : B
+{
+    protected override void Configure(MapperBuilder b) => b.Map<Triple<A, B, Rel<A, B>>, Dto>();
+}
+[MorphantMapper] internal partial class Second<T, Z> : TypeMapper
+{
+    protected override void Configure(MapperBuilder b) =>
+        b.Map<Triple<Loop<T>, IOut<IOut<IInv<int>>>, Z>, Dto>();
+}
+""";
+        var result = MappingRegistrationGeneratorTest.Run(source, LanguageVersion.CSharp9);
+        Assert.That(result.Diagnostics.Select(d => d.Id),
+            Is.EqualTo(intersects ? new[] { "MORPH0064" } : Array.Empty<string>()));
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
     [TestCase("struct", false)]
     [TestCase("System.IDisposable", true)]
     public void A_remaining_free_parameter_must_satisfy_both_definitions(string requirement, bool conflicts)

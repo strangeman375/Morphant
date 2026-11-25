@@ -6,6 +6,28 @@ namespace Morphant.Generator.UnitTests.ConstructionSurfaceTests;
 [TestFixture]
 internal sealed class IndirectPairConstraintUsageTests
 {
+    [TestCase("IOut<IOut<ILeaf<object>>>")]
+    [TestCase("IOut<IOut<IOut<ILeaf<object>>>>")]
+    public void Nested_covariant_projections_preserve_the_required_reference_constraint(string target)
+    {
+        var source = $$"""
+#nullable enable
+using Morphant;
+internal interface IOut<out T> { }
+internal interface ILeaf<out T> { }
+internal sealed class Loop<T> : IOut<Loop<T>>, ILeaf<T> { }
+internal sealed class Request<T, TView> where T : TView { }
+[MorphantMapper] internal partial class Mapper<T> : TypeMapper where T : class
+{
+    protected override void Configure(MapperBuilder b) =>
+        b.Map<Request<Loop<T>, {{target}}>, int>().Convert(_ => 7);
+}
+""";
+        var result = MappingRegistrationGeneratorTest.Run(source, LanguageVersion.CSharp9);
+        Assert.That(result.Diagnostics, Is.Empty);
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
     [TestCase(true)]
     [TestCase(false)]
     public void An_unconditional_variant_conversion_is_available_to_both_mappers(bool constrainedFirst)
