@@ -130,12 +130,15 @@ expectations or verification policy, and when verifying a change. They are inten
   alone do not require the full suite.
 - Reuse completed checks while the tested content is unchanged; after a
   change, rerun only the affected validation.
+- Run `git diff --check` before publishing changes to instructions or
+  documentation, including executable examples, XML documentation and release
+  or package text.
 
 | Change | Required verification |
 | --- | --- |
-| Instructions or prose without executable examples | Review the complete changed text, references and anchors; run `git diff --check`. |
-| Executable documentation examples | Run the affected documentation-example and link checks. |
-| XML documentation or mechanical snapshot updates | Review the full generated sources and run affected documentation/compiler unit tests. Runtime checks are needed when observable behavior changes. |
+| Instructions or prose without executable examples | Review the complete changed text, references and anchors. |
+| Executable documentation examples | Run the affected documentation-example and link checks. Review the full generated-source snapshots for the affected examples. |
+| XML documentation or mechanical snapshot updates | Review the affected full generated-source snapshots and run the relevant documentation/compiler unit tests. For generated XML documentation, also run the affected documentation-example tests. Run runtime checks when observable behavior changes. |
 | Mapping, generation or diagnostic behavior | Run affected unit tests and applicable MSBuild runtime scenarios. Run the full Release build and both test projects for broad behavioral changes or shared build/test-infrastructure changes. |
 | Packaging or MSBuild integration | Run affected ordinary consumer and package tests, including the minimum-SDK checks when that compatibility is affected. |
 
