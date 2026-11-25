@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
+using Morphant.Generator.TypeMapperConfigure;
 using Morphant.Generator.TypeMapperGeneration;
 
 namespace Morphant.Generator.Incrementality;
@@ -18,6 +19,7 @@ internal static class FlatteningSemanticDependencyBuilder
         IReadOnlyList<IInvocationOperation> registrations,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        KnownSymbols symbols,
         DependencyTypeSet dependencies,
         CancellationToken cancellationToken)
     {
@@ -32,13 +34,14 @@ internal static class FlatteningSemanticDependencyBuilder
             cancellationToken.ThrowIfCancellationRequested();
             var syntax = registration.Syntax;
             var model = compilation.GetSemanticModel(syntax.SyntaxTree);
+            if (model.GetEnclosingSymbol(syntax.SpanStart, cancellationToken) is not IMethodSymbol method ||
+                !TypeMapperConfigurePipeline.IsTypeMapperConfigureOverride(method, symbols))
+                continue;
+
             var declaredSource = registration.TargetMethod.TypeArguments[0];
             var source = MapperTypeSubstitution.Substitute(declaredSource, substitutions, compilation);
             var destination = MapperTypeSubstitution.Substitute(registration.TargetMethod.TypeArguments[1], substitutions, compilation);
             walker.AddScope(source, destination, cancellationToken);
-
-            if (model.GetEnclosingSymbol(syntax.SpanStart, cancellationToken)?.ContainingType is not { } declaringMapper)
-                continue;
 
             var scopes = ImmutableArray.CreateBuilder<ITypeSymbol>();
             MappingPairKey? includedBase = null;
@@ -60,6 +63,7 @@ internal static class FlatteningSemanticDependencyBuilder
                 }
             }
 
+            var declaringMapper = method.ContainingType;
             if (!levels.TryGetValue(declaringMapper, out var pairs))
                 levels.Add(declaringMapper, pairs = new Dictionary<MappingPairKey, Registration>());
             var key = MappingPairKey.Create(source, destination);

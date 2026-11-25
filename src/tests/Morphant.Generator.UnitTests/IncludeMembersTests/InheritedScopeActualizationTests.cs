@@ -64,6 +64,8 @@ namespace TestCase
             b.Map<Middle, MiddleDto>().IncludeBase<BaseSource<Scope>, BaseDto>();
             b.Map<Source, Destination>().Flattening(Flattening.Auto).IncludeBase<Middle, MiddleDto>();
         }
+
+        private void Configure(MapperBuilder b, int unused) => b.Map<Middle, MiddleDto>();
     }
     internal static class Scenario
     {

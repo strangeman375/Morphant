@@ -183,7 +183,7 @@ internal static class TypeMapperConfigurePipeline
         return null;
     }
 
-    private static bool IsTypeMapperConfigureOverride(
+    internal static bool IsTypeMapperConfigureOverride(
         IMethodSymbol method,
         KnownSymbols knownSymbols)
     {

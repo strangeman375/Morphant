@@ -84,8 +84,9 @@ internal static class MapperSemanticFingerprintBuilder
             }
         }
 
-        FlatteningSemanticDependencyBuilder.Add(
-            registrations, compilation, mapperType, dependencyTypes, cancellationToken);
+        if (compatibility.KnownSymbols is { } symbols)
+            FlatteningSemanticDependencyBuilder.Add(
+                registrations, compilation, mapperType, symbols, dependencyTypes, cancellationToken);
         var lookupTypes = new DependencyTypeSet();
         ExtensionLookupDependencies.Add(
             compilation,
