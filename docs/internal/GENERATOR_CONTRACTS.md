@@ -66,23 +66,28 @@ generated-source expectations. Follow the general principles in
   compiler limits are unsupported. Keep the agreed generated type names; the
   compiler's explicit `CS7013` error at assembly emission is sufficient. Do
   not add automatic type-name shortening for this case.
+- Keep generated surface and binary size small. Do not add generated members,
+  attributes or compatibility branches without a user-facing need.
+
+## DSL extensions and registrations
+
 - DSL extensions stay in `Morphant`; partial mapper declarations stay in the
   user's namespace.
 - All mappers in an assembly share the DSL extensions for a CLR pair. Tuple
-  element names, nested nullable annotations and `dynamic` must agree. Generate
-  open extensions with the type parameters and constraints needed by the pair.
-  Include indirect constraints from variant conversions and unmanaged storage.
-  Omit constraints imposed only by an individual mapper.
-  For conflicting presentations, the first registration by source path and
+  element names, nested nullable annotations and `dynamic` must agree.
+- Generate open extensions with the type parameters and constraints needed by
+  the pair. Include indirect constraints from variant conversions and unmanaged
+  storage. Omit constraints imposed only by an individual mapper.
+- For conflicting presentations, the first registration by source path and
   position owns the shared extension. Later conflicting registrations retain
-  typed failure stubs. For distinct open pairs, report an intersection at the
-  later registration by source path and position when C# cannot select a more
-  specific receiver for a constructible pair, and invalidate all affected
-  mappings. Anchor the diagnostic to the first declaration of each conflicting
-  extension, even when another mapper repeats the registration.
-  Each extension has its own type parameters, even when
-  both registrations use one mapper parameter.
-  Report collisions with extensions made visible by a friend assembly at the
+  typed failure stubs.
+- For distinct open pairs, report an intersection at the later registration by
+  source path and position when C# cannot select a more specific receiver for
+  a constructible pair, and invalidate all affected mappings. Anchor the
+  diagnostic to the first declaration of each conflicting extension, even when
+  another mapper repeats the registration. Each extension has its own type
+  parameters, even when both registrations use one mapper parameter.
+- Report collisions with extensions made visible by a friend assembly at the
   registration, including imports through an extern alias. Omit the local
   extension if every registration sees a friend. Otherwise keep the ordinary
   signature for callers without the import. The compiler can also report
@@ -93,7 +98,7 @@ generated-source expectations. Follow the general principles in
   nested annotations and `Nullable<T>` intact. Reference results of `Convert`,
   `ConstructUsing` and `ResolveUsing` are nullable. Keep declarative and
   factory sources non-null and the reference source of `Convert` nullable.
-  Generate `IncludeMembers` with the declarative source of `Members` only when
+- Generate `IncludeMembers` with the declarative source of `Members` only when
   the source is not an enum, a built-in C# type, an array, a delegate or
   `dynamic`, and the destination has member or structured construction
   surfaces. Track its selected types for incrementality from syntax, including
@@ -101,6 +106,9 @@ generated-source expectations. Follow the general principles in
   compilation. Follow selectors inherited through `IncludeBase` using the
   mapper's actual type arguments and the consuming destination's member and
   constructor names.
+
+## Member-plan records
+
 - Preserve record member-plan types and `with` expressions. A destination
   member whose name conflicts with the generated record, its type parameters
   or its required record members uses a readable configuration alias: append
@@ -111,8 +119,6 @@ generated-source expectations. Follow the general principles in
   ordinary destinations and tuple elements.
 - Let the compiler synthesize standard member-plan record methods; do not emit
   placeholder equality or formatting implementations.
-- Keep generated surface and binary size small. Do not add generated members,
-  attributes or compatibility branches without a user-facing need.
 
 ## Diagnostics and failure isolation
 
