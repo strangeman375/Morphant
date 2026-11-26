@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/25/2026 - 18:27:54 |
-| Coverage date: | 11/25/2026 - 18:12:57 - 11/25/2026 - 18:27:48 |
+| Generated on: | 11/26/2026 - 04:50:35 |
+| Coverage date: | 11/26/2026 - 04:38:36 - 11/26/2026 - 04:50:31 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
-| Classes: | 401 |
-| Files: | 223 |
-| **Line coverage:** | 90.9% (41354 of 45459) |
-| Covered lines: | 41354 |
-| Uncovered lines: | 4105 |
-| Coverable lines: | 45459 |
-| Total lines: | 75937 |
-| **Branch coverage:** | 79.2% (16520 of 20834) |
-| Covered branches: | 16520 |
-| Total branches: | 20834 |
+| Classes: | 400 |
+| Files: | 222 |
+| **Line coverage:** | 90.9% (41214 of 45321) |
+| Covered lines: | 41214 |
+| Uncovered lines: | 4107 |
+| Coverable lines: | 45321 |
+| Total lines: | 75727 |
+| **Branch coverage:** | 79.2% (16491 of 20800) |
+| Covered branches: | 16491 |
+| Total branches: | 20800 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -79,7 +79,7 @@
 |Morphant.Generator.Compatibility.CompilationCompatibilityDetector|97.7%|86.5%|
 |Morphant.Generator.Compatibility.LibraryCompatibilityDetector|100%|100%|
 |Morphant.Generator.Compatibility.RuntimeContractCompatibility|100%||
-|Morphant.Generator.Compatibility.RuntimeContractManifest|100%|67.5%|
+|Morphant.Generator.Compatibility.RuntimeContractManifest|99.8%|66.8%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanModelBuilder|100%|90%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|100%|100%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorModel|100%||
@@ -94,10 +94,9 @@
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionTypePar<br/>ameterModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionSurfacePipeline|100%||
 |Morphant.Generator.ConstructionSurface.GeneratedTypeNameBuilder|96.8%|91.6%|
-|Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationE<br/>mitter|100%|96.4%|
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odel|100%||
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odelBuilder|100%|98.5%|
-|Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odelEquality|97.7%|94.1%|
+|Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odelEquality|97.6%|93.7%|
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairTypeParameterM<br/>odelBuilder|83.1%|68.1%|
 |Morphant.Generator.DiagnosticLocationActualizer|95.9%|90%|
 |Morphant.Generator.DiagnosticPipeline|100%|100%|
@@ -132,7 +131,7 @@
 |Morphant.Generator.Incrementality.TypeContractDependencies|95%|90.6%|
 |Morphant.Generator.Incrementality.TypeContractDependency|100%||
 |Morphant.Generator.Incrementality.TypeContractSourceVersion|0%||
-|Morphant.Generator.KnownSymbols|95.6%|50%|
+|Morphant.Generator.KnownSymbols|95.5%|50%|
 |Morphant.Generator.MapperDeclaration.GeneratedMapperContractConflict|100%||
 |Morphant.Generator.MapperDeclaration.MapperContainingTypeIssue|100%||
 |Morphant.Generator.MapperDeclaration.MapperContractAnalysis|100%|100%|
@@ -159,6 +158,7 @@
 |Morphant.Generator.MappingPair.InterfaceProjection|75%|65%|
 |Morphant.Generator.MappingPair.MapperMappingPairModel|88.8%||
 |Morphant.Generator.MappingPair.MapperMappingRegistrationModel|100%||
+|Morphant.Generator.MappingPair.MappingExtensionEmitter|100%|96.1%|
 |Morphant.Generator.MappingPair.MappingExtensionModelResult|100%||
 |Morphant.Generator.MappingPair.MappingExtensionNaming|100%|100%|
 |Morphant.Generator.MappingPair.MappingExtensionPipeline|95.6%|100%|
@@ -191,7 +191,6 @@
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanPropertyModel|100%||
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanTypeParameterModel|100%||
 |Morphant.Generator.MemberSurface.MemberSurfacePipeline|100%||
-|Morphant.Generator.MemberSurface.PairConfiguration.MemberConfigurationEmitt<br/>er|100%|83.3%|
 |Morphant.Generator.MorphantGenerator|100%|100%|
 |Morphant.Generator.ObsoleteTypeWarning|100%||
 |Morphant.Generator.ObsoleteTypeWarnings|97.9%|84.4%|
@@ -447,4 +446,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #824](https://github.com/strangeman375/Morphant/actions/runs/45671429233).
+Full HTML report: download the **coverage** artifact from [CI run #828](https://github.com/strangeman375/Morphant/actions/runs/45755795399).
