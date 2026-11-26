@@ -8,9 +8,6 @@ internal static class PairConfigurationModelEquality
     {
         return left.ObsoleteWarnings.SequenceEqual(right.ObsoleteWarnings) &&
                StringComparer.Ordinal.Equals(
-                   left.ExtensionContainerTypeName,
-                   right.ExtensionContainerTypeName) &&
-               StringComparer.Ordinal.Equals(
                    left.BuilderTypeName,
                    right.BuilderTypeName) &&
                StringComparer.Ordinal.Equals(left.ReceiverParameter, right.ReceiverParameter) &&

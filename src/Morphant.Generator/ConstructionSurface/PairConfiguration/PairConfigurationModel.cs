@@ -4,7 +4,6 @@ using Morphant.Generator.ConstructionSurface.ConstructionPlan;
 namespace Morphant.Generator.ConstructionSurface.PairConfiguration;
 
 internal sealed record PairConfigurationModel(
-    string ExtensionContainerTypeName,
     string BuilderTypeName,
     string ReceiverParameter,
     bool HasIncludeMembers,

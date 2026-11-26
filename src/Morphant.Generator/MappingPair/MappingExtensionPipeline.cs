@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.ConstructionSurface.PairConfiguration;
-using Morphant.Generator.MemberSurface.PairConfiguration;
 
 namespace Morphant.Generator.MappingPair;
 
@@ -72,10 +71,10 @@ internal static class MappingExtensionPipeline
     }
 
     public static DslSurfaceRequest BuildConstructionRequest(MappingExtensionModelResult model, bool fileScopedNamespace = false) =>
-        new(model.HintName, PairConfigurationEmitter.Emit(model.Model, fileScopedNamespace));
+        new(model.HintName, MappingExtensionEmitter.EmitMapping(model.Model, fileScopedNamespace));
 
     public static DslSurfaceRequest BuildMemberRequest(MappingExtensionModelResult model, bool fileScopedNamespace = false) =>
-        new(model.MemberHintName!, MemberConfigurationEmitter.Emit(model.Model, fileScopedNamespace));
+        new(model.MemberHintName!, MappingExtensionEmitter.EmitMembers(model.Model, fileScopedNamespace));
 
     private static void AddSource(SourceProductionContext context, DslSurfaceRequest request) =>
         context.AddSource(request.HintName, SourceText.From(request.Source, Encoding.UTF8));

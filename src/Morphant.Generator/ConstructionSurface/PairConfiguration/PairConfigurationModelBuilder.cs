@@ -54,7 +54,6 @@ internal static class PairConfigurationModelBuilder
             compilation);
 
         return new PairConfigurationModel(
-            GeneratedMappingExtensionNaming.CommonContainerTypeName,
             builderTypeName,
             BuildReceiverParameter(sourceType, sourceTypeName, destinationType, destinationTypeName),
             HasIncludeMembers(pair.Capabilities, declarativeSourceType),
