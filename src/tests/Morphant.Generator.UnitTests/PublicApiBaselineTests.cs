@@ -53,9 +53,7 @@ internal sealed class PublicApiBaselineTests
     public void Runtime_public_API_preserves_modifiers_inheritance_and_metadata()
     {
         var typeMapperType = typeof(TypeMapper);
-        var mapperBuilderType = typeMapperType.GetNestedType(
-            "MapperBuilder",
-            BindingFlags.NonPublic)!;
+        var mapperBuilderType = typeof(MapperBuilder);
         var sealedTypes = new[]
         {
             typeof(Mapper),
@@ -411,8 +409,6 @@ T Morphant.Flattening
 T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource)
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
-T Morphant.IMapperDeclaration
-  M System.Boolean Supports(System.Type, System.Type)
 T Morphant.ITypeMapper<TSource, TDestination>
   M TDestination Create(TSource, Morphant.Context.MappingContext)
   M TDestination Update(TSource, TDestination, Morphant.Context.MappingContext)
@@ -420,6 +416,9 @@ T Morphant.Mapper
   C .ctor(System.IServiceProvider)
   M TDestination Map<TSource, TDestination>(TSource)
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
+T Morphant.MapperBuilder
+  M Morphant.MapperBuilder MappingMode(Morphant.MappingMode)
+  M Morphant.MappingBuilder<TSource, TDestination> Map<TSource, TDestination>(Morphant.MappingMode)
 T Morphant.MapperBuilderBase<TBuilder>
   M TBuilder ConstructorSelection(Morphant.ConstructorSelection)
   M TBuilder Flattening(Morphant.Flattening)
@@ -482,7 +481,7 @@ T Morphant.TypeMapper
   M Morphant.Markers.MapMarker<T> Update<T>(System.Object, System.Object)
   M Morphant.Markers.ValueMarker<T> Value<T>(T)
   M System.Boolean Supports(System.Type, System.Type)
-  M System.Void Configure(Morphant.TypeMapper.MapperBuilder)
+  M System.Void Configure(Morphant.MapperBuilder)
 T Morphant.TypeMapperExtensions
   M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
   M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)

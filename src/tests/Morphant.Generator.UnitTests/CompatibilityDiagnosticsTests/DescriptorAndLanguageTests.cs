@@ -20,7 +20,7 @@ internal sealed class DescriptorAndLanguageTests
             "MetadataOnlyRuntime",
 """
 using System.Reflection;
-[assembly: AssemblyMetadata("Morphant.GeneratorContractVersion", "3")]
+[assembly: AssemblyMetadata("Morphant.GeneratorContractVersion", "4")]
 """);
         var diagnostics = new[]
         {

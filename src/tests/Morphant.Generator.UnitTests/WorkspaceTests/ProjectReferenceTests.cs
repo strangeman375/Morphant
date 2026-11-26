@@ -152,7 +152,7 @@ namespace ExternalModels
     [Morphant.MorphantMapper]
     public partial class ExternalMapper : Morphant.TypeMapper
     {
-        protected override void Configure(MapperBuilder builder) =>
+        protected override void Configure(Morphant.MapperBuilder builder) =>
             builder.Map<Source, Destination>();
     }
 }

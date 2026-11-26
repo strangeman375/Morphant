@@ -5,8 +5,8 @@ are sufficient, then chain only the rules that differ.
 
 ## Availability
 
-`Map` is available on `MapperBuilder` inside `Configure`. Both types must form
-a supported, accessible mapping pair.
+`Map` is available on `Morphant.MapperBuilder` inside `Configure`. Both types
+must form a supported, accessible mapping pair.
 
 ## Mapper declarations
 

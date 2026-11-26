@@ -15,4 +15,11 @@ internal sealed class TypeMapperStandaloneDispatchTests
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
             .StandaloneDispatchBoundary_9d7a0106.Scenario.Verify();
     }
+
+    [Test]
+    public void A_standalone_handwritten_mapper_exposes_only_the_selected_pair()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .HandwrittenStandaloneDispatch.Scenario.Verify();
+    }
 }

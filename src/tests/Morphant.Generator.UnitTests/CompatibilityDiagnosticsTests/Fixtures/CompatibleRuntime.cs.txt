@@ -1,7 +1,7 @@
 #nullable enable
 #pragma warning disable CS1591
 
-// Test-owned revision-2 contract used to exercise the generator as a black
+// Test-owned runtime contract used to exercise the generator as a black
 // box. It is intentionally independent from the production manifest.
 
 using System;
@@ -105,11 +105,6 @@ namespace Morphant
             TDestination? destination);
     }
 
-    public interface IMapperDeclaration
-    {
-        bool Supports(Type sourceType, Type destinationType);
-    }
-
     public sealed class Mapper : IMapper
     {
         public Mapper(IServiceProvider serviceProvider)
@@ -139,17 +134,13 @@ namespace Morphant
         }
     }
 
-    public abstract class TypeMapper : IMapperDeclaration
+    public abstract class TypeMapper
     {
         protected internal virtual bool Supports(
             Type sourceType,
             Type destinationType) => false;
 
         protected abstract void Configure(MapperBuilder builder);
-
-        bool IMapperDeclaration.Supports(
-            Type sourceType,
-            Type destinationType) => Supports(sourceType, destinationType);
 
         protected static Markers.ByConventionMarker ByConvention() =>
             throw new NotSupportedException();
@@ -196,18 +187,20 @@ namespace Morphant
             object? source,
             object? destination) =>
             throw new NotSupportedException();
+    }
 
-        protected sealed class MapperBuilder :
-            MapperBuilderBase<MapperBuilder>
+    public sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
+    {
+        private MapperBuilder()
         {
-            public MapperBuilder MappingMode(MappingMode value) =>
-                throw new NotSupportedException();
-
-            public MappingBuilder<TSource, TDestination>
-                Map<TSource, TDestination>(
-                    MappingMode value = Morphant.MappingMode.Default) =>
-                throw new NotSupportedException();
         }
+
+        public MapperBuilder MappingMode(MappingMode value) =>
+            throw new NotSupportedException();
+
+        public MappingBuilder<TSource, TDestination> Map<TSource, TDestination>(
+            MappingMode value = Morphant.MappingMode.Default) =>
+            throw new NotSupportedException();
     }
 
     public abstract class MapperBuilderBase<T>

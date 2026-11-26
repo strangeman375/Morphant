@@ -86,11 +86,10 @@ var created = typeMapper.Create(orderDto);
 var updated = typeMapper.Update(orderDto, order);
 ```
 
-Nested calls can use other mapping pairs declared by the same generated
-mapper. Mappings declared by another mapper require the application `IMapper`.
-
-This is an additional option. The standard application path remains DI
-registration and `IMapper`.
+Nested calls can use each exact pair declared by the same generated mapper.
+For a handwritten implementation of `ITypeMapper<TSource, TDestination>`,
+only the pair selected for the top-level call is available. To reach other
+pairs, register them with DI and use the application `IMapper`.
 
 See [Nested mapping](nested-mapping.md) for nested operations and
 [Exceptions](exceptions.md) for runtime failure types.

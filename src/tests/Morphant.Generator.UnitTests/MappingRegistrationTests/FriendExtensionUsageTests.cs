@@ -34,7 +34,7 @@ internal class Dto { public int Id { get; set; } }
 using M = global::Morphant;
 [M.MorphantMapper] internal partial class Local : M.TypeMapper
 {
-    protected override void Configure(MapperBuilder b) => b.Map<Dto,Dto>();
+    protected override void Configure(M.MapperBuilder b) => b.Map<Dto,Dto>();
 }
 """;
         var hidden = GeneratorTestDriver.Run("Consumer", source, LanguageVersion.CSharp9,

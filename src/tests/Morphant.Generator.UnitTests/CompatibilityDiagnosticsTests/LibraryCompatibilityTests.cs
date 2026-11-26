@@ -334,7 +334,7 @@ namespace BodyUsage
 
     private static PortableExecutableReference Runtime(
         string version,
-        string revision = "3")
+        string revision = "4")
     {
         return RuntimeContractFixture.Compatible()
             .WithRevision(revision)

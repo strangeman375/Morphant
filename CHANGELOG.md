@@ -37,8 +37,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Removed
 
-- `TypeMapper<TMapper>`, `MappingBuilder<TMapper, TSource, TDestination>` and
-  `IMappingBuilder<TMapper, TSource, TDestination>`.
+- `TypeMapper<TMapper>`, `MappingBuilder<TMapper, TSource, TDestination>`,
+  `IMappingBuilder<TMapper, TSource, TDestination>` and `IMapperDeclaration`.
 - Diagnostics `MORPH0058`, `MORPH0059` and `MORPH0060`; see
   [removed diagnostics](docs/diagnostics.md#removed-diagnostics).
 
@@ -51,9 +51,10 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 Derive mappers from `TypeMapper`. Replace `TypeMapper<OrderMapper>` with
 `TypeMapper`, and remove the self-type parameter and its recursive constraint
-from reusable mapper bases. Explicit pair-builder references now use
-`MappingBuilder<TSource, TDestination>`. Import `Morphant` for
-`IncludeMembers` if the file previously used only a namespace alias. Write the
+from reusable mapper bases. The `Configure` parameter is now
+`Morphant.MapperBuilder`. Import `Morphant` for the short type name and for
+`IncludeMembers`. Explicit pair-builder references now use
+`MappingBuilder<TSource, TDestination>`. Write the
 `IncludeMembers` selector of a nullable struct source against its value:
 `source => source.Details` instead of `source => source!.Value.Details`.
 
@@ -62,6 +63,10 @@ tuple names, nested nullable annotations and uses of `dynamic` when migrating
 independent mappers. Register reference pairs in DI as
 `ITypeMapper<Source, Destination>`. Factories and converters may return null.
 See [result nullability](docs/settings/null-handling.md#result-nullability).
+
+If a handwritten mapper used `IMapperDeclaration` to expose additional pairs
+for nested calls, register those pairs with DI and call the application
+`IMapper`. See [calling without DI](docs/runtime-dispatch.md#calling-without-di).
 
 ## [0.5.0]
 

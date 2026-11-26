@@ -23,7 +23,7 @@ namespace TestCase
     [Morphant.MorphantMapper]
     public partial class TestMapper : Morphant.TypeMapper
     {
-        protected override void Configure(MapperBuilder builder) =>
+        protected override void Configure(Morphant.MapperBuilder builder) =>
             builder.Map<Source, Destination>();
     }
 }
