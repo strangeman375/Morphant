@@ -71,6 +71,10 @@ generated-source expectations. Follow the general principles in
 
 ## DSL extensions and registrations
 
+- `TypeMapper.Configure` takes the public `Morphant.MapperBuilder`.
+  Its `Map<TSource, TDestination>` selects a
+  `MappingBuilder<TSource, TDestination>`. Both builders return their own
+  type from the settings inherited from `MapperBuilderBase<TBuilder>`.
 - DSL extensions stay in `Morphant`; partial mapper declarations stay in the
   user's namespace.
 - All mappers in an assembly share the DSL extensions for a CLR pair. Tuple
@@ -150,6 +154,10 @@ generated-source expectations. Follow the general principles in
 
 ## Runtime compatibility
 
+- Standalone nested calls use the exact pairs reported by the generated
+  `TypeMapper.Supports` override. For an `ITypeMapper<,>` implemented
+  independently of `TypeMapper`, only the exact pair selected at the
+  top-level call is available for nested lookup.
 - Generated code records no Morphant version. `MORPH0063` reads the
   `major.minor` line from each referenced assembly's reference to the detected
   runtime: before 1.0 it must equal the runtime line; from 1.0 the major must
