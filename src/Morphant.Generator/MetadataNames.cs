@@ -12,16 +12,13 @@ internal static class MetadataNames
         "Morphant.ITypeMapper`2";
 
     public const string MapperBuilder =
-        "Morphant.TypeMapper+MapperBuilder";
+        "Morphant.MapperBuilder";
 
     public const string MapperBuilderBase =
         "Morphant.MapperBuilderBase`1";
 
     public const string PairMapperBuilder =
         "Morphant.MappingBuilder`2";
-
-    public const string MapperDeclaration =
-        "Morphant.IMapperDeclaration";
 
     public const string Member =
         "Morphant.Members.Member`1";

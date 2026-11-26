@@ -27,8 +27,8 @@ internal static class RuntimeContractManifest
             TypeKind.Class,
             IsTypeMapper),
 
-        // Builder contract, ordered by metadata name. The protected root
-        // builder is validated as part of TypeMapper because it is nested.
+        // Configuration builders.
+        Requirement(MetadataNames.MapperBuilder, TypeKind.Class, IsMapperBuilder),
         Requirement(
             "Morphant.MapperBuilderBase`1",
             TypeKind.Class,
@@ -61,10 +61,6 @@ internal static class RuntimeContractManifest
             ("Create", 1),
             ("Update", 2)),
         Requirement("Morphant.IMapper", TypeKind.Interface, IsMapperInterface),
-        Requirement(
-            "Morphant.IMapperDeclaration",
-            TypeKind.Interface,
-            IsMapperDeclaration),
         Requirement(
             "Morphant.ITypeMapper`2",
             TypeKind.Interface,
@@ -612,17 +608,9 @@ internal static class RuntimeContractManifest
 
     private static bool IsTypeMapper(INamedTypeSymbol symbol)
     {
-        var builder = symbol.GetTypeMembers("MapperBuilder")
-            .SingleOrDefault();
-
         return symbol.IsAbstract &&
                !symbol.IsSealed &&
                symbol.Arity == 0 &&
-               symbol.AllInterfaces.Any(@interface =>
-                   GetFullMetadataName(@interface.OriginalDefinition) ==
-                       "Morphant.IMapperDeclaration") &&
-               builder is not null &&
-               IsMapperBuilder(builder) &&
                HasMethod(
                    symbol,
                    "Configure",
@@ -630,8 +618,7 @@ internal static class RuntimeContractManifest
                    isStatic: false,
                    arity: 0,
                    Void,
-                   [Parameter(Named(
-                       "Morphant.TypeMapper+MapperBuilder"))],
+                   [Parameter(Named(MetadataNames.MapperBuilder))],
                    method => method.IsAbstract) &&
                HasMethod(
                    symbol,
@@ -821,21 +808,18 @@ internal static class RuntimeContractManifest
 
     private static bool IsMapperBuilder(INamedTypeSymbol symbol)
     {
+        var self = Named(MetadataNames.MapperBuilder);
+
         return symbol.IsSealed &&
                !symbol.IsAbstract &&
-               symbol.DeclaredAccessibility == Accessibility.Protected &&
-               HasBaseType(
-                   symbol,
-                   Named(
-                       "Morphant.MapperBuilderBase`1",
-                       Named("Morphant.TypeMapper+MapperBuilder"))) &&
+               HasBaseType(symbol, Named(MetadataNames.MapperBuilderBase, self)) &&
                HasMethod(
                    symbol,
                    "MappingMode",
                    Accessibility.Public,
                    isStatic: false,
                    arity: 0,
-                   Named("Morphant.TypeMapper+MapperBuilder"),
+                   self,
                    [Parameter(Named("Morphant.MappingMode"))]) &&
                HasMethod(
                    symbol,
@@ -888,19 +872,6 @@ internal static class RuntimeContractManifest
                        HasTypeParameterConstraint(
                            method.TypeParameters[1],
                            symbol.TypeParameters[1]));
-    }
-
-    private static bool IsMapperDeclaration(INamedTypeSymbol symbol)
-    {
-        return !symbol.IsStatic &&
-               HasMethod(
-                   symbol,
-                   "Supports",
-                   Accessibility.Public,
-                   isStatic: false,
-                   arity: 0,
-                   Boolean,
-                   [Parameter(SystemType), Parameter(SystemType)]);
     }
 
     private static bool HasTypeParameterConstraint(

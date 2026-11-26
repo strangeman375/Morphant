@@ -16,9 +16,8 @@ internal sealed record KnownSymbols(
         var typeMapper = compilation.GetTypeByMetadataName(
             MetadataNames.TypeMapper);
 
-        var mapperBuilder = typeMapper?
-            .GetTypeMembers("MapperBuilder")
-            .SingleOrDefault();
+        var mapperBuilder = compilation.GetTypeByMetadataName(
+            MetadataNames.MapperBuilder);
 
         var mapperBuilderBase = compilation.GetTypeByMetadataName(
             MetadataNames.MapperBuilderBase);

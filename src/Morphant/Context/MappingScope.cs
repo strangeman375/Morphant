@@ -69,8 +69,8 @@ internal sealed class MappingScope
             var sourceType = typeof(TSource);
             var destinationType = typeof(TDestination);
             var isDeclared =
-                standaloneMapper is IMapperDeclaration declaration
-                    ? declaration.Supports(sourceType, destinationType)
+                standaloneMapper is TypeMapper typeMapper
+                    ? typeMapper.Supports(sourceType, destinationType)
                     : sourceType == _standaloneSourceType &&
                       destinationType == _standaloneDestinationType;
 
